@@ -1,0 +1,1 @@
+Python/Flask Nostr client wrapped in QT 
