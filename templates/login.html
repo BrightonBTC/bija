@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href='/static/styles.css' />
+  <title>{{ title }}</title>
+</head>
+
+<body>
+<div class="main">
+    <h1>Login</h1>
+    <div class="card profileloader">
+        <form method="post" action="/login">
+        {% if login_type == 2 %}
+            <input type="text" id="pw" name="pw" placeholder="Saved password (this is not your private key)">
+            <input type="submit" id="login" name="login" value="Login">
+
+        {% elif login_type == 1 %}
+            {% if message %}
+            <p class="alert">{{message}}</p>
+            {% endif %}
+            <p>Enter a private key or create a new one to log in:</p>
+            <input type="text" id="private_key" name="private_key"  placeholder="Private Key (leave blank to create new)">
+            <div>
+              <input type="checkbox"  id="save_key" name="save_key"><label for="save_key">Save key for easy login?</label>
+            </div>
+
+            <input type="text" id="password" name="password"  placeholder="Optional password to encrypt your key (you'll need this to login next time)">
+            <input type="submit" id="load_private_key" name="load_private_key" value="Load profile">
+        {% endif %}
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

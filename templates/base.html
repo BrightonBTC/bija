@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href='/static/styles.css' />
+<!--  <script src="/static/page.js"></script>-->
+  <title>{{ title }}</title>
+</head>
+
+<body>
+<div class="main">
+  <div class="topnav">
+    <a href="/">Feed</a>
+    <a href="/profile">Profile</a>
+    <a href="#">Messages</a>
+    <a href="#">Notifications</a>
+    <a href="/settings">Settings</a>
+    <a href="/keys">Keys</a>
+  </div>
+
+  <div class="row">
+    <div class="leftcolumn">
+      {% block content %}
+      <div class="card">post 1</div>
+      <div class="card">another</div>
+      {% endblock content %}
+    </div>
+    <div class="rightcolumn">
+      <div class="card">
+        <h3>Header for something</h3>
+        <p>Some text..</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
