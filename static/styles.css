@@ -1,0 +1,198 @@
+html {
+  box-sizing: border-box;
+  font-size: 16px;
+}
+
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+
+body, h1, h2, h3, h4, h5, h6, p, ol, ul {
+  margin: 5px 0 15px 0;
+  padding: 0;
+  font-weight: normal;
+}
+
+body {
+  font-family: Arial;
+  padding: 10px;
+  background: #151822;
+  color: #fdffee;
+}
+
+ol, ul {
+  list-style: none;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+td, tr{
+    padding: 5px;
+}
+
+input[type=text], textarea {
+    width: 100%;
+    padding: 12px 20px;
+    margin: 8px 0;
+    display: inline-block;
+    border: 1px solid #403e3e;
+    background: #0c0d0e;
+    color: #fffeee;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+input[type=submit] {
+  width: 100%;
+  background-color: #4044d9;
+  color: white;
+  padding: 14px 20px;
+  margin: 8px 0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+input[type=submit]:hover {
+  background-color: #3538b9;
+  color: #dddf90;
+}
+
+.profileloader input[type=submit] {
+    width:18%;
+    margin-left:2%;
+    float:right;
+}
+.profileloader input[type=text] {
+    width:80%;
+}
+
+input[type=text].pname {
+    background-image: url(at.png);
+    background-position: 10px center;
+    background-repeat: no-repeat;
+    padding-left: 40px;
+    font-size: 120%;
+    font-weight: bold
+}
+
+
+
+.main {
+  max-width:1000px;
+  margin:auto;
+}
+
+/* Style the top navigation bar */
+.topnav {
+    overflow: hidden;
+    background-color: #040508;
+    border-radius: 5px;
+    border: 1px solid #29375e;
+    box-shadow: 5px 5px 7px 0px black;
+}
+
+/* Style the topnav links */
+.topnav a {
+  float: left;
+  display: block;
+  color: #f2f2f2;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+}
+
+/* Change color on hover */
+.topnav a:hover, .topnav a:active{
+    background-color: #18192a;
+    color: #9896ff;
+}
+
+/* Create two unequal columns that floats next to each other */
+/* Left column */
+.leftcolumn {
+  float: left;
+  width: 75%;
+}
+
+/* Right column */
+.rightcolumn {
+  float: left;
+  width: 25%;
+  padding-left: 20px;
+}
+
+/* Add a card effect for articles */
+.card {
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 3px;
+    border: 1px solid #253b6c;
+}
+
+.sm{
+    font-size:10px;
+    color: #ecffee;
+}
+
+.alert{
+    background: yellow;
+    color: red;
+    padding: 5px;
+}
+
+/* Clear floats after the columns */
+.row:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+.note-container{
+    display: flex;
+    padding: 10px;
+    border-bottom: 1px solid #35353c;
+}
+.note-container > *{
+    margin:10px;
+}
+.note-image{
+    flex: 0 0 60px;
+}
+.note-image img{
+    width: 60px;
+    border-radius:15px;
+    overflow:hidden;
+}
+
+.note{
+    flex:1;
+}
+.note > *{
+    margin-bottom: 25px;
+}
+.note a{
+    color:#c7c781;
+    text-decoration:none;
+}
+.note h3{
+    margin-bottom:10px;
+}
+/* Responsive layout - when the screen is less than 800px wide, make the two columns stack on top of each other instead of next to each other */
+@media screen and (max-width: 800px) {
+  .leftcolumn, .rightcolumn {
+    width: 100%;
+    padding: 0;
+  }
+}
+
+/* Responsive layout - when the screen is less than 400px wide, make the navigation links stack on top of each other instead of next to each other */
+@media screen and (max-width: 400px) {
+  .topnav a {
+    float: none;
+    width: 100%;
+  }
+}

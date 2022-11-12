@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% for post in notes: %}
+
+    <div class="note-container">
+      <div class="note-image"><img src="{{profile['pic']}}" /><img src="/identicon?id={{post['public_key']}}" /></div>
+      <div class="note">
+          <h3><a href="/profile">{{profile['name']}}</a> </h3>
+          <p class="sm">{{post['public_key']}}</p>
+          {{post['content'] |safe}}
+      </div>
+    </div>
+
+{% endfor %}
+
+{% endblock content %}

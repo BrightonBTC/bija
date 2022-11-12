@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="card">
+    <h3>Profile</h3>
+    <img src="{{data.profile['pic']}}" width="200" id="ppic" />
+    <form method="post" action="/settings">
+        <input type="hidden" id="pubk" name="pubk" value="{{data.profile['pub']}}">
+        <input type="text" id="pname" name="pname" class="pname" value="{{data.profile['name']}}">
+        <label for="pmsg">About</label>
+        <textarea name="pmsg" id="pmsg" rows="10" cols="30">{{data.profile['about']}}</textarea>
+        <label for="pim">Image URL</label>
+        <input type="text" id="pim" name="pim" value="{{data.profile['pic']}}">
+
+        <input type="submit" id="pupd" name="pupd" value="Update">
+    </form>
+    <h3>Relays</h3>
+    <form method="post" action="/settings">
+        <input type="text" id="newrelay" name="newrelay" class="newrelay" placeholder="wss://">
+        <input type="submit" id="addrelay" name="addrelay" value="+">
+    </form>
+</div>
+{% endblock content %}

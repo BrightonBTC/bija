@@ -1,9 +1,10 @@
 import sys
 from PyQt5 import QtCore, QtWidgets, QtGui, QtWebEngineWidgets
+from PyQt5.QtWidgets import QMainWindow
 
 
 def init_gui(application, port=5000, width=1000, height=800,
-             window_title="Bija Nostr Client", icon="appicon.png"):
+             window_title="Bija Nostr Client", icon="static/aum.png"):
 
     ROOT_URL = 'http://localhost:{}'.format(port)
 
@@ -30,7 +31,7 @@ def init_gui(application, port=5000, width=1000, height=800,
     qtapp.aboutToQuit.connect(webapp.terminate)
 
     # Main Window Level
-    window = QtWidgets.QMainWindow()
+    window = MainWindow()
     window.resize(width, height)
     window.setWindowTitle(window_title)
     window.setWindowIcon(QtGui.QIcon(icon))
@@ -48,3 +49,34 @@ def init_gui(application, port=5000, width=1000, height=800,
     window.show()
 
     return qtapp.exec_()
+
+
+class Ui_MainWindow(object):
+    def setupUi(self, MainWindow):
+        MainWindow.setObjectName("MainWindow")
+
+
+class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
+    def __init__(self, *args, obj=None, **kwargs):
+        super(MainWindow, self).__init__(*args, **kwargs)
+        self.setupUi(self)
+
+
+
+    def closeEvent(self, event):
+        page = QtWebEngineWidgets.QWebEnginePage()
+        page.load(QtCore.QUrl("http://localhost:5000/shutdown"))
+        self.webView.setPage(page)
+
+        print("Close clicked")
+        # Ask for confirmation
+        answer = QtWidgets.QMessageBox.question(self,
+        "Confirm Exit...",
+        "Are you sure you want to exit?\nAll data will be lost.",
+        QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+
+        event.ignore()
+        if answer == QtWidgets.QMessageBox.Yes:
+            event.accept()
+
+

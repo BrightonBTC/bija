@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+<div class="note-container">
+<table>
+    <tr>
+        <td>Public</td><td>{{k['private']}}</td>
+    </tr>
+    <tr>
+        <td>Private</td><td>{{k['public']}}</td>
+    </tr>
+</table>
+</div>
+
+
+{% endblock content %}
