@@ -1,17 +1,27 @@
 {% extends "base.html" %}
 
 {% block content %}
-{% for post in notes: %}
-
-    <div class="note-container">
-      <div class="note-image"><img src="{{profile['pic']}}" /><img src="/identicon?id={{post['public_key']}}" /></div>
-      <div class="note">
-          <h3><a href="/profile">{{profile['name']}}</a> </h3>
-          <p class="sm">{{post['public_key']}}</p>
-          {{post['content'] |safe}}
-      </div>
+{% if profile is not none %}
+<div class="profile">
+    <div class="profile-image">
+        {% if profile['pic'] is not none %}
+            {% set profile_pic=profile['pic'] %}
+        {% else %}
+            {% set profile_pic='/identicon?id='+profile['public_key'] %}
+        {% endif %}
+        <img src="{{profile_pic}}" width="120" id="ppic"  />
     </div>
-
-{% endfor %}
+    <div class="profile-details">
+        <h1>{{profile['name']}}</h1>
+        <p class="sm pk">@{{profile['public_key'] | truncate(21, False, '...')}}</p>
+        <pre>{{profile['about']}}</pre>
+    </div>
+</div>
+<div class="profile-tools">
+    <a href="#">&#43; follow</a> <a href="#">&#9993; message</a>
+</div>
+{% endif %}
+<h2 class="posts-title">Public posts</h2>
+{% include 'feed_items.html' %}
 
 {% endblock content %}

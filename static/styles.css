@@ -85,14 +85,21 @@ input[type=text].pname {
   max-width:1000px;
   margin:auto;
 }
-
+.row{
+    margin-top: 50px;
+}
 /* Style the top navigation bar */
 .topnav {
     overflow: hidden;
     background-color: #040508;
     border-radius: 5px;
-    border: 1px solid #29375e;
+    border: 2px solid #29375e;
+    border-top-width: 0;
     box-shadow: 5px 5px 7px 0px black;
+    position: fixed;
+    width: 1000px;
+    top: 0;
+    z-index: 100;
 }
 
 /* Style the topnav links */
@@ -138,6 +145,14 @@ input[type=text].pname {
     color: #ecffee;
 }
 
+.right{
+    float: right;
+}
+
+.dt{
+    color: #ccc;
+}
+
 .alert{
     background: yellow;
     color: red;
@@ -159,28 +174,134 @@ input[type=text].pname {
 .note-container > *{
     margin:10px;
 }
+.note-parent-container{
+    display: flex;
+    padding: 10px;
+    overflow: hidden;
+    position: relative;
+}
+.note-parent-container > *{
+    margin:10px;
+}
+
 .note-image{
     flex: 0 0 60px;
 }
 .note-image img{
     width: 60px;
-    border-radius:15px;
+    border-radius:8px;
     overflow:hidden;
+}
+
+.thread-pointer{
+    position: absolute;
+    border: 2px dashed #636376;
+    border-right: 0;
+    width: 80px;
+    border-radius: 20px;
+    height: 1000px;
+    margin-top: 10px;
+    margin-left: 30px;
+}
+
+.is-parent{
+    position: absolute;
+    width: 2px;
+    height: 1000px;
+    background: #636376;
+    margin-left: 40px;
+    margin-top: 85px;
+}
+
+.note-content{
+    border-radius:8px;
+    background: #070d22;
+    padding:10px;
+    white-space: pre-wrap;
+}
+
+.muted{
+    font-size: 70%;
+    filter: saturate(0.5);
+    border-radius:8px;
+    background: #070d22;
+    padding:10px;
+    width:fit-content;
 }
 
 .note{
     flex:1;
+    overflow: hidden;
 }
-.note > *{
-    margin-bottom: 25px;
-}
+
 .note a{
-    color:#c7c781;
+    color: #4ec74c;
     text-decoration:none;
 }
 .note h3{
     margin-bottom:10px;
 }
+
+#n_unseen_posts{
+    font-size: 10px;
+    background: rgb(0, 255, 0);
+    color: rgb(0, 0, 0);
+    border-radius: 10px;
+    min-width: 15px;
+    height: 15px;
+    padding: 2px;
+    display: none;
+}
+
+.profile{
+    padding: 30px;
+    margin: 10px;
+    background: #152148;
+    border-radius: 20px;
+    display: flex;
+    border-bottom: 1px solid #4ec74c;
+}
+.profile-image {
+    flex:0 0 120px;
+}
+.profile-image img{
+    border-radius:20px;
+}
+.profile-details{
+    padding: 0 20px;
+}
+.profile-details pre{
+    white-space:pre-wrap;
+}
+
+.profile-details h1{
+    font-weight: 800;
+    font-size: 20px;
+    line-height: 20px;
+    margin-bottom: 0;
+}
+.sm.pk{
+    color: #8d919f;
+}
+.profile-tools{
+    text-align: right;
+    padding: 5px 20px;
+    margin-bottom: 30px;
+}
+.profile-tools a{
+    text-decoration: none;
+    padding: 5px;
+    background: #070d22;
+    border-radius: 8px;
+    color: #4ec74c;
+}
+.posts-title{
+    border-bottom: 1px solid #35353c;
+    font-size: 12px;
+    padding: 5px;
+    color: #aaa;
+}
+
 /* Responsive layout - when the screen is less than 800px wide, make the two columns stack on top of each other instead of next to each other */
 @media screen and (max-width: 800px) {
   .leftcolumn, .rightcolumn {

@@ -1,11 +1,11 @@
 import time
 from os.path import exists
 
-from sqlalchemy import create_engine, Column, Integer, String, Time
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy import create_engine, Column, Integer, String, Time, ForeignKey, Boolean, text
+from sqlalchemy.orm import declarative_base, sessionmaker, join, relationship, subqueryload
 
 Base = declarative_base()
-DB_ENGINE = create_engine("sqlite:///bija.sqlite", echo=True)
+DB_ENGINE = create_engine("sqlite:///bija.sqlite", echo=False)
 DB_SESSION = sessionmaker(autocommit=False, autoflush=False, bind=DB_ENGINE)
 
 DEFAULT_RELAYS = [
@@ -30,6 +30,13 @@ class BijaDB:
         for r in DEFAULT_RELAYS:
             relays.append(Relay(name=r))
         self.session.add_all(relays)
+        self.session.commit()
+
+    def reset(self):
+        self.session.query(Profile).delete()
+        self.session.query(PrivateMessage).delete()
+        self.session.query(Note).delete()
+        self.session.query(PK).delete()
         self.session.commit()
 
     def get_relays(self):
@@ -69,6 +76,14 @@ class BijaDB:
         ))
         self.session.commit()
 
+    def add_following(self, keys_list):
+        for public_key in keys_list:
+            self.session.merge(Profile(
+                public_key=public_key,
+                following=True
+            ))
+        self.session.commit()
+
     def upd_profile(self,
                     public_key,
                     name=None,
@@ -106,6 +121,9 @@ class BijaDB:
         ))
         self.session.commit()
 
+    def is_note(self, note_id):
+        return self.session.query(Note.id).filter_by(id=note_id).first()
+
     def insert_private_message(self,
                                msg_id,
                                public_key,
@@ -121,12 +139,44 @@ class BijaDB:
         ))
         self.session.commit()
 
-    def get_feed(self):
-        return self.session.query(Note).order_by(Note.created_at.desc()).limit(50).all()
+    def get_feed(self, before):
+        return self.session.query(
+            Note.id,
+            Note.public_key,
+            Note.content,
+            Note.response_to,
+            Note.thread_root,
+            Note.created_at,
+            Note.members,
+            Profile.name,
+            Profile.pic,
+            Profile.nip05).join(Note.profile).filter(text("note.created_at<{}".format(before))).order_by(Note.created_at.desc()).limit(50).all()
 
-    def get_notes_by_pubkey(self, public_key):
-        return self.session.query(Note).filter_by(public_key=public_key).order_by(Note.created_at.desc()).limit(
-            50).all()
+    def get_note_by_id_list(self, note_ids):
+        return self.session.query(
+            Note.id,
+            Note.public_key,
+            Note.content,
+            Note.created_at,
+            Note.members,
+            Profile.name,
+            Profile.pic,
+            Profile.nip05).join(Note.profile).filter(Note.id.in_(note_ids)).all()
+
+    def get_notes_by_pubkey(self, public_key, before):
+        # return self.session.query(Note).filter_by(public_key=public_key).order_by(Note.created_at.desc()).limit(50).all()
+        return self.session.query(
+            Note.id,
+            Note.public_key,
+            Note.content,
+            Note.response_to,
+            Note.thread_root,
+            Note.created_at,
+            Note.members,
+            Profile.name,
+            Profile.pic,
+            Profile.nip05).join(Note.profile).filter(text("note.created_at<{}".format(before))).filter_by(public_key=public_key).order_by(
+            Note.created_at.desc()).limit(50).all()
 
     def test(self):
         print("===============================================")
@@ -142,6 +192,9 @@ class Profile(Base):
     pic = Column(String)
     about = Column(String)
     updated_at = Column(Integer)
+    following = Column(Boolean)
+
+    notes = relationship("Note", back_populates="profile")
 
     def __repr__(self):
         return {
@@ -150,19 +203,22 @@ class Profile(Base):
             self.nip05,
             self.pic,
             self.about,
-            self.updated_at
+            self.updated_at,
+            self.following
         }
 
 
 class Note(Base):
     __tablename__ = "note"
     id = Column(String(64), unique=True, primary_key=True)
-    public_key = Column(String(64))
+    public_key = Column(String(64), ForeignKey("profile.public_key"))
     content = Column(String)
     response_to = Column(String(64))
     thread_root = Column(String(64))
     created_at = Column(Integer)
     members = Column(String)
+
+    profile = relationship("Profile", back_populates="notes")
 
     def __repr__(self):
         return {
@@ -171,7 +227,6 @@ class Note(Base):
             self.content,
             self.response_to,
             self.thread_root,
-            self.about,
             self.created_at,
             self.members
         }

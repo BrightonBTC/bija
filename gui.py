@@ -3,7 +3,7 @@ from PyQt5 import QtCore, QtWidgets, QtGui, QtWebEngineWidgets
 from PyQt5.QtWidgets import QMainWindow
 
 
-def init_gui(application, port=5000, width=1000, height=800,
+def init_gui(application, port=5000, width=1100, height=800,
              window_title="Bija Nostr Client", icon="static/aum.png"):
 
     ROOT_URL = 'http://localhost:{}'.format(port)

@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <link rel="stylesheet" href='/static/styles.css' />
-<!--  <script src="/static/page.js"></script>-->
+  <script src="/static/page.js"></script>
   <title>{{ title }}</title>
 </head>
 
 <body>
-<div class="main">
+<div class="main" data-page="{{title}}">
   <div class="topnav">
-    <a href="/">Feed</a>
+    <a href="/">Feed <span id="n_unseen_posts"></span></a>
     <a href="/profile">Profile</a>
     <a href="#">Messages</a>
     <a href="#">Notifications</a>
@@ -19,15 +19,18 @@
   </div>
 
   <div class="row">
-    <div class="leftcolumn">
+    <div class="leftcolumn" id="main-content">
       {% block content %}
 
       {% endblock content %}
     </div>
     <div class="rightcolumn">
-      <div class="card">
-        <h3>Header for something</h3>
-        <p>Some text..</p>
+
+      <div id="note-poster">
+          <form method="post" action="/" id="new_post_form">
+              <textarea name="new_post" id="new_post" placeholder="Say something..."></textarea>
+              <input type="submit" name="new_post_submit" id="new_post_submit" value="Post">
+          </form>
       </div>
     </div>
   </div>

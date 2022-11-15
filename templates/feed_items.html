@@ -1,0 +1,44 @@
+{% for notes in threads: %}
+{% for post in notes: %}
+
+    {% if post['response_to'] is not none and post['response_to'] not in ids %}
+    <div class="note-parent-container">
+        <div class="note-image">
+           <div class="thread-pointer"></div>
+        </div>
+        <div class="note">
+            <div class="note-content muted"><a href="">{{post['response_to'] | truncate(21, False, '...')}}</a></div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if post['is_parent'] %}
+    <div class="note-parent-container">
+        <div class="is-parent"></div>
+    {% else %}
+    <div class="note-container">
+    {% endif %}
+
+        <div class="note-image">
+            {% if post['pic'] is not none %}
+            <img src="{{post['pic']}}" />
+            {% else %}
+            <img src="/identicon?id={{post['public_key']}}" />
+            {% endif %}
+        </div>
+        <div class="note" data-dt="{{post['created_at']}}">
+            <h3>
+                {% if post['name'] is not none %}
+                <a href="/profile?pk={{post['public_key']}}">{{post['name']}}</a>
+                {% else %}
+                <a href="/profile?pk={{post['public_key']}}">{{post['public_key'] | truncate(21, False, '...')}}</a>
+                {% endif %}
+                <span class="sm right dt">{{post['created_at']|dt}}</span>
+            </h3>
+            <pre class="note-content">{{post['content'] |safe}}</pre>
+            <p></p>
+        </div>
+    </div>
+
+{% endfor %}
+{% endfor %}

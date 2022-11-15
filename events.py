@@ -2,8 +2,9 @@ import json
 import ssl
 import time
 
-from nostr.event import EventKind
+from nostr.event import EventKind, Event
 from nostr.filter import Filters, Filter
+from nostr.key import PrivateKey
 from nostr.message_type import ClientMessageType
 from nostr.relay_manager import RelayManager
 
@@ -11,6 +12,7 @@ from nostr.relay_manager import RelayManager
 class BijaEvents:
     subscriptions = []
     pool_handler_running = False
+    unseen_notes = 0
 
     def __init__(self, db, session):
         self.db = db
@@ -40,12 +42,19 @@ class BijaEvents:
                     self.handle_contact_list_event(msg.event)
 
                 if msg.event.kind == EventKind.TEXT_NOTE:
-                    self.handle_note_event(msg.event)
+                    self.handle_note_event(msg.event, msg.subscription_id)
 
                 if msg.event.kind == EventKind.ENCRYPTED_DIRECT_MESSAGE:
                     self.handle_private_message_event(msg.event)
 
-            # time.sleep(5)
+    def get_relay_connect_status(self):
+        relays = {}
+        for r in self.relay_manager.relays.values():
+            if r.is_open:
+                relays[r.url] = 1
+            else:
+                relays[r.url] = 0
+        return relays
 
     def handle_metadata_event(self, event):
         s = json.loads(event.content)
@@ -70,13 +79,11 @@ class BijaEvents:
             event.created_at,
         )
 
-    def handle_note_event(self, event):
+    def handle_note_event(self, event, subscription):
         response_to = None
         thread_root = None
         members = ""
-        print("NOTE:", event.content)
         if len(event.tags) > 0:
-            print("NOTE TAGS:", event.tags)
             parents = []
             for item in event.tags:
                 if item[0] == "p":
@@ -94,6 +101,8 @@ class BijaEvents:
                 elif len(parents) > 1:
                     thread_root = parents[0]
                     response_to = parents[1]
+        if subscription in ['primary', 'following'] and self.db.is_note(event.id) is None:
+            self.unseen_notes += 1
         self.db.insert_note(
             event.id,
             event.public_key,
@@ -104,11 +113,26 @@ class BijaEvents:
             members
         )
 
+    def submit_note(self, msg):
+        print(msg)
+        k = bytes.fromhex(self.session.get("keys")['private'])
+        private_key = PrivateKey(k)
+
+        event = Event(private_key.public_key.hex(), msg)
+        print(event.id)
+        event.sign(private_key.hex())
+
+        message = json.dumps([ClientMessageType.EVENT, event.to_json_object()], ensure_ascii=False)
+        self.relay_manager.publish_message(message)
+        return event.id
+
     def handle_contact_list_event(self, event):
         keys = []
         for p in event.tags:
             if p[0] == "p":
                 keys.append(p[1])
+        if event.public_key == self.session.get("keys")['public']:
+            self.db.add_following(keys)
         self.subscribe_following(keys)
 
     def handle_private_message_event(self, event):
@@ -128,7 +152,6 @@ class BijaEvents:
 
     # create site wide subscription
     def subscribe_primary(self):
-        print("fetching profile")
         keys = self.session.get("keys")
         if 'primary' not in self.subscriptions and keys is not None:
             print("add primary subscription")
@@ -150,7 +173,6 @@ class BijaEvents:
             self.relay_manager.publish_message(message)
 
     def subscribe_following(self, public_keys):
-        print("fetching profiles I'm following")
         if 'following' not in self.subscriptions:
             print("add following subscription", public_keys)
             self.subscriptions.append('following')
@@ -158,7 +180,6 @@ class BijaEvents:
                            EventKind.TEXT_NOTE,
                            EventKind.DELETE]
             filters = Filters([Filter(authors=public_keys, kinds=event_kinds)])
-            print('FILTERS', dir(filters))
             subscription_id = 'following'
             request = [ClientMessageType.REQUEST, subscription_id]
             request.extend(filters.to_json_array())

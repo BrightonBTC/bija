@@ -4,14 +4,17 @@
 
 
 <div class="note-container">
-<table>
-    <tr>
-        <td>Public</td><td>{{k['private']}}</td>
-    </tr>
-    <tr>
-        <td>Private</td><td>{{k['public']}}</td>
-    </tr>
-</table>
+    <table>
+        <tr>
+            <td>Public</td><td>{{k['private']}}</td>
+        </tr>
+        <tr>
+            <td>Private</td><td>{{k['public']}}</td>
+        </tr>
+    </table>
+    <form method="post" action="/keys">
+        <input type="submit" name="del_keys" value="Delete these keys">
+    </form>
 </div>
 
 
