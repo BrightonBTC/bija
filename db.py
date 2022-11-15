@@ -42,6 +42,9 @@ class BijaDB:
     def get_relays(self):
         return self.session.query(Relay)
 
+    def get_preferred_relay(self):
+        return self.session.query(Relay).first()
+
     def get_profile(self, public_key: String):
         return self.session.query(Profile).filter_by(public_key=public_key).first()
 

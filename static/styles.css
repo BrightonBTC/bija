@@ -213,11 +213,20 @@ input[type=text].pname {
     margin-top: 85px;
 }
 
+.note-container .is-parent{
+    display:none;
+}
+
 .note-content{
     border-radius:8px;
     background: #070d22;
     padding:10px;
     white-space: pre-wrap;
+}
+
+#note-poster{
+    position: fixed;
+    width:230px;
 }
 
 .muted{
@@ -242,6 +251,9 @@ input[type=text].pname {
     margin-bottom:10px;
 }
 
+.reply-form{
+    display:none;
+}
 #n_unseen_posts{
     font-size: 10px;
     background: rgb(0, 255, 0);
@@ -300,6 +312,27 @@ input[type=text].pname {
     font-size: 12px;
     padding: 5px;
     color: #aaa;
+}
+
+.notify {
+    position: fixed;
+    bottom: 50px;
+    right: 20px;
+    width: 400px;
+    padding: 20px;
+    background: #364c89;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 10px;
+    opacity: 0;
+    animation: fadeInOut 3s linear;
+    z-index: 400;
+}
+
+
+@keyframes fadeInOut {
+  0%,100% { opacity: 0 }
+  10%, 80% { opacity: 1 }
 }
 
 /* Responsive layout - when the screen is less than 800px wide, make the two columns stack on top of each other instead of next to each other */

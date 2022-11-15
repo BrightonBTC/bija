@@ -113,13 +113,28 @@ class BijaEvents:
             members
         )
 
-    def submit_note(self, msg):
-        print(msg)
+    def submit_note(self, data):
         k = bytes.fromhex(self.session.get("keys")['private'])
         private_key = PrivateKey(k)
-
-        event = Event(private_key.public_key.hex(), msg)
-        print(event.id)
+        r = self.db.get_preferred_relay()
+        preferred_relay = r.name
+        tags = []
+        note = None
+        for v in data:
+            if v[0] == "new_post":
+                note = v[1]
+                break
+            elif v[0] == "reply":
+                note = v[1]
+            elif v[0] == "pubkey":
+                tags.append(["p", v[1], preferred_relay,])
+            elif v[0] == "parent_id":
+                tags.append(["e", v[1], preferred_relay, "reply"])
+            elif v[0] == "thread_root":
+                tags.append(["e", v[1], preferred_relay, "root"])
+        if note is None:
+            return False
+        event = Event(private_key.public_key.hex(), note, tags=tags, created_at=int(time.time()))
         event.sign(private_key.hex())
 
         message = json.dumps([ClientMessageType.EVENT, event.to_json_object()], ensure_ascii=False)
@@ -179,7 +194,7 @@ class BijaEvents:
             event_kinds = [EventKind.SET_METADATA,
                            EventKind.TEXT_NOTE,
                            EventKind.DELETE]
-            filters = Filters([Filter(authors=public_keys, kinds=event_kinds)])
+            filters = Filters([Filter(authors=public_keys, kinds=event_kinds, since=int(time.time())-(60*60))])
             subscription_id = 'following'
             request = [ClientMessageType.REQUEST, subscription_id]
             request.extend(filters.to_json_array())

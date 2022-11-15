@@ -100,8 +100,8 @@ def get_updates():
 def submit_note():
     event_id = False
     if request.method == 'POST':
-        event_id = EVENT_HANDLER.submit_note(request.json[0][1])
-        print(request.json[0][1])
+        event_id = EVENT_HANDLER.submit_note(request.json)
+        print(request.json)
     return render_template("upd.json", title="Home", data=json.dumps({'event_id': event_id}))
 
 

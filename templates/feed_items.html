@@ -13,12 +13,12 @@
     {% endif %}
 
     {% if post['is_parent'] %}
-    <div class="note-parent-container">
-        <div class="is-parent"></div>
+    {% set container='note-parent-container' %}
     {% else %}
-    <div class="note-container">
+    {% set container='note-container' %}
     {% endif %}
-
+    <div class="{{container}}">
+        <div class="is-parent"></div>
         <div class="note-image">
             {% if post['pic'] is not none %}
             <img src="{{post['pic']}}" />
@@ -36,7 +36,16 @@
                 <span class="sm right dt">{{post['created_at']|dt}}</span>
             </h3>
             <pre class="note-content">{{post['content'] |safe}}</pre>
-            <p></p>
+            <p><a href="#" class="reply-link" data-rel="{{post['id']}}">reply</a></p>
+            <form class="reply-form"  data-noteid="{{post['id']}}" >
+                <input type="hidden" name="pubkey" value="{{post['public_key']}}">
+                <input type="hidden" name="parent_id" value="{{post['id']}}">
+                {% if post['thread_root'] is not none %}
+                <input type="hidden" name="thread_root" value="{{post['thread_root']}}">
+                {% endif %}
+                <textarea name="reply"></textarea>
+                <input type="submit" value="post" data-reply-submit="1" data-rel="{{post['id']}}">
+            </form>
         </div>
     </div>
 
