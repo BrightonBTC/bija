@@ -39,6 +39,7 @@ class LoginState(IntEnum):
 
 @app.route('/')
 def index_page():
+    EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     EVENT_HANDLER.unseen_notes = 0
     login_state = get_login_state()
     if login_state is LoginState.LOGGED_IN:
@@ -52,6 +53,7 @@ def index_page():
 
 @app.route('/feed', methods=['GET'])
 def feed():
+    EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     if request.method == 'GET':
         if 'before' in request.args:
             before = int(request.args['before'])
@@ -65,6 +67,7 @@ def feed():
 
 @app.route('/login', methods=['POST'])
 def login_page():
+    EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     login_state = get_login_state()
     if request.method == 'POST':
         if process_login():
@@ -79,7 +82,21 @@ def login_page():
 
 @app.route('/note', methods=['GET'])
 def note_page():
-    return render_template("note.html", title="Note")
+    note_id = request.args['id']
+    EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
+    EXECUTOR.submit(EVENT_HANDLER.subscribe_note, note_id)
+
+    note = DB.get_note(note_id)
+    notes = []
+    if note is not None:
+        if note.thread_root is not None:
+            notes = DB.get_note_thread(note.thread_root)
+        elif note.response_to is not None:
+            notes = DB.get_note_thread(note.response_to)
+        else:
+            notes = DB.get_note_thread(note.id)
+    t, i = make_threaded(notes)
+    return render_template("note.html", title="Note", id=note_id, threads=t, ids=i)
 
 
 @app.route('/identicon', methods=['GET'])
@@ -107,6 +124,9 @@ def submit_note():
 
 @app.route('/profile', methods=['GET'])
 def profile_page():
+    EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
+    if session.get("keys")["public"] != request.args['pk']:
+        EXECUTOR.submit(EVENT_HANDLER.subscribe_profile, request.args['pk'])
     if 'pk' not in request.args:
         k = session.get("keys")["public"]
     elif is_hex_key(request.args['pk']):

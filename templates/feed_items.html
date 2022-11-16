@@ -7,7 +7,7 @@
            <div class="thread-pointer"></div>
         </div>
         <div class="note">
-            <div class="note-content muted"><a href="">{{post['response_to'] | truncate(21, False, '...')}}</a></div>
+            <div class="note-content muted"><a href="/note?id={{post['response_to']}}">{{post['response_to'] | truncate(21, False, '...')}}</a></div>
         </div>
     </div>
     {% endif %}
@@ -35,7 +35,7 @@
                 {% endif %}
                 <span class="sm right dt">{{post['created_at']|dt}}</span>
             </h3>
-            <pre class="note-content">{{post['content'] |safe}}</pre>
+            <pre class="note-content">{{post['content'] |safe}}<p><a href="/note?id={{post['id']}}">&gt;</a></p></pre>
             <p><a href="#" class="reply-link" data-rel="{{post['id']}}">reply</a></p>
             <form class="reply-form"  data-noteid="{{post['id']}}" >
                 <input type="hidden" name="pubkey" value="{{post['public_key']}}">

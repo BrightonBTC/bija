@@ -103,6 +103,12 @@ class BijaEvents:
                     response_to = parents[1]
         if subscription in ['primary', 'following'] and self.db.is_note(event.id) is None:
             self.unseen_notes += 1
+
+        is_known = self.db.is_known_pubkey(event.public_key)
+        print(is_known)
+        if is_known is None:
+            print(">>>>>>>>>>>>>>> ADD PROFILE", event.public_key)
+            self.db.add_profile(event.public_key)
         self.db.insert_note(
             event.id,
             event.public_key,
@@ -120,6 +126,8 @@ class BijaEvents:
         preferred_relay = r.name
         tags = []
         note = None
+        response_to = None
+        thread_root = None
         for v in data:
             if v[0] == "new_post":
                 note = v[1]
@@ -129,16 +137,27 @@ class BijaEvents:
             elif v[0] == "pubkey":
                 tags.append(["p", v[1], preferred_relay,])
             elif v[0] == "parent_id":
+                response_to = v[1]
                 tags.append(["e", v[1], preferred_relay, "reply"])
             elif v[0] == "thread_root":
+                thread_root = v[1]
                 tags.append(["e", v[1], preferred_relay, "root"])
         if note is None:
             return False
-        event = Event(private_key.public_key.hex(), note, tags=tags, created_at=int(time.time()))
+        created_at = int(time.time())
+        event = Event(private_key.public_key.hex(), note, tags=tags, created_at=created_at)
         event.sign(private_key.hex())
 
         message = json.dumps([ClientMessageType.EVENT, event.to_json_object()], ensure_ascii=False)
         self.relay_manager.publish_message(message)
+        self.db.insert_note(
+            event.id,
+            private_key.public_key.hex(),
+            note,
+            response_to,
+            thread_root,
+            created_at
+        )
         return event.id
 
     def handle_contact_list_event(self, event):
@@ -148,7 +167,7 @@ class BijaEvents:
                 keys.append(p[1])
         if event.public_key == self.session.get("keys")['public']:
             self.db.add_following(keys)
-        self.subscribe_following(keys)
+            self.subscribe_following(keys)
 
     def handle_private_message_event(self, event):
         to = False
@@ -164,6 +183,46 @@ class BijaEvents:
                 to,
                 event.created_at
             )
+
+    def close_secondary_subscriptions(self):
+        for s in self.subscriptions:
+            if s not in ['primary', 'following']:
+                print("CLOSE SUBSCRIPTION: ", s)
+                self.relay_manager.close_subscription(s)
+
+    def subscribe_note(self, note_id):
+        subscription_id = 'note-{}'.format(note_id)
+        print("OPEN SUBSCRIPTION: ", subscription_id)
+        self.subscriptions.append(subscription_id)
+        filters = Filters([
+            Filter(ids=[note_id], kinds=[EventKind.TEXT_NOTE]),
+            Filter(tags={'#e': [note_id]}, kinds=[EventKind.TEXT_NOTE])
+        ])
+        request = [ClientMessageType.REQUEST, subscription_id]
+        request.extend(filters.to_json_array())
+        self.relay_manager.add_subscription(subscription_id, filters)
+        time.sleep(1.25)
+        message = json.dumps(request)
+        self.relay_manager.publish_message(message)
+        print("OPEN SUBSCRIPTION: ", subscription_id, message)
+
+    def subscribe_profile(self, pubkey):
+        subscription_id = 'profile-{}'.format(pubkey)
+        print("OPEN SUBSCRIPTION: ", subscription_id)
+        self.subscriptions.append(subscription_id)
+        event_kinds = [EventKind.SET_METADATA,
+                       EventKind.TEXT_NOTE,
+                       EventKind.DELETE]
+        filters = Filters([
+            Filter(authors=[pubkey], kinds=event_kinds)
+        ])
+        request = [ClientMessageType.REQUEST, subscription_id]
+        request.extend(filters.to_json_array())
+        self.relay_manager.add_subscription(subscription_id, filters)
+        time.sleep(1.25)
+        message = json.dumps(request)
+        self.relay_manager.publish_message(message)
+        print("OPEN SUBSCRIPTION: ", subscription_id, message)
 
     # create site wide subscription
     def subscribe_primary(self):
@@ -188,20 +247,23 @@ class BijaEvents:
             self.relay_manager.publish_message(message)
 
     def subscribe_following(self, public_keys):
-        if 'following' not in self.subscriptions:
-            print("add following subscription", public_keys)
-            self.subscriptions.append('following')
-            event_kinds = [EventKind.SET_METADATA,
-                           EventKind.TEXT_NOTE,
-                           EventKind.DELETE]
-            filters = Filters([Filter(authors=public_keys, kinds=event_kinds, since=int(time.time())-(60*60))])
-            subscription_id = 'following'
-            request = [ClientMessageType.REQUEST, subscription_id]
-            request.extend(filters.to_json_array())
-            self.relay_manager.add_subscription(subscription_id, filters)
-            time.sleep(1.25)
-            message = json.dumps(request)
-            self.relay_manager.publish_message(message)
+        if 'following' in self.subscriptions:
+            print("close following subscription", public_keys)
+            self.relay_manager.close_subscription('following')
+            time.sleep(1)
+        print("add following subscription", public_keys)
+        self.subscriptions.append('following')
+        event_kinds = [EventKind.SET_METADATA,
+                       EventKind.TEXT_NOTE,
+                       EventKind.DELETE]
+        filters = Filters([Filter(authors=public_keys, kinds=event_kinds, since=int(time.time())-(60*60*12))])
+        subscription_id = 'following'
+        request = [ClientMessageType.REQUEST, subscription_id]
+        request.extend(filters.to_json_array())
+        self.relay_manager.add_subscription(subscription_id, filters)
+        time.sleep(1.25)
+        message = json.dumps(request)
+        self.relay_manager.publish_message(message)
 
     def close(self):
         print("CLOSING CONNECTIONS")

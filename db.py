@@ -127,6 +127,35 @@ class BijaDB:
     def is_note(self, note_id):
         return self.session.query(Note.id).filter_by(id=note_id).first()
 
+    def is_known_pubkey(self, pk):
+        return self.session.query(Profile.public_key).filter_by(public_key=pk).first()
+
+    def get_note(self, note_id):
+        return self.session.query(Note.id,
+                                  Note.public_key,
+                                  Note.content,
+                                  Note.response_to,
+                                  Note.thread_root,
+                                  Note.created_at,
+                                  Note.members,
+                                  Profile.name,
+                                  Profile.pic,
+                                  Profile.nip05).filter_by(id=note_id).join(Note.profile).first()
+
+    def get_note_thread(self, note_id):
+        return self.session.query(Note.id,
+                                  Note.public_key,
+                                  Note.content,
+                                  Note.response_to,
+                                  Note.thread_root,
+                                  Note.created_at,
+                                  Note.members,
+                                  Profile.name,
+                                  Profile.pic,
+                                  Profile.nip05)\
+            .filter(text("note.id='{}' or note.response_to='{}' or note.thread_root='{}'".format(note_id, note_id, note_id)))\
+            .join(Note.profile).order_by(Note.created_at.desc()).all()
+
     def insert_private_message(self,
                                msg_id,
                                public_key,
@@ -153,7 +182,9 @@ class BijaDB:
             Note.members,
             Profile.name,
             Profile.pic,
-            Profile.nip05).join(Note.profile).filter(text("note.created_at<{}".format(before))).order_by(Note.created_at.desc()).limit(50).all()
+            Profile.nip05).join(Note.profile).filter(text("note.created_at<{}".format(before)))\
+            .filter(text("profile.following=1"))\
+            .order_by(Note.created_at.desc()).limit(50).all()
 
     def get_note_by_id_list(self, note_ids):
         return self.session.query(
@@ -178,7 +209,8 @@ class BijaDB:
             Note.members,
             Profile.name,
             Profile.pic,
-            Profile.nip05).join(Note.profile).filter(text("note.created_at<{}".format(before))).filter_by(public_key=public_key).order_by(
+            Profile.nip05).join(Note.profile).filter(text("note.created_at<{}".format(before))).filter_by(
+            public_key=public_key).order_by(
             Note.created_at.desc()).limit(50).all()
 
     def test(self):
