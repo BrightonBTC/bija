@@ -1,3 +1,4 @@
+import json
 import time
 from os.path import exists
 
@@ -45,7 +46,7 @@ class BijaDB:
     def get_preferred_relay(self):
         return self.session.query(Relay).first()
 
-    def get_profile(self, public_key: String):
+    def get_profile(self, public_key):
         return self.session.query(Profile).filter_by(public_key=public_key).first()
 
     def get_saved_pk(self):
@@ -79,8 +80,16 @@ class BijaDB:
         ))
         self.session.commit()
 
+    def add_contact_list(self, public_key, keys: list):
+        self.session.merge(Profile(
+            public_key=public_key,
+            contacts=json.dumps(keys)
+        ))
+        self.session.commit()
+
     def set_following(self, keys_list, following=True):
         for public_key in keys_list:
+            print(public_key, following)
             self.session.merge(Profile(
                 public_key=public_key,
                 following=following
@@ -92,6 +101,16 @@ class BijaDB:
         out = []
         for k in keys:
             out.append(k.public_key)
+        return out
+
+    def get_following(self):
+        profiles = self.session.query(
+            Profile.public_key,
+            Profile.name,
+            Profile.pic).filter_by(following=1).all()
+        out = []
+        for p in profiles:
+            out.append(dict(p))
         return out
 
     def upd_profile(self,
@@ -178,7 +197,7 @@ class BijaDB:
         ))
         self.session.commit()
 
-    def get_feed(self, before):
+    def get_feed(self, before, public_key):
         return self.session.query(
             Note.id,
             Note.public_key,
@@ -190,7 +209,7 @@ class BijaDB:
             Profile.name,
             Profile.pic,
             Profile.nip05).join(Note.profile).filter(text("note.created_at<{}".format(before)))\
-            .filter(text("profile.following=1"))\
+            .filter(text("profile.following=1 OR profile.public_key='{}'".format(public_key)))\
             .order_by(Note.created_at.desc()).limit(50).all()
 
     def get_note_by_id_list(self, note_ids):
@@ -226,14 +245,13 @@ class BijaDB:
 class Profile(Base):
     __tablename__ = "profile"
     public_key = Column(String(64), unique=True, primary_key=True)
-    # private_key = Column(String(64))
-    # ^ we'll keep the account owner here alongside follows but store priv encrypted elsewhere
     name = Column(String)
     nip05 = Column(String)
     pic = Column(String)
     about = Column(String)
     updated_at = Column(Integer)
     following = Column(Boolean)
+    contacts = Column(String)
 
     notes = relationship("Note", back_populates="profile")
 
@@ -245,7 +263,8 @@ class Profile(Base):
             self.pic,
             self.about,
             self.updated_at,
-            self.following
+            self.following,
+            self.contacts
         }
 
 

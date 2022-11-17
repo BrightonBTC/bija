@@ -43,7 +43,7 @@ def index_page():
     EVENT_HANDLER.unseen_notes = 0
     login_state = get_login_state()
     if login_state is LoginState.LOGGED_IN:
-        notes = DB.get_feed(time.time())
+        notes = DB.get_feed(time.time(), session.get("keys")["public"])
         t, i = make_threaded(notes)
 
         return render_template("feed.html", title="Home", threads=t, ids=i)
@@ -59,7 +59,7 @@ def feed():
             before = int(request.args['before'])
         else:
             before = time.time()
-        notes = DB.get_feed(before)
+        notes = DB.get_feed(before, session.get("keys")["public"])
         t, i = make_threaded(notes)
 
         return render_template("feed_items.html", threads=t, ids=i)
@@ -82,17 +82,18 @@ def login_page():
 
 @app.route('/profile', methods=['GET'])
 def profile_page():
-    now = int(time.time())
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     if 'pk' in request.args and is_hex_key(request.args['pk']):
-        EXECUTOR.submit(EVENT_HANDLER.subscribe_profile, request.args['pk'], now-(60*60*24*7))
+        EXECUTOR.submit(EVENT_HANDLER.subscribe_profile, request.args['pk'], timestamp_minus(TimePeriod.WEEK))
         k = request.args['pk']
+        is_me = False
     else:
         k = session.get("keys")["public"]
-    notes = DB.get_notes_by_pubkey(k, now, now-(60*60*24))
+        is_me = True
+    notes = DB.get_notes_by_pubkey(k, int(time.time()), timestamp_minus(TimePeriod.DAY))
     t, i = make_threaded(notes)
     profile = DB.get_profile(k)
-    return render_template("profile.html", title="Profile", threads=t, ids=i, profile=profile)
+    return render_template("profile.html", title="Profile", threads=t, ids=i, profile=profile, is_me=is_me)
 
 
 @app.route('/note', methods=['GET'])
@@ -114,6 +115,28 @@ def note_page():
     return render_template("note.html", title="Note", id=note_id, threads=t, ids=i)
 
 
+@app.route('/following', methods=['GET'])
+def following_page():
+    EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
+    if 'pk' in request.args and is_hex_key(request.args['pk']):
+        EXECUTOR.submit(EVENT_HANDLER.subscribe_profile, request.args['pk'], timestamp_minus(TimePeriod.WEEK))
+        k = request.args['pk']
+        is_me = False
+        p = DB.get_profile(k)
+        profiles = []
+        if p is not None and p.contacts is not None:
+            for key in json.loads(p.contacts):
+                profile = DB.get_profile(key)
+                if profile is not None:
+                    profiles.append(profile)
+    else:
+        k = session.get("keys")["public"]
+        is_me = True
+        profiles = DB.get_following()
+    profile = DB.get_profile(k)
+    return render_template("following.html", title="Following", profile=profile, profiles=profiles, is_me=is_me)
+
+
 @app.route('/identicon', methods=['GET'])
 def identicon():
     im = ident_im_gen.generate(request.args['id'], 120, 120, padding=(10, 10, 10, 10), output_format="png")
@@ -124,8 +147,19 @@ def identicon():
 
 @app.route('/upd', methods=['POST', 'GET'])
 def get_updates():
-    d = {'unseen_posts': EVENT_HANDLER.unseen_notes}
+    notices = EVENT_HANDLER.notices
+    d = {'unseen_posts': EVENT_HANDLER.unseen_notes, 'notices': notices}
+    EVENT_HANDLER.notices = []
     return render_template("upd.json", title="Home", data=json.dumps(d))
+
+
+@app.route('/follow', methods=['GET'])
+def follow():
+    DB.set_following([request.args['id']], int(request.args['state']))
+    EXECUTOR.submit(EVENT_HANDLER.submit_follow_list)
+    profile = DB.get_profile(request.args['id'])
+    is_me = request.args['id'] == session.get("keys")["public"]
+    return render_template("profile.tools.html", profile=profile, is_me=is_me)
 
 
 @app.route('/upd_profile', methods=['GET'])

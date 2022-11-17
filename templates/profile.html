@@ -1,31 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-{% if profile is not none %}
-<div class="profile" id="profile" data-updat="{{profile['updated_at']}}" data-pk="{{profile['public_key']}}">
-    <div class="profile-image">
-        {% if profile['pic'] is not none %}
-            {% set profile_pic=profile['pic'] %}
-        {% else %}
-            {% set profile_pic='/identicon?id='+profile['public_key'] %}
-        {% endif %}
-        <img src="{{profile_pic}}" width="120" id="ppic"  class="profile-pic"  />
-    </div>
-    <div class="profile-details">
-        <h1 class="profile-name">{{profile['name']}}</h1>
-        <p class="sm pk">@{{profile['public_key'] | truncate(21, False, '...')}}</p>
-        <pre class="profile-about">{{profile['about']}}</pre>
-    </div>
-</div>
-<div class="profile-tools">
-    {% if profile['following'] !=  1 %}
-        <a href="#" class="follow-btn">&#43; follow</a>
-    {% else %}
-        <a href="#" class="follow-btn">&#8722; unfollow</a> <a href="#" class="private-message-btn">&#9993; message</a>
-    {% endif %}
-
-</div>
-{% endif %}
+{% include 'profile.header.html' %}
 <h2 class="posts-title">Public posts</h2>
 {% include 'feed_items.html' %}
 

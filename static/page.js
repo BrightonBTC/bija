@@ -39,7 +39,35 @@ document.addEventListener("DOMContentLoaded", function () {
 class bijaProfile{
 
     constructor(){
-        setInterval(getProfileUpdates, 2000);
+        setInterval(getProfileUpdates, 10000);
+        this.setClicks()
+    }
+
+    setClicks(){
+        const btns = document.querySelectorAll(".follow-btn");
+        for (const btn of btns) {
+            btn.addEventListener("click", (event)=>{
+                event.preventDefault();
+                event.stopPropagation();
+                let id = btn.dataset.rel;
+                let state = btn.dataset.state;
+                this.setFollowState(id, state);
+                return false;
+            });
+        }
+    }
+
+    setFollowState(id, state){
+        let o = this;
+        fetch('/follow?id='+id+"&state="+state, {
+            method: 'get'
+        }).then(function(response) {
+            return response.text();
+        }).then(function(response) {
+            document.querySelector(".profile-tools").innerHTML = response
+        }).catch(function(err) {
+            console.log(err);
+        });
     }
 
 }
@@ -173,13 +201,22 @@ async function getUpdates() {
     const response = await fetch('/upd');
     const d = await response.json();
     if("unseen_posts" in d){
-    let el_unseen = document.getElementById("n_unseen_posts")
+        let el_unseen = document.getElementById("n_unseen_posts")
         if(parseInt(d['unseen_posts']) == 0){
             el_unseen.style.display = "none"
         }
         else{
             el_unseen.style.display = "inline-block"
             el_unseen.innerText = d['unseen_posts']
+        }
+    }
+    if("notices" in d){
+        const container = document.querySelector(".rightcolumn .notices")
+        for (let n in d["notices"]) {
+            console.log(d["notices"][n])
+            const div = document.createElement("div")
+            div.innerText = d["notices"][n]
+            container.prepend(div)
         }
     }
 }
