@@ -1,3 +1,5 @@
 /nostr/
 /*.sqlite
 /bija.sqlite-journal
+/flask_session/
+/__nostr/
