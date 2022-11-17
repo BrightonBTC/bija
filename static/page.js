@@ -29,7 +29,45 @@ document.addEventListener("DOMContentLoaded", function () {
     if(document.querySelector(".main[data-page='Home']") != null){
         f = new bijaFeed();
     }
+    if(document.querySelector(".main[data-page='Profile']") != null){
+        console.log("PROFILE ")
+        f = new bijaProfile();
+    }
+
 });
+
+class bijaProfile{
+
+    constructor(){
+        setInterval(getProfileUpdates, 2000);
+    }
+
+}
+
+async function getProfileUpdates() {
+        const profile_elem = document.querySelector("#profile")
+        const pk = profile_elem.dataset.pk
+        const updat = profile_elem.dataset.updat
+        const response = await fetch('/upd_profile?pk='+pk+'&updat='+updat);
+        const d = await response.json();
+        if("profile" in d){
+            profile = d.profile
+
+            document.querySelector(".profile-about").innerText = profile.about
+
+            document.querySelector("#profile").dataset.updat = profile.updated_at
+
+            const name_els = document.querySelectorAll(".profile-name");
+            for (let i = 0; i < name_els.length; i++) {
+              name_els[i].innerText = profile.name
+            }
+            const pic_els = document.querySelectorAll(".profile-pic");
+            for (let i = 0; i < pic_els.length; i++) {
+              pic_els[i].setAttribute("src", profile.pic)
+            }
+        }
+    }
+
 class bijaFeed{
 
     constructor(){
@@ -60,8 +98,17 @@ class bijaFeed{
                 this.postReply(id)
                 return false
             });
-//            link.removeAttribute("data-reply-submit")
         }
+        const note_links = document.querySelectorAll(".note-content[data-rel]");
+        for (const note_link of note_links) {
+            note_link.addEventListener("click", (event)=>{
+                event.preventDefault();
+                event.stopPropagation();
+                let id = note_link.dataset.rel
+                window.location.href = '/note?id='+id
+            });
+        }
+
     }
 
     loader(o){

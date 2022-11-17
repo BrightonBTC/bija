@@ -11,7 +11,7 @@ from markdown import markdown
 from app import app
 from db import BijaDB
 from events import BijaEvents
-from nostr.key import PrivateKey
+from python_nostr.nostr.key import PrivateKey
 
 from password import encrypt_key, decrypt_key
 from helpers import *
@@ -80,10 +80,25 @@ def login_page():
     return render_template("login.html", title="Login", login_type=login_state)
 
 
+@app.route('/profile', methods=['GET'])
+def profile_page():
+    now = int(time.time())
+    EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
+    if 'pk' in request.args and is_hex_key(request.args['pk']):
+        EXECUTOR.submit(EVENT_HANDLER.subscribe_profile, request.args['pk'], now-(60*60*24*7))
+        k = request.args['pk']
+    else:
+        k = session.get("keys")["public"]
+    notes = DB.get_notes_by_pubkey(k, now, now-(60*60*24))
+    t, i = make_threaded(notes)
+    profile = DB.get_profile(k)
+    return render_template("profile.html", title="Profile", threads=t, ids=i, profile=profile)
+
+
 @app.route('/note', methods=['GET'])
 def note_page():
-    note_id = request.args['id']
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
+    note_id = request.args['id']
     EXECUTOR.submit(EVENT_HANDLER.subscribe_note, note_id)
 
     note = DB.get_note(note_id)
@@ -113,6 +128,23 @@ def get_updates():
     return render_template("upd.json", title="Home", data=json.dumps(d))
 
 
+@app.route('/upd_profile', methods=['GET'])
+def get_profile_updates():
+    d = []
+    p = DB.get_profile_updates(request.args['pk'], request.args['updat'])
+    if p is not None:
+        if p.pic is None or len(p.pic.strip()) == 0:
+            p.pic = '/identicon?id={}'.format(p.public_key)
+        d = {'profile': {
+            'name': p.name,
+            'nip05': p.nip05,
+            'about': p.about,
+            'updated_at': p.updated_at,
+            'pic': p.pic,
+        }}
+    return render_template("upd.json", title="Home", data=json.dumps(d))
+
+
 @app.route('/submit_note', methods=['POST', 'GET'])
 def submit_note():
     event_id = False
@@ -120,23 +152,6 @@ def submit_note():
         event_id = EVENT_HANDLER.submit_note(request.json)
         print(request.json)
     return render_template("upd.json", title="Home", data=json.dumps({'event_id': event_id}))
-
-
-@app.route('/profile', methods=['GET'])
-def profile_page():
-    EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
-    if session.get("keys")["public"] != request.args['pk']:
-        EXECUTOR.submit(EVENT_HANDLER.subscribe_profile, request.args['pk'])
-    if 'pk' not in request.args:
-        k = session.get("keys")["public"]
-    elif is_hex_key(request.args['pk']):
-        k = request.args['pk']
-    else:
-        redirect('/404')
-    notes = DB.get_notes_by_pubkey(k, time.time())
-    t, i = make_threaded(notes)
-    profile = DB.get_profile(k)
-    return render_template("profile.html", title="Profile", threads=t, ids=i, profile=profile)
 
 
 @app.route('/keys', methods=['GET', 'POST'])

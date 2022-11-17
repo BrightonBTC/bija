@@ -222,6 +222,7 @@ input[type=text].pname {
     background: #070d22;
     padding:10px;
     white-space: pre-wrap;
+    cursor:pointer;
 }
 
 #note-poster{

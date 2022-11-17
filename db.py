@@ -79,13 +79,20 @@ class BijaDB:
         ))
         self.session.commit()
 
-    def add_following(self, keys_list):
+    def set_following(self, keys_list, following=True):
         for public_key in keys_list:
             self.session.merge(Profile(
                 public_key=public_key,
-                following=True
+                following=following
             ))
         self.session.commit()
+
+    def get_following_pubkeys(self):
+        keys = self.session.query(Profile).filter_by(following=1).all()
+        out = []
+        for k in keys:
+            out.append(k.public_key)
+        return out
 
     def upd_profile(self,
                     public_key,
@@ -197,8 +204,7 @@ class BijaDB:
             Profile.pic,
             Profile.nip05).join(Note.profile).filter(Note.id.in_(note_ids)).all()
 
-    def get_notes_by_pubkey(self, public_key, before):
-        # return self.session.query(Note).filter_by(public_key=public_key).order_by(Note.created_at.desc()).limit(50).all()
+    def get_notes_by_pubkey(self, public_key, before, after):
         return self.session.query(
             Note.id,
             Note.public_key,
@@ -213,8 +219,8 @@ class BijaDB:
             public_key=public_key).order_by(
             Note.created_at.desc()).limit(50).all()
 
-    def test(self):
-        print("===============================================")
+    def get_profile_updates(self, public_key, last_update):
+        return self.session.query(Profile).filter_by(public_key=public_key).filter(text("profile.updated_at>{}".format(last_update))).first()
 
 
 class Profile(Base):
