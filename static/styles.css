@@ -17,6 +17,7 @@ body {
   font-family: Arial;
   padding: 10px;
   background: #151822;
+  background-image: linear-gradient(to right, #151822 , #2a1725);
   color: #fdffee;
 }
 
@@ -230,6 +231,12 @@ input[type=text].pname {
     width:230px;
 }
 
+.notices{
+    position: fixed;
+    width:230px;
+    top:250px;
+}
+
 .muted{
     font-size: 70%;
     filter: saturate(0.5);
@@ -314,6 +321,36 @@ input[type=text].pname {
     padding: 5px;
     color: #aaa;
 }
+
+.following-list{
+
+}
+.following-item{
+    display: flex;
+    padding: 10px;
+    margin: 5px;
+    border: 1px solid #35353c;
+    border-radius: 10px;
+    text-decoration: none;
+    color: #fff;
+    align-items: center;
+}
+.following-item:hover{
+    background: #0e111c;
+}
+
+.following-list .pic{
+    flex-basis: 60px;
+}
+.following-list .pic img{
+    width:60px;
+    border-radius: 15px;
+}
+.following-list .name{
+    flex: 1;
+    padding: 10px;
+}
+
 
 .notify {
     position: fixed;
