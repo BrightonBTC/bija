@@ -106,6 +106,9 @@ async function getProfileUpdates() {
 class bijaNotes{
     constructor(){
         this.setClicks()
+        document.addEventListener('newContentLoaded', ()=>{
+            this.setClicks()
+        });
     }
 
     setClicks(){
@@ -170,6 +173,7 @@ class bijaFeed{
         this.loading = 0;
         this.listener = () => this.loader(this);
         window.addEventListener('scroll', this.listener);
+        this.pageLoadedEvent = new Event("newContentLoaded");
     }
 
     loader(o){
@@ -194,7 +198,7 @@ class bijaFeed{
             return response.text();
         }).then(function(response) {
             o.loadArticles(response);
-            o.setClicks()
+            document.dispatchEvent(o.pageLoadedEvent);
         }).catch(function(err) {
             console.log(err);
         });
