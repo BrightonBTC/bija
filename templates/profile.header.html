@@ -19,8 +19,13 @@
 {% endif %}
 
 
+{% if profile['updated_at'] is not none %}
+    {% set updated_at=profile['updated_at'] %}
+{% else %}
+    {% set updated_at='0' %}
+{% endif %}
 
-<div class="profile" id="profile" data-updat="{{profile['updated_at']}}" data-pk="{{profile['public_key']}}">
+<div class="profile" id="profile" data-updat="{{updated_at}}" data-pk="{{profile['public_key']}}">
     <div class="profile-image">
         <img src="{{profile_pic}}" width="120" id="ppic"  class="profile-pic"  />
     </div>

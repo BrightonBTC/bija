@@ -9,7 +9,7 @@
     {% else %}
     {% set container='main' %}
     {% endif %}
-    <div class="note-container {{container}}">
+    <div class="note-container {{container}}" data-rel="{{post['id']}}">
         <div class="is-parent"></div>
         <div class="note-image">
             {% if post['pic'] is not none %}

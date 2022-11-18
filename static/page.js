@@ -27,18 +27,19 @@ document.addEventListener("DOMContentLoaded", function () {
         return false;
     });
     if(document.querySelector(".main[data-page='Home']") != null){
-        f = new bijaFeed();
-        f = new bijaNotes();
+        new bijaFeed();
+        new bijaNotes();
     }
-    if(document.querySelector(".main[data-page='Note thread']") != null){
-        f = new bijaNotes();
+    if(document.querySelector(".main[data-page='Note']") != null){
+        new bijaNotes();
+        document.querySelector(".note-container.main").scrollIntoView(false);
     }
     if(document.querySelector(".main[data-page='Profile']") != null){
-        f = new bijaNotes();
+        new bijaNotes();
     }
     if(document.querySelector(".main[data-page='Profile']") != null){
         console.log("PROFILE ")
-        f = new bijaProfile();
+        new bijaProfile();
     }
 
 });
@@ -46,7 +47,7 @@ document.addEventListener("DOMContentLoaded", function () {
 class bijaProfile{
 
     constructor(){
-        setInterval(getProfileUpdates, 10000);
+        setInterval(getProfileUpdates, 2000);
         this.setClicks()
     }
 

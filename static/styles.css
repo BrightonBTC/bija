@@ -19,6 +19,7 @@ body {
   background: #151822;
   background-image: linear-gradient(to right, #151822 , #2a1725);
   color: #fdffee;
+  padding-top: 50px;
 }
 
 ol, ul {
@@ -86,9 +87,7 @@ input[type=text].pname {
   max-width:1000px;
   margin:auto;
 }
-.row{
-    margin-top: 50px;
-}
+
 /* Style the top navigation bar */
 .topnav {
     overflow: hidden;
@@ -171,6 +170,8 @@ input[type=text].pname {
     display: flex;
     padding: 10px;
     border-bottom: 1px solid #35353c;
+    overflow: hidden;
+    position: relative;
 }
 .note-container > *{
     margin:10px;
@@ -185,10 +186,10 @@ input[type=text].pname {
     margin:10px;
 }
 
-.note-container.main{
-    font-size: 110%;
-    filter: saturate(1.2);
-    border-radius: 20px;
+.note-container.main .note{
+    font-size: 130%;
+    filter: saturate(1.3);
+    border-radius: 10px;
     background: #35353c;
 }
 .note-container.ancestor{
@@ -217,15 +218,35 @@ input[type=text].pname {
 
 .is-parent{
     position: absolute;
-    width: 2px;
+    width: 40px;
     height: 1000px;
-    background: #636376;
     margin-left: 40px;
     margin-top: 85px;
+    border-color: #636376;
+    border-style: solid;
+    border-width: 0 0 2px 2px;
 }
 
 .note-container .is-parent{
     display:none;
+}
+
+.note-container.root .is-parent, .note-container.ancestor .is-parent, .note-container.main .is-parent{
+    display: block;
+}
+.note-container.reply .is-parent{
+    display: block;
+    margin-top: 20px;
+    height: 90px;
+    border-bottom-left-radius: 20px;
+    width: 130px;
+    border-style: dashed;
+}
+.note-container.reply .note-image{
+    flex: 0 0 150px
+}
+.note-container.reply .note-image img{
+    margin-left: 90px;
 }
 
 .note-content{
@@ -259,6 +280,7 @@ input[type=text].pname {
 .note{
     flex:1;
     overflow: hidden;
+    padding: 0 5px;
 }
 
 .note a{
@@ -283,6 +305,14 @@ input[type=text].pname {
     display: none;
 }
 
+.profile-header{
+    padding: 30px;
+    margin: 10px;
+    background: #152148;
+    border-radius: 20px;
+    display: flex;
+    border-bottom: 1px solid #4ec74c;
+}
 .profile{
     padding: 30px;
     margin: 10px;

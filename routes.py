@@ -113,8 +113,7 @@ def note_page():
             notes = DB.get_note_thread(note.id)
 
     n = note_thread(notes, note_id)
-    return render_template("note.html", title="Note thread", notes=n)
-    # return render_template("note.html", title="Note", id=note_id, threads=[list(map(lambda n: dict(n), notes))], ids=i, data=list(map(lambda n: dict(n), notes)))
+    return render_template("note.html", title="Note", notes=n)
 
 
 def note_thread(notes, current):
