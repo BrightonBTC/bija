@@ -180,7 +180,7 @@ class BijaDB:
                                   Profile.pic,
                                   Profile.nip05)\
             .filter(text("note.id='{}' or note.response_to='{}' or note.thread_root='{}'".format(note_id, note_id, note_id)))\
-            .join(Note.profile).order_by(Note.created_at.desc()).all()
+            .join(Note.profile).order_by(Note.created_at.asc()).all()
 
     def insert_private_message(self,
                                msg_id,

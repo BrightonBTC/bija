@@ -185,6 +185,16 @@ input[type=text].pname {
     margin:10px;
 }
 
+.note-container.main{
+    font-size: 110%;
+    filter: saturate(1.2);
+    border-radius: 20px;
+    background: #35353c;
+}
+.note-container.ancestor{
+    border-bottom:0;
+}
+
 .note-image{
     flex: 0 0 60px;
 }

@@ -62,7 +62,7 @@ def feed():
         notes = DB.get_feed(before, session.get("keys")["public"])
         t, i = make_threaded(notes)
 
-        return render_template("feed_items.html", threads=t, ids=i)
+        return render_template("feed.items.html", threads=t, ids=i)
 
 
 @app.route('/login', methods=['POST'])
@@ -111,8 +111,37 @@ def note_page():
             notes = DB.get_note_thread(note.response_to)
         else:
             notes = DB.get_note_thread(note.id)
-    t, i = make_threaded(notes)
-    return render_template("note.html", title="Note", id=note_id, threads=t, ids=i)
+
+    n = note_thread(notes, note_id)
+    return render_template("note.html", title="Note thread", notes=n)
+    # return render_template("note.html", title="Note", id=note_id, threads=[list(map(lambda n: dict(n), notes))], ids=i, data=list(map(lambda n: dict(n), notes)))
+
+
+def note_thread(notes, current):
+    out = []
+    notes.reverse()
+    current_found = False
+    next_ancestor = None
+    for note in notes:
+        note = dict(note)
+        note['content'] = markdown(note['content'])
+
+        if current_found:
+            if note['response_to'] is None and note['thread_root'] is None:
+                note['is_root'] = True
+                out.insert(0, note)
+            elif note['id'] == next_ancestor:
+                note['is_ancestor'] = True
+                next_ancestor = note["response_to"]
+                out.insert(0, note)
+        elif current == note['response_to']:
+            note['is_reply'] = True
+            out.insert(0, note)
+        elif note['id'] == current:
+            out.insert(0, note)
+            next_ancestor = note["response_to"]
+            current_found = True
+    return out
 
 
 @app.route('/following', methods=['GET'])

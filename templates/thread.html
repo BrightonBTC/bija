@@ -1,0 +1,45 @@
+{% for post in notes: %}
+
+    {% if post['is_root'] %}
+    {% set container='root' %}
+    {% elif post['is_ancestor'] %}
+    {% set container='ancestor' %}
+    {% elif post['is_reply'] %}
+    {% set container='reply' %}
+    {% else %}
+    {% set container='main' %}
+    {% endif %}
+    <div class="note-container {{container}}">
+        <div class="is-parent"></div>
+        <div class="note-image">
+            {% if post['pic'] is not none %}
+            <img src="{{post['pic']}}" class="profile-pic" />
+            {% else %}
+            <img src="/identicon?id={{post['public_key']}}" class="profile-pic" />
+            {% endif %}
+        </div>
+        <div class="note" data-dt="{{post['created_at']}}">
+            <h3>
+                {% if post['name'] is not none %}
+                <a href="/profile?pk={{post['public_key']}}" class="profile-name">{{post['name']}}</a>
+                {% else %}
+                <a href="/profile?pk={{post['public_key']}}" class="profile-name">{{post['public_key'] | truncate(21, False, '...')}}</a>
+                {% endif %}
+                <span class="sm right dt">{{post['created_at']|dt}}</span>
+            </h3>
+            <div class="sm">{{post['id']}}</div>
+            <pre class="note-content" data-rel="{{post['id']}}">{{post['content'] |safe}}<p></p></pre>
+            <p><a href="#" class="reply-link" data-rel="{{post['id']}}">reply</a></p>
+            <form class="reply-form"  data-noteid="{{post['id']}}" >
+                <input type="hidden" name="pubkey" value="{{post['public_key']}}">
+                <input type="hidden" name="parent_id" value="{{post['id']}}">
+                {% if post['thread_root'] is not none %}
+                <input type="hidden" name="thread_root" value="{{post['thread_root']}}">
+                {% endif %}
+                <textarea name="reply"></textarea>
+                <input type="submit" value="post" data-reply-submit="1" data-rel="{{post['id']}}">
+            </form>
+        </div>
+    </div>
+
+{% endfor %}

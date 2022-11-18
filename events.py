@@ -237,9 +237,18 @@ class BijaEvents:
         print("OPEN SUBSCRIPTION: ", subscription_id)
         self.subscriptions.append(subscription_id)
         filters = Filters([
-            Filter(ids=[note_id], kinds=[EventKind.TEXT_NOTE]),
-            Filter(tags={'#e': [note_id]}, kinds=[EventKind.TEXT_NOTE])
+            Filter(tags={'#e': [note_id]}, kinds=[EventKind.TEXT_NOTE])  # event responses
         ])
+        note = self.db.get_note(note_id)
+        if note is not None:
+            ancestors = []
+            if note.response_to is not None:
+                ancestors.append(note.response_to)
+            if note.thread_root is not None:
+                ancestors.append(note.thread_root)
+            if len(ancestors) > 0:
+                filters.append(Filter(ids=ancestors, kinds=[EventKind.TEXT_NOTE]))
+
         request = [ClientMessageType.REQUEST, subscription_id]
         request.extend(filters.to_json_array())
         self.relay_manager.add_subscription(subscription_id, filters)

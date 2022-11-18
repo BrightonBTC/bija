@@ -28,6 +28,13 @@ document.addEventListener("DOMContentLoaded", function () {
     });
     if(document.querySelector(".main[data-page='Home']") != null){
         f = new bijaFeed();
+        f = new bijaNotes();
+    }
+    if(document.querySelector(".main[data-page='Note thread']") != null){
+        f = new bijaNotes();
+    }
+    if(document.querySelector(".main[data-page='Profile']") != null){
+        f = new bijaNotes();
     }
     if(document.querySelector(".main[data-page='Profile']") != null){
         console.log("PROFILE ")
@@ -96,13 +103,8 @@ async function getProfileUpdates() {
         }
     }
 
-class bijaFeed{
-
+class bijaNotes{
     constructor(){
-        this.data = {};
-        this.loading = 0;
-        this.listener = () => this.loader(this);
-        window.addEventListener('scroll', this.listener);
         this.setClicks()
     }
 
@@ -136,7 +138,38 @@ class bijaFeed{
                 window.location.href = '/note?id='+id
             });
         }
+    }
 
+    postReply(id){
+        const form = document.querySelector(".reply-form[data-noteid='"+id+"']")
+        const formData = new FormData(form);
+        const data = [...formData.entries()];
+        const options = {
+            method: 'POST',
+            body: JSON.stringify(data),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }
+        fetch('/submit_note', options).then(function(response) {
+            return response.json();
+        }).then(function(response) {
+           if(response['event_id']){
+               notify('/note?id='+response['event_id'], 'Note created. View now?')
+           }
+        }).catch(function(err) {
+            console.log(err)
+        });
+    }
+}
+
+class bijaFeed{
+
+    constructor(){
+        this.data = {};
+        this.loading = 0;
+        this.listener = () => this.loader(this);
+        window.addEventListener('scroll', this.listener);
     }
 
     loader(o){
@@ -171,29 +204,6 @@ class bijaFeed{
         document.getElementById("main-content").innerHTML += response;
         this.loading = 0;
     }
-
-    postReply(id){
-        const form = document.querySelector(".reply-form[data-noteid='"+id+"']")
-        const formData = new FormData(form);
-        const data = [...formData.entries()];
-        const options = {
-            method: 'POST',
-            body: JSON.stringify(data),
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        }
-        fetch('/submit_note', options).then(function(response) {
-            return response.json();
-        }).then(function(response) {
-           if(response['event_id']){
-               notify('/note?id='+response['event_id'], 'Note created. View now?')
-           }
-        }).catch(function(err) {
-            console.log(err)
-        });
-    }
-
 }
 
 setInterval(getUpdates, 5000);
