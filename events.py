@@ -294,16 +294,19 @@ class BijaEvents:
                  EventKind.ENCRYPTED_DIRECT_MESSAGE,
                  EventKind.DELETE]
         profile_filter = Filter(authors=[pubkey], kinds=kinds)
-
+        f = [profile_filter]
         following_pubkeys = self.db.get_following_pubkeys()
         print(following_pubkeys)
 
-        following_filter = Filter(
-            authors=following_pubkeys,
-            kinds=[EventKind.SET_METADATA, EventKind.TEXT_NOTE, EventKind.DELETE],
-            since=int(time.time()) - (60 * 60 * 76))
+        if len(following_pubkeys) > 0:
+            following_filter = Filter(
+                authors=following_pubkeys,
+                kinds=[EventKind.SET_METADATA, EventKind.TEXT_NOTE, EventKind.DELETE],
+                since=int(time.time()) - (60 * 60 * 76))
+            f.append(following_filter)
 
-        filters = Filters([profile_filter, following_filter])
+        filters = Filters(f)
+
         subscription_id = 'primary'
         request = [ClientMessageType.REQUEST, subscription_id]
         request.extend(filters.to_json_array())
