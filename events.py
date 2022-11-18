@@ -294,7 +294,8 @@ class BijaEvents:
                  EventKind.ENCRYPTED_DIRECT_MESSAGE,
                  EventKind.DELETE]
         profile_filter = Filter(authors=[pubkey], kinds=kinds)
-        f = [profile_filter]
+        mentions_filter = Filter(tags={'#p': [pubkey]}, kinds=[EventKind.TEXT_NOTE, EventKind.ENCRYPTED_DIRECT_MESSAGE])
+        f = [profile_filter, mentions_filter]
         following_pubkeys = self.db.get_following_pubkeys()
         print(following_pubkeys)
 
