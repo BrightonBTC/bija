@@ -395,27 +395,23 @@ input[type=text].pname {
     text-decoration: none;
     color: #ffffff;
 }
-.msg.them{
-    flex-direction: row-reverse;
-}
 .msg.me{
-
+    flex-direction: row-reverse;
 }
 .msg > *{
     padding: 5px;
 }
 .speech-bubble{
     color: #fff;
-    background: #4a4a52;
+    background: #9896ff;
     position: relative;
     padding: 15px 25px;
     border-radius: 10px;
     max-width: 520px;
-    min-width: 200px;
     margin: 0 25px;
 }
-.me .speech-bubble{
-    background: #9896ff;
+.them .speech-bubble{
+    background: #4a4a52;
 }
 
 .speech-bubble::after {
@@ -424,15 +420,15 @@ input[type=text].pname {
   position: absolute;
 }
 
-.me .speech-bubble::after {
-  border-right-color: #9896ff;
+.them .speech-bubble::after {
+  border-right-color: #4a4a52;
   border-left: 0;
   left: -10px;
   top: 15px;
 }
 
-.them .speech-bubble::after {
-  border-left-color: #4a4a52;
+.me .speech-bubble::after {
+  border-left-color: #9896ff;
   border-right: 0;
   right: -10px;
   top: 15px;
@@ -440,9 +436,9 @@ input[type=text].pname {
 .msg .dt{
     font-size: 10px;
     color:#ccc;
-    padding: 0 50px;
+    padding: 0 30px;
 }
-.me.msg .dt{
+.them.msg .dt{
     float: right;
 }
 .msg-link{

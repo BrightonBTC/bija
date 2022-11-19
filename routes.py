@@ -278,7 +278,7 @@ def shutdown():
 
 @app.template_filter('dt')
 def _jinja2_filter_datetime(ts):
-    return datetime.fromtimestamp(ts).strftime('%Y-%m-%d | %H:%M:%S')
+    return datetime.fromtimestamp(ts).strftime('%Y-%m-%d @ %H:%M')
 
 
 @app.template_filter('decr')
