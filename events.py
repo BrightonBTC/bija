@@ -314,9 +314,14 @@ class BijaEvents:
         if len(following_pubkeys) > 0:
             following_filter = Filter(
                 authors=following_pubkeys,
-                kinds=[EventKind.SET_METADATA, EventKind.TEXT_NOTE, EventKind.DELETE],
-                since=int(time.time()) - (60 * 60 * 76))
+                kinds=[EventKind.TEXT_NOTE],
+                since=int(time.time()) - (60 * 60 * 76))  # TODO: should be configurable in user settings
+            following_profiles_filter = Filter(
+                authors=following_pubkeys,
+                kinds=[EventKind.SET_METADATA, EventKind.DELETE],
+            )
             f.append(following_filter)
+            f.append(following_profiles_filter)
 
         filters = Filters(f)
 
