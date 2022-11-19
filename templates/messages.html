@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+{% for message in messages: %}
+
+{% if message.pic is not none %}
+    {% set pic=message.pic %}
+{% else %}
+    {% set pic="/identicon?id="+message.public_key %}
+{% endif %}
+
+{% if message['name'] is not none %}
+    {% set name=message.name %}
+{% else %}
+    {% set name=(message.public_key | truncate(21, False, '...')) %}
+{% endif %}
+
+{% if message.is_sender==1 %}
+    {% set sender=message.name %}
+{% else %}
+    {% set sender="You" %}
+{% endif %}
+
+<a class="msg-link" href="/message?pk={{message.public_key}}">
+    <div class="msg-profile-pic"><img src='{{pic}}'></div>
+    <div class="msg-profile">
+        <div class="msg-profile-name">{{name}}</div>
+        <div class="msg-profile-last-message sm"><strong>Last message:</strong> {{sender}} {{message.last_message|dt}}</div>
+    </div>
+
+</a>
+
+{% endfor %}
+
+{% endblock content %}

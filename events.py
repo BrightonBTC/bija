@@ -211,13 +211,25 @@ class BijaEvents:
                 to = p[1]
                 break
         if to and [getattr(event, attr) for attr in ['id', 'public_key', 'content', 'created_at']]:
-            self.db.insert_private_message(
-                event.id,
-                event.public_key,
-                event.content,
-                to,
-                event.created_at
-            )
+            pk = None
+            is_sender = None
+            if to == self.session.get("keys")['public']:
+                pk = event.public_key
+                is_sender = 1
+            elif event.public_key == self.session.get("keys")['public']:
+                pk = to
+                is_sender = 0
+            if pk is not None and is_sender is not None:
+                self.db.insert_private_message(
+                    event.id,
+                    pk,
+                    event.content,
+                    is_sender,
+                    event.created_at
+                )
+            is_known = self.db.is_known_pubkey(event.public_key)
+            if is_known is None:
+                self.db.add_profile(event.public_key, updated_at=0)
 
     def handle_deleted_event(self, event):
         pass
@@ -315,6 +327,14 @@ class BijaEvents:
         time.sleep(1.25)
         message = json.dumps(request)
         self.relay_manager.publish_message(message)
+
+    def decrypt(self, message, public_key, is_sender):
+        try:
+            k = bytes.fromhex(self.session.get("keys")['private'])
+            pk = PrivateKey(k)
+            return pk.decrypt_message(message, public_key)
+        except:
+            return 'could not decrypt!'
 
     def close(self):
         print("CLOSING CONNECTIONS")

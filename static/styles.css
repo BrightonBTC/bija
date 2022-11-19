@@ -390,7 +390,33 @@ input[type=text].pname {
     flex: 1;
     padding: 10px;
 }
-
+.msg{
+    display: flex;
+    padding: 10px;
+    text-decoration: none;
+    color: #ffffff;
+    align-items: center;
+}
+.msg > *{
+    padding: 5px;
+}
+.msg-link{
+    display: flex;
+    padding: 10px;
+    text-decoration: none;
+    color: #ffffff;
+    align-items: center;
+}
+.msg-link > *{
+    padding: 5px;
+}
+.msg-profile-pic{
+    flex-basis: 60px;
+}
+.msg-profile-name{
+    font-size: 20px;
+    margin-bottom: 8px;
+}
 
 .notify {
     position: fixed;

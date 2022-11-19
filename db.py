@@ -2,8 +2,8 @@ import json
 import time
 from os.path import exists
 
-from sqlalchemy import create_engine, Column, Integer, String, Time, ForeignKey, Boolean, text
-from sqlalchemy.orm import declarative_base, sessionmaker, join, relationship, subqueryload
+from sqlalchemy import create_engine, Column, Integer, String, Time, ForeignKey, Boolean, text, distinct, func
+from sqlalchemy.orm import declarative_base, sessionmaker, join, relationship, subqueryload, aliased
 
 Base = declarative_base()
 DB_ENGINE = create_engine("sqlite:///bija.sqlite", echo=False)
@@ -186,13 +186,13 @@ class BijaDB:
                                msg_id,
                                public_key,
                                content,
-                               to,
+                               is_sender,
                                created_at):
         self.session.merge(PrivateMessage(
             id=msg_id,
             public_key=public_key,
             content=content,
-            to=to,
+            is_sender=is_sender,
             created_at=created_at,
         ))
         self.session.commit()
@@ -235,11 +235,26 @@ class BijaDB:
             Profile.name,
             Profile.pic,
             Profile.nip05).join(Note.profile).filter(text("note.created_at<{}".format(before))).filter_by(
-            public_key=public_key).order_by(
-            Note.created_at.desc()).limit(50).all()
+            public_key=public_key).order_by(Note.created_at.desc()).limit(50).all()
 
     def get_profile_updates(self, public_key, last_update):
         return self.session.query(Profile).filter_by(public_key=public_key).filter(text("profile.updated_at>{}".format(last_update))).first()
+
+    def get_message_list(self):
+        return self.session.query(
+            func.max(PrivateMessage.created_at).label("last_message"), Profile.public_key, Profile.name, Profile.pic, PrivateMessage.is_sender)\
+            .join(Profile, Profile.public_key == PrivateMessage.public_key)\
+            .order_by(PrivateMessage.created_at.desc()).group_by(PrivateMessage.public_key).all()
+
+    def get_message_thread(self, public_key):
+        return self.session.query(
+            PrivateMessage.is_sender,
+            PrivateMessage.content,
+            PrivateMessage.created_at,
+            PrivateMessage.public_key,
+            Profile.name,
+            Profile.pic)\
+            .filter(text("profile.public_key = private_message.public_key AND private_message.public_key='{}'".format(public_key))).order_by(PrivateMessage.created_at.desc()).all()
 
 
 class Profile(Base):
@@ -295,9 +310,9 @@ class Note(Base):
 class PrivateMessage(Base):
     __tablename__ = "private_message"
     id = Column(String(64), unique=True, primary_key=True)
-    public_key = Column(String(64))
+    public_key = Column(String(64), ForeignKey("profile.public_key"))
     content = Column(String)
-    to = Column(String(64))
+    is_sender = Column(Boolean)  # true = public_key is sender, false I'm sender
     created_at = Column(Integer)
 
     def __repr__(self):
@@ -305,7 +320,7 @@ class PrivateMessage(Base):
             self.id,
             self.public_key,
             self.content,
-            self.to,
+            self.is_sender,
             self.created_at
         }
 

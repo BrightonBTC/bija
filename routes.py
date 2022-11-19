@@ -116,6 +116,25 @@ def note_page():
     return render_template("note.html", title="Note", notes=n)
 
 
+@app.route('/messages', methods=['GET'])
+def private_messages_page():
+    EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
+
+    messages = DB.get_message_list()
+
+    return render_template("messages.html", title="Messages", messages=messages)
+
+
+@app.route('/message', methods=['GET'])
+def private_message_page():
+    EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
+    messages = []
+    if 'pk' in request.args and is_hex_key(request.args['pk']):
+        messages = DB.get_message_thread(request.args['pk'])
+
+    return render_template("message_thread.html", title="Messages", messages=messages)
+
+
 def note_thread(notes, current):
     out = []
     notes.reverse()
@@ -222,6 +241,7 @@ def keys_page():
     if login_state is LoginState.LOGGED_IN:
         if request.method == 'POST' and 'del_keys' in request.form.keys():
             print("RESET DB")
+            EVENT_HANDLER.close()
             DB.reset()
             session.clear()
             return redirect('/')
@@ -245,6 +265,11 @@ def shutdown():
 @app.template_filter('dt')
 def _jinja2_filter_datetime(ts):
     return datetime.fromtimestamp(ts).strftime('%Y-%m-%d | %H:%M:%S')
+
+
+@app.template_filter('decr')
+def _jinja2_filter_decr(content, pk, is_sender):
+    return EVENT_HANDLER.decrypt(content, pk, is_sender)
 
 
 def make_threaded(notes):
