@@ -333,13 +333,47 @@ class BijaEvents:
         message = json.dumps(request)
         self.relay_manager.publish_message(message)
 
-    def decrypt(self, message, public_key, is_sender):
+    def decrypt(self, message, public_key):
         try:
             k = bytes.fromhex(self.session.get("keys")['private'])
             pk = PrivateKey(k)
             return pk.decrypt_message(message, public_key)
         except:
             return 'could not decrypt!'
+
+    def encrypt(self, message, public_key):
+        try:
+            k = bytes.fromhex(self.session.get("keys")['private'])
+            pk = PrivateKey(k)
+            return pk.encrypt_message(message, public_key)
+        except:
+            return False
+
+    def submit_message(self, data):
+        pk = None
+        txt = None
+        for v in data:
+            print(v[0], v[1])
+            if v[0] == "new_message":
+                txt = v[1]
+            elif v[0] == "new_message_pk":
+                pk = v[1]
+        if pk is not None and txt is not None:
+            print('VALID DATA')
+            k = bytes.fromhex(self.session.get("keys")['private'])
+            private_key = PrivateKey(k)
+            tags = [['p', pk]]
+            created_at = int(time.time())
+            enc = self.encrypt(txt, pk)
+            event = Event(private_key.public_key.hex(), enc, tags=tags, created_at=created_at, kind=EventKind.ENCRYPTED_DIRECT_MESSAGE)
+            event.sign(private_key.hex())
+
+            message = json.dumps([ClientMessageType.EVENT, event.to_json_object()], ensure_ascii=False)
+            print(message)
+            self.relay_manager.publish_message(message)
+            return event.id
+        else:
+            return False
 
     def close(self):
         print("CLOSING CONNECTIONS")

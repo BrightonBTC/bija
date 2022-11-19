@@ -394,7 +394,6 @@ input[type=text].pname {
     display: flex;
     text-decoration: none;
     color: #ffffff;
-    align-items: center;
 }
 .msg.them{
     flex-direction: row-reverse;
@@ -407,7 +406,7 @@ input[type=text].pname {
 }
 .speech-bubble{
     color: #fff;
-    background: #000;
+    background: #4a4a52;
     position: relative;
     padding: 15px 25px;
     border-radius: 10px;
@@ -416,28 +415,27 @@ input[type=text].pname {
     margin: 0 25px;
 }
 .me .speech-bubble{
-    color: #fff;
-    background: #152148;
+    background: #9896ff;
 }
 
 .speech-bubble::after {
   content: "";
-  border: 15px solid transparent;
+  border: 10px solid transparent;
   position: absolute;
 }
 
 .me .speech-bubble::after {
-  border-right-color: #152148;
+  border-right-color: #9896ff;
   border-left: 0;
-  left: -15px; top: 50%;
-  margin-top: -15px;
+  left: -10px;
+  top: 15px;
 }
 
 .them .speech-bubble::after {
-  border-left-color: #000;
+  border-left-color: #4a4a52;
   border-right: 0;
-  right: -15px; top: 50%;
-  margin-top: -15px;
+  right: -10px;
+  top: 15px;
 }
 .msg .dt{
     font-size: 10px;
@@ -472,6 +470,9 @@ input[type=text].pname {
 #message-poster{
     position: sticky;
     bottom: 0;
+    background: #040508;
+    padding: 10px;
+    border-radius: 10px 10px 0 0;
 }
 
 .notify {

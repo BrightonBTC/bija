@@ -129,14 +129,24 @@ def private_messages_page():
 def private_message_page():
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     messages = []
+    pk = ''
     if 'pk' in request.args and is_hex_key(request.args['pk']):
         messages = DB.get_message_thread(request.args['pk'])
+        pk = request.args['pk']
 
     profile = DB.get_profile(session.get("keys")["public"])
 
     messages.reverse()
 
-    return render_template("message_thread.html", title="Messages", messages=messages, me=profile)
+    return render_template("message_thread.html", title="Messages", messages=messages, me=profile, them=pk)
+
+
+@app.route('/submit_message', methods=['POST', 'GET'])
+def submit_message():
+    event_id = False
+    if request.method == 'POST':
+        event_id = EVENT_HANDLER.submit_message(request.json)
+    return render_template("upd.json", title="Home", data=json.dumps({'event_id': event_id}))
 
 
 def note_thread(notes, current):
@@ -272,8 +282,8 @@ def _jinja2_filter_datetime(ts):
 
 
 @app.template_filter('decr')
-def _jinja2_filter_decr(content, pk, is_sender):
-    return EVENT_HANDLER.decrypt(content, pk, is_sender)
+def _jinja2_filter_decr(content, pk):
+    return EVENT_HANDLER.decrypt(content, pk)
 
 
 def make_threaded(notes):

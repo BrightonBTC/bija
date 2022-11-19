@@ -42,9 +42,46 @@ window.addEventListener("load", function () {
         new bijaProfile();
     }
     if(document.querySelector(".main[data-page='Messages']") != null){
-        window.scrollTo(0, document.body.scrollHeight);
+        new bijaMessages()
     }
 });
+
+class bijaMessages{
+    constructor(){
+        window.scrollTo(0, document.body.scrollHeight);
+        this.setSubmitMessage()
+    }
+
+    setSubmitMessage(){
+        document.querySelector('#new_message_submit').addEventListener("click", (event)=>{
+            event.preventDefault();
+            event.stopPropagation();
+            this.postMessage()
+            return false
+        });
+    }
+    postMessage(){
+        const form = document.querySelector("#new_message_form")
+        const formData = new FormData(form);
+        const data = [...formData.entries()];
+        const options = {
+            method: 'POST',
+            body: JSON.stringify(data),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }
+        fetch('/submit_message', options).then(function(response) {
+            return response.json();
+        }).then(function(response) {
+           if(response['event_id']){
+               notify('#', 'Message sent')
+           }
+        }).catch(function(err) {
+            console.log(err)
+        });
+    }
+}
 
 class bijaProfile{
 
@@ -247,6 +284,6 @@ let notify = function(link, text){
     document.body.append(a)
     a.classList.add('notify')
     setTimeout(function(){
-        d.remove()
+        a.remove()
     }, 3500);
 }
