@@ -43,8 +43,12 @@ class BijaEvents:
 
             while self.relay_manager.message_pool.has_events():
                 msg = self.relay_manager.message_pool.get_event()
-                print("EVENT OF KIND => ", msg.event.kind, " /", time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime()),
-                      " /", msg.subscription_id, " /")
+                # print(
+                #     "EVENT OF KIND => ",
+                #     msg.event.kind, " /",
+                #     time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime()),
+                #     " /", msg.subscription_id, " /"
+                # )
 
                 if msg.event.kind == EventKind.SET_METADATA:
                     self.handle_metadata_event(msg.event)
@@ -130,7 +134,6 @@ class BijaEvents:
             event.created_at,
             members
         )
-        print("CONTENT >>>>>>>", event.content)
 
     def submit_note(self, data):
         k = bytes.fromhex(self.session.get("keys")['private'])
@@ -209,7 +212,6 @@ class BijaEvents:
         for p in event.tags:
             if p[0] == "p":
                 to = p[1]
-                break
         if to and [getattr(event, attr) for attr in ['id', 'public_key', 'content', 'created_at']]:
             pk = None
             is_sender = None
@@ -241,12 +243,10 @@ class BijaEvents:
     def close_secondary_subscriptions(self):
         for s in self.subscriptions:
             if s not in ['primary', 'following']:
-                print("CLOSE SUBSCRIPTION: ", s)
                 self.close_subscription(s)
 
     def subscribe_note(self, note_id):
         subscription_id = 'note-thread'
-        print("OPEN SUBSCRIPTION: ", subscription_id)
         self.subscriptions.append(subscription_id)
         filters = Filters([
             Filter(tags={'#e': [note_id]}, kinds=[EventKind.TEXT_NOTE])  # event responses
@@ -267,11 +267,9 @@ class BijaEvents:
         time.sleep(1.25)
         message = json.dumps(request)
         self.relay_manager.publish_message(message)
-        print("OPEN SUBSCRIPTION: ", subscription_id, message)
 
     def subscribe_profile(self, pubkey, since):
         subscription_id = 'profile'
-        print("OPEN SUBSCRIPTION: ", subscription_id)
         self.subscriptions.append(subscription_id)
         profile = self.db.get_profile(pubkey)
 
@@ -280,7 +278,6 @@ class BijaEvents:
             Filter(authors=[pubkey], kinds=[EventKind.TEXT_NOTE, EventKind.DELETE], since=since)
         ]
         if profile is not None and profile.contacts is not None:
-            print("PROFILE CONTACT LIST", json.loads(profile.contacts))
             contacts_filter = Filter(authors=json.loads(profile.contacts), kinds=[EventKind.SET_METADATA])
             f.append(contacts_filter)
 
@@ -291,12 +288,10 @@ class BijaEvents:
         time.sleep(1.25)
         message = json.dumps(request)
         self.relay_manager.publish_message(message)
-        print("OPEN SUBSCRIPTION: ", subscription_id, message)
 
     # create site wide subscription
     def subscribe_primary(self):
         keys = self.session.get("keys")
-        print("add primary subscription")
         pubkey = keys['public']
         self.subscriptions.append('primary')
         kinds = [EventKind.SET_METADATA,
@@ -309,7 +304,6 @@ class BijaEvents:
         mentions_filter = Filter(tags={'#p': [pubkey]}, kinds=[EventKind.TEXT_NOTE, EventKind.ENCRYPTED_DIRECT_MESSAGE])
         f = [profile_filter, mentions_filter]
         following_pubkeys = self.db.get_following_pubkeys()
-        print(following_pubkeys)
 
         if len(following_pubkeys) > 0:
             following_filter = Filter(
@@ -353,13 +347,11 @@ class BijaEvents:
         pk = None
         txt = None
         for v in data:
-            print(v[0], v[1])
             if v[0] == "new_message":
                 txt = v[1]
             elif v[0] == "new_message_pk":
                 pk = v[1]
         if pk is not None and txt is not None:
-            print('VALID DATA')
             k = bytes.fromhex(self.session.get("keys")['private'])
             private_key = PrivateKey(k)
             tags = [['p', pk]]
@@ -369,12 +361,10 @@ class BijaEvents:
             event.sign(private_key.hex())
 
             message = json.dumps([ClientMessageType.EVENT, event.to_json_object()], ensure_ascii=False)
-            print(message)
             self.relay_manager.publish_message(message)
             return event.id
         else:
             return False
 
     def close(self):
-        print("CLOSING CONNECTIONS")
         self.relay_manager.close_connections()
