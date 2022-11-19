@@ -132,7 +132,9 @@ def private_message_page():
     if 'pk' in request.args and is_hex_key(request.args['pk']):
         messages = DB.get_message_thread(request.args['pk'])
 
-    return render_template("message_thread.html", title="Messages", messages=messages)
+    profile = DB.get_profile(session.get("keys")["public"])
+
+    return render_template("message_thread.html", title="Messages", messages=messages, me=profile)
 
 
 def note_thread(notes, current):

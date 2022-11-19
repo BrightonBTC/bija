@@ -4,12 +4,6 @@
 
 {% for message in messages: %}
 
-{% if message.pic is not none %}
-    {% set pic=message.pic %}
-{% else %}
-    {% set pic="/identicon?id="+message.public_key %}
-{% endif %}
-
 {% if message['name'] is not none %}
     {% set name=message.name %}
 {% else %}
@@ -17,14 +11,26 @@
 {% endif %}
 
 {% if message.is_sender %}
+    {% if message.pic is not none %}
+        {% set pic=message.pic %}
+    {% else %}
+        {% set pic="/identicon?id="+message.public_key %}
+    {% endif %}
     {% set sender=message.name %}
+    {% set class='them' %}
 {% else %}
+    {% if me.pic is not none %}
+        {% set pic=me.pic %}
+    {% else %}
+        {% set pic="/identicon?id="+me.public_key %}
+    {% endif %}
     {% set sender="You" %}
+    {% set class='me' %}
 {% endif %}
 
-<div class="msg">
+<div class="msg {{class}}">
     <div class="msg-profile-pic"><img src='{{pic}}'></div>
-    <div class="msg-profile">
+    <div class="msg-profile speech-bubble">
         <div class="msg-profile-name">{{sender}}</div>
         <pre>{{message.content|decr(message.public_key,message.is_sender)}}</pre>
     </div>

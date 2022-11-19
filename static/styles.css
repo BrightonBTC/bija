@@ -397,8 +397,48 @@ input[type=text].pname {
     color: #ffffff;
     align-items: center;
 }
+.msg.them{
+    flex-direction: row-reverse;
+}
+.msg.me{
+
+}
 .msg > *{
     padding: 5px;
+}
+.speech-bubble{
+    color: #fff;
+    background: #000;
+    position: relative;
+    padding: 5px;
+    border-radius: 10px;
+    max-width: 520px;
+    min-width: 300px;
+    margin: 0 25px;
+}
+.me .speech-bubble{
+    color: #fff;
+    background: #152148;
+}
+
+.speech-bubble::after {
+  content: "";
+  border: 15px solid transparent;
+  position: absolute;
+}
+
+.me .speech-bubble::after {
+  border-right-color: #152148;
+  border-left: 0;
+  left: -15px; top: 50%;
+  margin-top: -15px;
+}
+
+.them .speech-bubble::after {
+  border-left-color: #000;
+  border-right: 0;
+  right: -15px; top: 50%;
+  margin-top: -15px;
 }
 .msg-link{
     display: flex;
