@@ -254,7 +254,8 @@ class BijaDB:
             PrivateMessage.public_key,
             Profile.name,
             Profile.pic)\
-            .filter(text("profile.public_key = private_message.public_key AND private_message.public_key='{}'".format(public_key))).order_by(PrivateMessage.created_at.desc()).all()
+            .filter(text("profile.public_key = private_message.public_key AND private_message.public_key='{}'".format(public_key)))\
+            .order_by(PrivateMessage.created_at.desc()).limit(100).all()
 
 
 class Profile(Base):

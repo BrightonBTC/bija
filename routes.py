@@ -122,7 +122,7 @@ def private_messages_page():
 
     messages = DB.get_message_list()
 
-    return render_template("messages.html", title="Messages", messages=messages)
+    return render_template("messages.html", title="Message List", messages=messages)
 
 
 @app.route('/message', methods=['GET'])
@@ -133,6 +133,8 @@ def private_message_page():
         messages = DB.get_message_thread(request.args['pk'])
 
     profile = DB.get_profile(session.get("keys")["public"])
+
+    messages.reverse()
 
     return render_template("message_thread.html", title="Messages", messages=messages, me=profile)
 

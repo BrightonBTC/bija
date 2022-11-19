@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-
+<div class="messages">
 {% for message in messages: %}
 
 {% if message['name'] is not none %}
@@ -30,13 +30,22 @@
 
 <div class="msg {{class}}">
     <div class="msg-profile-pic"><img src='{{pic}}'></div>
-    <div class="msg-profile speech-bubble">
-        <div class="msg-profile-name">{{sender}}</div>
-        <pre>{{message.content|decr(message.public_key,message.is_sender)}}</pre>
+    <div class="msg-profile">
+        <div class="speech-bubble">
+            <div>{{message.content|decr(message.public_key,message.is_sender)}}</div>
+        </div>
+        <p class="dt">{{message['created_at']|dt}}</p>
     </div>
 
 </div>
 
 {% endfor %}
+</div>
+<div id="message-poster">
+  <form method="post" action="/" id="new_post_form">
+      <textarea name="new_post" id="new_post" placeholder="Say something..."></textarea>
+      <input type="submit" name="new_post_submit" id="new_post_submit" value="Post">
+  </form>
+</div>
 
 {% endblock content %}

@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", function () {
+window.addEventListener("load", function () {
     const btn = document.querySelector('#new_post_submit');
     const form = document.querySelector('#new_post_form');
 
@@ -41,7 +41,9 @@ document.addEventListener("DOMContentLoaded", function () {
         console.log("PROFILE ")
         new bijaProfile();
     }
-
+    if(document.querySelector(".main[data-page='Messages']") != null){
+        window.scrollTo(0, document.body.scrollHeight);
+    }
 });
 
 class bijaProfile{

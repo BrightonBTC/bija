@@ -392,7 +392,6 @@ input[type=text].pname {
 }
 .msg{
     display: flex;
-    padding: 10px;
     text-decoration: none;
     color: #ffffff;
     align-items: center;
@@ -410,10 +409,10 @@ input[type=text].pname {
     color: #fff;
     background: #000;
     position: relative;
-    padding: 5px;
+    padding: 15px 25px;
     border-radius: 10px;
     max-width: 520px;
-    min-width: 300px;
+    min-width: 200px;
     margin: 0 25px;
 }
 .me .speech-bubble{
@@ -440,6 +439,14 @@ input[type=text].pname {
   right: -15px; top: 50%;
   margin-top: -15px;
 }
+.msg .dt{
+    font-size: 10px;
+    color:#ccc;
+    padding: 0 50px;
+}
+.me.msg .dt{
+    float: right;
+}
 .msg-link{
     display: flex;
     padding: 10px;
@@ -453,9 +460,18 @@ input[type=text].pname {
 .msg-profile-pic{
     flex-basis: 60px;
 }
+.msg-profile-pic img{
+    width: 60px;
+    border-radius:10px;
+    margin-bottom:25px;
+}
 .msg-profile-name{
     font-size: 20px;
     margin-bottom: 8px;
+}
+#message-poster{
+    position: sticky;
+    bottom: 0;
 }
 
 .notify {
