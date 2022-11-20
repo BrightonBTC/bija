@@ -22,6 +22,7 @@ class BijaEvents:
         self.relay_manager = RelayManager()
         relays = self.db.get_relays()
         n_relays = 0
+        self.should_run = True
         for r in relays:
             n_relays += 1
             self.relay_manager.add_relay(r.name)
@@ -32,7 +33,7 @@ class BijaEvents:
         if self.pool_handler_running:
             return
         self.pool_handler_running = True
-        while True:
+        while self.should_run:
             while self.relay_manager.message_pool.has_notices():
                 notice = self.relay_manager.message_pool.get_notice()
                 self.notices.append(notice.content)
@@ -44,12 +45,10 @@ class BijaEvents:
             while self.relay_manager.message_pool.has_events():
                 msg = self.relay_manager.message_pool.get_event()
                 # print(
-                #     "EVENT OF KIND => ",
-                #     msg.event.kind, " /",
+                #     "EVENT OF KIND => ", msg.event.kind, " /",
                 #     time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime()),
                 #     " /", msg.subscription_id, " /"
                 # )
-
                 if msg.event.kind == EventKind.SET_METADATA:
                     self.handle_metadata_event(msg.event)
 
@@ -64,6 +63,7 @@ class BijaEvents:
 
                 if msg.event.kind == EventKind.DELETE:
                     self.handle_deleted_event(msg.event)
+            time.sleep(1)
 
     def get_relay_connect_status(self):
         relays = {}
@@ -260,6 +260,8 @@ class BijaEvents:
                 ancestors.append(note.thread_root)
             if len(ancestors) > 0:
                 filters.append(Filter(ids=ancestors, kinds=[EventKind.TEXT_NOTE]))
+        else:
+            filters.append(Filter(ids=[note_id], kinds=[EventKind.TEXT_NOTE]))
 
         request = [ClientMessageType.REQUEST, subscription_id]
         request.extend(filters.to_json_array())
@@ -367,4 +369,5 @@ class BijaEvents:
             return False
 
     def close(self):
+        self.should_run = False
         self.relay_manager.close_connections()
