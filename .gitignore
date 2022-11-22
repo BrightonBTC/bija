@@ -1,7 +1,4 @@
-/nostr/
 /*.sqlite
 /bija.sqlite-journal
 /flask_session/
-/__nostr/
 /.idea/
-/python_nostr/
