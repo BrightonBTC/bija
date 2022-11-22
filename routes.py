@@ -100,20 +100,21 @@ def profile_page():
 def note_page():
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     note_id = request.args['id']
-    EXECUTOR.submit(EVENT_HANDLER.subscribe_note, note_id)
+    EXECUTOR.submit(EVENT_HANDLER.subscribe_thread, note_id)
 
-    note = DB.get_note(note_id)
-    notes = []
-    if note is not None:
-        if note.thread_root is not None:
-            notes = DB.get_note_thread(note.thread_root)
-        elif note.response_to is not None:
-            notes = DB.get_note_thread(note.response_to)
-        else:
-            notes = DB.get_note_thread(note.id)
-
-    n = note_thread(notes, note_id)
-    return render_template("note.html", title="Note", notes=n)
+    notes = DB.get_note_thread(note_id)
+    # notes = []
+    # if note is not None:
+    #     print('note found')
+    #     if note.thread_root is not None:
+    #         notes = DB.get_note_thread(note.thread_root)
+    #     elif note.response_to is not None:
+    #         notes = DB.get_note_thread(note.response_to)
+    #     else:
+    #         notes = DB.get_note_thread(note.id)
+    # notes.reverse()
+    # n = note_thread(notes, note_id)
+    return render_template("note.html", title="Note", notes=notes)
 
 
 @app.route('/messages', methods=['GET'])
@@ -149,31 +150,35 @@ def submit_message():
     return render_template("upd.json", title="Home", data=json.dumps({'event_id': event_id}))
 
 
-def note_thread(notes, current):
-    out = []
-    notes.reverse()
-    current_found = False
-    next_ancestor = None
-    for note in notes:
-        note = dict(note)
-        note['content'] = markdown(note['content'])
-
-        if current_found:
-            if note['response_to'] is None and note['thread_root'] is None:
-                note['is_root'] = True
-                out.insert(0, note)
-            elif note['id'] == next_ancestor:
-                note['is_ancestor'] = True
-                next_ancestor = note["response_to"]
-                out.insert(0, note)
-        elif current == note['response_to']:
-            note['is_reply'] = True
-            out.insert(0, note)
-        elif note['id'] == current:
-            out.insert(0, note)
-            next_ancestor = note["response_to"]
-            current_found = True
-    return out
+# def note_thread(notes, current):
+#     out = []
+#     notes.reverse()
+#     current_found = False
+#     next_ancestor = None
+#     for note in notes:
+#         note = dict(note)
+#         note['content'] = markdown(note['content'])
+#         print(note)
+#         if current_found:
+#             if note['response_to'] is None and note['thread_root'] is None:
+#                 print('is root')
+#                 note['is_root'] = True
+#                 out.insert(0, note)
+#             elif note['id'] == next_ancestor:
+#                 print('is is_ancestor')
+#                 note['is_ancestor'] = True
+#                 next_ancestor = note["response_to"]
+#                 out.insert(0, note)
+#         elif current == note['response_to']:
+#             print('is reply')
+#             note['is_reply'] = True
+#             out.insert(0, note)
+#         elif note['id'] == current:
+#             print('is MAIN')
+#             out.insert(0, note)
+#             next_ancestor = note["response_to"]
+#             current_found = True
+#     return out
 
 
 @app.route('/following', methods=['GET'])
@@ -242,11 +247,23 @@ def get_profile_updates():
 
 @app.route('/submit_note', methods=['POST', 'GET'])
 def submit_note():
-    event_id = False
+    out = {}
     if request.method == 'POST':
-        event_id = EVENT_HANDLER.submit_note(request.json)
-        print(request.json)
-    return render_template("upd.json", title="Home", data=json.dumps({'event_id': event_id}))
+        data = {}
+        for v in request.json:
+            data[v[0]] = v[1]
+        if 'reply' not in data and 'new_post' not in data:
+            out['error'] = 'Invalid message'
+        elif 'reply' in data and len(data['reply']) < 1:
+            out['error'] = 'Invalid or empty message'
+        elif 'new_post' in data and len(data['new_post']) < 1:
+            out['error'] = 'Invalid or empty message'
+        elif 'reply' in data and 'parent_id' not in data:
+            out['error'] = 'No parent id identified for response'
+        else:
+            event_id = EVENT_HANDLER.submit_note(data)
+            out['event_id'] = event_id
+    return render_template("upd.json", title="Home", data=json.dumps(out))
 
 
 @app.route('/keys', methods=['GET', 'POST'])

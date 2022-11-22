@@ -231,7 +231,7 @@ input[type=text].pname {
     display:none;
 }
 
-.note-container.root .is-parent, .note-container.ancestor .is-parent, .note-container.main .is-parent{
+.note-container.root .is-parent, .note-container.ancestor .is-parent{
     display: block;
 }
 .note-container.reply .is-parent{
@@ -470,7 +470,9 @@ input[type=text].pname {
     padding: 10px;
     border-radius: 10px 10px 0 0;
 }
-
+.right{
+    float:right;
+}
 .notify {
     position: fixed;
     bottom: 50px;

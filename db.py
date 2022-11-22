@@ -2,7 +2,7 @@ import json
 import time
 from os.path import exists
 
-from sqlalchemy import create_engine, Column, Integer, String, Time, ForeignKey, Boolean, text, distinct, func
+from sqlalchemy import create_engine, Column, Integer, String, Time, ForeignKey, Boolean, text, distinct, func, or_
 from sqlalchemy.orm import declarative_base, sessionmaker, join, relationship, subqueryload, aliased
 
 Base = declarative_base()
@@ -50,7 +50,6 @@ class BijaDB:
         return self.session.query(Profile).filter_by(public_key=public_key).first()
 
     def get_saved_pk(self):
-        print("GET SAVED")
         pk = self.session.query(PK).first()
         return pk
 
@@ -89,7 +88,6 @@ class BijaDB:
 
     def set_following(self, keys_list, following=True):
         for public_key in keys_list:
-            print(public_key, following)
             self.session.merge(Profile(
                 public_key=public_key,
                 following=following
@@ -120,7 +118,6 @@ class BijaDB:
                     pic=None,
                     about=None,
                     updated_at=None):
-        print("UPDATING PROFILE: ", public_key)
         self.session.merge(Profile(
             public_key=public_key,
             name=name,
@@ -169,6 +166,20 @@ class BijaDB:
                                   Profile.nip05).filter_by(id=note_id).join(Note.profile).first()
 
     def get_note_thread(self, note_id):
+        items = self.session.query(Note.id,
+                                   Note.public_key,
+                                   Note.content,
+                                   Note.response_to,
+                                   Note.thread_root,
+                                   Note.created_at,
+                                   Note.members,
+                                   Profile.name,
+                                   Profile.pic,
+                                   Profile.nip05) \
+            .filter(
+            text("note.id='{}' or note.response_to='{}' or note.thread_root='{}'".format(note_id, note_id, note_id))) \
+            .join(Note.profile).order_by(Note.created_at.asc()).all()
+
         return self.session.query(Note.id,
                                   Note.public_key,
                                   Note.content,
@@ -178,9 +189,29 @@ class BijaDB:
                                   Note.members,
                                   Profile.name,
                                   Profile.pic,
-                                  Profile.nip05)\
-            .filter(text("note.id='{}' or note.response_to='{}' or note.thread_root='{}'".format(note_id, note_id, note_id)))\
+                                  Profile.nip05) \
+            .filter(
+            or_(
+                Note.id.in_([i.response_to for i in items]),
+                Note.id.in_([i.id for i in items])
+            )
+        ) \
             .join(Note.profile).order_by(Note.created_at.asc()).all()
+
+    def get_note_thread_ids(self, note_id):
+        items = self.session.query(Note.id, Note.response_to, Note.thread_root) \
+            .filter(
+            text("note.id='{}' or note.response_to='{}' or note.thread_root='{}'".format(note_id, note_id, note_id))) \
+            .all()
+
+        l1 = [i.id for i in items]
+        l2 = [i.response_to for i in items]
+        l3 = [i.thread_root for i in items]
+
+        out = list(dict.fromkeys(l1 + l2 + l3))
+        if None in out:
+            out.remove(None)
+            return out
 
     def insert_private_message(self,
                                msg_id,
@@ -208,8 +239,8 @@ class BijaDB:
             Note.members,
             Profile.name,
             Profile.pic,
-            Profile.nip05).join(Note.profile).filter(text("note.created_at<{}".format(before)))\
-            .filter(text("profile.following=1 OR profile.public_key='{}'".format(public_key)))\
+            Profile.nip05).join(Note.profile).filter(text("note.created_at<{}".format(before))) \
+            .filter(text("profile.following=1 OR profile.public_key='{}'".format(public_key))) \
             .order_by(Note.created_at.desc()).limit(50).all()
 
     def get_note_by_id_list(self, note_ids):
@@ -238,12 +269,14 @@ class BijaDB:
             public_key=public_key).order_by(Note.created_at.desc()).limit(50).all()
 
     def get_profile_updates(self, public_key, last_update):
-        return self.session.query(Profile).filter_by(public_key=public_key).filter(text("profile.updated_at>{}".format(last_update))).first()
+        return self.session.query(Profile).filter_by(public_key=public_key).filter(
+            text("profile.updated_at>{}".format(last_update))).first()
 
     def get_message_list(self):
         return self.session.query(
-            func.max(PrivateMessage.created_at).label("last_message"), Profile.public_key, Profile.name, Profile.pic, PrivateMessage.is_sender)\
-            .join(Profile, Profile.public_key == PrivateMessage.public_key)\
+            func.max(PrivateMessage.created_at).label("last_message"), Profile.public_key, Profile.name, Profile.pic,
+            PrivateMessage.is_sender) \
+            .join(Profile, Profile.public_key == PrivateMessage.public_key) \
             .order_by(PrivateMessage.created_at.desc()).group_by(PrivateMessage.public_key).all()
 
     def get_message_thread(self, public_key):
@@ -253,8 +286,9 @@ class BijaDB:
             PrivateMessage.created_at,
             PrivateMessage.public_key,
             Profile.name,
-            Profile.pic)\
-            .filter(text("profile.public_key = private_message.public_key AND private_message.public_key='{}'".format(public_key)))\
+            Profile.pic).join(Profile) \
+            .filter(text(
+            "profile.public_key = private_message.public_key AND private_message.public_key='{}'".format(public_key))) \
             .order_by(PrivateMessage.created_at.desc()).limit(100).all()
 
 

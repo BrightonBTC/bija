@@ -1,15 +1,25 @@
+<div id="thread-items">
 {% for post in notes: %}
 
-    {% if post['is_root'] %}
-    {% set container='root' %}
-    {% elif post['is_ancestor'] %}
-    {% set container='ancestor' %}
-    {% elif post['is_reply'] %}
-    {% set container='reply' %}
+    {% if post['thread_root'] is not none %}
+    {% set rel=post['thread_root'] %}
+    {% elif post['response_to'] is not none %}
+    {% set rel=post['response_to'] %}
     {% else %}
-    {% set container='main' %}
+    {% set rel=post['id'] %}
     {% endif %}
-    <div class="note-container {{container}}" data-rel="{{post['id']}}">
+
+    {% if post['thread_root'] is none and post['response_to'] is none %}
+    {% set parent='' %}
+    {% elif post['response_to'] is not none and post['thread_root'] is none %}
+    {% set parent=post['response_to'] %}
+    {% elif post['thread_root'] is not none and post['response_to'] is none %}
+    {% set parent=post['thread_root'] %}
+    {% else %}
+    {% set parent=post['response_to'] %}
+    {% endif %}
+
+    <div class="note-container" data-rel="{{rel}}" data-id="{{post['id']}}" data-parent="{{parent}}">
         <div class="is-parent"></div>
         <div class="note-image">
             {% if post['pic'] is not none %}
@@ -28,8 +38,8 @@
                 <span class="sm right dt">{{post['created_at']|dt}}</span>
             </h3>
             <div class="sm">{{post['id']}}</div>
-            <pre class="note-content" data-rel="{{post['id']}}">{{post['content'] |safe}}<p></p></pre>
-            <p><a href="#" class="reply-link" data-rel="{{post['id']}}">reply</a></p>
+            <pre class="note-content" data-rel="{{rel}}" data-id="{{post['id']}}">{{post['content'] |safe}}<p></p></pre>
+            <p><span class="reply-n"></span> replies<a href="#" class="reply-link right" data-rel="{{post['id']}}">reply</a></p>
             <form class="reply-form"  data-noteid="{{post['id']}}" >
                 <input type="hidden" name="pubkey" value="{{post['public_key']}}">
                 <input type="hidden" name="parent_id" value="{{post['id']}}">
@@ -43,3 +53,4 @@
     </div>
 
 {% endfor %}
+</div>

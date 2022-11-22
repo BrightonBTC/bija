@@ -2,7 +2,7 @@ import json
 import ssl
 import time
 
-from helpers import timestamp_minus, TimePeriod
+from helpers import timestamp_minus, TimePeriod, is_hex_key
 from python_nostr.nostr.event import EventKind, Event
 from python_nostr.nostr.filter import Filters, Filter
 from python_nostr.nostr.key import PrivateKey
@@ -44,11 +44,6 @@ class BijaEvents:
 
             while self.relay_manager.message_pool.has_events():
                 msg = self.relay_manager.message_pool.get_event()
-                # print(
-                #     "EVENT OF KIND => ", msg.event.kind, " /",
-                #     time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime()),
-                #     " /", msg.subscription_id, " /"
-                # )
                 if msg.event.kind == EventKind.SET_METADATA:
                     self.handle_metadata_event(msg.event)
 
@@ -64,6 +59,7 @@ class BijaEvents:
                 if msg.event.kind == EventKind.DELETE:
                     self.handle_deleted_event(msg.event)
             time.sleep(1)
+            print('running')
 
     def get_relay_connect_status(self):
         relays = {}
@@ -141,25 +137,45 @@ class BijaEvents:
         r = self.db.get_preferred_relay()
         preferred_relay = r.name
         tags = []
-        note = None
         response_to = None
         thread_root = None
-        for v in data:
-            if v[0] == "new_post":
-                note = v[1]
-                break
-            elif v[0] == "reply":
-                note = v[1]
-            elif v[0] == "pubkey":
-                tags.append(["p", v[1], preferred_relay, ])
-            elif v[0] == "parent_id":
-                response_to = v[1]
-                tags.append(["e", v[1], preferred_relay, "reply"])
-            elif v[0] == "thread_root":
-                thread_root = v[1]
-                tags.append(["e", v[1], preferred_relay, "root"])
-        if note is None:
+
+
+        if 'new_post' in data:
+            note = data['new_post']
+        elif 'reply' in data:
+            note = data['reply']
+            if 'pubkey' in data and is_hex_key(data['pubkey']):
+                tags.append(["p", data['pubkey'], preferred_relay])
+            else:
+                return False
+            if 'parent_id' not in data or 'thread_root' not in data:
+                return False
+            elif data['thread_root'] == data['parent_id'] and is_hex_key(data['parent_id']):
+                response_to = data['parent_id']
+                tags.append(["e", data['parent_id'], preferred_relay, "reply"])
+            elif is_hex_key(data['parent_id']) and is_hex_key(data['thread_root']):
+                tags.append(["e", data['parent_id'], preferred_relay, "reply"])
+                tags.append(["e", data['thread_root'], preferred_relay, "root"])
+        else:
             return False
+
+        # for v in data:
+        #     if v[0] == "new_post":
+        #         note = v[1]
+        #         break
+        #     elif v[0] == "reply":
+        #         note = v[1]
+        #     elif v[0] == "pubkey":
+        #         tags.append(["p", v[1], preferred_relay, ])
+        #     elif v[0] == "parent_id":
+        #         response_to = v[1]
+        #         tags.append(["e", v[1], preferred_relay, "reply"])
+        #     if v[0] == "thread_root":
+        #         thread_root = v[1]
+        #         tags.append(["e", v[1], preferred_relay, "root"])
+        # if note is None:
+        #     return False
         created_at = int(time.time())
         event = Event(private_key.public_key.hex(), note, tags=tags, created_at=created_at)
         event.sign(private_key.hex())
@@ -244,6 +260,24 @@ class BijaEvents:
         for s in self.subscriptions:
             if s not in ['primary', 'following']:
                 self.close_subscription(s)
+
+    def subscribe_thread(self, root_id):
+        subscription_id = 'note-thread'
+        self.subscriptions.append(subscription_id)
+        ids = self.db.get_note_thread_ids(root_id)
+        if len(ids) < 1:
+            ids = [root_id]
+        filters = Filters([
+            Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE]),  # event responses
+            Filter(ids=ids, kinds=[EventKind.TEXT_NOTE])
+        ])
+        print('SUBSCRIBE THREAD', ids)
+        request = [ClientMessageType.REQUEST, subscription_id]
+        request.extend(filters.to_json_array())
+        self.relay_manager.add_subscription(subscription_id, filters)
+        time.sleep(1.25)
+        message = json.dumps(request)
+        self.relay_manager.publish_message(message)
 
     def subscribe_note(self, note_id):
         subscription_id = 'note-thread'
@@ -359,7 +393,8 @@ class BijaEvents:
             tags = [['p', pk]]
             created_at = int(time.time())
             enc = self.encrypt(txt, pk)
-            event = Event(private_key.public_key.hex(), enc, tags=tags, created_at=created_at, kind=EventKind.ENCRYPTED_DIRECT_MESSAGE)
+            event = Event(private_key.public_key.hex(), enc, tags=tags, created_at=created_at,
+                          kind=EventKind.ENCRYPTED_DIRECT_MESSAGE)
             event.sign(private_key.hex())
 
             message = json.dumps([ClientMessageType.EVENT, event.to_json_object()], ensure_ascii=False)

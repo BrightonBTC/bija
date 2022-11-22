@@ -32,7 +32,8 @@ window.addEventListener("load", function () {
     }
     if(document.querySelector(".main[data-page='Note']") != null){
         new bijaNotes();
-        document.querySelector(".note-container.main").scrollIntoView(false);
+        new bijaThread()
+//        document.querySelector(".note-container.main").scrollIntoView(false);
     }
     if(document.querySelector(".main[data-page='Profile']") != null){
         new bijaNotes();
@@ -45,6 +46,92 @@ window.addEventListener("load", function () {
         new bijaMessages()
     }
 });
+
+class bijaThread{
+
+    constructor(){
+        this.focussed = false;
+        this.replies = [];
+        this.setFolding();
+        window.addEventListener("hashchange", (event)=>{
+            this.setFolding();
+        });
+    }
+
+    setFolding(){
+        this.focussed = window.location.hash.substring(1);
+        const note_elems = document.querySelectorAll(".note-container")
+        for (const n of note_elems) {
+            n.classList.remove('main', 'ancestor', 'reply')
+            n.style.display = 'none'
+        }
+        this.showReplies()
+        this.showMain()
+
+    }
+
+    showMain(){
+        const main = document.querySelector(".note-container[data-id='"+this.focussed+"']")
+        if(main){
+            main.classList.add('main')
+            main.style.display = 'flex'
+            this.setReplyCount(main)
+            if(main.dataset.parent.length > 0){
+                this.showParent(main.dataset.parent, main)
+            }
+            if(this.replies.length > 0){
+                main.classList.add('ancestor')
+            }
+            main.scrollIntoView({
+                behavior: 'auto',
+                block: 'center',
+                inline: 'center'
+            });
+        }
+        else{
+            const new_el = document.createElement('div');
+            new_el.innerHTML = "<p>Event ("+this.focussed+") not yet found on network</p>";
+            new_el.classList.add('note-content')
+            document.querySelector('#thread-items').prepend(new_el)
+        }
+    }
+
+    showReplies(){
+        this.replies = document.querySelectorAll(".note-container[data-parent='"+this.focussed+"']")
+        for (const n of this.replies) {
+            n.classList.add('reply')
+            n.style.display = 'flex'
+            this.setReplyCount(n)
+        }
+    }
+
+    showParent(id, child){
+        const el = document.querySelector(".note-container[data-id='"+id+"']");
+        if(el){
+            el.classList.add('ancestor');;
+            el.style.display = 'flex';
+            this.setReplyCount(el);
+            const parent = el.dataset.parent;;
+            if(parent.length > 0){
+                this.showParent(parent, el);
+            }
+        }
+        else{
+            const new_el = document.createElement('div');
+            new_el.innerHTML = "<p>Event ("+id+") not yet found on network</p>";
+            new_el.classList.add('note-content')
+            child.parentElement.insertBefore(new_el, child)
+        }
+    }
+    setReplyCount(el){
+        const id = el.dataset.id;
+        const n = document.querySelectorAll(".note-container[data-parent='"+id+"']").length;
+        const r_el = el.querySelector('.reply-n')
+        r_el.innerText = n
+    }
+
+
+}
 
 class bijaMessages{
     constructor(){
@@ -177,8 +264,9 @@ class bijaNotes{
             note_link.addEventListener("click", (event)=>{
                 event.preventDefault();
                 event.stopPropagation();
-                let id = note_link.dataset.rel
-                window.location.href = '/note?id='+id
+                let rel = note_link.dataset.rel
+                let id = note_link.dataset.id
+                window.location.href = '/note?id='+rel+'#'+id
             });
         }
     }
