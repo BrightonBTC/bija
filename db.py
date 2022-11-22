@@ -240,7 +240,7 @@ class BijaDB:
             Profile.name,
             Profile.pic,
             Profile.nip05).join(Note.profile).filter(text("note.created_at<{}".format(before))) \
-            .filter(text("profile.following=1 OR profile.public_key='{}'".format(public_key))) \
+            .filter(text("(profile.following=1 OR profile.public_key='{}')".format(public_key))) \
             .order_by(Note.created_at.desc()).limit(50).all()
 
     def get_note_by_id_list(self, note_ids):
