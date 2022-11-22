@@ -1,7 +1,5 @@
 import json
-import time
 from datetime import datetime
-from enum import IntEnum
 
 from flask import render_template, request, session, redirect, make_response
 from flask_executor import Executor
@@ -53,7 +51,6 @@ def index_page():
 
 @app.route('/feed', methods=['GET'])
 def feed():
-    EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     if request.method == 'GET':
         if 'before' in request.args:
             before = int(request.args['before'])
@@ -206,23 +203,6 @@ def get_profile_updates(args):
             'pic': p.pic,
         }
     return out
-
-
-# @app.route('/upd_profile', methods=['GET'])
-# def get_profile_updates():
-#     d = []
-#     p = DB.get_profile_updates(request.args['pk'], request.args['updated_ts'])
-#     if p is not None:
-#         if p.pic is None or len(p.pic.strip()) == 0:
-#             p.pic = '/identicon?id={}'.format(p.public_key)
-#         d = {'profile': {
-#             'name': p.name,
-#             'nip05': p.nip05,
-#             'about': p.about,
-#             'updated_at': p.updated_at,
-#             'pic': p.pic,
-#         }}
-#     return render_template("upd.json", title="Home", data=json.dumps(d))
 
 
 @app.route('/submit_note', methods=['POST', 'GET'])
