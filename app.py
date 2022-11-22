@@ -5,8 +5,6 @@ from sqlalchemy.orm import scoped_session
 import db
 from gui import init_gui
 
-# db.Base.metadata.create_all(bind=db.DB_ENGINE)
-
 app = Flask(__name__)
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"

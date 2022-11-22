@@ -173,7 +173,7 @@ class bijaMessages{
 class bijaProfile{
 
     constructor(){
-        setInterval(getProfileUpdates, 2000);
+//        setInterval(getProfileUpdates, 2000);
         this.setClicks()
     }
 
@@ -206,29 +206,29 @@ class bijaProfile{
 
 }
 
-async function getProfileUpdates() {
-        const profile_elem = document.querySelector("#profile")
-        const pk = profile_elem.dataset.pk
-        const updat = profile_elem.dataset.updat
-        const response = await fetch('/upd_profile?pk='+pk+'&updat='+updat);
-        const d = await response.json();
-        if("profile" in d){
-            profile = d.profile
-
-            document.querySelector(".profile-about").innerText = profile.about
-
-            document.querySelector("#profile").dataset.updat = profile.updated_at
-
-            const name_els = document.querySelectorAll(".profile-name");
-            for (let i = 0; i < name_els.length; i++) {
-              name_els[i].innerText = profile.name
-            }
-            const pic_els = document.querySelectorAll(".profile-pic");
-            for (let i = 0; i < pic_els.length; i++) {
-              pic_els[i].setAttribute("src", profile.pic)
-            }
-        }
-    }
+//async function getProfileUpdates() {
+//        const profile_elem = document.querySelector("#profile")
+//        const pk = profile_elem.dataset.pk
+//        const updated_ts = profile_elem.dataset.updated_ts
+//        const response = await fetch('/upd_profile?pk='+pk+'&updated_ts='+updated_ts);
+//        const d = await response.json();
+//        if("profile" in d){
+//            profile = d.profile
+//
+//            document.querySelector(".profile-about").innerText = profile.about
+//
+//            document.querySelector("#profile").dataset.updated_ts = profile.updated_at
+//
+//            const name_els = document.querySelectorAll(".profile-name");
+//            for (let i = 0; i < name_els.length; i++) {
+//              name_els[i].innerText = profile.name
+//            }
+//            const pic_els = document.querySelectorAll(".profile-pic");
+//            for (let i = 0; i < pic_els.length; i++) {
+//              pic_els[i].setAttribute("src", profile.pic)
+//            }
+//        }
+//    }
 
 class bijaNotes{
     constructor(){
@@ -340,8 +340,10 @@ class bijaFeed{
 
 setInterval(getUpdates, 5000);
 async function getUpdates() {
-    const response = await fetch('/upd');
+    const page = document.querySelector(".main").dataset.page
+    const response = await fetch(getUpdaterURL(page));
     const d = await response.json();
+    handleUpdaterResponse(page, d)
     if("unseen_posts" in d){
         let el_unseen = document.getElementById("n_unseen_posts")
         if(parseInt(d['unseen_posts']) == 0){
@@ -360,6 +362,40 @@ async function getUpdates() {
             div.innerText = d["notices"][n]
             container.prepend(div)
         }
+    }
+}
+
+let getUpdaterURL = function(page){
+    let params = {}
+    params['page'] = page
+    switch(page){
+        case 'Profile':
+            const profile_elem = document.querySelector("#profile")
+            const pk = profile_elem.dataset.pk
+            const updated_ts = profile_elem.dataset.updated_ts
+            params['pk'] = pk
+            params['updated_ts'] = updated_ts
+    }
+    return '/upd?' + Object.keys(params).map(key => key + '=' + params[key]).join('&');
+}
+
+let handleUpdaterResponse = function(page, d){
+    switch(page){
+        case 'Profile':
+            if("profile" in d){
+                profile = d.profile
+                console.log(profile)
+                document.querySelector(".profile-about").innerText = profile.about
+                document.querySelector("#profile").dataset.updated_ts = profile.updated_at
+                const name_els = document.querySelectorAll(".profile-name");
+                for (let i = 0; i < name_els.length; i++) {
+                    name_els[i].innerText = profile.name
+                }
+                const pic_els = document.querySelectorAll(".profile-pic");
+                for (let i = 0; i < pic_els.length; i++) {
+                    pic_els[i].setAttribute("src", profile.pic)
+                }
+            }
     }
 }
 

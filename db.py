@@ -268,6 +268,17 @@ class BijaDB:
             Profile.nip05).join(Note.profile).filter(text("note.created_at<{}".format(before))).filter_by(
             public_key=public_key).order_by(Note.created_at.desc()).limit(50).all()
 
+    def get_unseen_in_feed(self, public_key):
+        return self.session.query(Note, Profile).join(Note.profile)\
+            .filter(text("(profile.following=1 OR profile.public_key='{}') and note.seen=0".format(public_key))).count()
+
+    def set_all_seen_in_feed(self, public_key):
+        notes = self.session.query(Note).join(Note.profile) \
+            .filter(text("profile.following=1 OR profile.public_key='{}'".format(public_key)))
+        for note in notes:
+            note.seen = True
+        self.session.commit()
+
     def get_profile_updates(self, public_key, last_update):
         return self.session.query(Profile).filter_by(public_key=public_key).filter(
             text("profile.updated_at>{}".format(last_update))).first()
@@ -327,6 +338,7 @@ class Note(Base):
     thread_root = Column(String(64))
     created_at = Column(Integer)
     members = Column(String)
+    seen = Column(Boolean, default=False)
 
     profile = relationship("Profile", back_populates="notes")
 
@@ -338,7 +350,8 @@ class Note(Base):
             self.response_to,
             self.thread_root,
             self.created_at,
-            self.members
+            self.members,
+            self.seen
         }
 
 

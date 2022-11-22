@@ -40,10 +40,10 @@ class LoginState(IntEnum):
 @app.route('/')
 def index_page():
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
-    EVENT_HANDLER.unseen_notes = 0
+    DB.set_all_seen_in_feed(get_key())
     login_state = get_login_state()
     if login_state is LoginState.LOGGED_IN:
-        notes = DB.get_feed(time.time(), session.get("keys")["public"])
+        notes = DB.get_feed(time.time(), get_key())
         t, i = make_threaded(notes)
 
         return render_template("feed.html", title="Home", threads=t, ids=i)
@@ -59,7 +59,7 @@ def feed():
             before = int(request.args['before'])
         else:
             before = time.time()
-        notes = DB.get_feed(before, session.get("keys")["public"])
+        notes = DB.get_feed(before, get_key())
         t, i = make_threaded(notes)
 
         return render_template("feed.items.html", threads=t, ids=i)
@@ -88,7 +88,7 @@ def profile_page():
         k = request.args['pk']
         is_me = False
     else:
-        k = session.get("keys")["public"]
+        k = get_key()
         is_me = True
     notes = DB.get_notes_by_pubkey(k, int(time.time()), timestamp_minus(TimePeriod.DAY))
     t, i = make_threaded(notes)
@@ -103,17 +103,6 @@ def note_page():
     EXECUTOR.submit(EVENT_HANDLER.subscribe_thread, note_id)
 
     notes = DB.get_note_thread(note_id)
-    # notes = []
-    # if note is not None:
-    #     print('note found')
-    #     if note.thread_root is not None:
-    #         notes = DB.get_note_thread(note.thread_root)
-    #     elif note.response_to is not None:
-    #         notes = DB.get_note_thread(note.response_to)
-    #     else:
-    #         notes = DB.get_note_thread(note.id)
-    # notes.reverse()
-    # n = note_thread(notes, note_id)
     return render_template("note.html", title="Note", notes=notes)
 
 
@@ -135,7 +124,7 @@ def private_message_page():
         messages = DB.get_message_thread(request.args['pk'])
         pk = request.args['pk']
 
-    profile = DB.get_profile(session.get("keys")["public"])
+    profile = DB.get_profile(get_key())
 
     messages.reverse()
 
@@ -148,37 +137,6 @@ def submit_message():
     if request.method == 'POST':
         event_id = EVENT_HANDLER.submit_message(request.json)
     return render_template("upd.json", title="Home", data=json.dumps({'event_id': event_id}))
-
-
-# def note_thread(notes, current):
-#     out = []
-#     notes.reverse()
-#     current_found = False
-#     next_ancestor = None
-#     for note in notes:
-#         note = dict(note)
-#         note['content'] = markdown(note['content'])
-#         print(note)
-#         if current_found:
-#             if note['response_to'] is None and note['thread_root'] is None:
-#                 print('is root')
-#                 note['is_root'] = True
-#                 out.insert(0, note)
-#             elif note['id'] == next_ancestor:
-#                 print('is is_ancestor')
-#                 note['is_ancestor'] = True
-#                 next_ancestor = note["response_to"]
-#                 out.insert(0, note)
-#         elif current == note['response_to']:
-#             print('is reply')
-#             note['is_reply'] = True
-#             out.insert(0, note)
-#         elif note['id'] == current:
-#             print('is MAIN')
-#             out.insert(0, note)
-#             next_ancestor = note["response_to"]
-#             current_found = True
-#     return out
 
 
 @app.route('/following', methods=['GET'])
@@ -196,7 +154,7 @@ def following_page():
                 if profile is not None:
                     profiles.append(profile)
     else:
-        k = session.get("keys")["public"]
+        k = get_key()
         is_me = True
         profiles = DB.get_following()
     profile = DB.get_profile(k)
@@ -213,9 +171,15 @@ def identicon():
 
 @app.route('/upd', methods=['POST', 'GET'])
 def get_updates():
+    page = request.args['page']
     notices = EVENT_HANDLER.notices
-    d = {'unseen_posts': EVENT_HANDLER.unseen_notes, 'notices': notices}
+    d = {'unseen_posts': DB.get_unseen_in_feed(get_key()), 'notices': notices}
     EVENT_HANDLER.notices = []
+    if page == 'Profile':
+        p = get_profile_updates(request.args)
+        if p:
+            d['profile'] = p
+
     return render_template("upd.json", title="Home", data=json.dumps(d))
 
 
@@ -224,25 +188,41 @@ def follow():
     DB.set_following([request.args['id']], int(request.args['state']))
     EXECUTOR.submit(EVENT_HANDLER.submit_follow_list)
     profile = DB.get_profile(request.args['id'])
-    is_me = request.args['id'] == session.get("keys")["public"]
+    is_me = request.args['id'] == get_key()
     return render_template("profile.tools.html", profile=profile, is_me=is_me)
 
 
-@app.route('/upd_profile', methods=['GET'])
-def get_profile_updates():
-    d = []
-    p = DB.get_profile_updates(request.args['pk'], request.args['updat'])
+def get_profile_updates(args):
+    p = DB.get_profile_updates(args['pk'], args['updated_ts'])
+    out = False
     if p is not None:
         if p.pic is None or len(p.pic.strip()) == 0:
             p.pic = '/identicon?id={}'.format(p.public_key)
-        d = {'profile': {
+        out = {
             'name': p.name,
             'nip05': p.nip05,
             'about': p.about,
             'updated_at': p.updated_at,
             'pic': p.pic,
-        }}
-    return render_template("upd.json", title="Home", data=json.dumps(d))
+        }
+    return out
+
+
+# @app.route('/upd_profile', methods=['GET'])
+# def get_profile_updates():
+#     d = []
+#     p = DB.get_profile_updates(request.args['pk'], request.args['updated_ts'])
+#     if p is not None:
+#         if p.pic is None or len(p.pic.strip()) == 0:
+#             p.pic = '/identicon?id={}'.format(p.public_key)
+#         d = {'profile': {
+#             'name': p.name,
+#             'nip05': p.nip05,
+#             'about': p.about,
+#             'updated_at': p.updated_at,
+#             'pic': p.pic,
+#         }}
+#     return render_template("upd.json", title="Home", data=json.dumps(d))
 
 
 @app.route('/submit_note', methods=['POST', 'GET'])
@@ -380,6 +360,14 @@ def process_key_save(pk):
             pk = encrypt_key(pw, pk)
             enc = 1
         DB.save_pk(pk, enc)
+
+
+def get_key(k='public'):
+    keys = session.get("keys")
+    if keys is not None and k in keys:
+        return keys[k]
+    else:
+        return False
 
 
 def set_session_keys(k):
