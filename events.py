@@ -136,7 +136,7 @@ class BijaEvents:
         private_key = PrivateKey(k)
         r = self.db.get_preferred_relay()
         preferred_relay = r.name
-        tags = []
+        tags = [['client', 'BIJA']]
         response_to = None
         thread_root = None
 
@@ -390,7 +390,7 @@ class BijaEvents:
         if pk is not None and txt is not None:
             k = bytes.fromhex(self.session.get("keys")['private'])
             private_key = PrivateKey(k)
-            tags = [['p', pk]]
+            tags = [['p', pk], ['client', 'BIJA']]
             created_at = int(time.time())
             enc = self.encrypt(txt, pk)
             event = Event(private_key.public_key.hex(), enc, tags=tags, created_at=created_at,
