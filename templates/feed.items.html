@@ -1,13 +1,21 @@
 {% for notes in threads: %}
 {% for post in notes: %}
 
+    {% if post['thread_root'] is not none %}
+    {% set thread_root=post['thread_root'] %}
+    {% elif post['response_to'] is not none %}
+    {% set thread_root=post['response_to'] %}
+    {% else %}
+    {% set thread_root=post['id'] %}
+    {% endif %}
+
     {% if post['response_to'] is not none and post['response_to'] not in ids %}
     <div class="note-parent-container">
         <div class="note-image">
            <div class="thread-pointer"></div>
         </div>
         <div class="note">
-            <div class="note-content muted"><a href="/note?id={{post['response_to']}}">{{post['response_to'] | truncate(21, False, '...')}}</a></div>
+            <div class="note-content muted"><a href="/note?id={{post['response_to']}}#{{post['response_to']}}">{{post['response_to'] | truncate(21, False, '...')}}</a></div>
         </div>
     </div>
     {% endif %}
@@ -35,14 +43,12 @@
                 {% endif %}
                 <span class="sm right dt">{{post['created_at']|dt}}</span>
             </h3>
-            <pre class="note-content" data-rel="{{post['id']}}">{{post['content'] |safe}}<p></p></pre>
+            <pre class="note-content" data-id="{{post['id']}}" data-rel="{{thread_root}}">{{post['content'] |safe}}<p></p></pre>
             <p><a href="#" class="reply-link" data-rel="{{post['id']}}">reply</a></p>
             <form class="reply-form"  data-noteid="{{post['id']}}" >
                 <input type="hidden" name="pubkey" value="{{post['public_key']}}">
                 <input type="hidden" name="parent_id" value="{{post['id']}}">
-                {% if post['thread_root'] is not none %}
-                <input type="hidden" name="thread_root" value="{{post['thread_root']}}">
-                {% endif %}
+                <input type="hidden" name="thread_root" value="{{thread_root}}">
                 <textarea name="reply"></textarea>
                 <input type="submit" value="post" data-reply-submit="1" data-rel="{{post['id']}}">
             </form>
