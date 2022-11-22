@@ -25,7 +25,7 @@
     {% set updated_at='0' %}
 {% endif %}
 
-<div class="profile" id="profile" data-updat="{{updated_at}}" data-pk="{{profile['public_key']}}">
+<div class="profile" id="profile" data-updated_ts="{{updated_at}}" data-pk="{{profile['public_key']}}">
     <div class="profile-image">
         <img src="{{profile_pic}}" width="120" id="ppic"  class="profile-pic"  />
     </div>
