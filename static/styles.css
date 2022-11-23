@@ -294,7 +294,10 @@ input[type=text].pname {
 .reply-form{
     display:none;
 }
-#n_unseen_posts{
+.unseen{
+    position: absolute;
+    z-index: 100;
+    top: 10px;
     font-size: 10px;
     background: rgb(0, 255, 0);
     color: rgb(0, 0, 0);
@@ -303,8 +306,32 @@ input[type=text].pname {
     height: 15px;
     padding: 2px;
     display: none;
+    text-align: center;
 }
-
+.unseen{
+    position: absolute;
+    z-index: 100;
+    top: 10px;
+    font-size: 10px;
+    background: rgb(0, 255, 0);
+    color: rgb(0, 0, 0);
+    border-radius: 10px;
+    min-width: 15px;
+    height: 15px;
+    padding: 2px;
+    display: none;
+    text-align: center;
+}
+.msg-link .unseen{
+    display: block;
+    font-size: 12px;
+    height: 22px;
+    padding: 4px;
+    font-weight: 800;
+    min-width: 22px;
+    box-shadow: #000 2px 2px 4px;
+}
+}
 .profile-header{
     padding: 30px;
     margin: 10px;
@@ -447,6 +474,7 @@ input[type=text].pname {
     text-decoration: none;
     color: #ffffff;
     align-items: center;
+    position:relative;
 }
 .msg-link > *{
     padding: 5px;

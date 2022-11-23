@@ -45,6 +45,8 @@ window.addEventListener("load", function () {
     if(document.querySelector(".main[data-page='Messages']") != null){
         new bijaMessages()
     }
+    getUpdates()
+    setInterval(getUpdates, 5000);
 });
 
 class bijaThread{
@@ -337,8 +339,6 @@ class bijaFeed{
         this.loading = 0;
     }
 }
-
-setInterval(getUpdates, 5000);
 async function getUpdates() {
     const page = document.querySelector(".main").dataset.page
     const response = await fetch(getUpdaterURL(page));
@@ -352,6 +352,16 @@ async function getUpdates() {
         else{
             el_unseen.style.display = "inline-block"
             el_unseen.innerText = d['unseen_posts']
+        }
+    }
+    if("unseen_messages" in d){
+        let el_unseen = document.getElementById("n_unseen_messages")
+        if(parseInt(d['unseen_messages']) == 0){
+            el_unseen.style.display = "none"
+        }
+        else{
+            el_unseen.style.display = "inline-block"
+            el_unseen.innerText = d['unseen_messages']
         }
     }
     if("notices" in d){

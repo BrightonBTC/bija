@@ -23,10 +23,15 @@
 {% endif %}
 
 <a class="msg-link" href="/message?pk={{message.public_key}}">
-    <div class="msg-profile-pic"><img src='{{pic}}'></div>
+    <div class="msg-profile-pic">
+        <img src='{{pic}}'>
+        {% if message.n>0 %}
+        <span class="unseen">{{message.n}}</span>
+        {% endif %}
+    </div>
     <div class="msg-profile">
         <div class="msg-profile-name">{{name}}</div>
-        <div class="msg-profile-last-message sm"><strong>Last message:</strong> {{sender}} {{message.last_message|dt}}</div>
+        <div class="msg-profile-last-message sm"><strong>Last message:</strong> {{sender}} {{message.last_message|dt}} </div>
     </div>
 
 </a>

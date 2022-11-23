@@ -19,8 +19,6 @@ DEFAULT_RELAYS = [
 class BijaDB:
 
     def __init__(self, session):
-        # self.db_engine = create_engine("sqlite:///2.sqlite", echo=True)
-        # s = sessionmaker(bind=self.db_engine)
         self.session = session
         if not exists("bija.sqlite"):
             self.setup()
@@ -268,8 +266,16 @@ class BijaDB:
             Profile.nip05).join(Note.profile).filter(text("note.created_at<{}".format(before))).filter_by(
             public_key=public_key).order_by(Note.created_at.desc()).limit(50).all()
 
+    def get_unseen_messages(self):
+        return self.session.query(PrivateMessage) \
+            .filter(text("seen=0")).count()
+
+    # def get_unseen_messages_by_pubkey(self, public_key):
+    #     return self.session.query(PrivateMessage) \
+    #         .filter(text("seen=0 and public_key={}".format(public_key))).count()
+
     def get_unseen_in_feed(self, public_key):
-        return self.session.query(Note, Profile).join(Note.profile)\
+        return self.session.query(Note, Profile).join(Note.profile) \
             .filter(text("(profile.following=1 OR profile.public_key='{}') and note.seen=0".format(public_key))).count()
 
     def set_all_seen_in_feed(self, public_key):
@@ -284,13 +290,19 @@ class BijaDB:
             text("profile.updated_at>{}".format(last_update))).first()
 
     def get_message_list(self):
-        return self.session.query(
-            func.max(PrivateMessage.created_at).label("last_message"), Profile.public_key, Profile.name, Profile.pic,
-            PrivateMessage.is_sender) \
-            .join(Profile, Profile.public_key == PrivateMessage.public_key) \
-            .order_by(PrivateMessage.created_at.desc()).group_by(PrivateMessage.public_key).all()
+        return DB_ENGINE.execute(text("""SELECT 
+                max(PM2.created_at) AS last_message, 
+                profile.public_key AS public_key, 
+                profile.name AS name, 
+                profile.pic AS pic, 
+                PM2.is_sender AS is_sender, 
+                (select count(id) from private_message PM where PM.seen=0 AND PM.public_key=PM2.public_key) AS n 
+                FROM private_message PM2 JOIN profile ON profile.public_key = PM2.public_key GROUP BY PM2.public_key 
+                ORDER BY PM2.created_at DESC"""))
 
     def get_message_thread(self, public_key):
+        self.session.query(PrivateMessage).filter(PrivateMessage.public_key == public_key).update({'seen': True})
+        self.session.commit()
         return self.session.query(
             PrivateMessage.is_sender,
             PrivateMessage.content,
@@ -362,6 +374,7 @@ class PrivateMessage(Base):
     content = Column(String)
     is_sender = Column(Boolean)  # true = public_key is sender, false I'm sender
     created_at = Column(Integer)
+    seen = Column(Boolean, default=False)
 
     def __repr__(self):
         return {
@@ -369,7 +382,8 @@ class PrivateMessage(Base):
             self.public_key,
             self.content,
             self.is_sender,
-            self.created_at
+            self.created_at,
+            self.seen
         }
 
 

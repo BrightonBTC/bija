@@ -170,7 +170,11 @@ def identicon():
 def get_updates():
     page = request.args['page']
     notices = EVENT_HANDLER.notices
-    d = {'unseen_posts': DB.get_unseen_in_feed(get_key()), 'notices': notices}
+    d = {
+        'unseen_posts': DB.get_unseen_in_feed(get_key()),
+        'unseen_messages': DB.get_unseen_messages(),
+        'notices': notices
+    }
     EVENT_HANDLER.notices = []
     if page == 'Profile':
         p = get_profile_updates(request.args)
