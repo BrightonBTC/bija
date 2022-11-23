@@ -42,9 +42,73 @@ window.addEventListener("load", function () {
     if(document.querySelector(".main[data-page='messages_from']") != null){
         new bijaMessages()
     }
-    getUpdates()
-    setInterval(getUpdates, 1000);
+//    getUpdates()
+//    setInterval(getUpdates, 5000);
+    SOCK()
 });
+
+let SOCK = function(){
+    var socket = io.connect();
+    socket.on('connect', function() {
+        socket.emit('new_connect', {data: true});
+    });
+    socket.on('message', function(data) {
+        updateMessageThread(data)
+    });
+    socket.on('unseen_messages_n', function(data) {
+        let el_unseen = document.getElementById("n_unseen_messages")
+        if(parseInt(data) == 0){
+            el_unseen.style.display = "none"
+        }
+        else{
+            el_unseen.style.display = "inline-block"
+            el_unseen.innerText = data
+        }
+    });
+    socket.on('unseen_posts_n', function(data) {
+        let el_unseen = document.getElementById("n_unseen_posts")
+        if(parseInt(data) == 0){
+            el_unseen.style.display = "none"
+        }
+        else{
+            el_unseen.style.display = "inline-block"
+            el_unseen.innerText = data
+        }
+    });
+    socket.on('profile_update', function(data) {
+        updateProfile(data)
+    });
+}
+
+let updateProfile = function(profile){
+    document.querySelector(".profile-about").innerText = profile.about
+    document.querySelector("#profile").dataset.updated_ts = profile.updated_at
+    const name_els = document.querySelectorAll(".profile-name");
+    for (let i = 0; i < name_els.length; i++) {
+        name_els[i].innerText = profile.name
+    }
+    const pic_els = document.querySelectorAll(".profile-pic");
+    for (let i = 0; i < pic_els.length; i++) {
+        pic_els[i].setAttribute("src", profile.pic)
+    }
+}
+
+let updateMessageThread = function(data){
+    const messages_elem = document.querySelector("#messages_from")
+    if(messages_elem){
+        let shouldScroll = false
+        if ((window.innerHeight + Math.ceil(window.pageYOffset)) >= document.body.offsetHeight) {
+           shouldScroll = true
+        }
+        messages_elem.innerHTML += data
+        if(shouldScroll){
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+        else{
+            notify('#', 'new messages')
+        }
+    }
+}
 
 class bijaThread{
 
@@ -349,26 +413,26 @@ async function getUpdates() {
     const response = await fetch(getUpdaterURL(page));
     const d = await response.json();
     handleUpdaterResponse(page, d)
-    if("unseen_posts" in d){
-        let el_unseen = document.getElementById("n_unseen_posts")
-        if(parseInt(d['unseen_posts']) == 0){
-            el_unseen.style.display = "none"
-        }
-        else{
-            el_unseen.style.display = "inline-block"
-            el_unseen.innerText = d['unseen_posts']
-        }
-    }
-    if("unseen_messages" in d){
-        let el_unseen = document.getElementById("n_unseen_messages")
-        if(parseInt(d['unseen_messages']) == 0){
-            el_unseen.style.display = "none"
-        }
-        else{
-            el_unseen.style.display = "inline-block"
-            el_unseen.innerText = d['unseen_messages']
-        }
-    }
+//    if("unseen_posts" in d){
+//        let el_unseen = document.getElementById("n_unseen_posts")
+//        if(parseInt(d['unseen_posts']) == 0){
+//            el_unseen.style.display = "none"
+//        }
+//        else{
+//            el_unseen.style.display = "inline-block"
+//            el_unseen.innerText = d['unseen_posts']
+//        }
+//    }
+//    if("unseen_messages" in d){
+//        let el_unseen = document.getElementById("n_unseen_messages")
+//        if(parseInt(d['unseen_messages']) == 0){
+//            el_unseen.style.display = "none"
+//        }
+//        else{
+//            el_unseen.style.display = "inline-block"
+//            el_unseen.innerText = d['unseen_messages']
+//        }
+//    }
     if("notices" in d){
         const container = document.querySelector(".rightcolumn .notices")
         for (let n in d["notices"]) {
@@ -386,16 +450,20 @@ let getUpdaterURL = function(page){
     switch(page){
         case 'profile':
             const profile_elem = document.querySelector("#profile")
-            const pk = profile_elem.dataset.pk
-            const updated_ts = profile_elem.dataset.updated_ts
-            params['pk'] = pk
-            params['updated_ts'] = updated_ts
+            if(profile_elem){
+                const pk = profile_elem.dataset.pk
+                const updated_ts = profile_elem.dataset.updated_ts
+                params['pk'] = pk
+                params['updated_ts'] = updated_ts
+            }
         case 'messages_from':
             const messages_elem = document.querySelector("#messages_from")
-            const messages_pk = messages_elem.dataset.contact
-            params['pk'] = messages_pk
-            let nodes = document.querySelectorAll('.msg[data-dt]')
-            params['dt'] = nodes[nodes.length-1].dataset.dt
+            if(messages_elem){
+                const messages_pk = messages_elem.dataset.contact
+                params['pk'] = messages_pk
+                let nodes = document.querySelectorAll('.msg[data-dt]')
+                params['dt'] = nodes[nodes.length-1].dataset.dt
+            }
     }
     return '/upd?' + Object.keys(params).map(key => key + '=' + params[key]).join('&');
 }

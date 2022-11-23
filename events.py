@@ -2,6 +2,9 @@ import json
 import ssl
 import time
 
+from flask import render_template
+
+from app import socketio
 from helpers import timestamp_minus, TimePeriod, is_hex_key
 from python_nostr.nostr.event import EventKind, Event
 from python_nostr.nostr.filter import Filters, Filter
@@ -15,6 +18,10 @@ class BijaEvents:
     pool_handler_running = False
     unseen_notes = 0
     notices = []
+    page = {
+        'page': None,
+        'identifier': None
+    }
 
     def __init__(self, db, session):
         self.db = db
@@ -28,6 +35,19 @@ class BijaEvents:
             self.relay_manager.add_relay(r.name)
         if n_relays > 0:
             self.relay_manager.open_connections({"cert_reqs": ssl.CERT_NONE})
+
+    def set_page(self, page, identifier):
+        self.page = {
+            'page': page,
+            'identifier': identifier
+        }
+
+    def get_key(self, k='public'):
+        keys = self.session.get("keys")
+        if keys is not None and k in keys:
+            return keys[k]
+        else:
+            return False
 
     def message_pool_handler(self):
         if self.pool_handler_running:
@@ -59,7 +79,6 @@ class BijaEvents:
                 if msg.event.kind == EventKind.DELETE:
                     self.handle_deleted_event(msg.event)
             time.sleep(1)
-            print('running')
 
     def get_relay_connect_status(self):
         relays = {}
@@ -92,6 +111,17 @@ class BijaEvents:
             about,
             event.created_at,
         )
+        if self.page['page'] == 'profile' and self.page['identifier'] == event.public_key:
+            if picture is None or len(picture.strip()) == 0:
+                picture = '/identicon?id={}'.format(event.public_key)
+            socketio.emit('profile_update', {
+                'public_key': event.public_key,
+                'name': name,
+                'nip05': nip05,
+                'pic': picture,
+                'about': about,
+                'created_at': event.created_at
+            })
 
     def handle_note_event(self, event, subscription):
         response_to = None
@@ -130,9 +160,12 @@ class BijaEvents:
             event.created_at,
             members
         )
+        unseen_posts = self.db.get_unseen_in_feed(self.get_key())
+        if unseen_posts > 0:
+            socketio.emit('unseen_posts_n', unseen_posts)
 
     def submit_note(self, data):
-        k = bytes.fromhex(self.session.get("keys")['private'])
+        k = bytes.fromhex(self.get_key('private'))
         private_key = PrivateKey(k)
         r = self.db.get_preferred_relay()
         preferred_relay = r.name
@@ -160,22 +193,6 @@ class BijaEvents:
         else:
             return False
 
-        # for v in data:
-        #     if v[0] == "new_post":
-        #         note = v[1]
-        #         break
-        #     elif v[0] == "reply":
-        #         note = v[1]
-        #     elif v[0] == "pubkey":
-        #         tags.append(["p", v[1], preferred_relay, ])
-        #     elif v[0] == "parent_id":
-        #         response_to = v[1]
-        #         tags.append(["e", v[1], preferred_relay, "reply"])
-        #     if v[0] == "thread_root":
-        #         thread_root = v[1]
-        #         tags.append(["e", v[1], preferred_relay, "root"])
-        # if note is None:
-        #     return False
         created_at = int(time.time())
         event = Event(private_key.public_key.hex(), note, tags=tags, created_at=created_at)
         event.sign(private_key.hex())
@@ -193,7 +210,7 @@ class BijaEvents:
         return event.id
 
     def submit_follow_list(self):
-        k = bytes.fromhex(self.session.get("keys")['private'])
+        k = bytes.fromhex(self.get_key('private'))
         private_key = PrivateKey(k)
         pk_list = self.db.get_following_pubkeys()
         tags = []
@@ -210,7 +227,7 @@ class BijaEvents:
         for p in event.tags:
             if p[0] == "p":
                 keys.append(p[1])
-        if event.public_key == self.session.get("keys")['public']:
+        if event.public_key == self.get_key():
             following_pubkeys = self.db.get_following_pubkeys()
             new = set(keys) - set(following_pubkeys)
             removed = set(following_pubkeys) - set(keys)
@@ -231,10 +248,10 @@ class BijaEvents:
         if to and [getattr(event, attr) for attr in ['id', 'public_key', 'content', 'created_at']]:
             pk = None
             is_sender = None
-            if to == self.session.get("keys")['public']:
+            if to == self.get_key():
                 pk = event.public_key
                 is_sender = 1
-            elif event.public_key == self.session.get("keys")['public']:
+            elif event.public_key == self.get_key():
                 pk = to
                 is_sender = 0
             if pk is not None and is_sender is not None:
@@ -248,6 +265,17 @@ class BijaEvents:
             is_known = self.db.is_known_pubkey(event.public_key)
             if is_known is None:
                 self.db.add_profile(event.public_key, updated_at=0)
+
+            if self.page['page'] == 'message' and self.page['identifier'] == pk:
+                messages = self.db.get_unseen_messages(pk)
+                if len(messages) > 0:
+                    profile = self.db.get_profile(self.get_key())
+                    self.db.set_message_thread_read(pk)
+                    out = render_template("message_thread.items.html", me=profile, messages=messages)
+                    socketio.emit('message', out)
+            else:
+                unseen_n = self.db.get_unseen_message_count()
+                socketio.emit('unseen_messages_n', unseen_n)
 
     def handle_deleted_event(self, event):
         pass
@@ -327,8 +355,7 @@ class BijaEvents:
 
     # create site wide subscription
     def subscribe_primary(self):
-        keys = self.session.get("keys")
-        pubkey = keys['public']
+        pubkey = self.get_key()
         self.subscriptions.append('primary')
         kinds = [EventKind.SET_METADATA,
                  EventKind.TEXT_NOTE,
@@ -365,7 +392,7 @@ class BijaEvents:
 
     def decrypt(self, message, public_key):
         try:
-            k = bytes.fromhex(self.session.get("keys")['private'])
+            k = bytes.fromhex(self.get_key('private'))
             pk = PrivateKey(k)
             return pk.decrypt_message(message, public_key)
         except:
@@ -373,7 +400,7 @@ class BijaEvents:
 
     def encrypt(self, message, public_key):
         try:
-            k = bytes.fromhex(self.session.get("keys")['private'])
+            k = bytes.fromhex(self.get_key('private'))
             pk = PrivateKey(k)
             return pk.encrypt_message(message, public_key)
         except:

@@ -3,7 +3,7 @@ from PyQt5 import QtCore, QtWidgets, QtGui, QtWebEngineWidgets
 from PyQt5.QtWidgets import QMainWindow
 
 
-def init_gui(application, port=5000, width=1100, height=800,
+def init_gui(application, socketio, port=5000, width=1100, height=800,
              window_title="Bija Nostr Client", icon="static/aum.png"):
 
     ROOT_URL = 'http://localhost:{}'.format(port)
@@ -20,7 +20,8 @@ def init_gui(application, port=5000, width=1100, height=800,
         return True
 
     def run_app():
-        application.run(port=port, threaded=True)
+        # application.run(port=port, threaded=True)
+        socketio.run(application)
 
     # Application Level
     qtapp = QtWidgets.QApplication(sys.argv)

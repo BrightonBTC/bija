@@ -1,18 +1,22 @@
 import json
 from datetime import datetime
+from threading import Thread, Event
 
 from flask import render_template, request, session, redirect, make_response
 from flask_executor import Executor
 import pydenticon
+from flask_socketio import emit
 from markdown import markdown
 
-from app import app
+from app import app, socketio
 from db import BijaDB
 from events import BijaEvents
 from python_nostr.nostr.key import PrivateKey
 
 from password import encrypt_key, decrypt_key
 from helpers import *
+
+thread = Thread()
 
 DB = BijaDB(app.session)
 EXECUTOR = Executor(app)
@@ -37,6 +41,7 @@ class LoginState(IntEnum):
 
 @app.route('/')
 def index_page():
+    EVENT_HANDLER.set_page('home',  None)
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     DB.set_all_seen_in_feed(get_key())
     login_state = get_login_state()
@@ -64,6 +69,7 @@ def feed():
 
 @app.route('/login', methods=['POST'])
 def login_page():
+    EVENT_HANDLER.set_page('login',  None)
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     login_state = get_login_state()
     if request.method == 'POST':
@@ -81,11 +87,13 @@ def login_page():
 def profile_page():
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     if 'pk' in request.args and is_hex_key(request.args['pk']):
+        EVENT_HANDLER.set_page('profile',  request.args['pk'])
         EXECUTOR.submit(EVENT_HANDLER.subscribe_profile, request.args['pk'], timestamp_minus(TimePeriod.WEEK))
         k = request.args['pk']
         is_me = False
     else:
         k = get_key()
+        EVENT_HANDLER.set_page('profile',  k)
         is_me = True
     notes = DB.get_notes_by_pubkey(k, int(time.time()), timestamp_minus(TimePeriod.DAY))
     t, i = make_threaded(notes)
@@ -95,6 +103,7 @@ def profile_page():
 
 @app.route('/note', methods=['GET'])
 def note_page():
+    EVENT_HANDLER.set_page('note',  request.args['id'])
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     note_id = request.args['id']
     EXECUTOR.submit(EVENT_HANDLER.subscribe_thread, note_id)
@@ -105,6 +114,7 @@ def note_page():
 
 @app.route('/messages', methods=['GET'])
 def private_messages_page():
+    EVENT_HANDLER.set_page('messages', None)
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
 
     messages = DB.get_message_list()
@@ -114,6 +124,7 @@ def private_messages_page():
 
 @app.route('/message', methods=['GET'])
 def private_message_page():
+    EVENT_HANDLER.set_page('message', request.args['pk'])
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     messages = []
     pk = ''
@@ -166,27 +177,15 @@ def identicon():
     return response
 
 
-@app.route('/upd', methods=['POST', 'GET'])
-def get_updates():
-    page = request.args['page']
-    notices = EVENT_HANDLER.notices
-    d = {
-        'unseen_posts': DB.get_unseen_in_feed(get_key()),
-        'notices': notices
-    }
-    EVENT_HANDLER.notices = []
-    if page == 'profile':
-        p = get_profile_updates(request.args)
-        if p:
-            d['profile'] = p
-    elif page == 'messages_from':
-        result = get_messages_updates(request.args['pk'])
-        if result is not None:
-            d['messages'] = result
+@socketio.on('connect')
+def io_connect(m):
+    unseen_messages = DB.get_unseen_message_count()
+    if unseen_messages > 0:
+        socketio.emit('unseen_messages_n', unseen_messages)
 
-    d['unseen_messages'] = DB.get_unseen_message_count()
-
-    return render_template("upd.json", title="Home", data=json.dumps(d))
+    unseen_posts = DB.get_unseen_in_feed(get_key())
+    if unseen_posts > 0:
+        socketio.emit('unseen_posts_n', unseen_posts)
 
 
 @app.route('/follow', methods=['GET'])
@@ -196,32 +195,6 @@ def follow():
     profile = DB.get_profile(request.args['id'])
     is_me = request.args['id'] == get_key()
     return render_template("profile.tools.html", profile=profile, is_me=is_me)
-
-
-def get_messages_updates(pk):
-    messages = DB.get_unseen_messages(pk)
-    if len(messages) > 0:
-        profile = DB.get_profile(get_key())
-        DB.set_message_thread_read(pk)
-        return render_template("message_thread.items.html", me=profile, messages=messages)
-    else:
-        return None
-
-
-def get_profile_updates(args):
-    p = DB.get_profile_updates(args['pk'], args['updated_ts'])
-    out = False
-    if p is not None:
-        if p.pic is None or len(p.pic.strip()) == 0:
-            p.pic = '/identicon?id={}'.format(p.public_key)
-        out = {
-            'name': p.name,
-            'nip05': p.nip05,
-            'about': p.about,
-            'updated_at': p.updated_at,
-            'pic': p.pic,
-        }
-    return out
 
 
 @app.route('/submit_note', methods=['POST', 'GET'])
