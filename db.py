@@ -115,14 +115,16 @@ class BijaDB:
                     nip05=None,
                     pic=None,
                     about=None,
-                    updated_at=None):
+                    updated_at=None,
+                    raw=None):
         self.session.merge(Profile(
             public_key=public_key,
             name=name,
             nip05=nip05,
             pic=pic,
             about=about,
-            updated_at=updated_at
+            updated_at=updated_at,
+            raw=raw
         ))
         self.session.commit()
 
@@ -133,7 +135,8 @@ class BijaDB:
                     response_to=None,
                     thread_root=None,
                     created_at=None,
-                    members=None):
+                    members=None,
+                    raw=None):
         self.session.merge(Note(
             id=note_id,
             public_key=public_key,
@@ -141,7 +144,8 @@ class BijaDB:
             response_to=response_to,
             thread_root=thread_root,
             created_at=created_at,
-            members=members
+            members=members,
+            raw=raw
         ))
         self.session.commit()
 
@@ -216,13 +220,15 @@ class BijaDB:
                                public_key,
                                content,
                                is_sender,
-                               created_at):
+                               created_at,
+                               raw):
         self.session.merge(PrivateMessage(
             id=msg_id,
             public_key=public_key,
             content=content,
             is_sender=is_sender,
             created_at=created_at,
+            raw=raw
         ))
         self.session.commit()
 
@@ -331,6 +337,7 @@ class BijaDB:
         self.session.query(PrivateMessage).filter(PrivateMessage.public_key == public_key).update({'seen': True})
         self.session.commit()
 
+
 class Profile(Base):
     __tablename__ = "profile"
     public_key = Column(String(64), unique=True, primary_key=True)
@@ -341,6 +348,7 @@ class Profile(Base):
     updated_at = Column(Integer)
     following = Column(Boolean)
     contacts = Column(String)
+    raw = Column(String)
 
     notes = relationship("Note", back_populates="profile")
 
@@ -353,7 +361,8 @@ class Profile(Base):
             self.about,
             self.updated_at,
             self.following,
-            self.contacts
+            self.contacts,
+            self.raw
         }
 
 
@@ -367,6 +376,7 @@ class Note(Base):
     created_at = Column(Integer)
     members = Column(String)
     seen = Column(Boolean, default=False)
+    raw = Column(String)
 
     profile = relationship("Profile", back_populates="notes")
 
@@ -379,7 +389,8 @@ class Note(Base):
             self.thread_root,
             self.created_at,
             self.members,
-            self.seen
+            self.seen,
+            self.raw
         }
 
 
@@ -391,6 +402,7 @@ class PrivateMessage(Base):
     is_sender = Column(Boolean)  # true = public_key is sender, false I'm sender
     created_at = Column(Integer)
     seen = Column(Boolean, default=False)
+    raw = Column(String)
 
     def __repr__(self):
         return {
@@ -399,8 +411,32 @@ class PrivateMessage(Base):
             self.content,
             self.is_sender,
             self.created_at,
-            self.seen
+            self.seen,
+            self.raw
         }
+
+
+class Settings(Base):
+    __tablename__ = "settings"
+    key = Column(String(20), primary_key=True)
+    name = Column(String)
+    value = Column(String)
+
+
+class NoteReactions(Base):
+    __tablename__ = "note_reactions"
+    id = Column(Integer, primary_key=True)
+    public_key = Column(String)
+    event = Column(Integer, ForeignKey("note.id"))
+    content = Column(String(7))
+
+
+class MessageReactions(Base):
+    __tablename__ = "message_reactions"
+    id = Column(Integer, primary_key=True)
+    public_key = Column(String)
+    event = Column(Integer, ForeignKey("private_message.id"))
+    content = Column(String(7))
 
 
 # Private keys
@@ -408,7 +444,7 @@ class PK(Base):
     __tablename__ = "PK"
     id = Column(Integer, primary_key=True)
     key = Column(String)
-    enc = Column(Integer)  # boolean
+    enc = Column(Boolean)  # boolean
 
 
 class Relay(Base):

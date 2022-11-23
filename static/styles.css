@@ -22,7 +22,23 @@ h1, h2, h3, h4, h5, h6, p, ol, ul {
   font-weight: normal;
 }
 
+/* Settings page */
 
+.im-settings-container{
+    display: flex;
+    padding:5px;
+}
+.im-settings-container img{
+    flex-basis: 60px;
+    width: 60px;
+    margin-right: 10px;
+    border-radius: 10px;
+}
+.im-settings-container input{
+    flex: 1;
+}
+
+/* ---------- */
 
 ol, ul {
   list-style: none;

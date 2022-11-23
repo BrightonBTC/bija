@@ -4,14 +4,15 @@
 
 <div class="card">
     <h3>Profile</h3>
-    <img src="{{data.profile['pic']}}" width="200" id="ppic" />
-    <form method="post" action="/settings">
-        <input type="hidden" id="pubk" name="pubk" value="{{data.profile['pub']}}">
-        <input type="text" id="pname" name="pname" class="pname" value="{{data.profile['name']}}">
+    <form method="post" id="profile_updater" action="/settings">
+        <input type="text" id="pname" name="name" class="pname" value="{{profile['name']}}">
         <label for="pmsg">About</label>
-        <textarea name="pmsg" id="pmsg" rows="10" cols="30">{{data.profile['about']}}</textarea>
+        <textarea name="about" id="pmsg" rows="10" cols="30">{{profile['about']}}</textarea>
         <label for="pim">Image URL</label>
-        <input type="text" id="pim" name="pim" value="{{data.profile['pic']}}">
+        <div class="im-settings-container">
+            <img src="{{profile['pic']}}" id="ppic" />
+            <input type="text" id="pim" name="picture" value="{{profile['pic']}}">
+        </div>
 
         <input type="submit" id="pupd" name="pupd" value="Update">
     </form>

@@ -42,6 +42,9 @@ window.addEventListener("load", function () {
     if(document.querySelector(".main[data-page='messages_from']") != null){
         new bijaMessages()
     }
+    if(document.querySelector(".main[data-page='settings']") != null){
+        new bijaSettings()
+    }
 //    getUpdates()
 //    setInterval(getUpdates, 5000);
     SOCK()
@@ -107,6 +110,39 @@ let updateMessageThread = function(data){
         else{
             notify('#', 'new messages')
         }
+    }
+}
+
+class bijaSettings{
+    constructor(){
+        this.setClicks();
+    }
+
+    setClicks(){
+        const btn = document.querySelector("#pupd");
+        btn.addEventListener("click", (event)=>{
+            event.preventDefault();
+            event.stopPropagation();
+            const form = document.querySelector("#profile_updater")
+            const formData = new FormData(form);
+            const data = [...formData.entries()];
+            const options = {
+                method: 'POST',
+                body: JSON.stringify(data),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }
+            fetch('/upd_profile', options).then(function(response) {
+                return response.json();
+            }).then(function(response) {
+               if(response['success']){
+                   notify('#', 'Profile updated')
+               }
+            }).catch(function(err) {
+                console.log(err)
+            });
+        });
     }
 }
 

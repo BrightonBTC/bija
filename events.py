@@ -78,6 +78,9 @@ class BijaEvents:
 
                 if msg.event.kind == EventKind.DELETE:
                     self.handle_deleted_event(msg.event)
+
+                if msg.event.kind == EventKind.REACTION:
+                    print('REACTION', msg.event.to_json_object())
             time.sleep(1)
 
     def get_relay_connect_status(self):
@@ -110,6 +113,7 @@ class BijaEvents:
             picture,
             about,
             event.created_at,
+            json.dumps(event.to_json_object())
         )
         if self.page['page'] == 'profile' and self.page['identifier'] == event.public_key:
             if picture is None or len(picture.strip()) == 0:
@@ -158,7 +162,8 @@ class BijaEvents:
             response_to,
             thread_root,
             event.created_at,
-            members
+            members,
+            json.dumps(event.to_json_object())
         )
         unseen_posts = self.db.get_unseen_in_feed(self.get_key())
         if unseen_posts > 0:
@@ -260,7 +265,8 @@ class BijaEvents:
                     pk,
                     event.content,
                     is_sender,
-                    event.created_at
+                    event.created_at,
+                    json.dumps(event.to_json_object())
                 )
             is_known = self.db.is_known_pubkey(event.public_key)
             if is_known is None:
@@ -299,7 +305,6 @@ class BijaEvents:
             Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE]),  # event responses
             Filter(ids=ids, kinds=[EventKind.TEXT_NOTE])
         ])
-        print('SUBSCRIBE THREAD', ids)
         request = [ClientMessageType.REQUEST, subscription_id]
         request.extend(filters.to_json_array())
         self.relay_manager.add_subscription(subscription_id, filters)
@@ -362,9 +367,10 @@ class BijaEvents:
                  EventKind.RECOMMEND_RELAY,
                  EventKind.CONTACTS,
                  EventKind.ENCRYPTED_DIRECT_MESSAGE,
-                 EventKind.DELETE]
+                 EventKind.DELETE,
+                 EventKind.REACTION]
         profile_filter = Filter(authors=[pubkey], kinds=kinds)
-        mentions_filter = Filter(tags={'#p': [pubkey]}, kinds=[EventKind.TEXT_NOTE, EventKind.ENCRYPTED_DIRECT_MESSAGE])
+        mentions_filter = Filter(tags={'#p': [pubkey]}, kinds=[EventKind.TEXT_NOTE, EventKind.ENCRYPTED_DIRECT_MESSAGE, EventKind.REACTION])
         f = [profile_filter, mentions_filter]
         following_pubkeys = self.db.get_following_pubkeys()
 
@@ -372,10 +378,10 @@ class BijaEvents:
             following_filter = Filter(
                 authors=following_pubkeys,
                 kinds=[EventKind.TEXT_NOTE],
-                since=int(time.time()) - (60 * 60 * 76))  # TODO: should be configurable in user settings
+                since=timestamp_minus(TimePeriod.WEEK))  # TODO: should be configurable in user settings
             following_profiles_filter = Filter(
                 authors=following_pubkeys,
-                kinds=[EventKind.SET_METADATA, EventKind.DELETE],
+                kinds=[EventKind.SET_METADATA, EventKind.DELETE, EventKind.REACTION],
             )
             f.append(following_filter)
             f.append(following_profiles_filter)
@@ -405,6 +411,22 @@ class BijaEvents:
             return pk.encrypt_message(message, public_key)
         except:
             return False
+
+    def update_profile(self, data):
+        k = bytes.fromhex(self.get_key('private'))
+        private_key = PrivateKey(k)
+        created_at = int(time.time())
+        profile = {}
+        for item in data:
+            if item[0] in ['name', 'about', 'picture', 'nip05']:
+                profile[item[0]] = item[1].strip()
+        event = Event(private_key.public_key.hex(), json.dumps(profile), kind=EventKind.SET_METADATA, created_at=created_at)
+        event.sign(private_key.hex())
+
+        message = json.dumps([ClientMessageType.EVENT, event.to_json_object()], ensure_ascii=False)
+        self.relay_manager.publish_message(message)
+        print(event.to_json_object())
+        return event.id
 
     def submit_message(self, data):
         pk = None

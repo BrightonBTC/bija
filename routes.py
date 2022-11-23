@@ -112,6 +112,23 @@ def note_page():
     return render_template("note.html", page_id="note", title="Note", notes=notes)
 
 
+@app.route('/settings')
+def settings_page():
+    EVENT_HANDLER.set_page('settings',  None)
+    EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
+    profile = DB.get_profile(get_key())
+    settings = {}
+    return render_template("settings.html", page_id="settings", title="Settings", profile=profile, settings=settings)
+
+
+@app.route('/upd_profile', methods=['POST', 'GET'])
+def update_profile():
+    success = False
+    if request.method == 'POST':
+        success = EVENT_HANDLER.update_profile(request.json)
+    return render_template("upd.json", data=json.dumps({'update_profile': success}))
+
+
 @app.route('/messages', methods=['GET'])
 def private_messages_page():
     EVENT_HANDLER.set_page('messages', None)
