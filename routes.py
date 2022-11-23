@@ -44,9 +44,9 @@ def index_page():
         notes = DB.get_feed(time.time(), get_key())
         t, i = make_threaded(notes)
 
-        return render_template("feed.html", title="Home", threads=t, ids=i)
+        return render_template("feed.html", page_id="home", title="Home", threads=t, ids=i)
     else:
-        return render_template("login.html", title="Login", login_type=login_state)
+        return render_template("login.html", page_id="login", title="Login", login_type=login_state)
 
 
 @app.route('/feed', methods=['GET'])
@@ -74,7 +74,7 @@ def login_page():
         else:
             return render_template("login.html", title="Login", message="Incorrect key or password",
                                    login_type=login_state)
-    return render_template("login.html", title="Login", login_type=login_state)
+    return render_template("login.html", page_id="login", title="Login", login_type=login_state)
 
 
 @app.route('/profile', methods=['GET'])
@@ -90,7 +90,7 @@ def profile_page():
     notes = DB.get_notes_by_pubkey(k, int(time.time()), timestamp_minus(TimePeriod.DAY))
     t, i = make_threaded(notes)
     profile = DB.get_profile(k)
-    return render_template("profile.html", title="Profile", threads=t, ids=i, profile=profile, is_me=is_me)
+    return render_template("profile.html", page_id="profile", title="Profile", threads=t, ids=i, profile=profile, is_me=is_me)
 
 
 @app.route('/note', methods=['GET'])
@@ -100,7 +100,7 @@ def note_page():
     EXECUTOR.submit(EVENT_HANDLER.subscribe_thread, note_id)
 
     notes = DB.get_note_thread(note_id)
-    return render_template("note.html", title="Note", notes=notes)
+    return render_template("note.html", page_id="note", title="Note", notes=notes)
 
 
 @app.route('/messages', methods=['GET'])
@@ -109,7 +109,7 @@ def private_messages_page():
 
     messages = DB.get_message_list()
 
-    return render_template("messages.html", title="Message List", messages=messages)
+    return render_template("messages.html", page_id="messages", title="Private Messages", messages=messages)
 
 
 @app.route('/message', methods=['GET'])
@@ -125,7 +125,7 @@ def private_message_page():
 
     messages.reverse()
 
-    return render_template("message_thread.html", title="Messages", messages=messages, me=profile, them=pk)
+    return render_template("message_thread.html", page_id="messages_from", title="Messages From", messages=messages, me=profile, them=pk)
 
 
 @app.route('/submit_message', methods=['POST', 'GET'])
@@ -155,7 +155,7 @@ def following_page():
         is_me = True
         profiles = DB.get_following()
     profile = DB.get_profile(k)
-    return render_template("following.html", title="Following", profile=profile, profiles=profiles, is_me=is_me)
+    return render_template("following.html", page_id="following", title="Following", profile=profile, profiles=profiles, is_me=is_me)
 
 
 @app.route('/identicon', methods=['GET'])
@@ -241,7 +241,7 @@ def keys_page():
             session.clear()
             return redirect('/')
         else:
-            return render_template("keys.html", title="Keys", k=session.get("keys"))
+            return render_template("keys.html",  page_id="keys", title="Keys", k=session.get("keys"))
     else:
         return render_template("login.html", title="Login", login_type=login_state)
 

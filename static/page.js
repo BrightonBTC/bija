@@ -26,23 +26,20 @@ window.addEventListener("load", function () {
 
         return false;
     });
-    if(document.querySelector(".main[data-page='Home']") != null){
+    if(document.querySelector(".main[data-page='home']") != null){
         new bijaFeed();
         new bijaNotes();
     }
-    if(document.querySelector(".main[data-page='Note']") != null){
+    if(document.querySelector(".main[data-page='note']") != null){
         new bijaNotes();
         new bijaThread()
 //        document.querySelector(".note-container.main").scrollIntoView(false);
     }
-    if(document.querySelector(".main[data-page='Profile']") != null){
+    if(document.querySelector(".main[data-page='profile']") != null){
         new bijaNotes();
-    }
-    if(document.querySelector(".main[data-page='Profile']") != null){
-        console.log("PROFILE ")
         new bijaProfile();
     }
-    if(document.querySelector(".main[data-page='Messages']") != null){
+    if(document.querySelector(".main[data-page='messages_from']") != null){
         new bijaMessages()
     }
     getUpdates()
@@ -379,7 +376,7 @@ let getUpdaterURL = function(page){
     let params = {}
     params['page'] = page
     switch(page){
-        case 'Profile':
+        case 'profile':
             const profile_elem = document.querySelector("#profile")
             const pk = profile_elem.dataset.pk
             const updated_ts = profile_elem.dataset.updated_ts
@@ -391,7 +388,7 @@ let getUpdaterURL = function(page){
 
 let handleUpdaterResponse = function(page, d){
     switch(page){
-        case 'Profile':
+        case 'profile':
             if("profile" in d){
                 profile = d.profile
                 console.log(profile)
