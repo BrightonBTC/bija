@@ -172,14 +172,19 @@ def get_updates():
     notices = EVENT_HANDLER.notices
     d = {
         'unseen_posts': DB.get_unseen_in_feed(get_key()),
-        'unseen_messages': DB.get_unseen_messages(),
         'notices': notices
     }
     EVENT_HANDLER.notices = []
-    if page == 'Profile':
+    if page == 'profile':
         p = get_profile_updates(request.args)
         if p:
             d['profile'] = p
+    elif page == 'messages_from':
+        result = get_messages_updates(request.args['pk'])
+        if result is not None:
+            d['messages'] = result
+
+    d['unseen_messages'] = DB.get_unseen_message_count()
 
     return render_template("upd.json", title="Home", data=json.dumps(d))
 
@@ -191,6 +196,16 @@ def follow():
     profile = DB.get_profile(request.args['id'])
     is_me = request.args['id'] == get_key()
     return render_template("profile.tools.html", profile=profile, is_me=is_me)
+
+
+def get_messages_updates(pk):
+    messages = DB.get_unseen_messages(pk)
+    if len(messages) > 0:
+        profile = DB.get_profile(get_key())
+        DB.set_message_thread_read(pk)
+        return render_template("message_thread.items.html", me=profile, messages=messages)
+    else:
+        return None
 
 
 def get_profile_updates(args):

@@ -43,7 +43,7 @@ window.addEventListener("load", function () {
         new bijaMessages()
     }
     getUpdates()
-    setInterval(getUpdates, 5000);
+    setInterval(getUpdates, 1000);
 });
 
 class bijaThread{
@@ -145,6 +145,12 @@ class bijaMessages{
             this.postMessage()
             return false
         });
+        document.querySelector('#new_message').addEventListener("keyup", (event)=>{
+            if(event.which === 13){
+                this.postMessage()
+            }
+        });
+
     }
     postMessage(){
         const form = document.querySelector("#new_message_form")
@@ -161,7 +167,9 @@ class bijaMessages{
             return response.json();
         }).then(function(response) {
            if(response['event_id']){
+               window.scrollTo(0, document.body.scrollHeight);
                notify('#', 'Message sent')
+               document.querySelector("#new_message").value = ''
            }
         }).catch(function(err) {
             console.log(err)
@@ -382,6 +390,12 @@ let getUpdaterURL = function(page){
             const updated_ts = profile_elem.dataset.updated_ts
             params['pk'] = pk
             params['updated_ts'] = updated_ts
+        case 'messages_from':
+            const messages_elem = document.querySelector("#messages_from")
+            const messages_pk = messages_elem.dataset.contact
+            params['pk'] = messages_pk
+            let nodes = document.querySelectorAll('.msg[data-dt]')
+            params['dt'] = nodes[nodes.length-1].dataset.dt
     }
     return '/upd?' + Object.keys(params).map(key => key + '=' + params[key]).join('&');
 }
@@ -401,6 +415,22 @@ let handleUpdaterResponse = function(page, d){
                 const pic_els = document.querySelectorAll(".profile-pic");
                 for (let i = 0; i < pic_els.length; i++) {
                     pic_els[i].setAttribute("src", profile.pic)
+                }
+            }
+        case 'messages_from':
+            if("messages" in d){
+                messages = d.messages
+                const messages_elem = document.querySelector("#messages_from")
+                let shouldScroll = false
+                if ((window.innerHeight + Math.ceil(window.pageYOffset)) >= document.body.offsetHeight) {
+                   shouldScroll = true
+                }
+                messages_elem.innerHTML += messages
+                if(shouldScroll){
+                    window.scrollTo(0, document.body.scrollHeight);
+                }
+                else{
+                    notify('#', 'new messages')
                 }
             }
     }

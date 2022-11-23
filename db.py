@@ -266,13 +266,27 @@ class BijaDB:
             Profile.nip05).join(Note.profile).filter(text("note.created_at<{}".format(before))).filter_by(
             public_key=public_key).order_by(Note.created_at.desc()).limit(50).all()
 
-    def get_unseen_messages(self):
+    def get_unseen_message_count(self):
         return self.session.query(PrivateMessage) \
             .filter(text("seen=0")).count()
 
-    # def get_unseen_messages_by_pubkey(self, public_key):
-    #     return self.session.query(PrivateMessage) \
-    #         .filter(text("seen=0 and public_key={}".format(public_key))).count()
+    def get_unseen_messages(self, public_key):
+        out = []
+        filter_string = """profile.public_key = private_message.public_key
+         AND private_message.public_key='{}'
+         AND seen=0""".format(public_key)
+        result = self.session.query(
+            PrivateMessage.id,
+            PrivateMessage.public_key,
+            PrivateMessage.created_at,
+            PrivateMessage.content,
+            PrivateMessage.is_sender,
+            Profile.name,
+            Profile.pic).join(Profile) \
+            .filter(text(filter_string)).all()
+        for item in result:
+            out.append(dict(item))
+        return out
 
     def get_unseen_in_feed(self, public_key):
         return self.session.query(Note, Profile).join(Note.profile) \
@@ -301,8 +315,7 @@ class BijaDB:
                 ORDER BY PM2.created_at DESC"""))
 
     def get_message_thread(self, public_key):
-        self.session.query(PrivateMessage).filter(PrivateMessage.public_key == public_key).update({'seen': True})
-        self.session.commit()
+        self.set_message_thread_read(public_key)
         return self.session.query(
             PrivateMessage.is_sender,
             PrivateMessage.content,
@@ -314,6 +327,9 @@ class BijaDB:
             "profile.public_key = private_message.public_key AND private_message.public_key='{}'".format(public_key))) \
             .order_by(PrivateMessage.created_at.desc()).limit(100).all()
 
+    def set_message_thread_read(self, public_key):
+        self.session.query(PrivateMessage).filter(PrivateMessage.public_key == public_key).update({'seen': True})
+        self.session.commit()
 
 class Profile(Base):
     __tablename__ = "profile"
