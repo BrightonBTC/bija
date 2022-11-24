@@ -22,6 +22,40 @@ h1, h2, h3, h4, h5, h6, p, ol, ul {
   font-weight: normal;
 }
 
+/* global header */
+.conn-status{
+    font-size: 10px;
+    font-weight:800;
+    padding: 5px;
+    margin: 12px;
+    background: #29375e;
+    border-radius: 5px;
+}
+.conn-status .status{
+    padding: 5px;
+    margin-right:10px;
+}
+.led{
+    width: 10px;
+    height: 10px;
+    border-radius: 5px;
+    display: inline-block;
+    margin-right:5px;
+}
+.led.connected{
+    background: green;
+}
+.led.recent{
+    background: yellow;
+}
+.led.disconnected{
+    background: grey;
+}
+.led.none{
+    background: red;
+}
+
+
 /* Settings page */
 
 .im-settings-container{

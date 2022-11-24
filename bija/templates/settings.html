@@ -4,7 +4,13 @@
 
 <div class="card">
     <h3>Relays</h3>
-    <form method="post" action="/settings">
+    <ul>
+    {% for relay in relays: %}
+        <li><span class="led" data-url="{{relay.name}}"></span>{{relay.name}}</li>
+    {% endfor %}
+    </ul>
+    <button class="refresh_connections">reset connections</button>
+    <form id="relay_adder">
         <input type="text" id="newrelay" name="newrelay" class="newrelay" placeholder="wss://">
         <input type="submit" id="addrelay" name="addrelay" value="+">
     </form>

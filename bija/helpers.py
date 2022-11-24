@@ -13,6 +13,17 @@ def is_valid_nip05(name: str) -> bool:
     return re.fullmatch(regex, name) is not None
 
 
+def is_valid_relay(url: str) -> bool:
+    regex = re.compile(
+        r'^wss?://' # http:// or https://
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
+        r'localhost|' #localhost...
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+        r'(?::\d+)?' # optional port
+        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+    return re.fullmatch(regex, url) is not None
+
+
 def is_hex_key(k):
     return len(k) == 64 and all(c in '1234567890abcdefABCDEF' for c in k)
 

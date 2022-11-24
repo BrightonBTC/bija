@@ -24,17 +24,37 @@ class BijaEvents:
     }
 
     def __init__(self, db, session):
+        self.should_run = True
         self.db = db
         self.session = session
         self.relay_manager = RelayManager()
+        self.open_connections()
+
+    def open_connections(self):
         relays = self.db.get_relays()
         n_relays = 0
-        self.should_run = True
         for r in relays:
             n_relays += 1
             self.relay_manager.add_relay(r.name)
         if n_relays > 0:
             self.relay_manager.open_connections({"cert_reqs": ssl.CERT_NONE})
+
+    # close existing connections, reopen, and start primary subscription
+    # used after adding or removing relays
+    def reset(self):
+        self.relay_manager.close_connections()
+        self.open_connections()
+        self.subscribe_primary()
+
+    def get_connection_status(self):
+        status = self.relay_manager.get_connection_status()
+        out = []
+        for s in status:
+            if s[1] is not None:
+                out.append([s[0], int(time.time() - s[1])])
+            else:
+                out.append([s[0], None])
+        socketio.emit('conn_status', out)
 
     def set_page(self, page, identifier):
         self.page = {
@@ -53,6 +73,7 @@ class BijaEvents:
         if self.pool_handler_running:
             return
         self.pool_handler_running = True
+        i = 0
         while self.should_run:
             while self.relay_manager.message_pool.has_notices():
                 notice = self.relay_manager.message_pool.get_notice()
@@ -82,6 +103,10 @@ class BijaEvents:
                 if msg.event.kind == EventKind.REACTION:
                     self.handle_deleted_event(msg.event)
             time.sleep(1)
+            i += 1
+            if i == 60:
+                self.get_connection_status()
+                i = 0
 
     def get_relay_connect_status(self):
         relays = {}

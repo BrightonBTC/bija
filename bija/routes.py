@@ -115,9 +115,10 @@ def note_page():
 def settings_page():
     EVENT_HANDLER.set_page('settings',  None)
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
-    profile = DB.get_profile(get_key())
     settings = {}
-    return render_template("settings.html", page_id="settings", title="Settings", profile=profile, settings=settings)
+    relays = DB.get_relays()
+    EVENT_HANDLER.get_connection_status()
+    return render_template("settings.html", page_id="settings", title="Settings", relays=relays, settings=settings)
 
 
 @app.route('/upd_profile', methods=['POST', 'GET'])
@@ -126,6 +127,23 @@ def update_profile():
     if request.method == 'POST':
         success = EVENT_HANDLER.update_profile(request.json)
     return render_template("upd.json", data=json.dumps({'update_profile': success}))
+
+
+@app.route('/add_relay', methods=['POST', 'GET'])
+def add_relay():
+    success = False
+    if request.method == 'POST':
+        for item in request.json:
+            if item[0] == 'newrelay' and is_valid_relay(item[1]):
+                success = True
+                DB.insert_relay(item[1])
+    return render_template("upd.json", data=json.dumps({'ad_relay': success}))
+
+
+@app.route('/reset_relays', methods=['POST', 'GET'])
+def reset_relays():
+    EXECUTOR.submit(EVENT_HANDLER.reset)
+    return render_template("upd.json", data=json.dumps({'reset_relays': True}))
 
 
 @app.route('/messages', methods=['GET'])
@@ -202,6 +220,14 @@ def io_connect(m):
     unseen_posts = DB.get_unseen_in_feed(get_key())
     if unseen_posts > 0:
         socketio.emit('unseen_posts_n', unseen_posts)
+
+    EXECUTOR.submit(EVENT_HANDLER.get_connection_status)
+
+
+@app.route('/refresh_connections', methods=['GET'])
+def refresh_connections():
+    EXECUTOR.submit(EVENT_HANDLER.reset())
+    return render_template("upd.json", data=json.dumps({'reset': True}))
 
 
 @app.route('/follow', methods=['GET'])

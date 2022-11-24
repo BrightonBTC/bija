@@ -79,6 +79,56 @@ let SOCK = function(){
     socket.on('profile_update', function(data) {
         updateProfile(data)
     });
+    socket.on('conn_status', function(data) {
+        const connections = {'connected': 0, 'recent': 0, 'disconnected': 0, 'none':0}
+        for(const relay in data){
+            r = data[relay]
+            console.log(r[1])
+            let urel = document.querySelector(".led[data-url='"+r[0]+"']")
+            if(r[1] == null){
+                connections['none'] += 1
+                if(urel){
+                    urel.setAttribute("class", "led none")
+                }
+            }
+            else if(parseInt(r[1]) < 60){
+                connections['connected'] += 1
+                if(urel){
+                    urel.setAttribute("class", "led connected")
+                }
+            }
+            else if(parseInt(r[1]) < 180){
+                connections['recent'] += 1
+                if(urel){
+                    urel.setAttribute("class", "led recent")
+                }
+            }
+            else{
+                connections['disconnected'] += 1
+                if(urel){
+                    urel.setAttribute("class", "led disconnected")
+                }
+            }
+        }
+        console.log(connections)
+        const el = document.querySelector(".conn-status")
+        el.innerHTML = "";
+        for (const [k, v] of Object.entries(connections)) {
+            if(v > 0){
+                let span = document.createElement('span')
+                span.classList.add('status')
+                let span2 = document.createElement('span')
+                span2.classList.add('led', k)
+                let span3 = document.createElement('span')
+                span3.innerText = v
+                span.append(span2)
+                span.append(span3)
+                el.append(span)
+            }
+        }
+
+
+    });
 }
 
 let updateProfile = function(profile){
@@ -117,7 +167,42 @@ class bijaSettings{
     }
 
     setClicks(){
+        const upd_relay_btn = document.querySelector(".refresh_connections");
+        upd_relay_btn.addEventListener("click", (event)=>{
+            fetch('/refresh_connections', {
+            method: 'get'
+            }).then(function(response) {
+                return response.text();
+            }).then(function(response) {
 
+            }).catch(function(err) {
+                console.log(err);
+            });
+        });
+        const relay_btn = document.querySelector("#addrelay");
+        relay_btn.addEventListener("click", (event)=>{
+            event.preventDefault();
+            event.stopPropagation();
+            const form = document.querySelector("#relay_adder")
+            const formData = new FormData(form);
+            const data = [...formData.entries()];
+            const options = {
+                method: 'POST',
+                body: JSON.stringify(data),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }
+            fetch('/add_relay', options).then(function(response) {
+                return response.json();
+            }).then(function(response) {
+               if(response['success']){
+                   notify('#', 'relay added')
+               }
+            }).catch(function(err) {
+                console.log(err)
+            });
+        });
     }
 }
 

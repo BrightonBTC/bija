@@ -41,6 +41,12 @@ class BijaDB:
     def get_relays(self):
         return self.session.query(Relay)
 
+    def insert_relay(self, url):
+        self.session.add(Relay(
+            name=url
+        ))
+        self.session.commit()
+
     def get_preferred_relay(self):
         return self.session.query(Relay).first()
 
