@@ -2,11 +2,11 @@
 {% for post in notes: %}
 
     {% if post['thread_root'] is not none %}
-    {% set rel=post['thread_root'] %}
+    {% set thread_root=post['thread_root'] %}
     {% elif post['response_to'] is not none %}
-    {% set rel=post['response_to'] %}
+    {% set thread_root=post['response_to'] %}
     {% else %}
-    {% set rel=post['id'] %}
+    {% set thread_root=post['id'] %}
     {% endif %}
 
     {% if post['thread_root'] is none and post['response_to'] is none %}
@@ -19,7 +19,7 @@
     {% set parent=post['response_to'] %}
     {% endif %}
 
-    <div class="note-container" data-rel="{{rel}}" data-id="{{post['id']}}" data-parent="{{parent}}">
+    <div class="note-container" data-rel="{{thread_root}}" data-id="{{post['id']}}" data-parent="{{parent}}">
         <div class="is-parent"></div>
         <div class="note-image">
             {% if post['pic'] is not none %}
@@ -38,14 +38,12 @@
                 <span class="sm right dt">{{post['created_at']|dt}}</span>
             </h3>
             <div class="sm">{{post['id']}}</div>
-            <pre class="note-content" data-rel="{{rel}}" data-id="{{post['id']}}">{{post['content'] |safe}}<p></p></pre>
+            <pre class="note-content" data-rel="{{thread_root}}" data-id="{{post['id']}}">{{post['content'] |safe}}<p></p></pre>
             <p><span class="reply-n"></span> replies<a href="#" class="reply-link right" data-rel="{{post['id']}}">reply</a></p>
             <form class="reply-form"  data-noteid="{{post['id']}}" >
                 <input type="hidden" name="pubkey" value="{{post['public_key']}}">
                 <input type="hidden" name="parent_id" value="{{post['id']}}">
-                {% if post['thread_root'] is not none %}
-                <input type="hidden" name="thread_root" value="{{post['thread_root']}}">
-                {% endif %}
+                <input type="hidden" name="thread_root" value="{{thread_root}}">
                 <textarea name="reply"></textarea>
                 <input type="submit" value="post" data-reply-submit="1" data-rel="{{post['id']}}">
             </form>
