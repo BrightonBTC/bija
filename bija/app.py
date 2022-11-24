@@ -1,5 +1,5 @@
 
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO
 from flask import Flask
 from flask_session import Session
 from sqlalchemy.orm import scoped_session
