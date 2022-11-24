@@ -26,14 +26,37 @@
 {% endif %}
 
 <div class="profile" id="profile" data-updated_ts="{{updated_at}}" data-pk="{{profile['public_key']}}">
-    <div class="profile-image">
+    {% if is_me %}
+    <a href="#" class="profile-edit-btn">edit</a>
+    {% endif %}
+    <div class="profile-image profile-item">
         <img src="{{profile_pic}}" width="120" id="ppic"  class="profile-pic"  />
     </div>
-    <div class="profile-details">
+    <div class="profile-details profile-item">
         <h1 class="profile-name">{{name}}</h1>
         <p class="sm pk">@{{profile['public_key'] | truncate(21, False, '...')}}</p>
         <pre class="profile-about">{{about}}</pre>
     </div>
+    {% if is_me %}
+        {% if profile['name'] is not none %}
+            {% set pname=profile['name'] %}
+        {% else %}
+            {% set pname="" %}
+        {% endif %}
+        {% if profile['pic'] is not none %}
+            {% set pic_url=profile['pic'] %}
+        {% else %}
+            {% set pic_url='' %}
+        {% endif %}
+    <form id="profile_updater" data-vis="0">
+        <input type="text" id="pname" name="name" class="pname" value="{{pname}}">
+        <label for="pmsg">About</label>
+        <textarea name="about" id="pmsg" rows="10" cols="30">{{about}}</textarea>
+        <label for="pim">Image URL</label>
+        <input type="text" id="pim" name="picture" value="{{pic_url}}">
+        <input type="submit" id="pupd" name="pupd" value="Update">
+    </form>
+    {% endif %}
 </div>
 <div class="profile-tools">
     {% include 'profile.tools.html' %}

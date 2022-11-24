@@ -37,8 +37,112 @@ h1, h2, h3, h4, h5, h6, p, ol, ul {
 .im-settings-container input{
     flex: 1;
 }
+/* ---------- */
+
+
+/* Profile page */
+
+.profile{
+    padding: 30px;
+    margin: 10px;
+    background: #152148;
+    border-radius: 20px;
+    display: flex;
+    border-bottom: 1px solid #4ec74c;
+    position: relative;
+}
+.profile-image {
+    flex:0 0 120px;
+}
+.profile-image img{
+    border-radius:20px;
+}
+.profile-details{
+    padding: 0 20px;
+}
+.profile-details pre{
+    white-space:pre-wrap;
+}
+
+.profile-details h1{
+    font-weight: 800;
+    font-size: 20px;
+    line-height: 20px;
+    margin-bottom: 0;
+}
+.sm.pk{
+    color: #8d919f;
+}
+.profile-tools{
+    text-align: right;
+    padding: 5px 20px;
+    margin-bottom: 30px;
+}
+.profile-tools a{
+    text-decoration: none;
+    padding: 5px;
+    background: #070d22;
+    border-radius: 8px;
+    color: #4ec74c;
+}
+.posts-title{
+    border-bottom: 1px solid #35353c;
+    font-size: 12px;
+    padding: 5px;
+    color: #aaa;
+}
+
+.following-list{
+
+}
+.following-item{
+    display: flex;
+    padding: 10px;
+    margin: 5px;
+    border: 1px solid #35353c;
+    border-radius: 10px;
+    text-decoration: none;
+    color: #fff;
+    align-items: center;
+}
+.following-item:hover{
+    background: #0e111c;
+}
+
+.following-list .pic{
+    flex-basis: 60px;
+}
+.following-list .pic img{
+    width:60px;
+    border-radius: 15px;
+}
+.following-list .name{
+    flex: 1;
+    padding: 10px;
+}
+.profile-edit-btn{
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    color: #4ec74c;
+    text-decoration: none;
+    font-size: 12px;
+}
+#profile form{
+    display: none;
+}
+#profile.editing form{
+    display: block;
+}
+#profile .profile-item{
+    display:block;
+}
+#profile.editing .profile-item{
+    display:none;
+}
 
 /* ---------- */
+
 
 ol, ul {
   list-style: none;
@@ -349,92 +453,8 @@ input[type=text].pname {
     min-width: 22px;
     box-shadow: #000 2px 2px 4px;
 }
-}
-.profile-header{
-    padding: 30px;
-    margin: 10px;
-    background: #152148;
-    border-radius: 20px;
-    display: flex;
-    border-bottom: 1px solid #4ec74c;
-}
-.profile{
-    padding: 30px;
-    margin: 10px;
-    background: #152148;
-    border-radius: 20px;
-    display: flex;
-    border-bottom: 1px solid #4ec74c;
-}
-.profile-image {
-    flex:0 0 120px;
-}
-.profile-image img{
-    border-radius:20px;
-}
-.profile-details{
-    padding: 0 20px;
-}
-.profile-details pre{
-    white-space:pre-wrap;
-}
 
-.profile-details h1{
-    font-weight: 800;
-    font-size: 20px;
-    line-height: 20px;
-    margin-bottom: 0;
-}
-.sm.pk{
-    color: #8d919f;
-}
-.profile-tools{
-    text-align: right;
-    padding: 5px 20px;
-    margin-bottom: 30px;
-}
-.profile-tools a{
-    text-decoration: none;
-    padding: 5px;
-    background: #070d22;
-    border-radius: 8px;
-    color: #4ec74c;
-}
-.posts-title{
-    border-bottom: 1px solid #35353c;
-    font-size: 12px;
-    padding: 5px;
-    color: #aaa;
-}
 
-.following-list{
-
-}
-.following-item{
-    display: flex;
-    padding: 10px;
-    margin: 5px;
-    border: 1px solid #35353c;
-    border-radius: 10px;
-    text-decoration: none;
-    color: #fff;
-    align-items: center;
-}
-.following-item:hover{
-    background: #0e111c;
-}
-
-.following-list .pic{
-    flex-basis: 60px;
-}
-.following-list .pic img{
-    width:60px;
-    border-radius: 15px;
-}
-.following-list .name{
-    flex: 1;
-    padding: 10px;
-}
 .msg{
     display: flex;
     text-decoration: none;

@@ -45,8 +45,6 @@ window.addEventListener("load", function () {
     if(document.querySelector(".main[data-page='settings']") != null){
         new bijaSettings()
     }
-//    getUpdates()
-//    setInterval(getUpdates, 5000);
     SOCK()
 });
 
@@ -119,30 +117,7 @@ class bijaSettings{
     }
 
     setClicks(){
-        const btn = document.querySelector("#pupd");
-        btn.addEventListener("click", (event)=>{
-            event.preventDefault();
-            event.stopPropagation();
-            const form = document.querySelector("#profile_updater")
-            const formData = new FormData(form);
-            const data = [...formData.entries()];
-            const options = {
-                method: 'POST',
-                body: JSON.stringify(data),
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }
-            fetch('/upd_profile', options).then(function(response) {
-                return response.json();
-            }).then(function(response) {
-               if(response['success']){
-                   notify('#', 'Profile updated')
-               }
-            }).catch(function(err) {
-                console.log(err)
-            });
-        });
+
     }
 }
 
@@ -280,7 +255,6 @@ class bijaMessages{
 class bijaProfile{
 
     constructor(){
-//        setInterval(getProfileUpdates, 2000);
         this.setClicks()
     }
 
@@ -294,6 +268,44 @@ class bijaProfile{
                 let state = btn.dataset.state;
                 this.setFollowState(id, state);
                 return false;
+            });
+        }
+        const edit_tog = document.querySelector(".profile-edit-btn");
+        if(edit_tog){
+            edit_tog.addEventListener("click", (event)=>{
+                event.preventDefault();
+                event.stopPropagation();
+                const pel = document.querySelector("#profile");
+                if(pel.classList.contains('editing')){
+                    pel.classList.remove('editing')
+                }
+                else{
+                    pel.classList.add('editing')
+                }
+            });
+            const pupd = document.querySelector("#pupd");
+            pupd.addEventListener("click", (event)=>{
+                event.preventDefault();
+                event.stopPropagation();
+                const form = document.querySelector("#profile_updater")
+                const formData = new FormData(form);
+                const data = [...formData.entries()];
+                const options = {
+                    method: 'POST',
+                    body: JSON.stringify(data),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }
+                fetch('/upd_profile', options).then(function(response) {
+                    return response.json();
+                }).then(function(response) {
+                   if(response['success']){
+                       notify('#', 'Profile updated')
+                   }
+                }).catch(function(err) {
+                    console.log(err)
+                });
             });
         }
     }
@@ -312,30 +324,6 @@ class bijaProfile{
     }
 
 }
-
-//async function getProfileUpdates() {
-//        const profile_elem = document.querySelector("#profile")
-//        const pk = profile_elem.dataset.pk
-//        const updated_ts = profile_elem.dataset.updated_ts
-//        const response = await fetch('/upd_profile?pk='+pk+'&updated_ts='+updated_ts);
-//        const d = await response.json();
-//        if("profile" in d){
-//            profile = d.profile
-//
-//            document.querySelector(".profile-about").innerText = profile.about
-//
-//            document.querySelector("#profile").dataset.updated_ts = profile.updated_at
-//
-//            const name_els = document.querySelectorAll(".profile-name");
-//            for (let i = 0; i < name_els.length; i++) {
-//              name_els[i].innerText = profile.name
-//            }
-//            const pic_els = document.querySelectorAll(".profile-pic");
-//            for (let i = 0; i < pic_els.length; i++) {
-//              pic_els[i].setAttribute("src", profile.pic)
-//            }
-//        }
-//    }
 
 class bijaNotes{
     constructor(){
