@@ -4,8 +4,8 @@ import time
 
 from flask import render_template
 
-from app import socketio
-from helpers import timestamp_minus, TimePeriod, is_hex_key
+from bija.app import socketio
+from bija.helpers import timestamp_minus, TimePeriod, is_hex_key
 from python_nostr.nostr.event import EventKind, Event
 from python_nostr.nostr.filter import Filters, Filter
 from python_nostr.nostr.key import PrivateKey
@@ -80,7 +80,7 @@ class BijaEvents:
                     self.handle_deleted_event(msg.event)
 
                 if msg.event.kind == EventKind.REACTION:
-                    print('REACTION', msg.event.to_json_object())
+                    self.handle_deleted_event(msg.event)
             time.sleep(1)
 
     def get_relay_connect_status(self):
@@ -91,6 +91,9 @@ class BijaEvents:
             else:
                 relays[r.url] = 0
         return relays
+
+    def handle_deleted_event(self, event):
+        pass
 
     def handle_metadata_event(self, event):
         s = json.loads(event.content)

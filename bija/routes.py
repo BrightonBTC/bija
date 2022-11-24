@@ -5,16 +5,15 @@ from threading import Thread, Event
 from flask import render_template, request, session, redirect, make_response
 from flask_executor import Executor
 import pydenticon
-from flask_socketio import emit
 from markdown import markdown
 
-from app import app, socketio
-from db import BijaDB
-from events import BijaEvents
+from bija.app import app, socketio
+from bija.db import BijaDB
+from bija.events import BijaEvents
 from python_nostr.nostr.key import PrivateKey
 
-from password import encrypt_key, decrypt_key
-from helpers import *
+from bija.password import encrypt_key, decrypt_key
+from bija.helpers import *
 
 thread = Thread()
 
