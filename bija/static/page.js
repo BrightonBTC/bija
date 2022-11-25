@@ -540,40 +540,6 @@ class bijaFeed{
         this.loading = 0;
     }
 }
-async function getUpdates() {
-    const page = document.querySelector(".main").dataset.page
-    const response = await fetch(getUpdaterURL(page));
-    const d = await response.json();
-    handleUpdaterResponse(page, d)
-//    if("unseen_posts" in d){
-//        let el_unseen = document.getElementById("n_unseen_posts")
-//        if(parseInt(d['unseen_posts']) == 0){
-//            el_unseen.style.display = "none"
-//        }
-//        else{
-//            el_unseen.style.display = "inline-block"
-//            el_unseen.innerText = d['unseen_posts']
-//        }
-//    }
-//    if("unseen_messages" in d){
-//        let el_unseen = document.getElementById("n_unseen_messages")
-//        if(parseInt(d['unseen_messages']) == 0){
-//            el_unseen.style.display = "none"
-//        }
-//        else{
-//            el_unseen.style.display = "inline-block"
-//            el_unseen.innerText = d['unseen_messages']
-//        }
-//    }
-    if("notices" in d){
-        const container = document.querySelector(".rightcolumn .notices")
-        for (let n in d["notices"]) {
-            const div = document.createElement("div")
-            div.innerText = d["notices"][n]
-            container.prepend(div)
-        }
-    }
-}
 
 let getUpdaterURL = function(page){
     let params = {}
