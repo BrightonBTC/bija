@@ -1,39 +1,13 @@
 window.addEventListener("load", function () {
-    const btn = document.querySelector('#new_post_submit');
-    const form = document.querySelector('#new_post_form');
 
-    btn.addEventListener('click', (e) => {
-        e.preventDefault();
-
-        const formData = new FormData(form);
-        const data = [...formData.entries()];
-        const options = {
-            method: 'POST',
-            body: JSON.stringify(data),
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        }
-        fetch('/submit_note', options).then(function(response) {
-            return response.json();
-        }).then(function(response) {
-           if(response['event_id']){
-               notify('/note?id='+response['event_id'], 'Note created. View now?')
-           }
-        }).catch(function(err) {
-            console.log(err)
-        });
-
-        return false;
-    });
     if(document.querySelector(".main[data-page='home']") != null){
         new bijaFeed();
         new bijaNotes();
+        new bijaNotePoster();
     }
     if(document.querySelector(".main[data-page='note']") != null){
         new bijaNotes();
         new bijaThread()
-//        document.querySelector(".note-container.main").scrollIntoView(false);
     }
     if(document.querySelector(".main[data-page='profile']") != null){
         new bijaNotes();
@@ -83,7 +57,6 @@ let SOCK = function(){
         const connections = {'connected': 0, 'recent': 0, 'disconnected': 0, 'none':0}
         for(const relay in data){
             r = data[relay]
-            console.log(r[1])
             let urel = document.querySelector(".relay[data-url='"+r[0]+"'] .led")
             if(r[1] == null){
                 connections['none'] += 1
@@ -110,7 +83,6 @@ let SOCK = function(){
                 }
             }
         }
-        console.log(connections)
         const el = document.querySelector(".conn-status")
         el.innerHTML = "";
         for (const [k, v] of Object.entries(connections)) {
@@ -158,6 +130,42 @@ let updateMessageThread = function(data){
         else{
             notify('#', 'new messages')
         }
+    }
+}
+
+class bijaNotePoster{
+    constructor(){
+        this.setClicks();
+    }
+
+    setClicks(){
+        const btn = document.querySelector('#new_post_submit');
+        const form = document.querySelector('#new_post_form');
+
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            const data = [...formData.entries()];
+            const options = {
+                method: 'POST',
+                body: JSON.stringify(data),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }
+            fetch('/submit_note', options).then(function(response) {
+                return response.json();
+            }).then(function(response) {
+               if(response['event_id']){
+                   notify('/note?id='+response['event_id'], 'Note created. View now?')
+               }
+            }).catch(function(err) {
+                console.log(err)
+            });
+
+            return false;
+        });
     }
 }
 
@@ -560,7 +568,6 @@ async function getUpdates() {
     if("notices" in d){
         const container = document.querySelector(".rightcolumn .notices")
         for (let n in d["notices"]) {
-            console.log(d["notices"][n])
             const div = document.createElement("div")
             div.innerText = d["notices"][n]
             container.prepend(div)
@@ -597,7 +604,6 @@ let handleUpdaterResponse = function(page, d){
         case 'profile':
             if("profile" in d){
                 profile = d.profile
-                console.log(profile)
                 document.querySelector(".profile-about").innerText = profile.about
                 document.querySelector("#profile").dataset.updated_ts = profile.updated_at
                 const name_els = document.querySelectorAll(".profile-name");
@@ -639,4 +645,10 @@ let notify = function(link, text){
     setTimeout(function(){
         a.remove()
     }, 3500);
+}
+
+function defaultImage(img)
+{
+    img.onerror = "";
+    img.src = '/identicon?id='+img.dataset.rel;
 }

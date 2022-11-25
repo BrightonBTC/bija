@@ -1,7 +1,7 @@
 {% if is_me %}
-    <a href="/following">following</a>
+    <a href="#" class="profile-edit-btn">edit</a>
 {% elif profile['following'] !=  1 %}
-   <a href="/following?pk={{profile['public_key']}}">following</a> <a href="#" class="follow-btn" data-rel="{{profile['public_key']}}" data-state="1">&#43; follow</a>
+    <a href="#" class="follow-btn" data-rel="{{profile['public_key']}}" data-state="1">&#43; follow</a>
 {% else %}
-   <a href="/following?pk={{profile['public_key']}}">following</a> <a href="#" class="follow-btn" data-rel="{{profile['public_key']}}" data-state="0">&#8722; unfollow</a> <a href="#" class="private-message-btn">&#9993; message</a>
+    <a href="#" class="follow-btn" data-rel="{{profile['public_key']}}" data-state="0">&#8722; unfollow</a> <a href="#" class="private-message-btn">&#9993; message</a>
 {% endif %}

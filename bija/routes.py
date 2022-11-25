@@ -305,6 +305,12 @@ def _jinja2_filter_decr(content, pk):
     return EVENT_HANDLER.decrypt(content, pk)
 
 
+@app.template_filter('ident_string')
+def _jinja2_filter_ident(name, pk):
+    if name is None or len(name.strip()) < 1:
+        name = "{}...".format(pk[0:21])
+    return name
+
 def make_threaded(notes):
     in_list = []
     threads = []

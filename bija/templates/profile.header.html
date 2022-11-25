@@ -6,12 +6,6 @@
     {% set profile_pic='/identicon?id='+profile['public_key'] %}
 {% endif %}
 
-{% if profile['name'] is not none %}
-    {% set name=profile['name'] %}
-{% else %}
-    {% set name=(profile['public_key'] | truncate(21, False, '...')) %}
-{% endif %}
-
 {% if profile['about'] is not none %}
     {% set about=profile['about'] %}
 {% else %}
@@ -26,14 +20,14 @@
 {% endif %}
 
 <div class="profile" id="profile" data-updated_ts="{{updated_at}}" data-pk="{{profile['public_key']}}">
-    {% if is_me %}
-    <a href="#" class="profile-edit-btn">edit</a>
-    {% endif %}
+    <div class="profile-tools">
+        {% include 'profile.tools.html' %}
+    </div>
     <div class="profile-image profile-item">
-        <img src="{{profile_pic}}" width="120" id="ppic"  class="profile-pic"  />
+        <img src="{{profile_pic}}" width="120" id="ppic"  class="profile-pic" data-rel="{{profile['public_key']}}"  onerror="defaultImage(this);"  />
     </div>
     <div class="profile-details profile-item">
-        <h1 class="profile-name">{{name}}</h1>
+        <h1 class="profile-name">{{profile['name'] | ident_string(profile['public_key']) }}</h1>
         <p class="sm pk">@{{profile['public_key'] | truncate(21, False, '...')}}</p>
         <pre class="profile-about">{{about}}</pre>
     </div>
@@ -58,7 +52,14 @@
     </form>
     {% endif %}
 </div>
-<div class="profile-tools">
-    {% include 'profile.tools.html' %}
+<div class="profile-menu">
+    {% if is_me %}
+        <a href="/profile">posts</a>
+        <a href="/following">following</a>
+    {% else %}
+        <a href="/profile?pk={{profile['public_key']}}">posts</a>
+       <a href="/following?pk={{profile['public_key']}}">following</a>
+    {% endif %}
 </div>
 {% endif %}
+

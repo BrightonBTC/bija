@@ -54,6 +54,16 @@ h1, h2, h3, h4, h5, h6, p, ol, ul {
 .led.none{
     background: red;
 }
+/* ---------- */
+
+/* Feed */
+#note-poster{
+    height:150px;
+}
+#new_post_submit {
+    width: auto;
+    padding: 10px;
+}
 
 
 /* Settings page */
@@ -108,9 +118,10 @@ h1, h2, h3, h4, h5, h6, p, ol, ul {
     color: #8d919f;
 }
 .profile-tools{
-    text-align: right;
     padding: 5px 20px;
     margin-bottom: 30px;
+    position: absolute;
+    right: 0;
 }
 .profile-tools a{
     text-decoration: none;
@@ -125,6 +136,26 @@ h1, h2, h3, h4, h5, h6, p, ol, ul {
     padding: 5px;
     color: #aaa;
 }
+.profile-menu{
+    overflow: hidden;
+    background-color: #070d22;
+    border-radius: 20px;
+    border-top-width: 0;
+    margin: 0 10px 25px 10px;
+}
+.profile-menu a{
+    float: left;
+    display: block;
+    color: #4ec74c;
+    text-align: center;
+    padding: 10px 15px;
+    text-decoration: none;
+}
+.profile-menu a:hover{
+    background-color: #18192a;
+    color: #9896ff;
+}
+
 
 .following-list{
 
@@ -413,10 +444,7 @@ input[type=text].pname {
     cursor:pointer;
 }
 
-#note-poster{
-    position: fixed;
-    width:230px;
-}
+
 
 .notices{
     position: fixed;
