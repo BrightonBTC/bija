@@ -17,7 +17,6 @@ class BijaEvents:
     subscriptions = []
     pool_handler_running = False
     unseen_notes = 0
-    notices = []
     page = {
         'page': None,
         'identifier': None
@@ -90,11 +89,9 @@ class BijaEvents:
         while self.should_run:
             while self.relay_manager.message_pool.has_notices():
                 notice = self.relay_manager.message_pool.get_notice()
-                self.notices.append(notice.content)
 
             while self.relay_manager.message_pool.has_eose_notices():
                 notice = self.relay_manager.message_pool.get_eose_notice()
-                self.notices.append(notice.url)
 
             while self.relay_manager.message_pool.has_events():
                 msg = self.relay_manager.message_pool.get_event()
