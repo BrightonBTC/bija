@@ -84,7 +84,7 @@ let SOCK = function(){
         for(const relay in data){
             r = data[relay]
             console.log(r[1])
-            let urel = document.querySelector(".led[data-url='"+r[0]+"']")
+            let urel = document.querySelector(".relay[data-url='"+r[0]+"'] .led")
             if(r[1] == null){
                 connections['none'] += 1
                 if(urel){
@@ -179,6 +179,21 @@ class bijaSettings{
                 console.log(err);
             });
         });
+        const relays = document.querySelectorAll(".relay[data-url]");
+        for (const relay of relays) {
+            relay.querySelector(".del-relay").addEventListener("click", (event)=>{
+                fetch('/del_relay?url='+relay.dataset.url, {
+                    method: 'get'
+                }).then(function(response) {
+                    return response.text();
+                }).then(function(response) {
+                    relay.remove()
+                }).catch(function(err) {
+                    console.log(err);
+                });
+            });
+        }
+
         const relay_btn = document.querySelector("#addrelay");
         relay_btn.addEventListener("click", (event)=>{
             event.preventDefault();

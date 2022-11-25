@@ -47,6 +47,10 @@ class BijaDB:
         ))
         self.session.commit()
 
+    def remove_relay(self, url):
+        self.session.query(Relay).filter_by(name=url).delete()
+        self.session.commit()
+
     def get_preferred_relay(self):
         return self.session.query(Relay).first()
 

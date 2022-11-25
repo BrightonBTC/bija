@@ -43,8 +43,21 @@ class BijaEvents:
     # used after adding or removing relays
     def reset(self):
         self.relay_manager.close_connections()
+        time.sleep(1)
+        self.relay_manager.relays = {}
+        time.sleep(1)
         self.open_connections()
+        time.sleep(1)
         self.subscribe_primary()
+        time.sleep(1)
+        self.get_connection_status()
+
+    def remove_relay(self, url):
+        self.relay_manager.remove_relay(url)
+
+    def add_relay(self, url):
+        self.relay_manager.add_relay(url)
+
 
     def get_connection_status(self):
         status = self.relay_manager.get_connection_status()
@@ -107,15 +120,6 @@ class BijaEvents:
             if i == 60:
                 self.get_connection_status()
                 i = 0
-
-    def get_relay_connect_status(self):
-        relays = {}
-        for r in self.relay_manager.relays.values():
-            if r.is_open:
-                relays[r.url] = 1
-            else:
-                relays[r.url] = 0
-        return relays
 
     def handle_deleted_event(self, event):
         pass

@@ -137,6 +137,7 @@ def add_relay():
             if item[0] == 'newrelay' and is_valid_relay(item[1]):
                 success = True
                 DB.insert_relay(item[1])
+                EVENT_HANDLER.add_relay(item[1])
     return render_template("upd.json", data=json.dumps({'ad_relay': success}))
 
 
@@ -228,6 +229,13 @@ def io_connect(m):
 def refresh_connections():
     EXECUTOR.submit(EVENT_HANDLER.reset())
     return render_template("upd.json", data=json.dumps({'reset': True}))
+
+
+@app.route('/del_relay', methods=['GET'])
+def del_relay():
+    DB.remove_relay(request.args['url'])
+    EVENT_HANDLER.remove_relay(request.args['url'])
+    return render_template("upd.json", data=json.dumps({'del': True}))
 
 
 @app.route('/follow', methods=['GET'])

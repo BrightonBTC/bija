@@ -6,7 +6,7 @@
     <h3>Relays</h3>
     <ul>
     {% for relay in relays: %}
-        <li><span class="led" data-url="{{relay.name}}"></span>{{relay.name}}</li>
+        <li class="relay" data-url="{{relay.name}}"><span class="led"></span>{{relay.name}}<button class="del-relay">x</button></li>
     {% endfor %}
     </ul>
     <button class="refresh_connections">reset connections</button>
