@@ -239,13 +239,35 @@ input[type=submit]:hover {
 
 /* Feed */
 #note-poster{
-    height: 150px;
     border-bottom: 1px solid var(--bdr-clr-2);
     margin-bottom: 30px;
+    display: flex;
+    background: var(--bg-clr2);
+    padding: 10px;
+    border-radius: 5px;
 }
+#note-poster .pic{
+    flex-basis: 50px;
+    padding: 5px;
+}
+#note-poster .pic img{
+    border-radius: 10px;
+}
+#note-poster form{
+    flex: 1;
+    margin: 0;
+    padding: 0;
+}
+#note-poster textarea{
+    margin-top: 0;
+    height: 70px;
+    border: 0;
+    background: none;
+}
+
 #new_post_submit {
     width: auto;
-    padding: 10px;
+    padding: 5px;
 }
 
 

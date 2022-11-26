@@ -2,10 +2,17 @@
 
 {% block content %}
 <div id="note-poster">
-  <form method="post" action="/" id="new_post_form">
-      <textarea name="new_post" id="new_post" placeholder="Say something..."></textarea>
-      <input type="submit" name="new_post_submit" id="new_post_submit" class="right" value="Post">
-  </form>
+    <div class="pic">
+        {% if profile['pic'] is not none %}
+            <img src="{{profile['pic']}}" class="profile-pic" onerror="defaultImage(this);"  />
+        {% else %}
+            <img src="/identicon?id={{profile['public_key']}}" class="profile-pic" />
+        {% endif %}
+    </div>
+    <form method="post" action="/" id="new_post_form">
+        <textarea name="new_post" id="new_post" placeholder="Say something..."></textarea>
+        <input type="submit" name="new_post_submit" id="new_post_submit" class="right" value="Post">
+    </form>
 </div>
 <h2 class="posts-title">Recent activity in your network</h2>
 {% include 'feed.items.html' %}

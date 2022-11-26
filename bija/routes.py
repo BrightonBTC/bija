@@ -47,8 +47,8 @@ def index_page():
     if login_state is LoginState.LOGGED_IN:
         notes = DB.get_feed(time.time(), get_key())
         t, i = make_threaded(notes)
-
-        return render_template("feed.html", page_id="home", title="Home", threads=t, ids=i)
+        profile = DB.get_profile(get_key())
+        return render_template("feed.html", page_id="home", title="Home", threads=t, ids=i, profile=profile)
     else:
         return render_template("login.html", page_id="login", title="Login", login_type=login_state)
 
