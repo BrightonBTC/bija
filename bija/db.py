@@ -113,7 +113,9 @@ class BijaDB:
         profiles = self.session.query(
             Profile.public_key,
             Profile.name,
-            Profile.pic).filter_by(following=1).all()
+            Profile.pic,
+            Profile.nip05,
+            Profile.nip05_validated).filter_by(following=1).all()
         out = []
         for p in profiles:
             out.append(dict(p))
@@ -136,6 +138,11 @@ class BijaDB:
             updated_at=updated_at,
             raw=raw
         ))
+        self.session.commit()
+        return self.session.query(Profile).filter_by(public_key=public_key).first()
+
+    def set_valid_nip05(self, public_key):
+        self.session.query(Profile).filter(Profile.public_key == public_key).update({'nip05_validated': True})
         self.session.commit()
 
     def insert_note(self,
@@ -177,6 +184,9 @@ class BijaDB:
                                   Profile.pic,
                                   Profile.nip05).filter_by(id=note_id).join(Note.profile).first()
 
+    def get_raw_note_data(self, note_id):
+        return self.session.query(Note.raw).filter_by(id=note_id).first()
+
     def get_note_thread(self, note_id):
         items = self.session.query(Note.id,
                                    Note.public_key,
@@ -187,7 +197,8 @@ class BijaDB:
                                    Note.members,
                                    Profile.name,
                                    Profile.pic,
-                                   Profile.nip05) \
+                                   Profile.nip05,
+                                   Profile.nip05_validated) \
             .filter(
             text("note.id='{}' or note.response_to='{}' or note.thread_root='{}'".format(note_id, note_id, note_id))) \
             .join(Note.profile).order_by(Note.created_at.asc()).all()
@@ -201,7 +212,8 @@ class BijaDB:
                                   Note.members,
                                   Profile.name,
                                   Profile.pic,
-                                  Profile.nip05) \
+                                  Profile.nip05,
+                                   Profile.nip05_validated) \
             .filter(
             or_(
                 Note.id.in_([i.response_to for i in items]),
@@ -253,7 +265,8 @@ class BijaDB:
             Note.members,
             Profile.name,
             Profile.pic,
-            Profile.nip05).join(Note.profile).filter(text("note.created_at<{}".format(before))) \
+            Profile.nip05,
+            Profile.nip05_validated).join(Note.profile).filter(text("note.created_at<{}".format(before))) \
             .filter(text("(profile.following=1 OR profile.public_key='{}')".format(public_key))) \
             .order_by(Note.created_at.desc()).limit(50).all()
 
@@ -358,6 +371,7 @@ class Profile(Base):
     updated_at = Column(Integer)
     following = Column(Boolean)
     contacts = Column(String)
+    nip05_validated = Column(Boolean, default=False)
     raw = Column(String)
 
     notes = relationship("Note", back_populates="profile")

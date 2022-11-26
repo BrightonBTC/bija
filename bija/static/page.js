@@ -472,6 +472,24 @@ class bijaNotes{
                 window.location.href = '/note?id='+rel+'#'+id
             });
         }
+        const im_els = document.querySelectorAll(".note .info");
+        for (let i = 0; i < im_els.length; i++) {
+            im_els[i].addEventListener('click', (e) => {
+                popup('loading...')
+                fetch('/fetch_raw?id='+im_els[i].dataset.id).then(function(response) {
+                    return response.json();
+                }).then(function(response) {
+                    if(response['data']){
+                        const p =document.querySelector('.popup')
+                        if(p){
+                            p.innerHTML = "<pre>"+JSON.stringify(JSON.parse(response['data']), null, 2)+"</pre>";
+                        }
+                    }
+                }).catch(function(err) {
+                    console.log(err)
+                });
+            })
+        }
     }
 
     postReply(id){
@@ -613,8 +631,21 @@ let notify = function(link, text){
     }, 3500);
 }
 
-function defaultImage(img)
-{
+function defaultImage(img){
     img.onerror = "";
     img.src = '/identicon?id='+img.dataset.rel;
+}
+
+let popup = function(str){
+    overlay = document.createElement('div')
+    overlay.classList.add('popup-overlay')
+    the_popup = document.createElement('div')
+    the_popup.classList.add('popup')
+    the_popup.innerHTML = str
+    overlay.onclick = function(){
+        overlay.remove();
+        the_popup.remove();
+    }
+    document.body.append(overlay)
+    document.body.append(the_popup)
 }

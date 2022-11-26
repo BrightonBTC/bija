@@ -85,7 +85,7 @@ def login_page():
 @app.route('/profile', methods=['GET'])
 def profile_page():
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
-    if 'pk' in request.args and is_hex_key(request.args['pk']):
+    if 'pk' in request.args and is_hex_key(request.args['pk']) and request.args['pk'] != get_key():
         EVENT_HANDLER.set_page('profile',  request.args['pk'])
         EXECUTOR.submit(EVENT_HANDLER.subscribe_profile, request.args['pk'], timestamp_minus(TimePeriod.WEEK))
         k = request.args['pk']
@@ -247,6 +247,12 @@ def follow():
     return render_template("profile.tools.html", profile=profile, is_me=is_me)
 
 
+@app.route('/fetch_raw', methods=['GET'])
+def fetch_raw():
+    d = DB.get_raw_note_data(request.args['id'])
+    return render_template("upd.json", data=json.dumps({'data': d.raw}))
+
+
 @app.route('/submit_note', methods=['POST', 'GET'])
 def submit_note():
     out = {}
@@ -306,8 +312,12 @@ def _jinja2_filter_decr(content, pk):
 
 
 @app.template_filter('ident_string')
-def _jinja2_filter_ident(name, pk):
-    if name is None or len(name.strip()) < 1:
+def _jinja2_filter_ident(name, pk, nip5, validated):
+    if validated and nip5 is not None:
+        if nip5[0:2] == "_@":
+            nip5 = nip5[2:]
+        return "{} <span class='nip5'>{}</span>".format(name, nip5)
+    elif name is None or len(name.strip()) < 1:
         name = "{}...".format(pk[0:21])
     return name
 

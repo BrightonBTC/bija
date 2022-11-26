@@ -8,14 +8,28 @@ def is_valid_name(name: str) -> bool:
     return re.fullmatch(regex, name) is not None
 
 
-def is_valid_nip05(name: str) -> bool:
+def validate_nip05(name: str):
+    parts = name.split('@')
+    print(parts)
+    if len(parts) == 2:
+        if parts[0] == '_':
+            test_str = 'test@{}'.format(parts[1])
+        else:
+            test_str = name
+    else:
+        test_str = 'test@{}'.format(parts[0])
+        parts.insert(0, '_')
     regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
-    return re.fullmatch(regex, name) is not None
+    print(test_str)
+    if re.fullmatch(regex, test_str) is not None:
+        return parts
+    else:
+        return False
 
 
 def is_valid_relay(url: str) -> bool:
     regex = re.compile(
-        r'^wss?://' # http:// or https://
+        r'^wss?://' 
         r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
         r'localhost|' #localhost...
         r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip

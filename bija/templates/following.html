@@ -12,7 +12,7 @@
             <img src="/identicon?id={{p['public_key']}}" class="profile-pic" />
             {% endif %}
         </div>
-        <div class="name">{{p['name'] | ident_string(p['public_key']) }}</div>
+        <div class="name">{{p['name'] | ident_string(p['public_key'], p['nip05'], p['nip05_validated']) | safe }}</div>
     </a>
 {% endfor %}
 </div>

@@ -27,7 +27,7 @@
         <img src="{{profile_pic}}" width="120" id="ppic"  class="profile-pic" data-rel="{{profile['public_key']}}"  onerror="defaultImage(this);"  />
     </div>
     <div class="profile-details profile-item">
-        <h1 class="profile-name">{{profile['name'] | ident_string(profile['public_key']) }}</h1>
+        <h1 class="profile-name">{{profile['name'] | ident_string(profile['public_key'], profile['nip05'], profile['nip05_validated']) | safe }}</h1>
         <p class="sm pk">@{{profile['public_key'] | truncate(21, False, '...')}}</p>
         <pre class="profile-about">{{about}}</pre>
     </div>

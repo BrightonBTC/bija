@@ -129,7 +129,7 @@ input[type=submit]:hover {
     overflow: hidden;
     background-color: var(--bg-clr2);
     border-radius: 5px;
-    border: 4px solid var(--bg-clr3);
+    border: 2px solid var(--bg-clr3);
     border-top-width: 0;
     box-shadow: 3px 3px 5px 0px black;
     position: fixed;
@@ -210,11 +210,38 @@ input[type=submit]:hover {
     padding: 5px;
 }
 
+.popup-overlay{
+    background: #fff;
+    opacity: 0.1;
+    position: fixed;
+    left:0;
+    top:0;
+    right:0;
+    bottom:0;
+    z-index: 1000;
+}
+
+.popup{
+    background: #fff;
+    color: #000;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 10px;
+    width:700px;
+    height: 600px;
+    overflow: auto;
+    z-index: 1001;
+}
+
 /* ---------- */
 
 /* Feed */
 #note-poster{
-    height:150px;
+    height: 150px;
+    border-bottom: 1px solid var(--bdr-clr-2);
+    margin-bottom: 30px;
 }
 #new_post_submit {
     width: auto;
@@ -619,6 +646,18 @@ input[type=text].pname {
 
 .reply-form{
     display:none;
+}
+
+.info{
+    font-size: 12px;
+    margin-left: 15px;
+    cursor: pointer;
+}
+
+.nip5{
+    font-size: 14px;
+    font-style: italic;
+    color: var(--txt-clr2);
 }
 
 /* ---------- */

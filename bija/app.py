@@ -1,8 +1,7 @@
-
 from flask_socketio import SocketIO
 from engineio.async_drivers import gevent
 from flask import Flask
-from flask_session import Session
+from flask_session.__init__ import Session
 from sqlalchemy.orm import scoped_session
 import bija.db as db
 from bija.gui import init_gui

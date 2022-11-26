@@ -30,14 +30,8 @@
         </div>
         <div class="note" data-dt="{{post['created_at']}}">
             <h3>
-                {% if post['name'] is not none %}
-                <a href="/profile?pk={{post['public_key']}}" class="profile-name">{{post['name']}}</a>
-                {% else %}
-                <a href="/profile?pk={{post['public_key']}}" class="profile-name">{{post['public_key'] | truncate(21, False, '...')}}</a>
-                {% endif %}
-                <span class="sm right dt">{{post['created_at']|dt}}</span>
+                <a href="/profile?pk={{post['public_key']}}" class="profile-name">{{post['name'] | ident_string(post['public_key'], post['nip05'], post['nip05_validated']) | safe }}</a>
             </h3>
-            <div class="sm">{{post['id']}}</div>
             <pre class="note-content" data-rel="{{thread_root}}" data-id="{{post['id']}}">{{post['content'] |safe}}<p></p></pre>
             <p><span class="reply-n"></span> replies<a href="#" class="reply-link right" data-rel="{{post['id']}}">reply</a></p>
             <form class="reply-form"  data-noteid="{{post['id']}}" >

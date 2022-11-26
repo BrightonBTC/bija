@@ -2,10 +2,12 @@ import json
 import ssl
 import time
 
+import requests as requests
 from flask import render_template
 
 from bija.app import socketio
-from bija.helpers import timestamp_minus, TimePeriod, is_hex_key
+from bija.db import Profile
+from bija.helpers import timestamp_minus, TimePeriod, is_hex_key, validate_nip05
 from python_nostr.nostr.event import EventKind, Event
 from python_nostr.nostr.filter import Filters, Filter
 from python_nostr.nostr.key import PrivateKey
@@ -113,6 +115,7 @@ class BijaEvents:
                 if msg.event.kind == EventKind.REACTION:
                     self.handle_deleted_event(msg.event)
             time.sleep(1)
+            print('running')
             i += 1
             if i == 60:
                 self.get_connection_status()
@@ -135,7 +138,7 @@ class BijaEvents:
             about = s['about']
         if 'picture' in s:
             picture = s['picture']
-        self.db.upd_profile(
+        result = self.db.upd_profile(
             event.public_key,
             name,
             nip05,
@@ -144,6 +147,8 @@ class BijaEvents:
             event.created_at,
             json.dumps(event.to_json_object())
         )
+        if result.nip05 is not None and result.nip05_validated == 0:
+            self.validate_nip05(result)
         if self.page['page'] == 'profile' and self.page['identifier'] == event.public_key:
             if picture is None or len(picture.strip()) == 0:
                 picture = '/identicon?id={}'.format(event.public_key)
@@ -155,6 +160,23 @@ class BijaEvents:
                 'about': about,
                 'created_at': event.created_at
             })
+
+    def validate_nip05(self, p: Profile):
+        valid_parts = validate_nip05(p.nip05)
+        if valid_parts:
+            try:
+                response = requests.get('https://{}/.well-known/nostr.json'.format(valid_parts[1]), params={'name': valid_parts[0]}, timeout=2)
+                if response.status_code == 200:
+                    try:
+                        d = response.json()
+                        if valid_parts[0] in d['names'] and d['names'][valid_parts[0]] == p.public_key:
+                            self.db.set_valid_nip05(p.public_key)
+                    except:
+                        print('INVALID JSON')
+                else:
+                    print('FAILED ', response.status_code)
+            except:
+                print('UNKNOWN ERROR')
 
     def handle_note_event(self, event, subscription):
         response_to = None
