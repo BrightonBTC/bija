@@ -292,7 +292,8 @@ class BijaDB:
             Note.members,
             Profile.name,
             Profile.pic,
-            Profile.nip05).join(Note.profile).filter(text("note.created_at<{}".format(before))).filter_by(
+            Profile.nip05,
+            Profile.nip05_validated).join(Note.profile).filter(text("note.created_at<{}".format(before))).filter_by(
             public_key=public_key).order_by(Note.created_at.desc()).limit(50).all()
 
     def get_unseen_message_count(self):
