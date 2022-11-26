@@ -2,7 +2,9 @@ Python/Flask [Nostr](https://github.com/nostr-protocol/nostr) client wrapped in 
 
 This is experimental software in early development and comes without warranty.
 
-To get it up and running you'll need to follow these steps: 
+If you want to give a try you can find an alpha release for Linux on the [releases page](https://github.com/BrightonBTC/bija/releases) 
+
+Or, to get it up and running yourself you'll need to follow these steps: 
 
 
 1) clone the repo and open it in a python 3.10 virtual env (using PyCharm or similar)
@@ -25,6 +27,6 @@ To get it up and running you'll need to follow these steps:
 
 `pip install -r ../python_nostr/requirements.txt`
 
-5) run app.py
+5) run cli.py
 
-`python3 app.py`
+`python3 cli.py`
