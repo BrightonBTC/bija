@@ -6,11 +6,7 @@
 {% for p in profiles: %}
     <a class="following-item" href="/profile?pk={{p['public_key']}}">
         <div class="pic">
-            {% if p['pic'] is not none %}
-            <img src="{{p['pic']}}" class="profile-pic" data-rel="{{p['public_key']}}"  onerror="defaultImage(this);" />
-            {% else %}
-            <img src="/identicon?id={{p['public_key']}}" class="profile-pic" />
-            {% endif %}
+            {% include 'profile.image.html' %}
         </div>
         <div class="name">{{p['name'] | ident_string(p['public_key'], p['nip05'], p['nip05_validated']) | safe }}</div>
     </a>

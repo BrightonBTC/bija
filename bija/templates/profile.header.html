@@ -1,17 +1,10 @@
 {% if profile is not none %}
 
-{% if profile['pic'] is not none %}
-    {% set profile_pic=profile['pic'] %}
-{% else %}
-    {% set profile_pic='/identicon?id='+profile['public_key'] %}
-{% endif %}
-
 {% if profile['about'] is not none %}
     {% set about=profile['about'] %}
 {% else %}
     {% set about='' %}
 {% endif %}
-
 
 {% if profile['updated_at'] is not none %}
     {% set updated_at=profile['updated_at'] %}
@@ -24,7 +17,8 @@
         {% include 'profile.tools.html' %}
     </div>
     <div class="profile-image profile-item">
-        <img src="{{profile_pic}}" width="120" id="ppic"  class="profile-pic" data-rel="{{profile['public_key']}}"  onerror="defaultImage(this);"  />
+        {% set p=profile %}
+        {% include 'profile.image.html' %}
     </div>
     <div class="profile-details profile-item">
         <h1 class="profile-name">{{profile['name'] | ident_string(profile['public_key'], profile['nip05'], profile['nip05_validated']) | safe }}</h1>

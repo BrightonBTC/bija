@@ -4,9 +4,9 @@
 <div id="note-poster">
     <div class="pic">
         {% if profile['pic'] is not none %}
-            <img src="{{profile['pic']}}" class="profile-pic" onerror="defaultImage(this);"  />
+            <img src="{{profile['pic']}}" class="user-image" onerror="defaultImage(this);"  />
         {% else %}
-            <img src="/identicon?id={{profile['public_key']}}" class="profile-pic" />
+            <img src="/identicon?id={{profile['public_key']}}" class="user-image" />
         {% endif %}
     </div>
     <form method="post" action="/" id="new_post_form">

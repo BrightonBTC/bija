@@ -1,0 +1,5 @@
+{% if p['pic'] is not none %}
+<img src="{{p['pic']}}" class="user-image" data-rel="{{p['public_key']}}"  onerror="defaultImage(this);"  />
+{% else %}
+<img src="/identicon?id={{p['public_key']}}" class="user-image" />
+{% endif %}

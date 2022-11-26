@@ -22,11 +22,8 @@
     <div class="note-container" data-rel="{{thread_root}}" data-id="{{post['id']}}" data-parent="{{parent}}">
         <div class="is-parent"></div>
         <div class="note-image">
-            {% if post['pic'] is not none %}
-            <img src="{{post['pic']}}" class="profile-pic" />
-            {% else %}
-            <img src="/identicon?id={{post['public_key']}}" class="profile-pic" />
-            {% endif %}
+            {% set p=post %}
+            {% include 'profile.image.html' %}
         </div>
         <div class="note" data-dt="{{post['created_at']}}">
             <h3>
