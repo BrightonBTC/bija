@@ -123,10 +123,20 @@ def settings_page():
 
 @app.route('/upd_profile', methods=['POST', 'GET'])
 def update_profile():
-    success = False
+    out = {'success': False}
     if request.method == 'POST':
-        success = EVENT_HANDLER.update_profile(request.json)
-    return render_template("upd.json", data=json.dumps({'update_profile': success}))
+        profile = {}
+        for item in request.json:
+            if item[0] in ['name', 'about', 'picture', 'nip05']:
+                profile[item[0]] = item[1].strip()
+        if 'nip05' in profile and len(profile['nip05']) > 0:
+            valid_nip5 = EVENT_HANDLER.validate_nip05(profile['nip05'], get_key())
+            out['nip05'] = valid_nip5
+            if valid_nip5:
+                out['success'] = EVENT_HANDLER.update_profile(profile)
+        else:
+            out['success'] = EVENT_HANDLER.update_profile(profile)
+    return render_template("upd.json", data=json.dumps(out))
 
 
 @app.route('/add_relay', methods=['POST', 'GET'])
@@ -316,9 +326,9 @@ def _jinja2_filter_ident(name, pk, nip5, validated):
     if validated and nip5 is not None:
         if nip5[0:2] == "_@":
             nip5 = nip5[2:]
-        return "{} <span class='nip5'>{}</span>".format(name, nip5)
+        return "<span class='name'>{}</span> <span class='nip5'>{}</span>".format(name, nip5)
     elif name is None or len(name.strip()) < 1:
-        name = "{}...".format(pk[0:21])
+        name = "<span class='name'>{}...</span> <span class='nip5'></span>".format(pk[0:21])
     return name
 
 def make_threaded(notes):

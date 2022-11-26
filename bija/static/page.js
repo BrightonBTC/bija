@@ -108,7 +108,12 @@ let updateProfile = function(profile){
     document.querySelector("#profile").dataset.updated_ts = profile.updated_at
     const name_els = document.querySelectorAll(".profile-name");
     for (let i = 0; i < name_els.length; i++) {
-        name_els[i].innerText = profile.name
+        if(profile.name.length > 0){
+            name_els[i].querySelector('.name').innerText = profile.name
+        }
+        if(profile.nip05.length > 0 && profile.nip05_validated){
+            name_els[i].querySelector('.nip5').innerText = profile.nip05
+        }
     }
     const pic_els = document.querySelectorAll(".profile-pic");
     for (let i = 0; i < pic_els.length; i++) {
@@ -408,9 +413,17 @@ class bijaProfile{
                 fetch('/upd_profile', options).then(function(response) {
                     return response.json();
                 }).then(function(response) {
-                   if(response['success']){
-                       notify('#', 'Profile updated')
-                   }
+                    if(response['success']){
+                        notify('#', 'Profile updated')
+                        document.querySelector("#nip5").classList.remove('error')
+                    }
+                    else if(response['nip05'] === false){
+                        notify('#', 'Nip05 identifier could not be validated')
+                        document.querySelector("#nip5").classList.add('error')
+                    }
+                    else{
+                        notify('#', 'Something went wrong updating your profile. Check for any errors and try again.')
+                    }
                 }).catch(function(err) {
                     console.log(err)
                 });

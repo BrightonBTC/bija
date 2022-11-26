@@ -148,7 +148,8 @@ class BijaEvents:
             json.dumps(event.to_json_object())
         )
         if result.nip05 is not None and result.nip05_validated == 0:
-            self.validate_nip05(result)
+            if self.validate_nip05(result.nip05, result.public_key):
+                self.db.set_valid_nip05(result.public_key)
         if self.page['page'] == 'profile' and self.page['identifier'] == event.public_key:
             if picture is None or len(picture.strip()) == 0:
                 picture = '/identicon?id={}'.format(event.public_key)
@@ -156,27 +157,33 @@ class BijaEvents:
                 'public_key': event.public_key,
                 'name': name,
                 'nip05': nip05,
+                'nip05_validated': result.nip05_validated,
                 'pic': picture,
                 'about': about,
                 'created_at': event.created_at
             })
 
-    def validate_nip05(self, p: Profile):
-        valid_parts = validate_nip05(p.nip05)
+    def validate_nip05(self, nip05, pk):
+        valid_parts = validate_nip05(nip05)
         if valid_parts:
             try:
                 response = requests.get('https://{}/.well-known/nostr.json'.format(valid_parts[1]), params={'name': valid_parts[0]}, timeout=2)
                 if response.status_code == 200:
                     try:
                         d = response.json()
-                        if valid_parts[0] in d['names'] and d['names'][valid_parts[0]] == p.public_key:
-                            self.db.set_valid_nip05(p.public_key)
+                        if valid_parts[0] in d['names'] and d['names'][valid_parts[0]] == pk:
+                            return True
                     except:
                         print('INVALID JSON')
+                        return False
                 else:
                     print('FAILED ', response.status_code)
+                    return False
             except:
                 print('UNKNOWN ERROR')
+                return False
+        else:
+            return False
 
     def handle_note_event(self, event, subscription):
         response_to = None
@@ -463,14 +470,11 @@ class BijaEvents:
         except:
             return False
 
-    def update_profile(self, data):
+    def update_profile(self, profile):
         k = bytes.fromhex(self.get_key('private'))
         private_key = PrivateKey(k)
         created_at = int(time.time())
-        profile = {}
-        for item in data:
-            if item[0] in ['name', 'about', 'picture', 'nip05']:
-                profile[item[0]] = item[1].strip()
+
         event = Event(private_key.public_key.hex(), json.dumps(profile), kind=EventKind.SET_METADATA, created_at=created_at)
         event.sign(private_key.hex())
 

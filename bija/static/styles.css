@@ -240,6 +240,11 @@ input[type=submit]:hover {
     border-radius: 15%;
 }
 
+.error{
+    border-color: red !important;
+    color: red;
+}
+
 /* ---------- */
 
 /* Feed */
