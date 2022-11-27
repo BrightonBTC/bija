@@ -18,7 +18,6 @@ from python_nostr.nostr.relay_manager import RelayManager
 class BijaEvents:
     subscriptions = []
     pool_handler_running = False
-    unseen_notes = 0
     page = {
         'page': None,
         'identifier': None
@@ -167,7 +166,7 @@ class BijaEvents:
         valid_parts = validate_nip05(nip05)
         if valid_parts:
             try:
-                response = requests.get('https://{}/.well-known/nostr.json'.format(valid_parts[1]), params={'name': valid_parts[0]}, timeout=2)
+                response = self.request_nip05(valid_parts[1], valid_parts[0])
                 if response.status_code == 200:
                     try:
                         d = response.json()
@@ -184,6 +183,9 @@ class BijaEvents:
                 return False
         else:
             return False
+
+    def request_nip05(self, address, name):
+        return requests.get('https://{}/.well-known/nostr.json'.format(address), params={'name': name}, timeout=2)
 
     def handle_note_event(self, event, subscription):
         response_to = None
@@ -207,9 +209,6 @@ class BijaEvents:
                 elif len(parents) > 1:
                     thread_root = parents[0]
                     response_to = parents[1]
-        if subscription in ['primary', 'following'] and self.db.is_note(event.id) is None:
-            self.unseen_notes += 1
-
         is_known = self.db.is_known_pubkey(event.public_key)
         if is_known is None:
             self.db.add_profile(event.public_key, updated_at=0)
@@ -223,9 +222,12 @@ class BijaEvents:
             members,
             json.dumps(event.to_json_object())
         )
-        unseen_posts = self.db.get_unseen_in_feed(self.get_key())
-        if unseen_posts > 0:
-            socketio.emit('unseen_posts_n', unseen_posts)
+        if subscription == 'primary':
+            unseen_posts = self.db.get_unseen_in_feed(self.get_key())
+            if unseen_posts > 0:
+                socketio.emit('unseen_posts_n', unseen_posts)
+        elif subscription == 'profile':
+            socketio.emit('new_profile_posts', True)
 
     def submit_note(self, data):
         k = bytes.fromhex(self.get_key('private'))

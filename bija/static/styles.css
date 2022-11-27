@@ -421,6 +421,19 @@ input[type=text].pname {
     font-weight: bold
 }
 
+.new-posts{
+    display: block;
+    width: 200px;
+    margin: auto;
+    text-align: center;
+    background: var(--bg-clr3);
+    font-size: 12px;
+    padding: 5px;
+    border-radius: 5px;
+    color: var(--lnk-clr);
+    text-decoration: none;
+}
+
 /* ---------- */
 
 
@@ -692,7 +705,20 @@ input[type=text].pname {
     font-style: italic;
     color: var(--txt-clr2);
 }
+/* ---------- */
 
+/* Right column */
+#search {
+    position: fixed;
+}
+
+#search input{
+    margin: 0;
+    border-radius: 20px;
+}
+#search p{
+    padding: 0 20px;
+}
 /* ---------- */
 
 @keyframes fadeInOut {

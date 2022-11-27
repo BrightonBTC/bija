@@ -57,6 +57,9 @@ class BijaDB:
     def get_profile(self, public_key):
         return self.session.query(Profile).filter_by(public_key=public_key).first()
 
+    def get_pk_by_nip05(self, nip05):
+        return self.session.query(Profile.public_key).filter_by(nip05=nip05).first()
+
     def get_saved_pk(self):
         pk = self.session.query(PK).first()
         return pk

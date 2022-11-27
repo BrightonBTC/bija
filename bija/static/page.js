@@ -53,6 +53,9 @@ let SOCK = function(){
     socket.on('profile_update', function(data) {
         updateProfile(data)
     });
+    socket.on('new_profile_posts', function() {
+        notifyNewProfilePosts()
+    });
     socket.on('conn_status', function(data) {
         const connections = {'connected': 0, 'recent': 0, 'disconnected': 0, 'none':0}
         for(const relay in data){
@@ -102,7 +105,17 @@ let SOCK = function(){
 
     });
 }
-
+let notifyNewProfilePosts = function(){
+    elem = document.querySelector("#profile-posts")
+    notifications = document.querySelectorAll(".new-posts")
+    if(elem && notifications.length < 1){
+        notification = document.createElement('a')
+        notification.innerText = 'Show new posts';
+        notification.href = ''
+        notification.classList.add('new-posts')
+        elem.prepend(notification)
+    }
+}
 let updateProfile = function(profile){
     document.querySelector(".profile-about").innerText = profile.about
     document.querySelector("#profile").dataset.updated_ts = profile.updated_at
@@ -111,7 +124,7 @@ let updateProfile = function(profile){
         if(profile.name.length > 0){
             name_els[i].querySelector('.name').innerText = profile.name
         }
-        if(profile.nip05.length > 0 && profile.nip05_validated){
+        if(profile.nip05 !== null && profile.nip05.length > 0 && profile.nip05_validated){
             name_els[i].querySelector('.nip5').innerText = profile.nip05
         }
     }

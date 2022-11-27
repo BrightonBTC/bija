@@ -97,6 +97,9 @@ def profile_page():
     notes = DB.get_notes_by_pubkey(k, int(time.time()), timestamp_minus(TimePeriod.DAY))
     t, i = make_threaded(notes)
     profile = DB.get_profile(k)
+    if profile is None:
+        DB.add_profile(k)
+        profile = DB.get_profile(k)
     return render_template("profile.html", page_id="profile", title="Profile", threads=t, ids=i, profile=profile, is_me=is_me)
 
 
@@ -214,6 +217,41 @@ def following_page():
     return render_template("following.html", page_id="following", title="Following", profile=profile, profiles=profiles, is_me=is_me)
 
 
+@app.route('/search', methods=['GET'])
+def search_page():
+    EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
+    message = False
+    results = []
+    if 'search_term' in request.args:
+        term = request.args['search_term']
+        if is_hex_key(request.args['search_term']):
+            return redirect('/profile?pk={}'.format(term))
+        else:
+            valid_nip05 = validate_nip05(term)
+            if valid_nip05:
+                pk = DB.get_pk_by_nip05(term)
+                if pk is not None:
+                    return redirect('/profile?pk={}'.format(pk.public_key))
+                else:
+                    try:
+                        response = EVENT_HANDLER.request_nip05(valid_nip05[1], valid_nip05[0])
+                        if response.status_code == 200:
+                            try:
+                                d = response.json()
+                                if valid_nip05[0] in d['names']:
+
+                                    return redirect('/profile?pk={}'.format(d['names'][valid_nip05[0]]))
+                            except:
+                                message = "Failed to validate nip-05"
+                        else:
+                            message = "Failed to validate nip-05"
+                    except:
+                        message = "Failed to validate nip-05"
+    else:
+        message = "no results found"
+    return render_template("search.html", page_id="search", title="Search", message=message, results=results)
+
+
 @app.route('/identicon', methods=['GET'])
 def identicon():
     im = ident_im_gen.generate(request.args['id'], 120, 120, padding=(10, 10, 10, 10), output_format="png")
@@ -329,6 +367,8 @@ def _jinja2_filter_ident(name, pk, nip5, validated):
         return "<span class='name'>{}</span> <span class='nip5'>{}</span>".format(name, nip5)
     elif name is None or len(name.strip()) < 1:
         name = "<span class='name'>{}...</span> <span class='nip5'></span>".format(pk[0:21])
+    else:
+        name = "<span class='name'>{}</span> <span class='nip5'></span>".format(name)
     return name
 
 def make_threaded(notes):

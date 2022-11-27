@@ -1,9 +1,8 @@
 {% extends "base.html" %}
-
 {% block content %}
 {% include 'profile.header.html' %}
-
 <h2 class="posts-title">Public posts</h2>
-{% include 'feed.items.html' %}
-
+<div id="profile-posts">
+    {% include 'feed.items.html' %}
+</div>
 {% endblock content %}
