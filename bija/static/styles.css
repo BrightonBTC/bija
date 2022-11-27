@@ -12,6 +12,7 @@
     --inpt-clr: #fffeee;
     --inpt-bg-clr: #0c0d0e;
     --inpt-bdr-clr: #243776;
+    --inpt-bdr-clr-fcs: #9896ff;
     --mnu-clr: #f2f2f2;
     --mnu-clr-hvr: #9896ff;
     --btn-bg: #245c23;
@@ -83,6 +84,11 @@ input[type=submit] {
 input[type=submit]:hover {
   background-color: var(--btn-bg-hvr);
   color: var(--btn-txt-hvr);
+}
+
+:focus {
+  outline: none;
+  box-shadow: 0 0 0 1px var(--inpt-bdr-clr-fcs);
 }
 
 /* global header */
@@ -663,6 +669,9 @@ input[type=text].pname {
     white-space: pre-wrap;
     cursor:pointer;
 }
+.note-container.main .note-content{
+    cursor:auto;
+}
 
 .muted{
     font-size: 70%;
@@ -677,6 +686,10 @@ input[type=text].pname {
     flex:1;
     overflow: hidden;
     padding: 0 5px;
+}
+.note .image-attachment{
+    text-align: center;
+    margin-top: 20px;
 }
 
 .note a{

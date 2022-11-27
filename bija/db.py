@@ -156,6 +156,7 @@ class BijaDB:
                     thread_root=None,
                     created_at=None,
                     members=None,
+                    media =None,
                     raw=None):
         self.session.merge(Note(
             id=note_id,
@@ -165,6 +166,7 @@ class BijaDB:
             thread_root=thread_root,
             created_at=created_at,
             members=members,
+            media=media,
             raw=raw
         ))
         self.session.commit()
@@ -183,6 +185,7 @@ class BijaDB:
                                   Note.thread_root,
                                   Note.created_at,
                                   Note.members,
+                                  Note.media,
                                   Profile.name,
                                   Profile.pic,
                                   Profile.nip05).filter_by(id=note_id).join(Note.profile).first()
@@ -198,6 +201,7 @@ class BijaDB:
                                    Note.thread_root,
                                    Note.created_at,
                                    Note.members,
+                                   Note.media,
                                    Profile.name,
                                    Profile.pic,
                                    Profile.nip05,
@@ -213,6 +217,7 @@ class BijaDB:
                                   Note.thread_root,
                                   Note.created_at,
                                   Note.members,
+                                  Note.media,
                                   Profile.name,
                                   Profile.pic,
                                   Profile.nip05,
@@ -266,6 +271,7 @@ class BijaDB:
             Note.thread_root,
             Note.created_at,
             Note.members,
+            Note.media,
             Profile.name,
             Profile.pic,
             Profile.nip05,
@@ -280,6 +286,7 @@ class BijaDB:
             Note.content,
             Note.created_at,
             Note.members,
+            Note.media,
             Profile.name,
             Profile.pic,
             Profile.nip05).join(Note.profile).filter(Note.id.in_(note_ids)).all()
@@ -293,6 +300,7 @@ class BijaDB:
             Note.thread_root,
             Note.created_at,
             Note.members,
+            Note.media,
             Profile.name,
             Profile.pic,
             Profile.nip05,
@@ -403,6 +411,7 @@ class Note(Base):
     thread_root = Column(String(64))
     created_at = Column(Integer)
     members = Column(String)
+    media = Column(String)
     seen = Column(Boolean, default=False)
     raw = Column(String)
 
@@ -417,6 +426,7 @@ class Note(Base):
             self.thread_root,
             self.created_at,
             self.members,
+            self.media,
             self.seen,
             self.raw
         }

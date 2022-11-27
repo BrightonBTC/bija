@@ -8,6 +8,18 @@ def is_valid_name(name: str) -> bool:
     return re.fullmatch(regex, name) is not None
 
 
+def get_embeded_tag_indexes(content: str):
+    regex = re.compile(r'\#\[([0-9]+)\]')
+    return re.findall(regex, content)
+
+
+def get_urls_in_string(content: str):
+    regex = re.compile(r'(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\('
+                       r'[^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:\'".,<>?«»“”‘’]))')
+    url = re.findall(regex, content)
+    return [x[0] for x in url]
+
+
 def validate_nip05(name: str):
     parts = name.split('@')
     print(parts)
@@ -52,3 +64,9 @@ def timestamp_minus(period: TimePeriod, multiplier: int = 1):
     now = int(time.time())
     return now - (period * multiplier)
 
+
+def list_index_exists(lst, i):
+    try:
+        return lst[i]
+    except IndexError:
+        return None

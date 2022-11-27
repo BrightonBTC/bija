@@ -5,7 +5,6 @@ from threading import Thread, Event
 from flask import render_template, request, session, redirect, make_response
 from flask_executor import Executor
 import pydenticon
-from markdown import markdown
 
 from bija.app import app, socketio
 from bija.db import BijaDB
@@ -220,35 +219,25 @@ def following_page():
 @app.route('/search', methods=['GET'])
 def search_page():
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
-    message = False
     results = []
-    if 'search_term' in request.args:
+    if 'search_term' in request.args or len(request.args['search_term'].strip()) < 1:
         term = request.args['search_term']
         if is_hex_key(request.args['search_term']):
             return redirect('/profile?pk={}'.format(term))
-        else:
-            valid_nip05 = validate_nip05(term)
-            if valid_nip05:
-                pk = DB.get_pk_by_nip05(term)
+        elif validate_nip05(term):
+            profile = DB.get_pk_by_nip05(term)
+            if profile is not None:
+                return redirect('/profile?pk={}'.format(profile.public_key))
+            else:
+                pk = EVENT_HANDLER.request_nip05(term)
                 if pk is not None:
-                    return redirect('/profile?pk={}'.format(pk.public_key))
+                    return redirect('/profile?pk={}'.format(pk))
                 else:
-                    try:
-                        response = EVENT_HANDLER.request_nip05(valid_nip05[1], valid_nip05[0])
-                        if response.status_code == 200:
-                            try:
-                                d = response.json()
-                                if valid_nip05[0] in d['names']:
-
-                                    return redirect('/profile?pk={}'.format(d['names'][valid_nip05[0]]))
-                            except:
-                                message = "Failed to validate nip-05"
-                        else:
-                            message = "Failed to validate nip-05"
-                    except:
-                        message = "Failed to validate nip-05"
+                    message = "Nip-05 identifier could not be located"
+        else:
+            message = "Nothing found. Please try again with a valid public key or nip-05 identifier."
     else:
-        message = "no results found"
+        message = "no search term found!"
     return render_template("search.html", page_id="search", title="Search", message=message, results=results)
 
 
@@ -371,13 +360,23 @@ def _jinja2_filter_ident(name, pk, nip5, validated):
         name = "<span class='name'>{}</span> <span class='nip5'></span>".format(name)
     return name
 
+
+@app.template_filter('process_media_attachments')
+def _jinja2_filter_media(json_string):
+    a = json.loads(json_string)
+    if len(a) > 0:
+        media = a[0]
+        if media[1] == 'image':
+            return '<div class="image-attachment"><img src="{}"></div>'.format(media[0])
+    return '';
+
+
 def make_threaded(notes):
     in_list = []
     threads = []
     for note in notes:
         in_list.append(note['id'])
         note = dict(note)
-        note['content'] = markdown(note['content'])
 
         thread = [note]
         thread_ids = []

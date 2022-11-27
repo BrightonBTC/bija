@@ -1,13 +1,17 @@
 import json
+import logging
+import os
 import ssl
 import time
+import traceback
+from urllib.parse import urlparse
 
 import requests as requests
 from flask import render_template
 
 from bija.app import socketio
-from bija.db import Profile
-from bija.helpers import timestamp_minus, TimePeriod, is_hex_key, validate_nip05
+from bija.helpers import timestamp_minus, TimePeriod, is_hex_key, validate_nip05, get_embeded_tag_indexes, \
+    list_index_exists, get_urls_in_string
 from python_nostr.nostr.event import EventKind, Event
 from python_nostr.nostr.filter import Filters, Filter
 from python_nostr.nostr.key import PrivateKey
@@ -57,7 +61,6 @@ class BijaEvents:
 
     def add_relay(self, url):
         self.relay_manager.add_relay(url)
-
 
     def get_connection_status(self):
         status = self.relay_manager.get_connection_status()
@@ -163,29 +166,39 @@ class BijaEvents:
             })
 
     def validate_nip05(self, nip05, pk):
+        validated_name = self.request_nip05(nip05)
+        if validated_name is not None and validated_name == pk:
+            return True
+        return False
+
+    @staticmethod
+    def request_nip05(nip05):
         valid_parts = validate_nip05(nip05)
         if valid_parts:
+            name = valid_parts[0]
+            address = valid_parts[1]
             try:
-                response = self.request_nip05(valid_parts[1], valid_parts[0])
+                response = requests.get(
+                    'https://{}/.well-known/nostr.json'.format(address), params={'name': name}, timeout=2
+                )
                 if response.status_code == 200:
                     try:
                         d = response.json()
-                        if valid_parts[0] in d['names'] and d['names'][valid_parts[0]] == pk:
-                            return True
-                    except:
-                        print('INVALID JSON')
-                        return False
+                        if name in d['names']:
+                            return d['names'][name]
+                    except ValueError:
+                        return None
+                    except Exception as e:
+                        logging.error(traceback.format_exc())
                 else:
-                    print('FAILED ', response.status_code)
-                    return False
-            except:
-                print('UNKNOWN ERROR')
-                return False
+                    return None
+            except ConnectionError:
+                return None
+            except Exception as e:
+                logging.error(traceback.format_exc())
+                return None
         else:
-            return False
-
-    def request_nip05(self, address, name):
-        return requests.get('https://{}/.well-known/nostr.json'.format(address), params={'name': name}, timeout=2)
+            return None
 
     def handle_note_event(self, event, subscription):
         response_to = None
@@ -212,14 +225,16 @@ class BijaEvents:
         is_known = self.db.is_known_pubkey(event.public_key)
         if is_known is None:
             self.db.add_profile(event.public_key, updated_at=0)
+        content, media = self.process_note_content(event.content, event.tags)
         self.db.insert_note(
             event.id,
             event.public_key,
-            event.content,
+            content,
             response_to,
             thread_root,
             event.created_at,
             members,
+            media,
             json.dumps(event.to_json_object())
         )
         if subscription == 'primary':
@@ -229,6 +244,40 @@ class BijaEvents:
         elif subscription == 'profile':
             socketio.emit('new_profile_posts', True)
 
+    def process_note_content(self, content, tags):
+        embeds = get_embeded_tag_indexes(content)
+        for item in embeds:
+            item = int(item)
+            if list_index_exists(tags, item) and tags[item][0] == "p":
+                pk = tags[item][1]
+                profile = self.db.get_profile(pk)
+                if profile is not None:
+                    name = profile.name
+                else:
+                    name = '{}...{}'.format(pk[:3], pk[-5:])
+                content = content.replace(
+                    "#[{}]".format(item),
+                    "<a class='uname' href='/profile?pk={}'>@{}</a>".format(pk, name))
+        urls = get_urls_in_string(content)
+        media = []
+        for url in urls:
+            parts = url.split('//')
+            if len(parts) < 2:
+                parts = ['', url]
+                url = 'https://'+url
+            if len(parts[1]) > 21:
+                link_text = parts[1][:21]+'...'
+            else:
+                link_text = parts[1]
+            content = content.replace(
+                url,
+                "<a href='{}'>{}</a>".format(url, link_text))
+            path = urlparse(url).path
+            extension = os.path.splitext(path)[1]
+            if extension.lower() in ['.png', '.svg', '.gif', '.jpg', '.jpeg']:
+                media.append((url, 'image'))
+        return content, json.dumps(media)
+
     def submit_note(self, data):
         k = bytes.fromhex(self.get_key('private'))
         private_key = PrivateKey(k)
@@ -237,7 +286,6 @@ class BijaEvents:
         tags = [['client', 'BIJA']]
         response_to = None
         thread_root = None
-
 
         if 'new_post' in data:
             note = data['new_post']
@@ -430,7 +478,8 @@ class BijaEvents:
                  EventKind.DELETE,
                  EventKind.REACTION]
         profile_filter = Filter(authors=[pubkey], kinds=kinds)
-        mentions_filter = Filter(tags={'#p': [pubkey]}, kinds=[EventKind.TEXT_NOTE, EventKind.ENCRYPTED_DIRECT_MESSAGE, EventKind.REACTION])
+        kinds = [EventKind.TEXT_NOTE, EventKind.ENCRYPTED_DIRECT_MESSAGE, EventKind.REACTION]
+        mentions_filter = Filter(tags={'#p': [pubkey]}, kinds=kinds)
         f = [profile_filter, mentions_filter]
         following_pubkeys = self.db.get_following_pubkeys()
 
@@ -461,7 +510,7 @@ class BijaEvents:
             k = bytes.fromhex(self.get_key('private'))
             pk = PrivateKey(k)
             return pk.decrypt_message(message, public_key)
-        except:
+        except ValueError:
             return 'could not decrypt!'
 
     def encrypt(self, message, public_key):
@@ -469,7 +518,7 @@ class BijaEvents:
             k = bytes.fromhex(self.get_key('private'))
             pk = PrivateKey(k)
             return pk.encrypt_message(message, public_key)
-        except:
+        except ValueError:
             return False
 
     def update_profile(self, profile):
@@ -477,7 +526,11 @@ class BijaEvents:
         private_key = PrivateKey(k)
         created_at = int(time.time())
 
-        event = Event(private_key.public_key.hex(), json.dumps(profile), kind=EventKind.SET_METADATA, created_at=created_at)
+        event = Event(
+            private_key.public_key.hex(),
+            json.dumps(profile),
+            kind=EventKind.SET_METADATA,
+            created_at=created_at)
         event.sign(private_key.hex())
 
         message = json.dumps([ClientMessageType.EVENT, event.to_json_object()], ensure_ascii=False)
