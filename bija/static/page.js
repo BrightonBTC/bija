@@ -491,11 +491,17 @@ class bijaNotes{
         const note_links = document.querySelectorAll(".note-content[data-rel]");
         for (const note_link of note_links) {
             note_link.addEventListener("click", (event)=>{
-                event.preventDefault();
-                event.stopPropagation();
-                let rel = note_link.dataset.rel
                 let id = note_link.dataset.id
-                window.location.href = '/note?id='+rel+'#'+id
+                const container_el = document.querySelector(".note-container[data-id='"+id+"']");
+                if(container_el && container_el.classList.contains("main")){
+
+                }
+                else{
+                    event.preventDefault();
+                    event.stopPropagation();
+                    let rel = note_link.dataset.rel
+                    window.location.href = '/note?id='+rel+'#'+id
+                }
             });
         }
         const im_els = document.querySelectorAll(".note .info");
