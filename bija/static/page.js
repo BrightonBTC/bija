@@ -133,7 +133,7 @@ let updateProfile = function(profile){
             name_els[i].querySelector('.nip5').innerText = profile.nip05
         }
     }
-    const pic_els = document.querySelectorAll(".profile-pic");
+    const pic_els = document.querySelectorAll(".user-image");
     for (let i = 0; i < pic_els.length; i++) {
         pic_els[i].setAttribute("src", profile.pic)
     }
