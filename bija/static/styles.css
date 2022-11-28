@@ -661,6 +661,10 @@ input[type=text].pname {
 .note-container.reply .note-image img{
     margin-left: 90px;
 }
+.note-container.placeholder{
+    font-size:80%;
+    opacity: 0.7;
+}
 
 .note-content{
     border-radius:8px;
