@@ -133,7 +133,7 @@ let updateProfile = function(profile){
             name_els[i].querySelector('.nip5').innerText = profile.nip05
         }
     }
-    const pic_els = document.querySelectorAll(".profile-pic");
+    const pic_els = document.querySelectorAll(".user-image");
     for (let i = 0; i < pic_els.length; i++) {
         pic_els[i].setAttribute("src", profile.pic)
     }
@@ -277,13 +277,13 @@ class bijaThread{
                         if(new_item.dataset.parent.length > 0){
                             const siblings = document.querySelectorAll(".note-container[data-parent='"+new_item.dataset.parent+"']")
                             if(siblings.length > 0){
-                                const last = siblings[siblings.length- 1]
-                                last.parentElement.insertBefore(new_item, last)
+                                const last = Array.from(siblings).pop();
+                                last.insertAdjacentElement("afterend", new_item);
                             }
                             else{
-                                const parent = document.querySelectorAll(".note-container[data-id='"+new_item.dataset.parent+"']")
+                                const parent = document.querySelector(".note-container[data-id='"+new_item.dataset.parent+"']")
                                 if(parent){
-                                    parent.parentElement.insertBefore(new_item, parent)
+                                    parent.insertAdjacentElement("afterend", new_item);
                                 }
                             }
                         }
