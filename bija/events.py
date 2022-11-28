@@ -409,10 +409,9 @@ class BijaEvents:
         subscription_id = 'note-thread'
         self.subscriptions.append(subscription_id)
         ids = self.db.get_note_thread_ids(root_id)
-        if len(ids) < 1:
+        if ids is None:
             ids = [root_id]
 
-        print('thread subscription', ids)
         filters = Filters([
             Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE]),  # event responses
             Filter(ids=ids, kinds=[EventKind.TEXT_NOTE])
