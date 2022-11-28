@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QMainWindow
 
 
 def init_gui(application, socketio, port=5000, width=1100, height=800,
-             window_title="Bija Nostr Client", icon="static/aum.png"):
+             window_title="Bija Nostr Client", icon="http://localhost:5000/static/bija.png"):
 
     ROOT_URL = 'http://localhost:{}'.format(port)
 

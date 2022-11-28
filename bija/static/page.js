@@ -7,7 +7,7 @@ window.addEventListener("load", function () {
     }
     if(document.querySelector(".main[data-page='note']") != null){
         new bijaNotes();
-        new bijaThread()
+        new bijaThread();
     }
     if(document.querySelector(".main[data-page='profile']") != null){
         new bijaNotes();
@@ -23,6 +23,7 @@ window.addEventListener("load", function () {
 });
 
 let SOCK = function(){
+
     var socket = io.connect();
     socket.on('connect', function() {
         socket.emit('new_connect', {data: true});
@@ -56,6 +57,12 @@ let SOCK = function(){
     socket.on('new_profile_posts', function() {
         notifyNewProfilePosts()
     });
+    socket.on('new_in_thread', function(id) {
+        document.dispatchEvent(new CustomEvent("newNote", {
+            detail: { id: id }
+        }));
+    });
+
     socket.on('conn_status', function(data) {
         const connections = {'connected': 0, 'recent': 0, 'disconnected': 0, 'none':0}
         for(const relay in data){
@@ -101,8 +108,6 @@ let SOCK = function(){
                 el.append(span)
             }
         }
-
-
     });
 }
 let notifyNewProfilePosts = function(){
@@ -256,6 +261,43 @@ class bijaThread{
         window.addEventListener("hashchange", (event)=>{
             this.setFolding();
         });
+        document.addEventListener("newNote", (event)=>{
+            const el = document.querySelector(".note-container[data-id='"+event.detail.id+"']")
+
+            if( (el && el.classList.contains('placeholder')) || !el){
+                const o = this
+                fetch('/thread_item?id='+event.detail.id, {
+                    method: 'get'
+                }).then(function(response) {
+                    return response.text();
+                }).then(function(response) {
+                    const doc = new DOMParser().parseFromString(response, "text/html")
+                    const new_item = doc.body.firstChild
+                    if(!el){
+                        if(new_item.dataset.parent.length > 0){
+                            const siblings = document.querySelectorAll(".note-container[data-parent='"+new_item.dataset.parent+"']")
+                            if(siblings.length > 0){
+                                const last = siblings[siblings.length- 1]
+                                last.parentElement.insertBefore(new_item, last)
+                            }
+                            else{
+                                const parent = document.querySelectorAll(".note-container[data-id='"+new_item.dataset.parent+"']")
+                                if(parent){
+                                    parent.parentElement.insertBefore(new_item, parent)
+                                }
+                            }
+                        }
+                    }
+                    else{
+                        el.replaceWith(new_item)
+                        document.dispatchEvent(new Event('newContentLoaded'))
+                    }
+                    o.setFolding()
+                }).catch(function(err) {
+                    console.log(err);
+                });
+            }
+        });
     }
 
     setFolding(){
@@ -289,10 +331,8 @@ class bijaThread{
             });
         }
         else{
-            const new_el = document.createElement('div');
-            new_el.innerHTML = "<p>Event ("+this.focussed+") not yet found on network</p>";
-            new_el.classList.add('note-content')
-            document.querySelector('#thread-items').prepend(new_el)
+            const elem = this.buildPlaceholder(this.focussed, this.focussed)
+            document.querySelector('#thread-items').prepend(elem)
         }
     }
 
@@ -312,22 +352,45 @@ class bijaThread{
             el.style.display = 'flex';
             this.setReplyCount(el);
             const parent = el.dataset.parent;;
-            if(parent.length > 0){
+            if(parent && parent.length > 0){
                 this.showParent(parent, el);
             }
         }
         else{
-            const new_el = document.createElement('div');
-            new_el.innerHTML = "<p>Event ("+id+") not yet found on network</p>";
-            new_el.classList.add('note-content')
-            child.parentElement.insertBefore(new_el, child)
+            const rel = child.dataset.rel
+            const elem = this.buildPlaceholder(id, rel)
+            if(child.dataset.rel == id){
+                document.querySelector('#thread-items').prepend(elem)
+            }
+            else{
+                child.parentElement.insertBefore(elem, child)
+            }
         }
     }
+
+    buildPlaceholder(id, rel){
+        const new_container_el = document.createElement('div');
+        new_container_el.dataset.id = id
+        new_container_el.dataset.rel = rel
+        new_container_el.dataset.parent = ''
+        new_container_el.classList.add('note-container', 'placeholder')
+        const new_el = document.createElement('div');
+        new_el.innerHTML = "<p>Event ("+id+") not yet found on network</p>";
+        new_el.classList.add('note-content')
+        new_container_el.append(new_el)
+        new_container_el.addEventListener("click", (event)=>{
+            window.location.href = '/note?id='+rel+'#'+id
+        });
+        return new_container_el
+    }
+
     setReplyCount(el){
         const id = el.dataset.id;
         const n = document.querySelectorAll(".note-container[data-parent='"+id+"']").length;
         const r_el = el.querySelector('.reply-n')
-        r_el.innerText = n
+        if(r_el){
+            r_el.innerText = n
+        }
     }
 
 

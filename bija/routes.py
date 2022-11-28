@@ -113,6 +113,13 @@ def note_page():
     return render_template("note.html", page_id="note", title="Note", notes=notes)
 
 
+@app.route('/thread_item', methods=['GET'])
+def thread_item():
+    note_id = request.args['id']
+    note = DB.get_note(note_id)
+    return render_template("thread.item.html", post=note)
+
+
 @app.route('/settings')
 def settings_page():
     EVENT_HANDLER.set_page('settings',  None)

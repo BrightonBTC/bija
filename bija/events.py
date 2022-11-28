@@ -243,6 +243,8 @@ class BijaEvents:
                 socketio.emit('unseen_posts_n', unseen_posts)
         elif subscription == 'profile':
             socketio.emit('new_profile_posts', True)
+        elif subscription == 'note-thread':
+            socketio.emit('new_in_thread', event.id)
 
     def process_note_content(self, content, tags):
         embeds = get_embeded_tag_indexes(content)
@@ -409,35 +411,12 @@ class BijaEvents:
         ids = self.db.get_note_thread_ids(root_id)
         if len(ids) < 1:
             ids = [root_id]
+
+        print('thread subscription', ids)
         filters = Filters([
             Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE]),  # event responses
             Filter(ids=ids, kinds=[EventKind.TEXT_NOTE])
         ])
-        request = [ClientMessageType.REQUEST, subscription_id]
-        request.extend(filters.to_json_array())
-        self.relay_manager.add_subscription(subscription_id, filters)
-        time.sleep(1.25)
-        message = json.dumps(request)
-        self.relay_manager.publish_message(message)
-
-    def subscribe_note(self, note_id):
-        subscription_id = 'note-thread'
-        self.subscriptions.append(subscription_id)
-        filters = Filters([
-            Filter(tags={'#e': [note_id]}, kinds=[EventKind.TEXT_NOTE])  # event responses
-        ])
-        note = self.db.get_note(note_id)
-        if note is not None:
-            ancestors = []
-            if note.response_to is not None:
-                ancestors.append(note.response_to)
-            if note.thread_root is not None:
-                ancestors.append(note.thread_root)
-            if len(ancestors) > 0:
-                filters.append(Filter(ids=ancestors, kinds=[EventKind.TEXT_NOTE]))
-        else:
-            filters.append(Filter(ids=[note_id], kinds=[EventKind.TEXT_NOTE]))
-
         request = [ClientMessageType.REQUEST, subscription_id]
         request.extend(filters.to_json_array())
         self.relay_manager.add_subscription(subscription_id, filters)
