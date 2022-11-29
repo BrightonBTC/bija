@@ -650,7 +650,11 @@ class bijaFeed{
 
     loadArticles(response){
         document.getElementById("main-content").innerHTML += response;
-        this.loading = 0;
+        const o = this
+        setTimeout(function(){
+            o.loading = 0;
+        }, 200)
+
     }
 }
 
