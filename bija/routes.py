@@ -47,6 +47,7 @@ def index_page():
         notes = DB.get_feed(time.time(), get_key())
         t, i = make_threaded(notes)
         profile = DB.get_profile(get_key())
+        EXECUTOR.submit(EVENT_HANDLER.subscribe_feed, i)
         return render_template("feed.html", page_id="home", title="Home", threads=t, ids=i, profile=profile)
     else:
         return render_template("login.html", page_id="login", title="Login", login_type=login_state)
@@ -61,6 +62,7 @@ def feed():
             before = time.time()
         notes = DB.get_feed(before, get_key())
         t, i = make_threaded(notes)
+        EXECUTOR.submit(EVENT_HANDLER.subscribe_feed, i)
 
         return render_template("feed.items.html", threads=t, ids=i)
 
@@ -385,7 +387,7 @@ def make_threaded(notes):
         in_list.append(note['id'])
         note = dict(note)
 
-        thread = [note]
+        t = [note]
         thread_ids = []
         if note['response_to'] is not None:
             thread_ids.append(note['response_to'])
@@ -397,14 +399,15 @@ def make_threaded(notes):
             if nn['id'] in thread_ids:
                 notes.remove(n)
                 nn['is_parent'] = True
-                thread.insert(0, nn)
+                t.insert(0, nn)
                 in_list.append(nn['id'])
                 if nn['response_to'] is not None:
                     thread_ids.append(nn['response_to'])
                 if nn['thread_root'] is not None:
                     thread_ids.append(nn['thread_root'])
 
-        threads.append(thread)
+        threads.append(t)
+        in_list = list(dict.fromkeys(in_list))
 
     return threads, in_list
 

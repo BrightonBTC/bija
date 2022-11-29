@@ -260,6 +260,13 @@ class BijaEvents:
                 content = content.replace(
                     "#[{}]".format(item),
                     "<a class='uname' href='/profile?pk={}'>@{}</a>".format(pk, name))
+            elif list_index_exists(tags, item) and tags[item][0] == "e":
+                id = tags[item][1]
+                content = content.replace(
+                    "#[{}]".format(item),
+                    "<div class='repost' data-id='{}'>{}</div>".format(id, id))
+
+
         urls = get_urls_in_string(content)
         media = []
         for url in urls:
@@ -413,6 +420,21 @@ class BijaEvents:
             ids = [root_id]
 
         print('thread subscription', ids)
+        filters = Filters([
+            Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE]),  # event responses
+            Filter(ids=ids, kinds=[EventKind.TEXT_NOTE])
+        ])
+        request = [ClientMessageType.REQUEST, subscription_id]
+        request.extend(filters.to_json_array())
+        self.relay_manager.add_subscription(subscription_id, filters)
+        time.sleep(1.25)
+        message = json.dumps(request)
+        self.relay_manager.publish_message(message)
+
+    def subscribe_feed(self, ids):
+        subscription_id = 'main-feed'
+        self.subscriptions.append(subscription_id)
+        print('feed subscription', ids)
         filters = Filters([
             Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE]),  # event responses
             Filter(ids=ids, kinds=[EventKind.TEXT_NOTE])
