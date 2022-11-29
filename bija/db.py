@@ -141,9 +141,7 @@ class BijaDB:
             updated_at=updated_at,
             raw=raw
         ))
-        print('NOT COMMITED', raw)
         self.session.commit()
-        print('COMMITED')
         return self.session.query(Profile).filter_by(public_key=public_key).first()
 
     def set_valid_nip05(self, public_key):
