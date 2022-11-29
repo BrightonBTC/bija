@@ -1,4 +1,5 @@
 import json
+from collections import OrderedDict
 from datetime import datetime
 from threading import Thread, Event
 
@@ -45,9 +46,14 @@ def index_page():
     login_state = get_login_state()
     if login_state is LoginState.LOGGED_IN:
         notes = DB.get_feed(time.time(), get_key())
-        t, i = make_threaded(notes)
+        threads, last_ts = make_threaded(notes)
         profile = DB.get_profile(get_key())
-        return render_template("feed.html", page_id="home", title="Home", threads=t, ids=i, profile=profile)
+        return render_template("feed.html", page_id="home", title="Home", threads=threads, last=last_ts, profile=profile)
+
+        # t, i = make_threaded(notes)
+        # profile = DB.get_profile(get_key())
+        # EXECUTOR.submit(EVENT_HANDLER.subscribe_feed, i)
+        # return render_template("feed.html", page_id="home", title="Home", threads=t, ids=i, profile=profile)
     else:
         return render_template("login.html", page_id="login", title="Login", login_type=login_state)
 
@@ -60,9 +66,11 @@ def feed():
         else:
             before = time.time()
         notes = DB.get_feed(before, get_key())
-        t, i = make_threaded(notes)
-
-        return render_template("feed.items.html", threads=t, ids=i)
+        # t, i = make_threaded(notes)
+        # EXECUTOR.submit(EVENT_HANDLER.subscribe_feed, i)
+        # return render_template("feed.items.html", threads=t, ids=i)
+        threads, last_ts = make_threaded(notes)
+        return render_template("feed.items.html",  threads=threads, last=last_ts)
 
 
 @app.route('/login', methods=['POST'])
@@ -94,12 +102,14 @@ def profile_page():
         EVENT_HANDLER.set_page('profile',  k)
         is_me = True
     notes = DB.get_notes_by_pubkey(k, int(time.time()), timestamp_minus(TimePeriod.DAY))
-    t, i = make_threaded(notes)
+    # t, i = make_threaded(notes)
+    threads, last_ts = make_threaded(notes)
     profile = DB.get_profile(k)
     if profile is None:
         DB.add_profile(k)
         profile = DB.get_profile(k)
-    return render_template("profile.html", page_id="profile", title="Profile", threads=t, ids=i, profile=profile, is_me=is_me)
+    # return render_template("profile.html", page_id="profile", title="Profile", threads=t, ids=i, profile=profile, is_me=is_me)
+    return render_template("profile.html", page_id="profile", title="Profile", threads=threads, last=last_ts, profile=profile, is_me=is_me)
 
 
 @app.route('/note', methods=['GET'])
@@ -356,16 +366,30 @@ def _jinja2_filter_decr(content, pk):
 
 
 @app.template_filter('ident_string')
-def _jinja2_filter_ident(name, pk, nip5, validated):
+def _jinja2_filter_ident(name, pk, nip5=None, validated=None):
     if validated and nip5 is not None:
         if nip5[0:2] == "_@":
             nip5 = nip5[2:]
-        return "<span class='name'>{}</span> <span class='nip5'>{}</span>".format(name, nip5)
+        return "<span class='uname' data-pk='{}'><span class='name'>{}</span> <span class='nip5'>{}</span>".format(pk, name, nip5)
     elif name is None or len(name.strip()) < 1:
-        name = "<span class='name'>{}...</span> <span class='nip5'></span>".format(pk[0:21])
+        name = "<span class='uname' data-pk='{}'><span class='name'>{}...</span> <span class='nip5'></span></span>".format(pk, pk[0:21])
     else:
-        name = "<span class='name'>{}</span> <span class='nip5'></span>".format(name)
+        name = "<span class='uname' data-pk='{}'><span class='name'>{}</span> <span class='nip5'></span></span>".format(pk, name)
     return name
+
+
+@app.template_filter('responders_string')
+def _jinja2_filter_responders(the_dict, n):
+    names = []
+    for pk, name in the_dict.items():
+        names.append([pk, _jinja2_filter_ident(name, pk)])
+
+    if n == 1:
+        return '<a href="/profile?pk={}">@{}</a> commented'.format(names[0][0], names[0][1])
+    elif n == 2:
+        return '<a href="/profile?pk={}">@{}</a> and <a href="/profile?pk={}">@{}</a> commented'.format(names[0][0], names[0][1], names[1][0], names[1][1])
+    else:
+        return '<a href="/profile?pk={}">@{}</a>, <a href="/profile?pk={}">@{}</a> and {} other contacts commented'.format(names[0][0], names[0][1], names[1][0], names[1][1], n-2)
 
 
 @app.template_filter('process_media_attachments')
@@ -379,34 +403,74 @@ def _jinja2_filter_media(json_string):
 
 
 def make_threaded(notes):
-    in_list = []
+
     threads = []
+    thread_roots = []
+    last_ts = None
     for note in notes:
-        in_list.append(note['id'])
         note = dict(note)
-
-        thread = [note]
-        thread_ids = []
-        if note['response_to'] is not None:
-            thread_ids.append(note['response_to'])
+        last_ts = note['created_at']
         if note['thread_root'] is not None:
-            thread_ids.append(note['thread_root'])
+            thread_roots.append(note['thread_root'])
+        elif note['response_to'] is not None:
+            thread_roots.append(note['response_to'])
+        elif note['thread_root'] is None and note['response_to'] is None:
+            thread_roots.append(note['id'])
 
-        for n in notes:
-            nn = dict(n)
-            if nn['id'] in thread_ids:
-                notes.remove(n)
-                nn['is_parent'] = True
-                thread.insert(0, nn)
-                in_list.append(nn['id'])
-                if nn['response_to'] is not None:
-                    thread_ids.append(nn['response_to'])
-                if nn['thread_root'] is not None:
-                    thread_ids.append(nn['thread_root'])
+    thread_roots = list(dict.fromkeys(thread_roots))
 
-        threads.append(thread)
+    for root in thread_roots:
+        t = {'self': None, 'id': root, 'response': None, 'responders': {}}
+        responders = []
+        for note in notes:
+            note = dict(note)
+            if note['id'] == root:
+                t['self'] = note
+            elif note['response_to'] == root or note['thread_root'] == root:
+                if t['response'] is None:
+                    t['response'] = note
+                if len(t['responders']) < 2:
+                    t['responders'][note['public_key']] = note['name']
+                responders.append(note['public_key'])
+        responders = list(dict.fromkeys(responders))
+        t['responder_count'] = len(responders)
 
-    return threads, in_list
+        if t['self'] is None:
+            t['self'] = DB.get_note(root)
+        threads.append(t)
+    return threads, last_ts
+
+
+
+            # in_list = []
+    # threads = []
+    # for note in notes:
+    #     in_list.append(note['id'])
+    #     note = dict(note)
+    #
+    #     t = [note]
+    #     thread_ids = []
+    #     if note['response_to'] is not None:
+    #         thread_ids.append(note['response_to'])
+    #     if note['thread_root'] is not None:
+    #         thread_ids.append(note['thread_root'])
+    #
+    #     for n in notes:
+    #         nn = dict(n)
+    #         if nn['id'] in thread_ids:
+    #             notes.remove(n)
+    #             nn['is_parent'] = True
+    #             t.insert(0, nn)
+    #             in_list.append(nn['id'])
+    #             if nn['response_to'] is not None:
+    #                 thread_ids.append(nn['response_to'])
+    #             if nn['thread_root'] is not None:
+    #                 thread_ids.append(nn['thread_root'])
+    #
+    #     threads.append(t)
+    #     in_list = list(dict.fromkeys(in_list))
+    #
+    # return threads, in_list
 
 
 def get_login_state():

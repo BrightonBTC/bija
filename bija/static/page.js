@@ -124,7 +124,7 @@ let notifyNewProfilePosts = function(){
 let updateProfile = function(profile){
     document.querySelector(".profile-about").innerText = profile.about
     document.querySelector("#profile").dataset.updated_ts = profile.updated_at
-    const name_els = document.querySelectorAll(".profile-name");
+    const name_els = document.querySelectorAll(".uname[data-pk='"+profile.public_key+"']");
     for (let i = 0; i < name_els.length; i++) {
         if(profile.name.length > 0){
             name_els[i].querySelector('.name').innerText = profile.name
@@ -133,7 +133,7 @@ let updateProfile = function(profile){
             name_els[i].querySelector('.nip5').innerText = profile.nip05
         }
     }
-    const pic_els = document.querySelectorAll(".user-image");
+    const pic_els = document.querySelectorAll(".user-image[data-rel='"+profile.public_key+"']");
     for (let i = 0; i < pic_els.length; i++) {
         pic_els[i].setAttribute("src", profile.pic)
     }
@@ -389,7 +389,8 @@ class bijaThread{
         const n = document.querySelectorAll(".note-container[data-parent='"+id+"']").length;
         const r_el = el.querySelector('.reply-n')
         if(r_el){
-            r_el.innerText = n
+            if(n>0) r_el.innerText = n+' replies'
+            else r_el.innerText = ''
         }
     }
 
@@ -624,8 +625,8 @@ class bijaFeed{
         if (
             (window.innerHeight +window.innerHeight + window.scrollY) >= document.body.offsetHeight && o.loading == 0
         ){
-            let nodes = document.querySelectorAll('.note[data-dt]')
-            o.requestNextPage(nodes[nodes.length-1].dataset.dt);
+            let nodes = document.querySelectorAll('.ts[data-ts]')
+            o.requestNextPage(nodes[nodes.length-1].dataset.ts);
         }
     }
 
@@ -650,7 +651,11 @@ class bijaFeed{
 
     loadArticles(response){
         document.getElementById("main-content").innerHTML += response;
-        this.loading = 0;
+        const o = this
+        setTimeout(function(){
+            o.loading = 0;
+        }, 200)
+
     }
 }
 

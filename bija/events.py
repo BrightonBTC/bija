@@ -99,6 +99,7 @@ class BijaEvents:
 
             while self.relay_manager.message_pool.has_events():
                 msg = self.relay_manager.message_pool.get_event()
+                print('EventKind', msg.event.kind)
                 if msg.event.kind == EventKind.SET_METADATA:
                     self.handle_metadata_event(msg.event)
 
@@ -128,6 +129,7 @@ class BijaEvents:
 
     def handle_metadata_event(self, event):
         s = json.loads(event.content)
+        print(s)
         name = None
         nip05 = None
         about = None
@@ -140,6 +142,8 @@ class BijaEvents:
             about = s['about']
         if 'picture' in s:
             picture = s['picture']
+
+        print('here')
         result = self.db.upd_profile(
             event.public_key,
             name,
@@ -149,6 +153,7 @@ class BijaEvents:
             event.created_at,
             json.dumps(event.to_json_object())
         )
+        print('here')
         if result.nip05 is not None and result.nip05_validated == 0:
             if self.validate_nip05(result.nip05, result.public_key):
                 self.db.set_valid_nip05(result.public_key)
@@ -260,6 +265,13 @@ class BijaEvents:
                 content = content.replace(
                     "#[{}]".format(item),
                     "<a class='uname' href='/profile?pk={}'>@{}</a>".format(pk, name))
+            elif list_index_exists(tags, item) and tags[item][0] == "e":
+                id = tags[item][1]
+                content = content.replace(
+                    "#[{}]".format(item),
+                    "<div class='repost' data-id='{}'>{}</div>".format(id, id))
+
+
         urls = get_urls_in_string(content)
         media = []
         for url in urls:
@@ -412,6 +424,21 @@ class BijaEvents:
         if ids is None:
             ids = [root_id]
 
+        filters = Filters([
+            Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE]),  # event responses
+            Filter(ids=ids, kinds=[EventKind.TEXT_NOTE])
+        ])
+        request = [ClientMessageType.REQUEST, subscription_id]
+        request.extend(filters.to_json_array())
+        self.relay_manager.add_subscription(subscription_id, filters)
+        time.sleep(1.25)
+        message = json.dumps(request)
+        self.relay_manager.publish_message(message)
+
+    def subscribe_feed(self, ids):
+        subscription_id = 'main-feed'
+        self.subscriptions.append(subscription_id)
+        print('feed subscription', ids)
         filters = Filters([
             Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE]),  # event responses
             Filter(ids=ids, kinds=[EventKind.TEXT_NOTE])

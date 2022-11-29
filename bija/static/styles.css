@@ -3,6 +3,7 @@
     --txt-clr2: #8c8f9a;
     --lnk-clr: #4ec74c;
     --lnk-clr-hvr: #4ee44c;
+    --lnk-clr2: #658dff;
     --bg-clr1: #1d2546;
     --bg-clr1-fade: #1a172a;
     --bg-clr2: #070d22;
@@ -24,7 +25,7 @@
 /* global styles */
 html {
   box-sizing: border-box;
-  font-size: 16px;
+  font-size: 14px;
 }
 
 *, *:before, *:after {
@@ -208,6 +209,7 @@ input[type=submit]:hover {
 
 .dt{
     color: var(--txt-clr2);
+    margin-left: 50px;
 }
 
 .alert{
@@ -361,6 +363,7 @@ input[type=submit]:hover {
     font-size: 12px;
     padding: 5px;
     color: var(--txt-clr2);
+    margin-bottom: 30px;
 }
 .profile-menu{
     overflow: hidden;
@@ -582,22 +585,19 @@ input[type=text].pname {
 /* Thread page */
 .note-container{
     display: flex;
-    padding: 10px;
-    border-bottom: 1px solid var(--bdr-clr-1);
+    padding: 0 10px;
     overflow: hidden;
     position: relative;
 }
 .note-container > *{
     margin:10px;
 }
-.note-parent-container{
-    display: flex;
-    padding: 10px;
-    overflow: hidden;
-    position: relative;
+.note-container.root {
+    font-size: 120%;
+    filter: saturate(1.1);
 }
-.note-parent-container > *{
-    margin:10px;
+.note-container.root .note {
+    border: 2px solid var(--bdr-clr-1);
 }
 
 .note-container.main .note{
@@ -629,31 +629,29 @@ input[type=text].pname {
     margin-left: 30px;
 }
 
-.is-parent{
+.thread-marker{
     position: absolute;
-    width: 40px;
-    height: 1000px;
-    margin-left: 40px;
-    margin-top: 85px;
+    width: 0;
     border-color: var(--bdr-clr-2);
     border-style: solid;
     border-width: 0 0 2px 2px;
+    display: none;
+    top: 80px;
+    left: 40px;
+    margin: 0 10px;
+    bottom: 10px;
 }
 
-.note-container .is-parent{
-    display:none;
-}
-
-.note-container.root .is-parent, .note-container.ancestor .is-parent{
+.note-container.root .thread-marker, .note-container.ancestor .thread-marker{
     display: block;
 }
-.note-container.reply .is-parent{
+.note-container.reply .thread-marker{
     display: block;
-    margin-top: 20px;
     height: 90px;
     border-bottom-left-radius: 20px;
     width: 130px;
-    border-style: dashed;
+    border-style: dotted;
+    top: 0;
 }
 .note-container.reply .note-image{
     flex: 0 0 150px
@@ -666,15 +664,42 @@ input[type=text].pname {
     opacity: 0.7;
 }
 
+.note-container.connector{
+    height: 40px;
+    align-items: center;
+}
+.note-container.connector a{
+    color: var(--lnk-clr);
+    text-decoration: none;
+    font-size: 12px;
+    flex: 1;
+    text-align: center;
+}
+.note-container.connector .thread-marker{
+    border-style: dashed;
+    top: 0;
+    bottom: 5px;
+    display: block;
+}
+
 .note-content{
     border-radius:8px;
     background: var(--bg-clr2);
     padding:10px;
-    white-space: pre-wrap;
     cursor:pointer;
+}
+.note-content pre{
+    margin:0;
+    white-space: pre-wrap;
 }
 .note-container.main .note-content{
     cursor:auto;
+}
+
+.thread-divider{
+    border: 0;
+    border-bottom: 1px solid var(--bdr-clr-1);
+    margin-bottom: 50px;
 }
 
 .muted{
@@ -685,11 +710,15 @@ input[type=text].pname {
     padding:10px;
     width:fit-content;
 }
-
+.note-outer{
+    flex: 1;
+}
 .note{
-    flex:1;
     overflow: hidden;
-    padding: 0 5px;
+    padding: 0 10px 10px;
+    border-radius: 10px;
+    background: var(--bg-clr1);
+    box-shadow: 1px 1px 4px var(--bg-clr2);
 }
 .note .image-attachment{
     text-align: center;
@@ -704,7 +733,13 @@ input[type=text].pname {
     color: var(--lnk-clr-hvr);
 }
 .note h3{
-    margin-bottom:10px;
+    margin-bottom:0px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.note h3 *{
+    line-height: 24px;
 }
 
 .reply-form{
@@ -722,6 +757,17 @@ input[type=text].pname {
     font-style: italic;
     color: var(--txt-clr2);
 }
+.response-accounts{
+    font-size: 10px;
+    font-weight: 200;
+    padding: 0px 5px 10px;
+}
+.response-accounts a{
+    color: var(--lnk-clr2);
+    text-decoration: none;
+    font-weight: 600;
+}
+
 /* ---------- */
 
 /* Right column */

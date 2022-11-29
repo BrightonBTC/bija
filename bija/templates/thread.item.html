@@ -17,23 +17,21 @@
 {% endif %}
 
 <div class="note-container" data-rel="{{thread_root}}" data-id="{{post['id']}}" data-parent="{{parent}}">
-    <div class="is-parent"></div>
+    <div class="thread-marker"></div>
     <div class="note-image">
         {% set p=post %}
         {% include 'profile.image.html' %}
     </div>
+    <div class="note-outer">
     <div class="note" data-dt="{{post['created_at']}}">
         <h3>
             <a href="/profile?pk={{post['public_key']}}" class="profile-name">{{post['name'] | ident_string(post['public_key'], post['nip05'], post['nip05_validated']) | safe }}</a>
+            <span class="sm dt">{{post['created_at']|dt}} <span class="info" data-id="{{post['id']}}">🛈</span></span>
         </h3>
-        <pre class="note-content" data-rel="{{thread_root}}" data-id="{{post['id']}}">{{post['content'] |safe}}{{post['media'] | process_media_attachments | safe}}</pre>
-        <p><span class="reply-n"></span> replies<a href="#" class="reply-link right" data-rel="{{post['id']}}">reply</a></p>
-        <form class="reply-form"  data-noteid="{{post['id']}}" >
-            <input type="hidden" name="pubkey" value="{{post['public_key']}}">
-            <input type="hidden" name="parent_id" value="{{post['id']}}">
-            <input type="hidden" name="thread_root" value="{{thread_root}}">
-            <textarea name="reply"></textarea>
-            <input type="submit" value="post" data-reply-submit="1" data-rel="{{post['id']}}">
-        </form>
+        <div class="note-content" data-rel="{{thread_root}}" data-id="{{post['id']}}">
+            <pre>{{post['content'] |safe}}{{post['media'] | process_media_attachments | safe}}</pre>
+        </div>
+        {% include 'note.reply_form.html' %}
+    </div>
     </div>
 </div>
