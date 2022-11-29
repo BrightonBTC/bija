@@ -141,7 +141,9 @@ class BijaDB:
             updated_at=updated_at,
             raw=raw
         ))
+        print('NOT COMMITED', raw)
         self.session.commit()
+        print('COMMITED')
         return self.session.query(Profile).filter_by(public_key=public_key).first()
 
     def set_valid_nip05(self, public_key):
@@ -156,7 +158,7 @@ class BijaDB:
                     thread_root=None,
                     created_at=None,
                     members=None,
-                    media =None,
+                    media=None,
                     raw=None):
         self.session.merge(Note(
             id=note_id,
@@ -221,7 +223,7 @@ class BijaDB:
                                   Profile.name,
                                   Profile.pic,
                                   Profile.nip05,
-                                   Profile.nip05_validated) \
+                                  Profile.nip05_validated) \
             .filter(
             or_(
                 Note.id.in_([i.response_to for i in items]),
@@ -398,6 +400,7 @@ class Profile(Base):
             self.updated_at,
             self.following,
             self.contacts,
+            self.nip05_validated,
             self.raw
         }
 

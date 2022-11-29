@@ -1,50 +1,80 @@
-{% for notes in threads: %}
-{% for post in notes: %}
-
-    {% if post['thread_root'] is not none %}
-    {% set thread_root=post['thread_root'] %}
-    {% elif post['response_to'] is not none %}
-    {% set thread_root=post['response_to'] %}
-    {% else %}
-    {% set thread_root=post['id'] %}
-    {% endif %}
-
-    {% if post['response_to'] is not none and post['response_to'] not in ids %}
-    <div class="note-parent-container">
-        <div class="note-image">
-           <div class="thread-pointer"></div>
-        </div>
-        <div class="note">
-            <div class="note-content muted">
-                <a href="/note?id={{post['response_to']}}#{{post['response_to']}}">{{post['response_to'] | truncate(21, False, '...')}}</a>
-            </div>
-        </div>
+<div class="ts" data-ts="{{last}}"></div>
+{% for thread in threads: %}
+{% if thread['responder_count'] > 0 %}
+{% set root_class = 'note-container root' %}
+{% else %}
+{% set root_class = 'note-container' %}
+{% endif %}
+{% if thread['self'] is not none %}
+{% set post = thread['self'] %}
+<div class="{{root_class}}">
+    <div class="thread-marker"></div>
+    <div class="note-image">
+        {% set p=post %}
+        {% include 'profile.image.html' %}
+    </div>
+    <div class="note-outer">
+    {% if thread['responder_count'] > 0 %}
+    <div class="response-accounts">
+        {{ thread['responders'] | responders_string(thread['responder_count']) | safe }}
+        {% if thread['self'] is none %}
+        on a <a href="/note?id={{thread['id']}}#{{thread['id']}}">thread</a>
+        {% endif %}
     </div>
     {% endif %}
-
-    {% if post['is_parent'] %}
-    {% set container='note-parent-container' %}
-    {% else %}
-    {% set container='note-container' %}
-    {% endif %}
-    <div class="{{container}}">
-        <div class="is-parent"></div>
-        <div class="note-image">
-            {% set p=post %}
-            {% include 'profile.image.html' %}
+    <div class="note" data-dt="{{post['created_at']}}">
+        <h3>
+            <a href="/profile?pk={{post['public_key']}}" class="profile-name">{{post['name'] | ident_string(post['public_key'], post['nip05'], post['nip05_validated']) | safe }}</a>
+            <span class="sm dt">{{post['created_at']|dt}} <span class="info" data-id="{{post['id']}}">🛈</span></span>
+        </h3>
+        <div class="note-content" data-id="{{post['id']}}" data-rel="{{post['id']}}">
+            <pre>{{post['content'] |safe}}{{post['media'] | process_media_attachments | safe}}</pre>
         </div>
-        <div class="note" data-dt="{{post['created_at']}}">
-            <h3>
-                <a href="/profile?pk={{post['public_key']}}" class="profile-name">{{post['name'] | ident_string(post['public_key'], post['nip05'], post['nip05_validated']) | safe }}</a>
-                <span class="sm dt">{{post['created_at']|dt}} <span class="info" data-id="{{post['id']}}">🛈</span></span>
-            </h3>
-            <div class="note-content" data-id="{{post['id']}}" data-rel="{{thread_root}}">
-                <pre>{{post['content'] |safe}}{{post['media'] | process_media_attachments | safe}}</pre>
-            </div>
-            {% include 'note.reply_form.html' %}
-        </div>
-
+        {% include 'note.reply_form.html' %}
     </div>
+    </div>
+</div>
+{% endif %}
+{% if thread['response'] is not none %}
+{% set post = thread['response'] %}
 
-{% endfor %}
+{% if thread['self'] is not none %}
+{% if post['response_to'] != thread['id'] or post['response_to'] is none and post['thread_root'] != thread['id']  %}
+<div class="note-container connector">
+    <div class="thread-marker"></div>
+    <div class="note-image"></div>
+    <a href="/note?id={{thread['id']}}#{{post['id']}}">View thread</a>
+</div>
+{% endif %}
+{% endif %}
+
+<div class="note-container">
+    <div class="thread-marker"></div>
+    <div class="note-image">
+        {% set p=post %}
+        {% include 'profile.image.html' %}
+    </div>
+    <div class="note-outer">
+    {% if thread['responder_count'] > 0 and thread['self'] is none %}
+    <div class="response-accounts">
+        {{ thread['responders'] | responders_string(thread['responder_count']) | safe }}
+        {% if thread['self'] is none %}
+        on a <a href="/note?id={{thread['id']}}#{{thread['id']}}">thread</a>
+        {% endif %}
+    </div>
+    {% endif %}
+    <div class="note" data-dt="{{post['created_at']}}">
+        <h3>
+            <a href="/profile?pk={{post['public_key']}}" class="profile-name">{{post['name'] | ident_string(post['public_key'], post['nip05'], post['nip05_validated']) | safe }}</a>
+            <span class="sm dt">{{post['created_at']|dt}} <span class="info" data-id="{{post['id']}}">🛈</span></span>
+        </h3>
+        <div class="note-content" data-id="{{post['id']}}" data-rel="{{thread['id']}}">
+            <pre>{{post['content'] |safe}}{{post['media'] | process_media_attachments | safe}}</pre>
+        </div>
+        {% include 'note.reply_form.html' %}
+    </div>
+    </div>
+</div>
+{% endif %}
+<hr class="thread-divider" />
 {% endfor %}

@@ -99,6 +99,7 @@ class BijaEvents:
 
             while self.relay_manager.message_pool.has_events():
                 msg = self.relay_manager.message_pool.get_event()
+                print('EventKind', msg.event.kind)
                 if msg.event.kind == EventKind.SET_METADATA:
                     self.handle_metadata_event(msg.event)
 
@@ -128,6 +129,7 @@ class BijaEvents:
 
     def handle_metadata_event(self, event):
         s = json.loads(event.content)
+        print(s)
         name = None
         nip05 = None
         about = None
@@ -140,6 +142,8 @@ class BijaEvents:
             about = s['about']
         if 'picture' in s:
             picture = s['picture']
+
+        print('here')
         result = self.db.upd_profile(
             event.public_key,
             name,
@@ -149,6 +153,7 @@ class BijaEvents:
             event.created_at,
             json.dumps(event.to_json_object())
         )
+        print('here')
         if result.nip05 is not None and result.nip05_validated == 0:
             if self.validate_nip05(result.nip05, result.public_key):
                 self.db.set_valid_nip05(result.public_key)
