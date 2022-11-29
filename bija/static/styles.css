@@ -690,9 +690,12 @@ input[type=text].pname {
 }
 
 .note{
-    flex:1;
+    flex: 1;
     overflow: hidden;
-    padding: 0 5px;
+    padding: 10px;
+    border-radius: 10px;
+    background: var(--bg-clr1);
+    box-shadow: 1px 1px 4px var(--bg-clr2);
 }
 .note .image-attachment{
     text-align: center;

@@ -389,7 +389,8 @@ class bijaThread{
         const n = document.querySelectorAll(".note-container[data-parent='"+id+"']").length;
         const r_el = el.querySelector('.reply-n')
         if(r_el){
-            r_el.innerText = n
+            if(n>0) r_el.innerText = n+' replies'
+            else r_el.innerText = ''
         }
     }
 
