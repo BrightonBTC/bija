@@ -60,6 +60,10 @@ td, tr{
     padding: 5px;
 }
 
+a{
+    text-decoration:none;
+}
+
 input[type=text], textarea {
     width: 100%;
     padding: 12px 20px;
@@ -151,7 +155,6 @@ input[type=submit]:hover {
   color: var(--mnu-clr);
   text-align: center;
   padding: 14px 16px;
-  text-decoration: none;
 }
 
 .topnav a:hover, .topnav a:active{
@@ -159,12 +162,12 @@ input[type=submit]:hover {
     color: var(--mnu-clr-hvr);
 }
 
-.leftcolumn {
+.left-column {
   float: left;
   width: 75%;
 }
 
-.rightcolumn {
+.right-column {
   float: left;
   width: 25%;
   padding-left: 20px;
@@ -192,7 +195,6 @@ input[type=submit]:hover {
     padding: 20px;
     background: #364c89;
     color: #fff;
-    text-decoration: none;
     border-radius: 10px;
     opacity: 0;
     animation: fadeInOut 3s linear;
@@ -347,7 +349,6 @@ input[type=submit]:hover {
     top: 10px
 }
 .profile-tools a{
-    text-decoration: none;
     padding: 5px;
     background: var(--bg-clr2);
     border-radius: 8px;
@@ -378,7 +379,6 @@ input[type=submit]:hover {
     color: var(--mnu-clr);
     text-align: center;
     padding: 10px 15px;
-    text-decoration: none;
 }
 .profile-menu a:hover{
     background-color: var(--bg-clr3);
@@ -390,7 +390,6 @@ input[type=submit]:hover {
     padding: 10px;
     margin: 0 5px;
     border-bottom: 1px solid var(--bdr-clr-1);
-    text-decoration: none;
     color: var(--txt-clr);
     align-items: center;
 }
@@ -440,7 +439,6 @@ input[type=text].pname {
     padding: 5px;
     border-radius: 5px;
     color: var(--lnk-clr);
-    text-decoration: none;
 }
 
 /* ---------- */
@@ -501,7 +499,6 @@ input[type=text].pname {
 
 .msg{
     display: flex;
-    text-decoration: none;
     color: var(--txt-clr);
 }
 .msg.me{
@@ -553,7 +550,6 @@ input[type=text].pname {
 .msg-link{
     display: flex;
     padding: 0 10px;
-    text-decoration: none;
     color: var(--txt-clr);
     position: relative;
 }
@@ -588,6 +584,7 @@ input[type=text].pname {
     padding: 0 10px;
     overflow: hidden;
     position: relative;
+    font-size: 14px;
 }
 .note-container > *{
     margin:10px;
@@ -600,8 +597,8 @@ input[type=text].pname {
     border: 2px solid var(--bdr-clr-1);
 }
 
-.note-container.main .note{
-    font-size: 130%;
+.note-container.main .note:not(.note-container .note-container *) {
+    font-size: 16px;
     filter: saturate(1.3);
     border-radius: 10px;
     background: var(--bg-clr3);
@@ -609,13 +606,20 @@ input[type=text].pname {
 .note-container.ancestor{
     border-bottom:0;
 }
-
+.note-container .note-container {
+    border: 2px solid var(--bdr-clr-2);
+    margin: 5px;
+    border-radius: 10px;
+    background: var(--bg-clr1);
+    display: flex !important;
+}
 .note-image{
     flex: 0 0 60px;
 }
 .note-image img{
     width: 60px;
     height: 60px;
+    position: relative;
 }
 
 .thread-pointer{
@@ -670,7 +674,6 @@ input[type=text].pname {
 }
 .note-container.connector a{
     color: var(--lnk-clr);
-    text-decoration: none;
     font-size: 12px;
     flex: 1;
     text-align: center;
@@ -686,12 +689,17 @@ input[type=text].pname {
     border-radius:8px;
     background: var(--bg-clr2);
     padding:10px;
-    cursor:pointer;
 }
 .note-content pre{
     margin:0;
     white-space: pre-wrap;
+    cursor:pointer;
+    background: var(--bg-clr2);
 }
+.note-content pre:hover{
+    filter: brightness(1.5);
+}
+
 .note-container.main .note-content{
     cursor:auto;
 }
@@ -727,7 +735,6 @@ input[type=text].pname {
 
 .note a{
     color: var(--lnk-clr);
-    text-decoration:none;
 }
 .note a:hover{
     color: var(--lnk-clr-hvr);
@@ -764,13 +771,17 @@ input[type=text].pname {
 }
 .response-accounts a{
     color: var(--lnk-clr2);
-    text-decoration: none;
     font-weight: 600;
 }
 
 /* ---------- */
 
 /* Right column */
+#right_content{
+    position: fixed;
+    top: 150px;
+    width: 230px
+}
 #search {
     position: fixed;
 }
@@ -782,6 +793,25 @@ input[type=text].pname {
 #search p{
     padding: 0 20px;
 }
+.thread-members{
+    border: 1px solid var(--bdr-clr-1);
+}
+.thread-members li{
+    padding: 10px;
+    display: flex;
+    align-items: center;
+}
+.thread-members .user-image{
+    width: 30px;
+    height: 30px;
+    margin-right: 10px;
+}
+.thread-members a{
+    color: var(--txt-clr2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 /* ---------- */
 
 @keyframes fadeInOut {
@@ -790,7 +820,7 @@ input[type=text].pname {
 }
 
 @media screen and (max-width: 800px) {
-  .leftcolumn, .rightcolumn {
+  .left-column, .right-column {
     width: 100%;
     padding: 0;
   }

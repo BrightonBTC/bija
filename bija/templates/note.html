@@ -1,4 +1,18 @@
-{% extends "base.html" %}
-{% block content %}
-{% include 'thread.html' %}
-{% endblock content %}
+<div class="note" data-dt="{{note['created_at']}}">
+    <h3>
+        <a href="/profile?pk={{note['public_key']}}" class="profile-name">{{note['name'] | ident_string(note['public_key'], note['nip05'], note['nip05_validated']) | safe }}</a>
+        <span class="sm dt">{{note['created_at']|dt}} <span class="info" data-id="{{note['id']}}">🛈</span></span>
+    </h3>
+    <div class="note-content" data-rel="{{thread_root}}" data-id="{{note['id']}}">
+        <pre>{{note['content'] |safe}}{{note['media'] | process_media_attachments | safe}}</pre>
+        {% if note['reshare'] is not none %}
+            {% if note['reshare'] is string %}
+
+            {% else %}
+            {% set item = note['reshare'] %}
+            {% include 'thread.item.html' %}
+            {% endif %}
+        {% endif %}
+    </div>
+    {% include 'note.reply_form.html' %}
+</div>

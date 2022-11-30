@@ -118,16 +118,38 @@ def note_page():
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     note_id = request.args['id']
     EXECUTOR.submit(EVENT_HANDLER.subscribe_thread, note_id)
-
     notes = DB.get_note_thread(note_id)
-    return render_template("note.html", page_id="note", title="Note", notes=notes)
+    notes_processed = []
+    members = []
+    for note in notes:
+        note = dict(note)
+        if note['reshare'] is not None:
+            print('reshare found')
+            reshare = DB.get_note(note['reshare'])
+            if reshare is not None:
+                print('reshare found at db')
+                note['reshare'] = reshare
+        members.append(note['public_key'])
+        if len(note['members'].strip()) > 0:
+            mems = note['members'].split(',')
+            for m in mems:
+                members.append(m)
+        notes_processed.append(note)
+    members = list(dict.fromkeys(members))
+    profiles = []
+    for member in members:
+        p = DB.get_profile(member)
+        if p is not None:
+            profiles.append(p)
+
+    return render_template("thread.html", page_id="note", title="Note", notes=notes_processed, members=profiles)
 
 
 @app.route('/thread_item', methods=['GET'])
 def thread_item():
     note_id = request.args['id']
     note = DB.get_note(note_id)
-    return render_template("thread.item.html", post=note)
+    return render_template("thread.item.html", item=note)
 
 
 @app.route('/settings')
@@ -424,6 +446,10 @@ def make_threaded(notes):
         responders = []
         for note in notes:
             note = dict(note)
+            if note['reshare'] is not None:
+                reshare = DB.get_note(note['reshare'])
+                if reshare is not None:
+                    note['reshare'] = reshare
             if note['id'] == root:
                 t['self'] = note
             elif note['response_to'] == root or note['thread_root'] == root:
@@ -438,6 +464,7 @@ def make_threaded(notes):
         if t['self'] is None:
             t['self'] = DB.get_note(root)
         threads.append(t)
+
     return threads, last_ts
 
 

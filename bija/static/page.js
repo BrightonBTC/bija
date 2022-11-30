@@ -539,7 +539,6 @@ class bijaNotes{
                 event.stopPropagation();
                 let id = link.dataset.rel
                 document.querySelector(".reply-form[data-noteid='"+id+"']").style.display = "block"
-                return false
             });
         }
         const btns = document.querySelectorAll("input[data-reply-submit]");
@@ -549,12 +548,11 @@ class bijaNotes{
                 event.stopPropagation();
                 let id = btn.dataset.rel
                 this.postReply(id)
-                return false
             });
         }
         const note_links = document.querySelectorAll(".note-content[data-rel]");
         for (const note_link of note_links) {
-            note_link.addEventListener("click", (event)=>{
+            note_link.querySelector('pre').addEventListener("click", (event)=>{
                 let id = note_link.dataset.id
                 const container_el = document.querySelector(".note-container[data-id='"+id+"']");
                 if(container_el && container_el.classList.contains("main")){
