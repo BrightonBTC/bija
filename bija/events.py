@@ -203,12 +203,12 @@ class BijaEvents:
     def handle_note_event(self, event, subscription):
         response_to = None
         thread_root = None
-        members = ""
+        members = []
         if len(event.tags) > 0:
             parents = []
             for item in event.tags:
                 if item[0] == "p":
-                    members += item[1] + ", "
+                    members.append(item[1])
                 elif item[0] == "e":
                     if len(item) == 2:  # deprecate format
                         parents.append(item[1])
@@ -234,7 +234,7 @@ class BijaEvents:
             thread_root,
             reshare,
             event.created_at,
-            members,
+            json.dumps(members),
             media,
             json.dumps(event.to_json_object())
         )
@@ -290,7 +290,7 @@ class BijaEvents:
                 media.append((url, 'image'))
         return content, json.dumps(media), reshare
 
-    def submit_note(self, data):
+    def submit_note(self, data, members=None):
         k = bytes.fromhex(self.get_key('private'))
         private_key = PrivateKey(k)
         r = self.db.get_preferred_relay()
@@ -299,14 +299,21 @@ class BijaEvents:
         response_to = None
         thread_root = None
 
-        if 'new_post' in data:
+        if 'quote_id' in data:
+            note = "{} #[1]".format(data['comment'])
+            tags.append(["e", data['quote_id']])
+            if members is not None:
+                for m in members:
+                    if is_hex_key(m):
+                        tags.append(["p", m, preferred_relay])
+        elif 'new_post' in data:
             note = data['new_post']
         elif 'reply' in data:
             note = data['reply']
-            if 'pubkey' in data and is_hex_key(data['pubkey']):
-                tags.append(["p", data['pubkey'], preferred_relay])
-            else:
-                return False
+            if members is not None:
+                for m in members:
+                    if is_hex_key(m):
+                        tags.append(["p", m, preferred_relay])
             if 'parent_id' not in data or 'thread_root' not in data:
                 return False
             elif data['thread_root'] == data['parent_id'] and is_hex_key(data['parent_id']):

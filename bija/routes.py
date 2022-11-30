@@ -145,6 +145,35 @@ def note_page():
     return render_template("thread.html", page_id="note", title="Note", notes=notes_processed, members=profiles)
 
 
+@app.route('/quote_form', methods=['GET'])
+def quote_form():
+    note_id = request.args['id']
+    note = DB.get_note(note_id)
+    return render_template("quote.form.html", item=note, id=note_id)
+
+
+@app.route('/quote', methods=['POST'])
+def quote_submit():
+    out = {}
+    if request.method == 'POST':
+        data = {}
+        for v in request.json:
+            data[v[0]] = v[1]
+        note = DB.get_note(data['quote_id'])
+        if note:
+            members = json.loads(note.members)
+            if note.public_key not in members:
+                members.insert(0, note.public_key)
+            if 'quote_id' not in data:
+                out['error'] = 'Nothing to quote'
+            else:
+                event_id = EVENT_HANDLER.submit_note(data, members)
+                out['event_id'] = event_id
+        else:
+            out['error'] = 'Quoted note not found at DB'
+    return render_template("upd.json", title="Home", data=json.dumps(out))
+
+
 @app.route('/thread_item', methods=['GET'])
 def thread_item():
     note_id = request.args['id']
@@ -345,7 +374,15 @@ def submit_note():
         elif 'reply' in data and 'parent_id' not in data:
             out['error'] = 'No parent id identified for response'
         else:
-            event_id = EVENT_HANDLER.submit_note(data)
+            members = None
+            if 'parent_id' in data:
+                note = DB.get_note(data['parent_id'])
+                if note:
+                    members = json.loads(note.members)
+                    if note.public_key not in members:
+                        members.insert(0, note.public_key)
+
+            event_id = EVENT_HANDLER.submit_note(data, members)
             out['event_id'] = event_id
     return render_template("upd.json", title="Home", data=json.dumps(out))
 

@@ -584,6 +584,57 @@ class bijaNotes{
                 });
             })
         }
+        const q_els = document.querySelectorAll(".quote-link");
+        for (let i = 0; i < q_els.length; i++) {
+            q_els[i].addEventListener('click', (e) => {
+                event.preventDefault();
+                event.stopPropagation();
+                popup('loading...')
+                const note_id = q_els[i].dataset.rel
+                const o = this
+                fetch('/quote_form?id='+note_id).then(function(response) {
+                    return response.text();
+                }).then(function(response) {
+                    if(response){
+                        const p =document.querySelector('.popup')
+                        if(p){
+                            p.innerHTML = response
+                            o.setQuoteForm()
+                        }
+                    }
+                }).catch(function(err) {
+                    console.log(err)
+                });
+            })
+        }
+    }
+
+    setQuoteForm(){
+    console.log('q form')
+        const form = document.querySelector("#quote_form")
+        const btn = form.querySelector("input[type='submit']")
+        btn.addEventListener('click', (e) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const formData = new FormData(form);
+            const data = [...formData.entries()];
+            const options = {
+                method: 'POST',
+                body: JSON.stringify(data),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }
+            fetch('/quote', options).then(function(response) {
+                return response.json();
+            }).then(function(response) {
+               if(response['event_id']){
+                   notify('/note?id='+response['event_id'], 'Note created. View now?')
+               }
+            }).catch(function(err) {
+                console.log(err)
+            });
+        });
     }
 
     postReply(id){
