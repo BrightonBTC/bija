@@ -225,13 +225,14 @@ class BijaEvents:
         is_known = self.db.is_known_pubkey(event.public_key)
         if is_known is None:
             self.db.add_profile(event.public_key, updated_at=0)
-        content, media = self.process_note_content(event.content, event.tags)
+        content, media, reshare = self.process_note_content(event.content, event.tags)
         self.db.insert_note(
             event.id,
             event.public_key,
             content,
             response_to,
             thread_root,
+            reshare,
             event.created_at,
             members,
             media,
@@ -247,6 +248,7 @@ class BijaEvents:
             socketio.emit('new_in_thread', event.id)
 
     def process_note_content(self, content, tags):
+        reshare = None
         embeds = get_embeded_tag_indexes(content)
         for item in embeds:
             item = int(item)
@@ -261,11 +263,12 @@ class BijaEvents:
                     "#[{}]".format(item),
                     "<a class='uname' href='/profile?pk={}'>@{}</a>".format(pk, name))
             elif list_index_exists(tags, item) and tags[item][0] == "e":
-                id = tags[item][1]
+                event_id = tags[item][1]
                 content = content.replace(
                     "#[{}]".format(item),
-                    "<div class='repost' data-id='{}'>{}</div>".format(id, id))
-
+                    "<a class='repost' href='/note?id={}#{}'>event:{}...</a>".format(event_id, event_id, event_id[:21]))
+                if reshare is None:
+                    reshare = event_id
 
         urls = get_urls_in_string(content)
         media = []
@@ -273,9 +276,9 @@ class BijaEvents:
             parts = url.split('//')
             if len(parts) < 2:
                 parts = ['', url]
-                url = 'https://'+url
+                url = 'https://' + url
             if len(parts[1]) > 21:
-                link_text = parts[1][:21]+'...'
+                link_text = parts[1][:21] + '...'
             else:
                 link_text = parts[1]
             content = content.replace(
@@ -285,7 +288,7 @@ class BijaEvents:
             extension = os.path.splitext(path)[1]
             if extension.lower() in ['.png', '.svg', '.gif', '.jpg', '.jpeg']:
                 media.append((url, 'image'))
-        return content, json.dumps(media)
+        return content, json.dumps(media), reshare
 
     def submit_note(self, data):
         k = bytes.fromhex(self.get_key('private'))

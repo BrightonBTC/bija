@@ -1,8 +1,8 @@
-<p><span class="reply-n"></span> <a href="#" class="reply-link right" data-rel="{{post['id']}}">&#128172;</a></p>
-<form class="reply-form"  data-noteid="{{post['id']}}" >
-    <input type="hidden" name="pubkey" value="{{post['public_key']}}">
+<p><span class="reply-n"></span> <a href="#" class="reply-link right" data-rel="{{note['id']}}">&#128172;</a></p>
+<form class="reply-form"  data-noteid="{{note['id']}}" >
+    <input type="hidden" name="pubkey" value="{{note['public_key']}}">
     <input type="hidden" name="thread_root" value="{{thread_root}}">
-    <input type="hidden" name="parent_id" value="{{post['id']}}">
+    <input type="hidden" name="parent_id" value="{{note['id']}}">
     <textarea name="reply"></textarea>
-    <input type="submit" value="post" data-reply-submit="1" data-rel="{{post['id']}}">
+    <input type="submit" value="note" data-reply-submit="1" data-rel="{{note['id']}}">
 </form>

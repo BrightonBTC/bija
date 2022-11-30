@@ -1,37 +1,29 @@
-{% if post['thread_root'] is not none %}
-{% set thread_root=post['thread_root'] %}
-{% elif post['response_to'] is not none %}
-{% set thread_root=post['response_to'] %}
+{% if item['thread_root'] is not none %}
+{% set thread_root=item['thread_root'] %}
+{% elif item['response_to'] is not none %}
+{% set thread_root=item['response_to'] %}
 {% else %}
-{% set thread_root=post['id'] %}
+{% set thread_root=item['id'] %}
 {% endif %}
 
-{% if post['thread_root'] is none and post['response_to'] is none %}
+{% if item['thread_root'] is none and item['response_to'] is none %}
 {% set parent='' %}
-{% elif post['response_to'] is not none and post['thread_root'] is none %}
-{% set parent=post['response_to'] %}
-{% elif post['thread_root'] is not none and post['response_to'] is none %}
-{% set parent=post['thread_root'] %}
+{% elif item['response_to'] is not none and item['thread_root'] is none %}
+{% set parent=item['response_to'] %}
+{% elif item['thread_root'] is not none and item['response_to'] is none %}
+{% set parent=item['thread_root'] %}
 {% else %}
-{% set parent=post['response_to'] %}
+{% set parent=item['response_to'] %}
 {% endif %}
 
-<div class="note-container" data-rel="{{thread_root}}" data-id="{{post['id']}}" data-parent="{{parent}}">
+<div class="note-container" data-rel="{{thread_root}}" data-id="{{item['id']}}" data-parent="{{parent}}">
     <div class="thread-marker"></div>
     <div class="note-image">
-        {% set p=post %}
+        {% set p=item %}
         {% include 'profile.image.html' %}
     </div>
     <div class="note-outer">
-    <div class="note" data-dt="{{post['created_at']}}">
-        <h3>
-            <a href="/profile?pk={{post['public_key']}}" class="profile-name">{{post['name'] | ident_string(post['public_key'], post['nip05'], post['nip05_validated']) | safe }}</a>
-            <span class="sm dt">{{post['created_at']|dt}} <span class="info" data-id="{{post['id']}}">🛈</span></span>
-        </h3>
-        <div class="note-content" data-rel="{{thread_root}}" data-id="{{post['id']}}">
-            <pre>{{post['content'] |safe}}{{post['media'] | process_media_attachments | safe}}</pre>
-        </div>
-        {% include 'note.reply_form.html' %}
-    </div>
+    {% set note=item %}
+    {% include 'note.html' %}
     </div>
 </div>

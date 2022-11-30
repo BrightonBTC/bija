@@ -552,7 +552,7 @@ class bijaNotes{
         }
         const note_links = document.querySelectorAll(".note-content[data-rel]");
         for (const note_link of note_links) {
-            note_link.addEventListener("click", (event)=>{
+            note_link.querySelector('pre').addEventListener("click", (event)=>{
                 let id = note_link.dataset.id
                 const container_el = document.querySelector(".note-container[data-id='"+id+"']");
                 if(container_el && container_el.classList.contains("main")){

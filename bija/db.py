@@ -154,6 +154,7 @@ class BijaDB:
                     content,
                     response_to=None,
                     thread_root=None,
+                    reshare=None,
                     created_at=None,
                     members=None,
                     media=None,
@@ -164,6 +165,7 @@ class BijaDB:
             content=content,
             response_to=response_to,
             thread_root=thread_root,
+            reshare=reshare,
             created_at=created_at,
             members=members,
             media=media,
@@ -183,6 +185,7 @@ class BijaDB:
                                   Note.content,
                                   Note.response_to,
                                   Note.thread_root,
+                                  Note.reshare,
                                   Note.created_at,
                                   Note.members,
                                   Note.media,
@@ -199,6 +202,7 @@ class BijaDB:
                                    Note.content,
                                    Note.response_to,
                                    Note.thread_root,
+                                   Note.reshare,
                                    Note.created_at,
                                    Note.members,
                                    Note.media,
@@ -215,6 +219,7 @@ class BijaDB:
                                   Note.content,
                                   Note.response_to,
                                   Note.thread_root,
+                                  Note.reshare,
                                   Note.created_at,
                                   Note.members,
                                   Note.media,
@@ -269,6 +274,7 @@ class BijaDB:
             Note.content,
             Note.response_to,
             Note.thread_root,
+            Note.reshare,
             Note.created_at,
             Note.members,
             Note.media,
@@ -298,6 +304,7 @@ class BijaDB:
             Note.content,
             Note.response_to,
             Note.thread_root,
+            Note.reshare,
             Note.created_at,
             Note.members,
             Note.media,
@@ -410,6 +417,7 @@ class Note(Base):
     content = Column(String)
     response_to = Column(String(64))
     thread_root = Column(String(64))
+    reshare = Column(String(64))
     created_at = Column(Integer)
     members = Column(String)
     media = Column(String)
@@ -425,6 +433,7 @@ class Note(Base):
             self.content,
             self.response_to,
             self.thread_root,
+            self.reshare,
             self.created_at,
             self.members,
             self.media,

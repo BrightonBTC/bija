@@ -584,6 +584,7 @@ input[type=text].pname {
     padding: 0 10px;
     overflow: hidden;
     position: relative;
+    font-size: 14px;
 }
 .note-container > *{
     margin:10px;
@@ -596,8 +597,8 @@ input[type=text].pname {
     border: 2px solid var(--bdr-clr-1);
 }
 
-.note-container.main .note{
-    font-size: 130%;
+.note-container.main .note:not(.note-container .note-container *) {
+    font-size: 16px;
     filter: saturate(1.3);
     border-radius: 10px;
     background: var(--bg-clr3);
@@ -605,7 +606,13 @@ input[type=text].pname {
 .note-container.ancestor{
     border-bottom:0;
 }
-
+.note-container .note-container {
+    border: 2px solid var(--bdr-clr-2);
+    margin: 5px;
+    border-radius: 10px;
+    background: var(--bg-clr1);
+    display: flex !important;
+}
 .note-image{
     flex: 0 0 60px;
 }
