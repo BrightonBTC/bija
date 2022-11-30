@@ -619,6 +619,7 @@ input[type=text].pname {
 .note-image img{
     width: 60px;
     height: 60px;
+    position: relative;
 }
 
 .thread-pointer{
@@ -688,12 +689,17 @@ input[type=text].pname {
     border-radius:8px;
     background: var(--bg-clr2);
     padding:10px;
-    cursor:pointer;
 }
 .note-content pre{
     margin:0;
     white-space: pre-wrap;
+    cursor:pointer;
+    background: var(--bg-clr2);
 }
+.note-content pre:hover{
+    filter: brightness(1.5);
+}
+
 .note-container.main .note-content{
     cursor:auto;
 }
