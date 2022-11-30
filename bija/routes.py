@@ -118,9 +118,23 @@ def note_page():
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     note_id = request.args['id']
     EXECUTOR.submit(EVENT_HANDLER.subscribe_thread, note_id)
-
     notes = DB.get_note_thread(note_id)
-    return render_template("note.html", page_id="note", title="Note", notes=notes)
+
+    members = []
+    for note in notes:
+        members.append(note['public_key'])
+        if len(note['members'].strip()) > 0:
+            mems = note['members'].split(',')
+            for m in mems:
+                members.append(m)
+    members = list(dict.fromkeys(members))
+    profiles = []
+    for member in members:
+        p = DB.get_profile(member)
+        if p is not None:
+            profiles.append(p)
+
+    return render_template("note.html", page_id="note", title="Note", notes=notes, members=profiles)
 
 
 @app.route('/thread_item', methods=['GET'])
@@ -438,6 +452,7 @@ def make_threaded(notes):
         if t['self'] is None:
             t['self'] = DB.get_note(root)
         threads.append(t)
+
     return threads, last_ts
 
 

@@ -539,7 +539,6 @@ class bijaNotes{
                 event.stopPropagation();
                 let id = link.dataset.rel
                 document.querySelector(".reply-form[data-noteid='"+id+"']").style.display = "block"
-                return false
             });
         }
         const btns = document.querySelectorAll("input[data-reply-submit]");
@@ -549,7 +548,6 @@ class bijaNotes{
                 event.stopPropagation();
                 let id = btn.dataset.rel
                 this.postReply(id)
-                return false
             });
         }
         const note_links = document.querySelectorAll(".note-content[data-rel]");

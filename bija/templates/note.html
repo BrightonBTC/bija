@@ -2,3 +2,16 @@
 {% block content %}
 {% include 'thread.html' %}
 {% endblock content %}
+
+
+{% block right_content %}
+<p>in this thread</p>
+<ul class="thread-members">
+{% for p in members: %}
+    <li>
+    {% include 'profile.image.html' %}
+    <a href="/profile?pk={{p['public_key']}}" class="profile-name">{{p['name'] | ident_string(p['public_key'], p['nip05'], p['nip05_validated']) | safe }}</a>
+    </li>
+{% endfor %}
+</ul>
+{% endblock right_content %}
