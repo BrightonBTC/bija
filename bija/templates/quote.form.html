@@ -1,0 +1,17 @@
+<form id="quote_form">
+    <input type="hidden" name="quote_id" value="{{id}}">
+    <textarea name="comment"></textarea>
+    <input type="submit" value="quote">
+</form>
+
+<div class="note-container">
+    <div class="thread-marker"></div>
+    <div class="note-image">
+        {% set p=item %}
+        {% include 'profile.image.html' %}
+    </div>
+    <div class="note-outer">
+    {% set note=item %}
+    {% include 'note.html' %}
+    </div>
+</div>
