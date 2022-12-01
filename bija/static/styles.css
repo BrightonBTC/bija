@@ -829,10 +829,17 @@ p.note-tools img{
 /* ---------- */
 
 /* Right column */
-#right_content{
+#right_content {
     position: fixed;
     top: 150px;
-    width: 230px
+    width: 230px;
+    bottom: 10px;
+    overflow: auto;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+#right_content::-webkit-scrollbar {
+    display: none;
 }
 #search {
     position: fixed;
