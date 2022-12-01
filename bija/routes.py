@@ -62,8 +62,11 @@ def feed():
         else:
             before = time.time()
         notes = DB.get_feed(before, get_key())
-        threads, last_ts = make_threaded(notes)
-        return render_template("feed.items.html", threads=threads, last=last_ts)
+        if len(notes) > 0:
+            threads, last_ts = make_threaded(notes)
+            return render_template("feed.items.html", threads=threads, last=last_ts)
+        else:
+            return 'END'
 
 
 @app.route('/login', methods=['POST'])

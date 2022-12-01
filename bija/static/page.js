@@ -732,8 +732,13 @@ class bijaFeed{
         }).then(function(response) {
             return response.text();
         }).then(function(response) {
-            o.loadArticles(response);
-            document.dispatchEvent(o.pageLoadedEvent);
+            if(response == 'END'){
+                o.loading = 3
+            }
+            else{
+                o.loadArticles(response);
+                document.dispatchEvent(o.pageLoadedEvent);
+            }
         }).catch(function(err) {
             console.log(err);
         });

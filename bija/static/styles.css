@@ -101,7 +101,7 @@ input[type=submit]:hover {
     font-size: 10px;
     font-weight:800;
     padding: 5px;
-    margin: 12px;
+    margin: 10px;
     background: var(--bg-clr3);
     border-radius: 5px;
 }
