@@ -200,22 +200,17 @@ class BijaDB:
         return self.session.query(Note.raw).filter_by(id=note_id).first()
 
     def get_note_thread(self, note_id):
-        items = self.session.query(Note.id,
-                                   Note.public_key,
-                                   Note.content,
-                                   Note.response_to,
-                                   Note.thread_root,
-                                   Note.reshare,
-                                   Note.created_at,
-                                   Note.members,
-                                   Note.media,
-                                   Profile.name,
-                                   Profile.pic,
-                                   Profile.nip05,
-                                   Profile.nip05_validated) \
+
+        like_counts = self.session.query(
+            NoteReaction.id,
+            NoteReaction.event_id,
+            func.count(NoteReaction.id).label('likes')
+        ).group_by(NoteReaction.event_id).subquery()
+
+        items = self.session.query(Note.id, Note.response_to) \
             .filter(
             text("note.id='{}' or note.response_to='{}' or note.thread_root='{}'".format(note_id, note_id, note_id))) \
-            .join(Note.profile).order_by(Note.created_at.asc()).all()
+            .join(Note.profile).all()
 
         return self.session.query(Note.id,
                                   Note.public_key,
@@ -228,16 +223,13 @@ class BijaDB:
                                   Note.media,
                                   Note.liked,
                                   Note.shared,
+                                  label("likes", like_counts.c.likes),
                                   Profile.name,
                                   Profile.pic,
                                   Profile.nip05,
                                   Profile.nip05_validated) \
-            .filter(
-            or_(
-                Note.id.in_([i.response_to for i in items]),
-                Note.id.in_([i.id for i in items])
-            )
-        ) \
+            .filter(or_(Note.id.in_([i.response_to for i in items]), Note.id.in_([i.id for i in items]))) \
+            .outerjoin(like_counts, like_counts.c.event_id == Note.id) \
             .join(Note.profile).order_by(Note.created_at.asc()).all()
 
     def get_note_thread_ids(self, note_id):
@@ -315,6 +307,13 @@ class BijaDB:
             Profile.nip05).join(Note.profile).filter(Note.id.in_(note_ids)).all()
 
     def get_notes_by_pubkey(self, public_key, before, after):
+
+        like_counts = self.session.query(
+            NoteReaction.id,
+            NoteReaction.event_id,
+            func.count(NoteReaction.id).label('likes')
+        ).group_by(NoteReaction.event_id).subquery()
+
         return self.session.query(
             Note.id,
             Note.public_key,
@@ -325,10 +324,16 @@ class BijaDB:
             Note.created_at,
             Note.members,
             Note.media,
+            Note.liked,
+            Note.shared,
+            label("likes", like_counts.c.likes),
             Profile.name,
             Profile.pic,
             Profile.nip05,
-            Profile.nip05_validated).join(Note.profile).filter(text("note.created_at<{}".format(before))).filter_by(
+            Profile.nip05_validated) \
+            .outerjoin(like_counts, like_counts.c.event_id == Note.id) \
+            .join(Note.profile) \
+            .filter(text("note.created_at<{}".format(before))).filter_by(
             public_key=public_key).order_by(Note.created_at.desc()).limit(50).all()
 
     def get_unseen_message_count(self):
@@ -425,7 +430,7 @@ class BijaDB:
             NoteReaction.content != '-').count()
 
     def get_like_events_for(self, note_id, public_key):
-        return self.session.query(NoteReaction).filter(NoteReaction.event_id == note_id).\
+        return self.session.query(NoteReaction).filter(NoteReaction.event_id == note_id). \
             filter(NoteReaction.public_key == public_key).all()
 
     def add_event(self, event_id, kind, commit=True):

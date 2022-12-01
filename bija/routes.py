@@ -124,10 +124,6 @@ def note_page():
                 note['reshare'] = reshare
         members.append(note['public_key'])
         members = json.loads(note['members']) + members
-        # if len(note['members'].strip()) > 0:
-        #     mems = note['members'].split(',')
-        #     for m in mems:
-        #         members.append(m)
         notes_processed.append(note)
     members = list(dict.fromkeys(members))
     profiles = []
