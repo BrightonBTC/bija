@@ -40,7 +40,7 @@ class LoginState(IntEnum):
 
 @app.route('/')
 def index_page():
-    EVENT_HANDLER.set_page('home',  None)
+    EVENT_HANDLER.set_page('home', None)
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     DB.set_all_seen_in_feed(get_key())
     login_state = get_login_state()
@@ -48,7 +48,8 @@ def index_page():
         notes = DB.get_feed(time.time(), get_key())
         threads, last_ts = make_threaded(notes)
         profile = DB.get_profile(get_key())
-        return render_template("feed.html", page_id="home", title="Home", threads=threads, last=last_ts, profile=profile)
+        return render_template("feed.html", page_id="home", title="Home", threads=threads, last=last_ts,
+                               profile=profile)
     else:
         return render_template("login.html", page_id="login", title="Login", login_type=login_state)
 
@@ -62,12 +63,12 @@ def feed():
             before = time.time()
         notes = DB.get_feed(before, get_key())
         threads, last_ts = make_threaded(notes)
-        return render_template("feed.items.html",  threads=threads, last=last_ts)
+        return render_template("feed.items.html", threads=threads, last=last_ts)
 
 
 @app.route('/login', methods=['POST'])
 def login_page():
-    EVENT_HANDLER.set_page('login',  None)
+    EVENT_HANDLER.set_page('login', None)
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     login_state = get_login_state()
     if request.method == 'POST':
@@ -85,13 +86,13 @@ def login_page():
 def profile_page():
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     if 'pk' in request.args and is_hex_key(request.args['pk']) and request.args['pk'] != get_key():
-        EVENT_HANDLER.set_page('profile',  request.args['pk'])
+        EVENT_HANDLER.set_page('profile', request.args['pk'])
         EXECUTOR.submit(EVENT_HANDLER.subscribe_profile, request.args['pk'], timestamp_minus(TimePeriod.WEEK))
         k = request.args['pk']
         is_me = False
     else:
         k = get_key()
-        EVENT_HANDLER.set_page('profile',  k)
+        EVENT_HANDLER.set_page('profile', k)
         is_me = True
     notes = DB.get_notes_by_pubkey(k, int(time.time()), timestamp_minus(TimePeriod.DAY))
     # t, i = make_threaded(notes)
@@ -100,12 +101,13 @@ def profile_page():
     if profile is None:
         DB.add_profile(k)
         profile = DB.get_profile(k)
-    return render_template("profile.html", page_id="profile", title="Profile", threads=threads, last=last_ts, profile=profile, is_me=is_me)
+    return render_template("profile.html", page_id="profile", title="Profile", threads=threads, last=last_ts,
+                           profile=profile, is_me=is_me)
 
 
 @app.route('/note', methods=['GET'])
 def note_page():
-    EVENT_HANDLER.set_page('note',  request.args['id'])
+    EVENT_HANDLER.set_page('note', request.args['id'])
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     note_id = request.args['id']
     EXECUTOR.submit(EVENT_HANDLER.subscribe_thread, note_id)
@@ -121,7 +123,7 @@ def note_page():
                 print('reshare found at db')
                 note['reshare'] = reshare
         members.append(note['public_key'])
-        members = json.loads(note['members'])+members
+        members = json.loads(note['members']) + members
         # if len(note['members'].strip()) > 0:
         #     mems = note['members'].split(',')
         #     for m in mems:
@@ -184,7 +186,7 @@ def settings_page():
             session.clear()
             return redirect('/')
         else:
-            EVENT_HANDLER.set_page('settings',  None)
+            EVENT_HANDLER.set_page('settings', None)
             EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
             settings = {}
             relays = DB.get_relays()
@@ -257,7 +259,8 @@ def private_message_page():
 
     messages.reverse()
 
-    return render_template("message_thread.html", page_id="messages_from", title="Messages From", messages=messages, me=profile, them=pk)
+    return render_template("message_thread.html", page_id="messages_from", title="Messages From", messages=messages,
+                           me=profile, them=pk)
 
 
 @app.route('/submit_message', methods=['POST', 'GET'])
@@ -266,6 +269,27 @@ def submit_message():
     if request.method == 'POST':
         event_id = EVENT_HANDLER.submit_message(request.json)
     return render_template("upd.json", title="Home", data=json.dumps({'event_id': event_id}))
+
+
+@app.route('/like', methods=['GET'])
+def submit_like():
+    event_id = False
+    if 'id' in request.args:
+        note_id = request.args['id']
+        note = DB.get_note(note_id)
+        if note.liked is False:
+            DB.set_note_liked(note_id)
+            event_id = EVENT_HANDLER.submit_like(note_id)
+        else:
+            DB.set_note_liked(note_id, False)
+            like_events = DB.get_like_events_for(note_id, get_key())
+            if like_events is not None:
+                ids = []
+                for event in like_events:
+                    ids.append(event.id)
+                event_id = EVENT_HANDLER.delete_events(ids)
+
+    return render_template("upd.json", data=json.dumps({'event_id': event_id}))
 
 
 @app.route('/following', methods=['GET'])
@@ -287,7 +311,8 @@ def following_page():
         is_me = True
         profiles = DB.get_following()
     profile = DB.get_profile(k)
-    return render_template("following.html", page_id="following", title="Following", profile=profile, profiles=profiles, is_me=is_me)
+    return render_template("following.html", page_id="following", title="Following", profile=profile, profiles=profiles,
+                           is_me=is_me)
 
 
 @app.route('/search', methods=['GET'])
@@ -419,11 +444,15 @@ def _jinja2_filter_ident(name, pk, nip5=None, validated=None):
     if validated and nip5 is not None:
         if nip5[0:2] == "_@":
             nip5 = nip5[2:]
-        return "<span class='uname' data-pk='{}'><span class='name'>{}</span> <span class='nip5'>{}</span>".format(pk, name, nip5)
+        return "<span class='uname' data-pk='{}'><span class='name'>{}</span> <span class='nip5'>{}</span>".format(pk,
+                                                                                                                   name,
+                                                                                                                   nip5)
     elif name is None or len(name.strip()) < 1:
-        name = "<span class='uname' data-pk='{}'><span class='name'>{}...</span> <span class='nip5'></span></span>".format(pk, pk[0:21])
+        name = "<span class='uname' data-pk='{}'><span class='name'>{}...</span> <span class='nip5'></span></span>".format(
+            pk, pk[0:21])
     else:
-        name = "<span class='uname' data-pk='{}'><span class='name'>{}</span> <span class='nip5'></span></span>".format(pk, name)
+        name = "<span class='uname' data-pk='{}'><span class='name'>{}</span> <span class='nip5'></span></span>".format(
+            pk, name)
     return name
 
 
@@ -436,9 +465,13 @@ def _jinja2_filter_responders(the_dict, n):
     if n == 1:
         return '<a href="/profile?pk={}">@{}</a> commented'.format(names[0][0], names[0][1])
     elif n == 2:
-        return '<a href="/profile?pk={}">@{}</a> and <a href="/profile?pk={}">@{}</a> commented'.format(names[0][0], names[0][1], names[1][0], names[1][1])
+        return '<a href="/profile?pk={}">@{}</a> and <a href="/profile?pk={}">@{}</a> commented'.format(names[0][0],
+                                                                                                        names[0][1],
+                                                                                                        names[1][0],
+                                                                                                        names[1][1])
     else:
-        return '<a href="/profile?pk={}">@{}</a>, <a href="/profile?pk={}">@{}</a> and {} other contacts commented'.format(names[0][0], names[0][1], names[1][0], names[1][1], n-2)
+        return '<a href="/profile?pk={}">@{}</a>, <a href="/profile?pk={}">@{}</a> and {} other contacts commented'.format(
+            names[0][0], names[0][1], names[1][0], names[1][1], n - 2)
 
 
 @app.template_filter('process_media_attachments')
@@ -452,7 +485,6 @@ def _jinja2_filter_media(json_string):
 
 
 def make_threaded(notes):
-
     threads = []
     thread_roots = []
     last_ts = None
