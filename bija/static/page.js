@@ -274,6 +274,7 @@ class bijaThread{
                     const doc = new DOMParser().parseFromString(response, "text/html")
                     const new_item = doc.body.firstChild
                     if(!el){
+                        console.log('1 // '+event.detail.id)
                         if(new_item.dataset.parent.length > 0){
                             const siblings = document.querySelectorAll(".note-container[data-parent='"+new_item.dataset.parent+"']")
                             if(siblings.length > 0){
@@ -287,8 +288,10 @@ class bijaThread{
                                 }
                             }
                         }
+                        document.dispatchEvent(new Event('newContentLoaded'))
                     }
                     else{
+                        console.log('2 // '+event.detail.id)
                         el.replaceWith(new_item)
                         document.dispatchEvent(new Event('newContentLoaded'))
                     }
@@ -309,7 +312,7 @@ class bijaThread{
         }
         this.showReplies()
         this.showMain()
-
+        document.querySelector(".note-container").classList.add('root')
     }
 
     showMain(){
@@ -535,8 +538,16 @@ class bijaNotes{
             link.addEventListener("click", (event)=>{
                 event.preventDefault();
                 event.stopPropagation();
-                let id = link.dataset.rel
-                document.querySelector(".reply-form[data-noteid='"+id+"']").style.display = "block"
+                const event_id = link.dataset.rel
+                const form_el = document.querySelector(".reply-form[data-noteid='"+event_id+"']")
+                if (form_el.dataset.vis == '1'){
+                    form_el.dataset.vis = '0'
+                    form_el.style.display = "none"
+                }
+                else{
+                    form_el.dataset.vis = '1'
+                    form_el.style.display = "block"
+                }
             });
         }
         const btns = document.querySelectorAll("input[data-reply-submit]");
@@ -678,9 +689,12 @@ class bijaNotes{
         fetch('/submit_note', options).then(function(response) {
             return response.json();
         }).then(function(response) {
-           if(response['event_id']){
-               notify('/note?id='+response['event_id'], 'Note created. View now?')
-           }
+        if(response['event_id']){
+            notify('/note?id='+response['event_id'], 'Note created. View now?')
+            const form_el = document.querySelector(".reply-form[data-noteid='"+id+"']")
+            form_el.dataset.vis = '0'
+            form_el.style.display = "none"
+        }
         }).catch(function(err) {
             console.log(err)
         });
@@ -821,7 +835,9 @@ let popup = function(str){
     overlay.onclick = function(){
         overlay.remove();
         the_popup.remove();
+        document.querySelector('.main').classList.remove('blur')
     }
     document.body.append(overlay)
     document.body.append(the_popup)
+    document.querySelector('.main').classList.add('blur')
 }

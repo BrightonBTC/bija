@@ -227,28 +227,29 @@ class BijaEvents:
         response_to = None
         thread_root = None
         members = []
+        content, media, reshare, used_tags = self.process_note_content(event.content, event.tags)
         if len(event.tags) > 0:
             parents = []
             for item in event.tags:
-                if item[0] == "p":
-                    members.append(item[1])
-                elif item[0] == "e":
-                    if len(item) == 2:  # deprecate format
-                        parents.append(item[1])
-                    elif len(item) > 3 and item[3] in ["root", "reply"]:
-                        if item[3] == "root":
-                            thread_root = item[1]
-                        elif item[3] == "reply":
-                            response_to = item[1]
-                if len(parents) == 1:
-                    response_to = parents[0]
-                elif len(parents) > 1:
-                    thread_root = parents[0]
-                    response_to = parents[1]
+                if item[1] not in used_tags:
+                    if item[0] == "p":
+                        members.append(item[1])
+                    elif item[0] == "e":
+                        if len(item) < 4 > 1:  # deprecate format
+                            parents.append(item[1])
+                        elif len(item) > 3 and item[3] in ["root", "reply"]:
+                            if item[3] == "root":
+                                thread_root = item[1]
+                            elif item[3] == "reply":
+                                response_to = item[1]
+                    if len(parents) == 1:
+                        response_to = parents[0]
+                    elif len(parents) > 1:
+                        thread_root = parents[0]
+                        response_to = parents[1]
         is_known = self.db.is_known_pubkey(event.public_key)
         if is_known is None:
             self.db.add_profile(event.public_key, updated_at=0)
-        content, media, reshare = self.process_note_content(event.content, event.tags)
         self.db.insert_note(
             event.id,
             event.public_key,
@@ -273,8 +274,11 @@ class BijaEvents:
     def process_note_content(self, content, tags):
         reshare = None
         embeds = get_embeded_tag_indexes(content)
+        used_tags = []
         for item in embeds:
             item = int(item)
+            if item in tags and len(tags[item]) > 1:
+                used_tags.append(tags[item][1])
             if list_index_exists(tags, item) and tags[item][0] == "p":
                 pk = tags[item][1]
                 profile = self.db.get_profile(pk)
@@ -311,7 +315,7 @@ class BijaEvents:
             extension = os.path.splitext(path)[1]
             if extension.lower() in ['.png', '.svg', '.gif', '.jpg', '.jpeg']:
                 media.append((url, 'image'))
-        return content, json.dumps(media), reshare
+        return content, json.dumps(media), reshare, used_tags
 
     def delete_events(self, event_ids: list):
         k = bytes.fromhex(self.get_key('private'))
@@ -560,11 +564,11 @@ class BijaEvents:
         if len(following_pubkeys) > 0:
             following_filter = Filter(
                 authors=following_pubkeys,
-                kinds=[EventKind.TEXT_NOTE],
-                since=timestamp_minus(TimePeriod.WEEK))  # TODO: should be configurable in user settings
+                kinds=[EventKind.TEXT_NOTE, EventKind.REACTION, EventKind.DELETE],
+                since=timestamp_minus(TimePeriod.WEEK*4))  # TODO: should be configurable in user settings
             following_profiles_filter = Filter(
                 authors=following_pubkeys,
-                kinds=[EventKind.SET_METADATA, EventKind.DELETE, EventKind.REACTION],
+                kinds=[EventKind.SET_METADATA],
             )
             f.append(following_filter)
             f.append(following_profiles_filter)

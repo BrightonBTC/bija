@@ -1,8 +1,13 @@
-<form id="quote_form">
-    <input type="hidden" name="quote_id" value="{{id}}">
-    <textarea name="comment"></textarea>
-    <input type="submit" value="quote">
-</form>
+<div class="poster-form">
+    <div class="pic">
+        {% include 'profile.image.html' %}
+    </div>
+    <form id="quote_form">
+        <input type="hidden" name="quote_id" value="{{id}}">
+        <textarea name="comment" placeholder="Add a comment to your re-post"></textarea>
+        <input type="submit" value="Share" class="right post-submit">
+    </form>
+</div>
 
 <div class="note-container">
     <div class="thread-marker"></div>

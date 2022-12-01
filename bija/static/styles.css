@@ -135,6 +135,9 @@ input[type=submit]:hover {
   max-width:1000px;
   margin:auto;
 }
+.main.blur{
+    filter: blur(5px);
+}
 
 .topnav {
     overflow: hidden;
@@ -157,6 +160,7 @@ input[type=submit]:hover {
     padding: 14px 16px;
     display: flex;
     align-items: center;
+    position: relative;
 }
 
 .topnav a:hover, .topnav a:active{
@@ -169,7 +173,7 @@ input[type=submit]:hover {
     margin-right: 10px;
     opacity: 0.4;
 }
-.topnav a span {
+.topnav .title {
     font-size: 12px;
 }
 
@@ -233,7 +237,7 @@ input[type=submit]:hover {
 }
 
 .popup-overlay{
-    background: #888;
+    background: #000;
     opacity: 0.5;
     position: fixed;
     left: 0;
@@ -246,12 +250,12 @@ input[type=submit]:hover {
 .popup{
     background: var(--bg-clr1);
     position: fixed;
-    top: 50%;
+    top: 10%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, 0%);
     padding: 10px;
     width: 700px;
-    height: 600px;
+    max-height: 80%;
     overflow: auto;
     z-index: 1001;
     border: 1px solid var(--bdr-clr-2);
@@ -271,7 +275,7 @@ input[type=submit]:hover {
 /* ---------- */
 
 /* Feed */
-#note-poster{
+.poster-form{
     border-bottom: 1px solid var(--bdr-clr-2);
     margin-bottom: 30px;
     display: flex;
@@ -279,27 +283,27 @@ input[type=submit]:hover {
     padding: 10px;
     border-radius: 5px;
 }
-#note-poster .pic{
+.poster-form .pic{
     flex-basis: 50px;
     padding: 5px;
 }
-#note-poster .pic img{
+.poster-form .pic img{
     width: 40px;
     height: 40px;
 }
-#note-poster form{
+.poster-form form{
     flex: 1;
     margin: 0;
     padding: 0;
 }
-#note-poster textarea{
+.poster-form textarea{
     margin-top: 0;
     height: 70px;
     border: 0;
     background: none;
 }
 
-#new_post_submit {
+input.post-submit {
     width: auto;
     padding: 5px;
 }
@@ -478,29 +482,17 @@ input[type=text].pname {
     position: absolute;
     z-index: 100;
     top: 10px;
-    font-size: 10px;
-    background: rgb(0, 255, 0);
-    color: rgb(0, 0, 0);
+    font-size: 9px;
+    font-weight: 800;
+    background: #00ff00;
+    color: #000;
     border-radius: 10px;
-    min-width: 15px;
-    height: 15px;
-    padding: 2px;
+    min-width: 11px;
+    height: 12px;
+    padding: 1px;
     display: none;
     text-align: center;
-}
-.unseen{
-    position: absolute;
-    z-index: 100;
-    top: 10px;
-    font-size: 10px;
-    background: rgb(0, 255, 0);
-    color: rgb(0, 0, 0);
-    border-radius: 10px;
-    min-width: 15px;
-    height: 15px;
-    padding: 2px;
-    display: none;
-    text-align: center;
+    right: 0;
 }
 .msg-link .unseen{
     display: block;
@@ -510,6 +502,9 @@ input[type=text].pname {
     font-weight: 800;
     min-width: 22px;
     box-shadow: #000 2px 2px 4px;
+    right: unset;
+    left: 50px;
+    top: 0;
 }
 
 
@@ -610,7 +605,7 @@ input[type=text].pname {
     filter: saturate(1.1);
 }
 .note-container.root .note {
-    border: 2px solid var(--bdr-clr-1);
+    border: 2px solid var(--bg-clr3);
 }
 
 .note-container.main .note {
@@ -819,14 +814,24 @@ p.note-tools img{
     border-radius: 5px;
     font-weight: 900;
 }
+.popup .note-container{
+    pointer-events:none;
+}
 
 /* ---------- */
 
 /* Right column */
-#right_content{
+#right_content {
     position: fixed;
     top: 150px;
-    width: 230px
+    width: 230px;
+    bottom: 10px;
+    overflow: auto;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+#right_content::-webkit-scrollbar {
+    display: none;
 }
 #search {
     position: fixed;

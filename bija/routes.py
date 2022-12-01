@@ -124,10 +124,6 @@ def note_page():
                 note['reshare'] = reshare
         members.append(note['public_key'])
         members = json.loads(note['members']) + members
-        # if len(note['members'].strip()) > 0:
-        #     mems = note['members'].split(',')
-        #     for m in mems:
-        #         members.append(m)
         notes_processed.append(note)
     members = list(dict.fromkeys(members))
     profiles = []
@@ -143,7 +139,8 @@ def note_page():
 def quote_form():
     note_id = request.args['id']
     note = DB.get_note(note_id)
-    return render_template("quote.form.html", item=note, id=note_id)
+    profile = DB.get_profile(get_key())
+    return render_template("quote.form.html", item=note, id=note_id, p=profile)
 
 
 @app.route('/quote', methods=['POST'])
