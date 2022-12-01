@@ -389,12 +389,10 @@ class bijaThread{
         const n = document.querySelectorAll(".note-container[data-parent='"+id+"']").length;
         const r_el = el.querySelector('.reply-n')
         if(r_el){
-            if(n>0) r_el.innerText = n+' replies'
+            if(n>0) r_el.innerText = n
             else r_el.innerText = ''
         }
     }
-
-
 }
 
 class bijaMessages{
@@ -601,6 +599,35 @@ class bijaNotes{
                             p.innerHTML = response
                             o.setQuoteForm()
                         }
+                    }
+                }).catch(function(err) {
+                    console.log(err)
+                });
+            })
+        }
+        const like_els = document.querySelectorAll("a.like");
+        for (let i = 0; i < like_els.length; i++) {
+            like_els[i].addEventListener('click', (e) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const d = like_els[i].dataset
+                if(d.disabled == true) return
+                d.disabled = true
+                if(d.liked == 'True'){
+                    d.liked = 'False'
+                    like_els[i].querySelector('img').setAttribute('src', '/static/like.svg')
+                }
+                else{
+                    d.liked = 'True'
+                    like_els[i].querySelector('img').setAttribute('src', '/static/liked.svg')
+                }
+                const note_id = d.rel
+                const o = this
+                fetch('/like?id='+note_id).then(function(response) {
+                    return response.json();
+                }).then(function(response) {
+                    if(response['event_id']){
+                        d.disabled = false
                     }
                 }).catch(function(err) {
                     console.log(err)

@@ -190,6 +190,8 @@ class BijaDB:
                                   Note.created_at,
                                   Note.members,
                                   Note.media,
+                                  Note.liked,
+                                  Note.shared,
                                   Profile.name,
                                   Profile.pic,
                                   Profile.nip05).filter_by(id=note_id).join(Note.profile).first()
@@ -224,6 +226,8 @@ class BijaDB:
                                   Note.created_at,
                                   Note.members,
                                   Note.media,
+                                  Note.liked,
+                                  Note.shared,
                                   Profile.name,
                                   Profile.pic,
                                   Profile.nip05,
@@ -286,11 +290,13 @@ class BijaDB:
             Note.created_at,
             Note.members,
             Note.media,
+            Note.liked,
+            Note.shared,
             label("likes", like_counts.c.likes),
             Profile.name,
             Profile.pic,
             Profile.nip05,
-            Profile.nip05_validated).join(Note.profile)\
+            Profile.nip05_validated).join(Note.profile) \
             .outerjoin(like_counts, like_counts.c.event_id == Note.id) \
             .filter(text("note.created_at<{}".format(before))) \
             .filter(text("(profile.following=1 OR profile.public_key='{}')".format(public_key))) \
@@ -402,8 +408,45 @@ class BijaDB:
         ))
         self.session.commit()
 
+    def delete_reaction(self, reaction_id):
+        self.session.query(Event).filter_by(id=reaction_id).delete()
+        self.session.query(NoteReaction).filter_by(id=reaction_id).delete()
+        self.session.commit()
+
+    def set_note_liked(self, note_id, liked=True):
+        self.session.merge(Note(
+            id=note_id,
+            liked=liked
+        ))
+        self.session.commit()
+
     def get_like_count(self, note_id):
-        return self.session.query(NoteReaction.event_id).filter(NoteReaction.event_id == note_id).filter(NoteReaction.content != '-').count()
+        return self.session.query(NoteReaction.event_id).filter(NoteReaction.event_id == note_id).filter(
+            NoteReaction.content != '-').count()
+
+    def get_like_events_for(self, note_id, public_key):
+        return self.session.query(NoteReaction).filter(NoteReaction.event_id == note_id).\
+            filter(NoteReaction.public_key == public_key).all()
+
+    def add_event(self, event_id, kind, commit=True):
+        self.session.merge(Event(
+            id=event_id,
+            kind=kind
+        ))
+        if commit:
+            self.session.commit()
+
+    def get_event(self, event_id):
+        return self.session.query(Event).filter(Event.id == event_id).first()
+
+    def commit(self):
+        self.session.commit()
+
+
+class Event(Base):
+    __tablename__ = "event"
+    id = Column(String(64), primary_key=True)
+    kind = Column(Integer)
 
 
 class Profile(Base):
@@ -448,6 +491,8 @@ class Note(Base):
     members = Column(String)
     media = Column(String)
     seen = Column(Boolean, default=False)
+    liked = Column(Boolean, default=False)
+    shared = Column(Boolean, default=False)
     raw = Column(String)
 
     profile = relationship("Profile", back_populates="notes")
@@ -464,6 +509,8 @@ class Note(Base):
             self.members,
             self.media,
             self.seen,
+            self.liked,
+            self.shared,
             self.raw
         }
 

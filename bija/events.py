@@ -99,6 +99,9 @@ class BijaEvents:
 
             while self.relay_manager.message_pool.has_events():
                 msg = self.relay_manager.message_pool.get_event()
+
+                self.db.add_event(msg.event.id, msg.event.kind, False)
+
                 if msg.event.kind == EventKind.SET_METADATA:
                     self.handle_metadata_event(msg.event)
 
@@ -112,10 +115,11 @@ class BijaEvents:
                     self.handle_private_message_event(msg.event)
 
                 if msg.event.kind == EventKind.DELETE:
-                    self.handle_deleted_event(msg.event)
+                    self.handle_del_event(msg.event)
 
                 if msg.event.kind == EventKind.REACTION:
                     self.handle_reaction_event(msg.event)
+            self.db.commit()
             time.sleep(1)
             print('running')
             i += 1
@@ -123,8 +127,14 @@ class BijaEvents:
                 self.get_connection_status()
                 i = 0
 
-    def handle_deleted_event(self, event):
-        pass
+    def handle_del_event(self, event):
+        for tag in event.tags:
+            if tag[0] == 'e':
+                e = self.db.get_event(tag[1])
+                if e is not None and e.kind == EventKind.REACTION:
+                    self.db.delete_reaction(tag[1])
+                if e is not None and e.kind == EventKind.TEXT_NOTE:
+                    print('DEL NOTE')
 
     def handle_reaction_event(self, event):
         e_pk = None
@@ -303,17 +313,57 @@ class BijaEvents:
                 media.append((url, 'image'))
         return content, json.dumps(media), reshare
 
+    def delete_events(self, event_ids: list):
+        k = bytes.fromhex(self.get_key('private'))
+        private_key = PrivateKey(k)
+        tags = []
+        for event in event_ids:
+            tags.append(['e', event])
+        tags.append(['client', 'BIJA'])
+        created_at = int(time.time())
+        event = Event(private_key.public_key.hex(), '', tags=tags, created_at=created_at, kind=EventKind.DELETE)
+        event.sign(private_key.hex())
+
+        message = json.dumps([ClientMessageType.EVENT, event.to_json_object()], ensure_ascii=False)
+        print(message)
+        self.relay_manager.publish_message(message)
+        return event.id
+
+    def submit_like(self, note_id):
+        k = bytes.fromhex(self.get_key('private'))
+        private_key = PrivateKey(k)
+        r = self.db.get_preferred_relay()
+        preferred_relay = r.name
+        note = self.db.get_note(note_id)
+        members = json.loads(note.members)
+        tags = []
+        for m in members:
+            if is_hex_key(m) and m != note.public_key:
+                tags.append(["p", m, preferred_relay])
+        tags.append(["p", note.public_key, preferred_relay])
+        tags.append(["e", note.id, preferred_relay])
+        tags.append(['client', 'BIJA'])
+
+        created_at = int(time.time())
+        event = Event(private_key.public_key.hex(), '+', tags=tags, created_at=created_at, kind=EventKind.REACTION)
+        event.sign(private_key.hex())
+
+        message = json.dumps([ClientMessageType.EVENT, event.to_json_object()], ensure_ascii=False)
+        print(message)
+        self.relay_manager.publish_message(message)
+        return event.id
+
     def submit_note(self, data, members=None):
         k = bytes.fromhex(self.get_key('private'))
         private_key = PrivateKey(k)
         r = self.db.get_preferred_relay()
         preferred_relay = r.name
-        tags = [['client', 'BIJA']]
+        tags = []
         response_to = None
         thread_root = None
 
         if 'quote_id' in data:
-            note = "{} #[1]".format(data['comment'])
+            note = "{} #[0]".format(data['comment'])
             tags.append(["e", data['quote_id']])
             if members is not None:
                 for m in members:
@@ -338,6 +388,7 @@ class BijaEvents:
         else:
             return False
 
+        tags.append(['client', 'BIJA'])
         created_at = int(time.time())
         event = Event(private_key.public_key.hex(), note, tags=tags, created_at=created_at)
         event.sign(private_key.hex())
