@@ -17,10 +17,10 @@
         <span class="likes counts">{{note['likes'] if note['likes'] is not none}}</span>
     </span>
 </p>
-<form class="reply-form"  data-noteid="{{note['id']}}" >
+<form class="reply-form poster-form"  data-noteid="{{note['id']}}" >
     <input type="hidden" name="pubkey" value="{{note['public_key']}}">
     <input type="hidden" name="thread_root" value="{{thread_root}}">
     <input type="hidden" name="parent_id" value="{{note['id']}}">
     <textarea name="reply"></textarea>
-    <input type="submit" value="note" data-reply-submit="1" data-rel="{{note['id']}}">
+    <input type="submit" value="Reply" data-reply-submit="1" data-rel="{{note['id']}}" class="post-submit right">
 </form>

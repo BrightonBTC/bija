@@ -139,7 +139,8 @@ def note_page():
 def quote_form():
     note_id = request.args['id']
     note = DB.get_note(note_id)
-    return render_template("quote.form.html", item=note, id=note_id)
+    profile = DB.get_profile(get_key())
+    return render_template("quote.form.html", item=note, id=note_id, p=profile)
 
 
 @app.route('/quote', methods=['POST'])
