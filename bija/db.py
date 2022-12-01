@@ -379,6 +379,21 @@ class BijaDB:
         self.session.query(PrivateMessage).filter(PrivateMessage.public_key == public_key).update({'seen': True})
         self.session.commit()
 
+    def add_note_reaction(self, eid, public_key, event_id, event_pk, content, members, raw):
+        self.session.merge(NoteReaction(
+            id=eid,
+            public_key=public_key,
+            event_id=event_id,
+            event_pk=event_pk,
+            content=content,
+            members=members,
+            raw=raw
+        ))
+        self.session.commit()
+
+    def get_like_count(self, note_id):
+        return self.session.query(NoteReaction.event_id).filter(NoteReaction.event_id == note_id).filter(NoteReaction.content != '-').count()
+
 
 class Profile(Base):
     __tablename__ = "profile"
@@ -471,15 +486,18 @@ class Settings(Base):
     value = Column(String)
 
 
-class NoteReactions(Base):
+class NoteReaction(Base):
     __tablename__ = "note_reactions"
-    id = Column(Integer, primary_key=True)
+    id = Column(String, primary_key=True)
     public_key = Column(String)
-    event = Column(Integer, ForeignKey("note.id"))
+    event_id = Column(Integer)
+    event_pk = Column(Integer)
     content = Column(String(7))
+    members = Column(String)
+    raw = Column(String)
 
 
-class MessageReactions(Base):
+class MessageReaction(Base):
     __tablename__ = "message_reactions"
     id = Column(Integer, primary_key=True)
     public_key = Column(String)

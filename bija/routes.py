@@ -49,11 +49,6 @@ def index_page():
         threads, last_ts = make_threaded(notes)
         profile = DB.get_profile(get_key())
         return render_template("feed.html", page_id="home", title="Home", threads=threads, last=last_ts, profile=profile)
-
-        # t, i = make_threaded(notes)
-        # profile = DB.get_profile(get_key())
-        # EXECUTOR.submit(EVENT_HANDLER.subscribe_feed, i)
-        # return render_template("feed.html", page_id="home", title="Home", threads=t, ids=i, profile=profile)
     else:
         return render_template("login.html", page_id="login", title="Login", login_type=login_state)
 
@@ -66,9 +61,6 @@ def feed():
         else:
             before = time.time()
         notes = DB.get_feed(before, get_key())
-        # t, i = make_threaded(notes)
-        # EXECUTOR.submit(EVENT_HANDLER.subscribe_feed, i)
-        # return render_template("feed.items.html", threads=t, ids=i)
         threads, last_ts = make_threaded(notes)
         return render_template("feed.items.html",  threads=threads, last=last_ts)
 
@@ -108,7 +100,6 @@ def profile_page():
     if profile is None:
         DB.add_profile(k)
         profile = DB.get_profile(k)
-    # return render_template("profile.html", page_id="profile", title="Profile", threads=t, ids=i, profile=profile, is_me=is_me)
     return render_template("profile.html", page_id="profile", title="Profile", threads=threads, last=last_ts, profile=profile, is_me=is_me)
 
 
@@ -130,10 +121,11 @@ def note_page():
                 print('reshare found at db')
                 note['reshare'] = reshare
         members.append(note['public_key'])
-        if len(note['members'].strip()) > 0:
-            mems = note['members'].split(',')
-            for m in mems:
-                members.append(m)
+        members = json.loads(note['members'])+members
+        # if len(note['members'].strip()) > 0:
+        #     mems = note['members'].split(',')
+        #     for m in mems:
+        #         members.append(m)
         notes_processed.append(note)
     members = list(dict.fromkeys(members))
     profiles = []
@@ -181,14 +173,28 @@ def thread_item():
     return render_template("thread.item.html", item=note)
 
 
-@app.route('/settings')
+@app.route('/settings', methods=['GET', 'POST'])
 def settings_page():
-    EVENT_HANDLER.set_page('settings',  None)
-    EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
-    settings = {}
-    relays = DB.get_relays()
-    EVENT_HANDLER.get_connection_status()
-    return render_template("settings.html", page_id="settings", title="Settings", relays=relays, settings=settings)
+    login_state = get_login_state()
+    if login_state is LoginState.LOGGED_IN:
+        if request.method == 'POST' and 'del_keys' in request.form.keys():
+            print("RESET DB")
+            EVENT_HANDLER.close()
+            DB.reset()
+            session.clear()
+            return redirect('/')
+        else:
+            EVENT_HANDLER.set_page('settings',  None)
+            EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
+            settings = {}
+            relays = DB.get_relays()
+            EVENT_HANDLER.get_connection_status()
+            return render_template(
+                "settings.html",
+                page_id="settings",
+                title="Settings", relays=relays, settings=settings, k=session.get("keys"))
+    else:
+        return render_template("login.html", title="Login", login_type=login_state)
 
 
 @app.route('/upd_profile', methods=['POST', 'GET'])
@@ -387,22 +393,6 @@ def submit_note():
     return render_template("upd.json", title="Home", data=json.dumps(out))
 
 
-@app.route('/keys', methods=['GET', 'POST'])
-def keys_page():
-    login_state = get_login_state()
-    if login_state is LoginState.LOGGED_IN:
-        if request.method == 'POST' and 'del_keys' in request.form.keys():
-            print("RESET DB")
-            EVENT_HANDLER.close()
-            DB.reset()
-            session.clear()
-            return redirect('/')
-        else:
-            return render_template("keys.html",  page_id="keys", title="Keys", k=session.get("keys"))
-    else:
-        return render_template("login.html", title="Login", login_type=login_state)
-
-
 @app.teardown_appcontext
 def remove_session(*args, **kwargs):
     app.session.remove()
@@ -503,38 +493,6 @@ def make_threaded(notes):
         threads.append(t)
 
     return threads, last_ts
-
-
-
-            # in_list = []
-    # threads = []
-    # for note in notes:
-    #     in_list.append(note['id'])
-    #     note = dict(note)
-    #
-    #     t = [note]
-    #     thread_ids = []
-    #     if note['response_to'] is not None:
-    #         thread_ids.append(note['response_to'])
-    #     if note['thread_root'] is not None:
-    #         thread_ids.append(note['thread_root'])
-    #
-    #     for n in notes:
-    #         nn = dict(n)
-    #         if nn['id'] in thread_ids:
-    #             notes.remove(n)
-    #             nn['is_parent'] = True
-    #             t.insert(0, nn)
-    #             in_list.append(nn['id'])
-    #             if nn['response_to'] is not None:
-    #                 thread_ids.append(nn['response_to'])
-    #             if nn['thread_root'] is not None:
-    #                 thread_ids.append(nn['thread_root'])
-    #
-    #     threads.append(t)
-    #     in_list = list(dict.fromkeys(in_list))
-    #
-    # return threads, in_list
 
 
 def get_login_state():
