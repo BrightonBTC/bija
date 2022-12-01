@@ -406,6 +406,9 @@ input[type=submit]:hover {
     color: var(--txt-clr);
     align-items: center;
 }
+.following-item a{
+    color: var(--txt-clr);
+}
 .following-item:hover{
     background: var(--bg-clr1);
 }
@@ -796,10 +799,25 @@ p.note-tools {
     justify-content: space-around;
     margin: 0;
     padding: 5px;
+    line-height: 14px;
 }
 p.note-tools img{
     width:14px;
     height:14px;
+}
+
+.note-tools .section{
+    position: relative;
+}
+
+.note-tools .counts{
+    font-size: 10px;
+    background: var(--bg-clr3);
+    position: absolute;
+    top: 2px;
+    left: 20px;
+    border-radius: 5px;
+    font-weight: 900;
 }
 
 /* ---------- */
