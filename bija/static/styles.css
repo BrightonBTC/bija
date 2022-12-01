@@ -135,6 +135,9 @@ input[type=submit]:hover {
   max-width:1000px;
   margin:auto;
 }
+.main.blur{
+    filter: blur(5px);
+}
 
 .topnav {
     overflow: hidden;
@@ -233,7 +236,7 @@ input[type=submit]:hover {
 }
 
 .popup-overlay{
-    background: #888;
+    background: #000;
     opacity: 0.5;
     position: fixed;
     left: 0;
@@ -246,12 +249,12 @@ input[type=submit]:hover {
 .popup{
     background: var(--bg-clr1);
     position: fixed;
-    top: 50%;
+    top: 10%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, 0%);
     padding: 10px;
     width: 700px;
-    height: 600px;
+    max-height: 80%;
     overflow: auto;
     z-index: 1001;
     border: 1px solid var(--bdr-clr-2);
@@ -818,6 +821,9 @@ p.note-tools img{
     left: 20px;
     border-radius: 5px;
     font-weight: 900;
+}
+.popup .note-container{
+    pointer-events:none;
 }
 
 /* ---------- */

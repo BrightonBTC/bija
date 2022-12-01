@@ -821,7 +821,9 @@ let popup = function(str){
     overlay.onclick = function(){
         overlay.remove();
         the_popup.remove();
+        document.querySelector('.main').classList.remove('blur')
     }
     document.body.append(overlay)
     document.body.append(the_popup)
+    document.querySelector('.main').classList.add('blur')
 }
