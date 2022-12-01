@@ -4,6 +4,7 @@ from os.path import exists
 
 from sqlalchemy import create_engine, Column, Integer, String, Time, ForeignKey, Boolean, text, distinct, func, or_
 from sqlalchemy.orm import declarative_base, sessionmaker, join, relationship, subqueryload, aliased
+from sqlalchemy.sql import label
 
 Base = declarative_base()
 DB_ENGINE = create_engine("sqlite:///bija.sqlite", echo=False)
@@ -268,6 +269,13 @@ class BijaDB:
         self.session.commit()
 
     def get_feed(self, before, public_key):
+
+        like_counts = self.session.query(
+            NoteReaction.id,
+            NoteReaction.event_id,
+            func.count(NoteReaction.id).label('likes')
+        ).group_by(NoteReaction.event_id).subquery()
+
         return self.session.query(
             Note.id,
             Note.public_key,
@@ -278,10 +286,13 @@ class BijaDB:
             Note.created_at,
             Note.members,
             Note.media,
+            label("likes", like_counts.c.likes),
             Profile.name,
             Profile.pic,
             Profile.nip05,
-            Profile.nip05_validated).join(Note.profile).filter(text("note.created_at<{}".format(before))) \
+            Profile.nip05_validated).join(Note.profile)\
+            .outerjoin(like_counts, like_counts.c.event_id == Note.id) \
+            .filter(text("note.created_at<{}".format(before))) \
             .filter(text("(profile.following=1 OR profile.public_key='{}')".format(public_key))) \
             .order_by(Note.created_at.desc()).limit(50).all()
 
@@ -379,6 +390,21 @@ class BijaDB:
         self.session.query(PrivateMessage).filter(PrivateMessage.public_key == public_key).update({'seen': True})
         self.session.commit()
 
+    def add_note_reaction(self, eid, public_key, event_id, event_pk, content, members, raw):
+        self.session.merge(NoteReaction(
+            id=eid,
+            public_key=public_key,
+            event_id=event_id,
+            event_pk=event_pk,
+            content=content,
+            members=members,
+            raw=raw
+        ))
+        self.session.commit()
+
+    def get_like_count(self, note_id):
+        return self.session.query(NoteReaction.event_id).filter(NoteReaction.event_id == note_id).filter(NoteReaction.content != '-').count()
+
 
 class Profile(Base):
     __tablename__ = "profile"
@@ -471,15 +497,18 @@ class Settings(Base):
     value = Column(String)
 
 
-class NoteReactions(Base):
+class NoteReaction(Base):
     __tablename__ = "note_reactions"
-    id = Column(Integer, primary_key=True)
+    id = Column(String, primary_key=True)
     public_key = Column(String)
-    event = Column(Integer, ForeignKey("note.id"))
+    event_id = Column(Integer)
+    event_pk = Column(Integer)
     content = Column(String(7))
+    members = Column(String)
+    raw = Column(String)
 
 
-class MessageReactions(Base):
+class MessageReaction(Base):
     __tablename__ = "message_reactions"
     id = Column(Integer, primary_key=True)
     public_key = Column(String)

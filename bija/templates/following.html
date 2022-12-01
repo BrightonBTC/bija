@@ -4,12 +4,12 @@
 {% include 'profile.header.html' %}
 <div class="following-list">
 {% for p in profiles: %}
-    <a class="following-item" href="/profile?pk={{p['public_key']}}">
+    <div class="following-item">
         <div class="pic">
             {% include 'profile.image.html' %}
         </div>
-        <div class="name">{{p['name'] | ident_string(p['public_key'], p['nip05'], p['nip05_validated']) | safe }}</div>
-    </a>
+        <div class="name"><a href="/profile?pk={{p['public_key']}}">{{p['name'] | ident_string(p['public_key'], p['nip05'], p['nip05_validated']) | safe }}</a></div>
+    </div>
 {% endfor %}
 </div>
 {% endblock content %}

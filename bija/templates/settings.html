@@ -1,7 +1,19 @@
 {% extends "base.html" %}
 
 {% block content %}
-
+<div class="card">
+    <table>
+        <tr>
+            <td>Public</td><td>{{k['public']}}</td>
+        </tr>
+        <tr>
+            <td>Private</td><td>{{k['private']}}</td>
+        </tr>
+    </table>
+    <form method="post" action="/keys">
+        <input type="submit" name="del_keys" value="Delete these keys">
+    </form>
+</div>
 <div class="card">
     <h3>Relays</h3>
     <ul>

@@ -115,7 +115,7 @@ class BijaEvents:
                     self.handle_deleted_event(msg.event)
 
                 if msg.event.kind == EventKind.REACTION:
-                    self.handle_deleted_event(msg.event)
+                    self.handle_reaction_event(msg.event)
             time.sleep(1)
             print('running')
             i += 1
@@ -125,6 +125,19 @@ class BijaEvents:
 
     def handle_deleted_event(self, event):
         pass
+
+    def handle_reaction_event(self, event):
+        e_pk = None
+        e_id = None
+        members = []
+        for tag in event.tags:
+            if tag[0] == "p":
+                e_pk = tag[1]
+                members.append(tag[1])
+            if tag[0] == "e":
+                e_id = tag[1]
+        if e_id is not None and e_id is not None:
+            self.db.add_note_reaction(event.id, event.public_key, e_id, e_pk, event.content, json.dumps(members), json.dumps(event.to_json_object()))
 
     def handle_metadata_event(self, event):
         s = json.loads(event.content)
