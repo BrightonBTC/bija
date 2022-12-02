@@ -719,6 +719,7 @@ input[type=text].pname {
     white-space: pre-wrap;
     cursor:pointer;
     background: var(--bg-clr2);
+    position: relative;
 }
 .note-content pre:hover{
     filter: brightness(1.5);
@@ -858,6 +859,22 @@ p.note-tools img{
 }
 .popup .note-container{
     pointer-events:none;
+}
+.reveal{
+    background-image: linear-gradient(to top, var(--bg-clr2) 30%, transparent 100%);
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+    height: 60px;
+    padding: 30px;
+}
+.reveal span{
+    padding: 5px;
+    border-radius: 5px;
+    background: var(--btn-bg);
+    font-size: 12px;
 }
 
 /* ---------- */

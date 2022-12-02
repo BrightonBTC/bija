@@ -122,20 +122,21 @@ let notifyNewProfilePosts = function(){
     }
 }
 let updateProfile = function(profile){
+    console.log('UPDATE PROFILE')
     document.querySelector(".profile-about").innerText = profile.about
     document.querySelector("#profile").dataset.updated_ts = profile.updated_at
     const name_els = document.querySelectorAll(".uname[data-pk='"+profile.public_key+"']");
-    for (let i = 0; i < name_els.length; i++) {
+    for (const name_el of name_els) {
         if(profile.name.length > 0){
-            name_els[i].querySelector('.name').innerText = profile.name
+            name_el.querySelector('.name').innerText = profile.name
         }
         if(profile.nip05 !== null && profile.nip05.length > 0 && profile.nip05_validated){
-            name_els[i].querySelector('.nip5').innerText = profile.nip05
+            name_el.querySelector('.nip5').innerText = profile.nip05
         }
     }
     const pic_els = document.querySelectorAll(".user-image[data-rel='"+profile.public_key+"']");
-    for (let i = 0; i < pic_els.length; i++) {
-        pic_els[i].setAttribute("src", profile.pic)
+    for (const pic_el of pic_els) {
+        pic_el.setAttribute("src", profile.pic)
     }
 }
 
@@ -158,71 +159,36 @@ let updateMessageThread = function(data){
 
 class bijaNotePoster{
     constructor(){
-        this.setClicks();
+        this.setEventListeners();
     }
 
-    setClicks(){
+    setEventListeners(){
         const btn = document.querySelector('#new_post_submit');
         const form = document.querySelector('#new_post_form');
 
         btn.addEventListener('click', (e) => {
             e.preventDefault();
-
-            const formData = new FormData(form);
-            const data = [...formData.entries()];
-            const options = {
-                method: 'POST',
-                body: JSON.stringify(data),
-                headers: {
-                    'Content-Type': 'application/json'
+            const cb = function(response, data){
+                if(response['event_id']){
+                   notify('/note?id='+response['event_id'], 'Note created. View now?')
                 }
             }
-            fetch('/submit_note', options).then(function(response) {
-                return response.json();
-            }).then(function(response) {
-               if(response['event_id']){
-                   notify('/note?id='+response['event_id'], 'Note created. View now?')
-               }
-            }).catch(function(err) {
-                console.log(err)
-            });
-
-            return false;
+            fetchFromForm('/submit_note', form, cb, {}, 'json');
         });
     }
 }
 
 class bijaSettings{
     constructor(){
-        this.setClicks();
+        this.setEventListeners();
     }
 
-    setClicks(){
-        const upd_relay_btn = document.querySelector(".refresh_connections");
-        upd_relay_btn.addEventListener("click", (event)=>{
-            fetch('/refresh_connections', {
-            method: 'get'
-            }).then(function(response) {
-                return response.text();
-            }).then(function(response) {
+    setEventListeners(){
+        this.setUpdateConnsClickedEvent()
 
-            }).catch(function(err) {
-                console.log(err);
-            });
-        });
         const relays = document.querySelectorAll(".relay[data-url]");
         for (const relay of relays) {
-            relay.querySelector(".del-relay").addEventListener("click", (event)=>{
-                fetch('/del_relay?url='+relay.dataset.url, {
-                    method: 'get'
-                }).then(function(response) {
-                    return response.text();
-                }).then(function(response) {
-                    relay.remove()
-                }).catch(function(err) {
-                    console.log(err);
-                });
-            });
+            this.setRelayRemoveClickedEvent(relay)
         }
 
         const relay_btn = document.querySelector("#addrelay");
@@ -230,24 +196,32 @@ class bijaSettings{
             event.preventDefault();
             event.stopPropagation();
             const form = document.querySelector("#relay_adder")
-            const formData = new FormData(form);
-            const data = [...formData.entries()];
-            const options = {
-                method: 'POST',
-                body: JSON.stringify(data),
-                headers: {
-                    'Content-Type': 'application/json'
+
+            const cb = function(response, data){
+                if(response['success']){
+                   notify('#', 'relay added')
                 }
             }
-            fetch('/add_relay', options).then(function(response) {
-                return response.json();
-            }).then(function(response) {
-               if(response['success']){
-                   notify('#', 'relay added')
-               }
-            }).catch(function(err) {
-                console.log(err)
-            });
+            fetchFromForm('/add_relay', form, cb, {}, 'json')
+        });
+    }
+
+    setRelayRemoveClickedEvent(elem){
+        elem.querySelector(".del-relay").addEventListener("click", (event)=>{
+            const cb = function(response, data){
+                data.elem.remove()
+            }
+            fetchGet('/del_relay?url='+elem.dataset.url, cb, {'elem': elem})
+        });
+    }
+
+    setUpdateConnsClickedEvent(){
+        const elem = document.querySelector(".refresh_connections");
+        elem.addEventListener("click", (event)=>{
+            const cb = function(response, data){
+                // TODO: update page
+            }
+            fetchGet('/refresh_connections', cb, {})
         });
     }
 }
@@ -265,42 +239,39 @@ class bijaThread{
             const el = document.querySelector(".note-container[data-id='"+event.detail.id+"']")
 
             if( (el && el.classList.contains('placeholder')) || !el){
-                const o = this
-                fetch('/thread_item?id='+event.detail.id, {
-                    method: 'get'
-                }).then(function(response) {
-                    return response.text();
-                }).then(function(response) {
-                    const doc = new DOMParser().parseFromString(response, "text/html")
-                    const new_item = doc.body.firstChild
-                    if(!el){
-                        console.log('1 // '+event.detail.id)
-                        if(new_item.dataset.parent.length > 0){
-                            const siblings = document.querySelectorAll(".note-container[data-parent='"+new_item.dataset.parent+"']")
-                            if(siblings.length > 0){
-                                const last = Array.from(siblings).pop();
-                                last.insertAdjacentElement("afterend", new_item);
-                            }
-                            else{
-                                const parent = document.querySelector(".note-container[data-id='"+new_item.dataset.parent+"']")
-                                if(parent){
-                                    parent.insertAdjacentElement("afterend", new_item);
-                                }
-                            }
-                        }
-                        document.dispatchEvent(new Event('newContentLoaded'))
-                    }
-                    else{
-                        console.log('2 // '+event.detail.id)
-                        el.replaceWith(new_item)
-                        document.dispatchEvent(new Event('newContentLoaded'))
-                    }
-                    o.setFolding()
-                }).catch(function(err) {
-                    console.log(err);
-                });
+
+                fetchGet('/thread_item?id='+event.detail.id, this.processNewNoteInThread, {'elem': el, 'context':this})
+
             }
         });
+    }
+
+    processNewNoteInThread(response, data){
+        const doc = new DOMParser().parseFromString(response, "text/html")
+        const new_item = doc.body.firstChild
+        if(!data.elem){
+            console.log('new elem')
+            if(new_item.dataset.parent.length > 0){
+                const siblings = document.querySelectorAll(".note-container[data-parent='"+new_item.dataset.parent+"']")
+                if(siblings.length > 0){
+                    const last = Array.from(siblings).pop();
+                    last.insertAdjacentElement("afterend", new_item);
+                }
+                else{
+                    const parent = document.querySelector(".note-container[data-id='"+new_item.dataset.parent+"']")
+                    if(parent){
+                        parent.insertAdjacentElement("afterend", new_item);
+                    }
+                }
+            }
+            document.dispatchEvent(new Event('newContentLoaded'))
+        }
+        else{
+            console.log('replace elem')
+            data.elem.replaceWith(new_item)
+            document.dispatchEvent(new Event('newContentLoaded'))
+        }
+        data.context.setFolding()
     }
 
     setFolding(){
@@ -419,37 +390,25 @@ class bijaMessages{
 
     }
     postMessage(){
-        const form = document.querySelector("#new_message_form")
-        const formData = new FormData(form);
-        const data = [...formData.entries()];
-        const options = {
-            method: 'POST',
-            body: JSON.stringify(data),
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        }
-        fetch('/submit_message', options).then(function(response) {
-            return response.json();
-        }).then(function(response) {
-           if(response['event_id']){
+        const cb = function(response, data){
+            if(response['event_id']){
                window.scrollTo(0, document.body.scrollHeight);
                notify('#', 'Message sent')
                document.querySelector("#new_message").value = ''
            }
-        }).catch(function(err) {
-            console.log(err)
-        });
+        }
+        const form = document.querySelector("#new_message_form")
+        fetchFromForm('/submit_message', form, cb, {}, 'json')
     }
 }
 
 class bijaProfile{
 
     constructor(){
-        this.setClicks()
+        this.setEventListeners()
     }
 
-    setClicks(){
+    setEventListeners(){
         const btns = document.querySelectorAll(".follow-btn");
         for (const btn of btns) {
             btn.addEventListener("click", (event)=>{
@@ -474,238 +433,227 @@ class bijaProfile{
                     pel.classList.add('editing')
                 }
             });
-            const pupd = document.querySelector("#pupd");
-            pupd.addEventListener("click", (event)=>{
+            const profile_updater = document.querySelector("#pupd");
+            profile_updater.addEventListener("click", (event)=>{
                 event.preventDefault();
                 event.stopPropagation();
+
                 const form = document.querySelector("#profile_updater")
-                const formData = new FormData(form);
-                const data = [...formData.entries()];
-                const options = {
-                    method: 'POST',
-                    body: JSON.stringify(data),
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                }
-                fetch('/upd_profile', options).then(function(response) {
-                    return response.json();
-                }).then(function(response) {
-                    if(response['success']){
-                        notify('#', 'Profile updated')
-                        document.querySelector("#nip5").classList.remove('error')
-                    }
-                    else if(response['nip05'] === false){
-                        notify('#', 'Nip05 identifier could not be validated')
-                        document.querySelector("#nip5").classList.add('error')
-                    }
-                    else{
-                        notify('#', 'Something went wrong updating your profile. Check for any errors and try again.')
-                    }
-                }).catch(function(err) {
-                    console.log(err)
-                });
+                fetchFromForm('/upd_profile', form, this.updateProfile, {}, 'json')
             });
         }
     }
 
+    updateProfile(response, data){
+        if(response['success']){
+            notify('#', 'Profile updated')
+            document.querySelector("#nip5").classList.remove('error')
+        }
+        else if(response['nip05'] === false){
+            notify('#', 'Nip05 identifier could not be validated')
+            document.querySelector("#nip5").classList.add('error')
+        }
+        else{
+            notify('#', 'Something went wrong updating your profile. Check for any errors and try again.')
+        }
+    }
+
     setFollowState(id, state){
-        let o = this;
-        fetch('/follow?id='+id+"&state="+state, {
-            method: 'get'
-        }).then(function(response) {
-            return response.text();
-        }).then(function(response) {
+        const cb = function(response, data){
             document.querySelector(".profile-tools").innerHTML = response
-        }).catch(function(err) {
-            console.log(err);
-        });
+        }
+        fetchGet('/follow?id='+id+"&state="+state, cb)
     }
 
 }
 
 class bijaNotes{
     constructor(){
-        this.setClicks()
+        this.setEventListeners()
         document.addEventListener('newContentLoaded', ()=>{
-            this.setClicks()
+            this.setEventListeners()
         });
     }
 
-    setClicks(){
+    setEventListeners(){
         const links = document.querySelectorAll(".reply-link");
         for (const link of links) {
-            link.addEventListener("click", (event)=>{
-                event.preventDefault();
-                event.stopPropagation();
-                const event_id = link.dataset.rel
-                const form_el = document.querySelector(".reply-form[data-noteid='"+event_id+"']")
-                if (form_el.dataset.vis == '1'){
-                    form_el.dataset.vis = '0'
-                    form_el.style.display = "none"
-                }
-                else{
-                    form_el.dataset.vis = '1'
-                    form_el.style.display = "block"
-                }
-            });
+            this.setReplyLinkEvents(link)
         }
-        const btns = document.querySelectorAll("input[data-reply-submit]");
-        for (const btn of btns) {
-            btn.addEventListener("click", (event)=>{
-                event.preventDefault();
-                event.stopPropagation();
-                let id = btn.dataset.rel
-                this.postReply(id)
-            });
+        const buttons = document.querySelectorAll("input[data-reply-submit]");
+        for (const btn of buttons) {
+            this.setReplyClickedEvents(btn)
         }
         const note_links = document.querySelectorAll(".note-content[data-rel]");
         for (const note_link of note_links) {
-            note_link.querySelector('pre').addEventListener("click", (event)=>{
-                let id = note_link.dataset.id
-                const container_el = document.querySelector(".note-container[data-id='"+id+"']");
-                if(container_el && container_el.classList.contains("main")){
+            this.setContentClickedEvents(note_link)
+        }
+        const opt_els = document.querySelectorAll(".note-opts");
+        for (const opt_el of opt_els) {
+            this.setOptsMenuEvents(opt_el)
+        }
+        const q_els = document.querySelectorAll(".quote-link");
+        for (const q_el of q_els) {
+            this.setQuoteClickedEvents(q_el)
+        }
+        const like_els = document.querySelectorAll("a.like");
+        for (const like_el of like_els) {
+            this.setLikeClickedEvents(like_el)
+        }
+        const content_els = document.querySelectorAll(".note-content pre");
+        for (const content_el of content_els) {
+            this.setExpandableHeight(content_el)
+        }
+    }
 
+    setExpandableHeight(elem){
+        if(elem.offsetHeight > 150){
+            elem.style.height = '150px'
+            elem.style.overflow = 'hidden'
+            elem.style.paddingBottom = '60px'
+            elem.dataset.state = 0
+            const reveal_btn = document.createElement('div')
+            reveal_btn.classList.add('reveal')
+            reveal_btn.innerHTML = '<span>show more</span>'
+            elem.append(reveal_btn)
+            reveal_btn.addEventListener("click", (event)=>{
+                event.stopPropagation();
+                const btn = elem.querySelector('span')
+                if(elem.dataset.state == 0){
+                    elem.style.height = 'auto'
+                    elem.dataset.state = 1
+                    btn.innerText = 'show less'
                 }
                 else{
-                    event.preventDefault();
-                    event.stopPropagation();
-                    let rel = note_link.dataset.rel
-                    window.location.href = '/note?id='+rel+'#'+id
+                    elem.style.height = '150px'
+                    elem.dataset.state = 0
+                    btn.innerText = 'show more'
                 }
             });
         }
-        const im_els = document.querySelectorAll(".note-opts");
-        for (let i = 0; i < im_els.length; i++) {
-            const note_id = im_els[i].dataset.id
-            const tools = im_els[i].querySelectorAll('.opts-menu li')
-            for (let i = 0; i < tools.length; i++) {
-                const tool  = tools[i].dataset.action;
-                console.log(tool)
-                if(tool == 'nfo'){
-                    tools[i].addEventListener('click', (e) => {
-                        popup('loading...')
-                        fetch('/fetch_raw?id='+note_id).then(function(response) {
-                            return response.json();
-                        }).then(function(response) {
-                            if(response['data']){
-                                const p =document.querySelector('.popup')
-                                if(p){
-                                    p.innerHTML = "<pre>"+JSON.stringify(JSON.parse(response['data']), null, 2)+"</pre>";
-                                }
-                            }
-                        }).catch(function(err) {
-                            console.log(err)
-                        });
-                    })
+    }
+    
+    setReplyClickedEvents(elem){
+        elem.addEventListener("click", (event)=>{
+            event.preventDefault();
+            event.stopPropagation();
+            this.postReply(elem.dataset.rel)
+        });
+    }
+
+    setLikeClickedEvents(elem){
+        elem.addEventListener('click', (e) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const d = elem.dataset
+            if(d.disabled == true) return
+            d.disabled = true
+            if(d.liked == 'True'){
+                d.liked = 'False'
+                elem.querySelector('img').setAttribute('src', '/static/like.svg')
+            }
+            else{
+                d.liked = 'True'
+                elem.querySelector('img').setAttribute('src', '/static/liked.svg')
+            }
+            const cb = function(response, data){
+                if(response['event_id']){
+                    data.elem.dataset.disabled = false
                 }
             }
-        }
-        const q_els = document.querySelectorAll(".quote-link");
-        for (let i = 0; i < q_els.length; i++) {
-            q_els[i].addEventListener('click', (e) => {
+            fetchGet('/like?id='+d.rel, cb, {'elem': elem})
+        })
+    }
+
+    setContentClickedEvents(elem){
+        elem.querySelector('pre').addEventListener("click", (event)=>{
+            let id = elem.dataset.id
+            const container_el = document.querySelector(".note-container[data-id='"+id+"']");
+            if(container_el && container_el.classList.contains("main")){
+
+            }
+            else{
                 event.preventDefault();
                 event.stopPropagation();
-                popup('loading...')
-                const note_id = q_els[i].dataset.rel
-                const o = this
-                fetch('/quote_form?id='+note_id).then(function(response) {
-                    return response.text();
-                }).then(function(response) {
-                    if(response){
-                        const p =document.querySelector('.popup')
-                        if(p){
-                            p.innerHTML = response
-                            o.setQuoteForm()
+                let rel = elem.dataset.rel
+                window.location.href = '/note?id='+rel+'#'+id
+            }
+        });
+    }
+
+    setReplyLinkEvents(elem){
+        elem.addEventListener("click", (event)=>{
+            event.preventDefault();
+            event.stopPropagation();
+            const event_id = elem.dataset.rel
+            const form_el = document.querySelector(".reply-form[data-noteid='"+event_id+"']")
+            if (form_el.dataset.vis == '1'){
+                form_el.dataset.vis = '0'
+                form_el.style.display = "none"
+            }
+            else{
+                form_el.dataset.vis = '1'
+                form_el.style.display = "block"
+            }
+        });
+    }
+
+    setQuoteClickedEvents(elem){
+        elem.addEventListener('click', (e) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const note_id = elem.dataset.rel
+            const cb = function(response, data){
+                if(response){
+                    popup(response)
+                    data.context.setQuoteForm()
+                }
+            }
+            fetchGet('/quote_form?id='+note_id, cb, {'context': this})
+        })
+    }
+
+    setOptsMenuEvents(elem){
+        const note_id = elem.dataset.id
+        const tools = elem.querySelectorAll('.opts-menu li')
+        for (const tool_el of tools) {
+            const tool  = tool_el.dataset.action;
+            if(tool == 'nfo'){
+                tool_el.addEventListener('click', (e) => {
+                    const on_get_info = function(response, data){
+                        if(response['data']){
+                            popup("<pre>"+JSON.stringify(JSON.parse(response['data']), null, 2)+"</pre>")
                         }
                     }
-                }).catch(function(err) {
-                    console.log(err)
-                });
-            })
-        }
-        const like_els = document.querySelectorAll("a.like");
-        for (let i = 0; i < like_els.length; i++) {
-            like_els[i].addEventListener('click', (e) => {
-                event.preventDefault();
-                event.stopPropagation();
-                const d = like_els[i].dataset
-                if(d.disabled == true) return
-                d.disabled = true
-                if(d.liked == 'True'){
-                    d.liked = 'False'
-                    like_els[i].querySelector('img').setAttribute('src', '/static/like.svg')
-                }
-                else{
-                    d.liked = 'True'
-                    like_els[i].querySelector('img').setAttribute('src', '/static/liked.svg')
-                }
-                const note_id = d.rel
-                const o = this
-                fetch('/like?id='+note_id).then(function(response) {
-                    return response.json();
-                }).then(function(response) {
-                    if(response['event_id']){
-                        d.disabled = false
-                    }
-                }).catch(function(err) {
-                    console.log(err)
-                });
-            })
+                    fetchGet('/fetch_raw?id='+note_id, on_get_info, {}, 'json')
+                })
+            }
         }
     }
 
     setQuoteForm(){
-    console.log('q form')
         const form = document.querySelector("#quote_form")
         const btn = form.querySelector("input[type='submit']")
         btn.addEventListener('click', (e) => {
-            event.preventDefault();
-            event.stopPropagation();
-            const formData = new FormData(form);
-            const data = [...formData.entries()];
-            const options = {
-                method: 'POST',
-                body: JSON.stringify(data),
-                headers: {
-                    'Content-Type': 'application/json'
+            const cb = function(response, data){
+                if(response['event_id']){
+                   notify('/note?id='+response['event_id'], 'Note created. View now?')
                 }
             }
-            fetch('/quote', options).then(function(response) {
-                return response.json();
-            }).then(function(response) {
-               if(response['event_id']){
-                   notify('/note?id='+response['event_id'], 'Note created. View now?')
-               }
-            }).catch(function(err) {
-                console.log(err)
-            });
+            fetchFromForm('/submit_note', form, cb, {}, 'json')
         });
     }
 
     postReply(id){
         const form = document.querySelector(".reply-form[data-noteid='"+id+"']")
-        const formData = new FormData(form);
-        const data = [...formData.entries()];
-        const options = {
-            method: 'POST',
-            body: JSON.stringify(data),
-            headers: {
-                'Content-Type': 'application/json'
+        const cb = function(response, data){
+            if(response['event_id']){
+                notify('/note?id='+response['event_id'], 'Note created. View now?')
+                data.form.dataset.vis = '0'
+                data.form.style.display = "none"
             }
         }
-        fetch('/submit_note', options).then(function(response) {
-            return response.json();
-        }).then(function(response) {
-        if(response['event_id']){
-            notify('/note?id='+response['event_id'], 'Note created. View now?')
-            const form_el = document.querySelector(".reply-form[data-noteid='"+id+"']")
-            form_el.dataset.vis = '0'
-            form_el.style.display = "none"
-        }
-        }).catch(function(err) {
-            console.log(err)
-        });
+        fetchFromForm('/submit_note', form, cb, {'form':form}, 'json')
     }
 }
 
@@ -720,9 +668,7 @@ class bijaFeed{
     }
 
     loader(o){
-        if (
-            (window.innerHeight +window.innerHeight + window.scrollY) >= document.body.offsetHeight && o.loading == 0
-        ){
+        if ((window.innerHeight + window.innerHeight + window.scrollY) >= document.body.offsetHeight && o.loading == 0){
             let nodes = document.querySelectorAll('.ts[data-ts]')
             o.requestNextPage(nodes[nodes.length-1].dataset.ts);
         }
@@ -734,22 +680,16 @@ class bijaFeed{
 
     requestNextPage(ts){
         this.loading = 1;
-        let o = this;
-        fetch('/feed?before='+ts, {
-            method: 'get'
-        }).then(function(response) {
-            return response.text();
-        }).then(function(response) {
+        const cb = function(response, data){
             if(response == 'END'){
-                o.loading = 3
+                data.context.loading = 3
             }
             else{
-                o.loadArticles(response);
-                document.dispatchEvent(o.pageLoadedEvent);
+                data.context.loadArticles(response);
+                document.dispatchEvent(data.context.pageLoadedEvent);
             }
-        }).catch(function(err) {
-            console.log(err);
-        });
+        }
+        fetchGet('/feed?before='+ts, cb, {'context': this})
     }
 
     loadArticles(response){
@@ -762,7 +702,7 @@ class bijaFeed{
     }
 }
 
-let getUpdaterURL = function(page){
+function getUpdaterURL(page){
     let params = {}
     params['page'] = page
     switch(page){
@@ -786,7 +726,7 @@ let getUpdaterURL = function(page){
     return '/upd?' + Object.keys(params).map(key => key + '=' + params[key]).join('&');
 }
 
-let handleUpdaterResponse = function(page, d){
+function handleUpdaterResponse(page, d){
     switch(page){
         case 'profile':
             if("profile" in d){
@@ -794,12 +734,12 @@ let handleUpdaterResponse = function(page, d){
                 document.querySelector(".profile-about").innerText = profile.about
                 document.querySelector("#profile").dataset.updated_ts = profile.updated_at
                 const name_els = document.querySelectorAll(".profile-name");
-                for (let i = 0; i < name_els.length; i++) {
-                    name_els[i].innerText = profile.name
+                for (const name_el of name_els) {
+                    name_el.innerText = profile.name
                 }
                 const pic_els = document.querySelectorAll(".profile-pic");
-                for (let i = 0; i < pic_els.length; i++) {
-                    pic_els[i].setAttribute("src", profile.pic)
+                for (const pic_el of pic_els) {
+                    pic_el.setAttribute("src", profile.pic)
                 }
             }
         case 'messages_from':
@@ -821,7 +761,7 @@ let handleUpdaterResponse = function(page, d){
     }
 }
 
-let notify = function(link, text){
+function notify(link, text){
     n = document.querySelector(".notify")
     if(n !== null) n.remove()
     a = document.createElement("a")
@@ -839,12 +779,12 @@ function defaultImage(img){
     img.src = '/identicon?id='+img.dataset.rel;
 }
 
-let popup = function(str){
+function popup(htm){
     overlay = document.createElement('div')
     overlay.classList.add('popup-overlay')
     the_popup = document.createElement('div')
     the_popup.classList.add('popup')
-    the_popup.innerHTML = str
+    the_popup.innerHTML = htm
     overlay.onclick = function(){
         overlay.remove();
         the_popup.remove();
@@ -853,4 +793,37 @@ let popup = function(str){
     document.body.append(overlay)
     document.body.append(the_popup)
     document.querySelector('.main').classList.add('blur')
+}
+
+function fetchGet(url, cb, cb_data = {}, response_type='text'){
+    fetch(url, {
+        method: 'get'
+    }).then(function(response) {
+        if(response_type == 'text') return response.text();
+        else if(response_type == 'json') return response.json();
+    }).then(function(response) {
+        cb(response, cb_data)
+    }).catch(function(err) {
+        console.log(err);
+    });
+}
+
+function fetchFromForm(url, form_el, cb, cb_data = {}, response_type='text'){
+    const formData = new FormData(form_el);
+    const data = [...formData.entries()];
+    const options = {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    }
+    fetch(url, options).then(function(response) {
+        if(response_type == 'text') return response.text();
+        else if(response_type == 'json') return response.json();
+    }).then(function(response) {
+        cb(response, cb_data)
+    }).catch(function(err) {
+        console.log(err)
+    });
 }
