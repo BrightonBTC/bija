@@ -144,7 +144,7 @@ def quote_form():
     note_id = request.args['id']
     note = DB.get_note(note_id)
     profile = DB.get_profile(get_key())
-    return render_template("quote.form.html", item=note, id=note_id, p=profile)
+    return render_template("quote.form.html", item=note, id=note_id, profile=profile)
 
 
 @app.route('/quote', methods=['POST'])
@@ -173,7 +173,8 @@ def quote_submit():
 def thread_item():
     note_id = request.args['id']
     note = DB.get_note(note_id)
-    return render_template("thread.item.html", item=note)
+    profile = DB.get_profile(get_key())
+    return render_template("thread.item.html", item=note, profile=profile)
 
 
 @app.route('/settings', methods=['GET', 'POST'])
