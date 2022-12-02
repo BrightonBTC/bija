@@ -306,6 +306,7 @@ class BijaDB:
             .join(Note.profile) \
             .filter(text("note.created_at<{}".format(before))) \
             .filter(text("(profile.following=1 OR profile.public_key='{}')".format(public_key))) \
+            .filter(text("note.deleted is not 1"))\
             .order_by(Note.created_at.desc()).limit(50).all()
 
     def get_note_by_id_list(self, note_ids):
@@ -348,8 +349,10 @@ class BijaDB:
             Profile.nip05_validated) \
             .outerjoin(like_counts, like_counts.c.event_id == Note.id) \
             .join(Note.profile) \
-            .filter(text("note.created_at<{}".format(before))).filter_by(
-            public_key=public_key).order_by(Note.created_at.desc()).limit(50).all()
+            .filter(text("note.created_at<{}".format(before)))\
+            .filter_by(public_key=public_key)\
+            .filter(text("note.deleted is not 1"))\
+            .order_by(Note.created_at.desc()).limit(50).all()
 
     def get_unseen_message_count(self):
         return self.session.query(PrivateMessage) \
