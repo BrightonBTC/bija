@@ -62,9 +62,10 @@ def feed():
         else:
             before = time.time()
         notes = DB.get_feed(before, get_key())
+        profile = DB.get_profile(get_key())
         if len(notes) > 0:
             threads, last_ts = make_threaded(notes)
-            return render_template("feed.items.html", threads=threads, last=last_ts)
+            return render_template("feed.items.html", threads=threads, last=last_ts, profile=profile)
         else:
             return 'END'
 
@@ -134,8 +135,8 @@ def note_page():
         p = DB.get_profile(member)
         if p is not None:
             profiles.append(p)
-
-    return render_template("thread.html", page_id="note", title="Note", notes=notes_processed, members=profiles)
+    profile = DB.get_profile(get_key())
+    return render_template("thread.html", page_id="note", title="Note", notes=notes_processed, members=profiles, profile=profile)
 
 
 @app.route('/quote_form', methods=['GET'])

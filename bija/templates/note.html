@@ -1,7 +1,21 @@
 <div class="note" data-dt="{{note['created_at']}}">
     <h3>
         <a href="/profile?pk={{note['public_key']}}" class="profile-name">{{note['name'] | ident_string(note['public_key'], note['nip05'], note['nip05_validated']) | safe }}</a>
-        <span class="sm dt">{{note['created_at']|dt}} <span class="info" data-id="{{note['id']}}">🛈</span></span>
+        <span class="note-info">
+            <span class="sm dt">
+                {{note['created_at']|dt}}
+            </span>
+            <span class="note-opts" data-id="{{note['id']}}">
+                <img src="/static/note-tools.svg">
+                <ul class="opts-menu">
+                    {%- if note['public_key'] == profile['public_key'] -%}
+                    <li data-action="del">delete</li>
+                    {%- endif -%}
+                    <li data-action="share">share</li>
+                    <li data-action="nfo">info</li>
+                </ul>
+            </span>
+        </span>
     </h3>
     <div class="note-content" data-rel="{{thread_root}}" data-id="{{note['id']}}">
         <pre>{{note['content'] |safe}}{{note['media'] | process_media_attachments | safe}}</pre>

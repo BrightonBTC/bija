@@ -669,6 +669,7 @@ input[type=text].pname {
 .note-container.root .thread-marker, .note-container.ancestor .thread-marker{
     display: block;
 }
+
 .note-container.reply .thread-marker{
     display: block;
     height: 90px;
@@ -676,6 +677,9 @@ input[type=text].pname {
     width: 130px;
     border-style: dotted;
     top: 0;
+}
+.note-container.deleted  .thread-marker{
+    display: none;
 }
 .note-container.reply .note-image{
     flex: 0 0 150px
@@ -777,6 +781,40 @@ input[type=text].pname {
     font-size: 12px;
     margin-left: 15px;
     cursor: pointer;
+}
+.note-opts{
+    position: relative;
+}
+.note-opts img{
+    width: 12px;
+    margin-left: 15px;
+    cursor: pointer;
+}
+.note-opts .opts-menu{
+    padding: 5px;
+    font-size: 10px;
+    visibility: hidden;
+    position: absolute;
+    width: 100px;
+    background: var(--bg-clr1);
+    top: 5px;
+    right: 5px;
+    border: 1px solid var(--bdr-clr-2);
+    border-radius: 5px;
+    box-shadow: 1px 1px 3px #000;
+    z-index: 1000;
+}
+.note-opts .opts-menu li:hover {
+    filter: brightness(1.3);
+    color: var(--lnk-clr);
+}
+
+.note-opts .opts-menu li {
+    padding: 2px;
+    cursor: pointer;
+}
+.note-opts:hover .opts-menu{
+    visibility: visible;
 }
 
 .nip5{

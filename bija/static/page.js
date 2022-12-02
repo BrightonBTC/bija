@@ -575,23 +575,31 @@ class bijaNotes{
                 }
             });
         }
-        const im_els = document.querySelectorAll(".note .info");
+        const im_els = document.querySelectorAll(".note-opts");
         for (let i = 0; i < im_els.length; i++) {
-            im_els[i].addEventListener('click', (e) => {
-                popup('loading...')
-                fetch('/fetch_raw?id='+im_els[i].dataset.id).then(function(response) {
-                    return response.json();
-                }).then(function(response) {
-                    if(response['data']){
-                        const p =document.querySelector('.popup')
-                        if(p){
-                            p.innerHTML = "<pre>"+JSON.stringify(JSON.parse(response['data']), null, 2)+"</pre>";
-                        }
-                    }
-                }).catch(function(err) {
-                    console.log(err)
-                });
-            })
+            const note_id = im_els[i].dataset.id
+            const tools = im_els[i].querySelectorAll('.opts-menu li')
+            for (let i = 0; i < tools.length; i++) {
+                const tool  = tools[i].dataset.action;
+                console.log(tool)
+                if(tool == 'nfo'){
+                    tools[i].addEventListener('click', (e) => {
+                        popup('loading...')
+                        fetch('/fetch_raw?id='+note_id).then(function(response) {
+                            return response.json();
+                        }).then(function(response) {
+                            if(response['data']){
+                                const p =document.querySelector('.popup')
+                                if(p){
+                                    p.innerHTML = "<pre>"+JSON.stringify(JSON.parse(response['data']), null, 2)+"</pre>";
+                                }
+                            }
+                        }).catch(function(err) {
+                            console.log(err)
+                        });
+                    })
+                }
+            }
         }
         const q_els = document.querySelectorAll(".quote-link");
         for (let i = 0; i < q_els.length; i++) {
