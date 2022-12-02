@@ -29,16 +29,5 @@
     </div>
 </div>
 {% else %}
-<div class="note-container deleted" data-rel="{{thread_root}}" data-id="{{item['id']}}" data-parent="{{parent}}">
-    <div class="thread-marker"></div>
-    <div class="note-image">
-        <img src="/static/user.svg" class="user-image" />
-    </div>
-    <div class="note-outer">
-    <div class="note-content" data-rel="{{thread_root}}" data-id="{{item['id']}}">
-        <pre>This note was deleted by the author:
-        Reason given: [{{item['content'] |safe}}]</pre>
-    </div>
-    </div>
-</div>
+{% include 'deleted.note.html' %}
 {% endif %}

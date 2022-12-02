@@ -7,6 +7,7 @@
 {% endif %}
 {% if thread['self'] is not none %}
 {% set post = thread['self'] %}
+{% if post['deleted'] is none %}
 <div class="{{root_class}}">
     <div class="thread-marker"></div>
     <div class="note-image">
@@ -33,6 +34,10 @@
         {% include 'note.html' %}
     </div>
 </div>
+{% else %}
+{% set item=post %}
+{% include 'deleted.note.html' %}
+{% endif %}
 {% endif %}
 {% if thread['response'] is not none %}
 {% set post = thread['response'] %}
@@ -46,7 +51,7 @@
 </div>
 {% endif %}
 {% endif %}
-
+{% if post['deleted'] is none %}
 <div class="note-container">
     <div class="thread-marker"></div>
     <div class="note-image">
@@ -73,6 +78,10 @@
     {% include 'note.html' %}
     </div>
 </div>
+{% else %}
+{% set item=post %}
+{% include 'deleted.note.html' %}
+{% endif %}
 {% endif %}
 <hr class="thread-divider" />
 {% endfor %}
