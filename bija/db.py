@@ -160,19 +160,21 @@ class BijaDB:
                     members=None,
                     media=None,
                     raw=None):
-        self.session.merge(Note(
-            id=note_id,
-            public_key=public_key,
-            content=content,
-            response_to=response_to,
-            thread_root=thread_root,
-            reshare=reshare,
-            created_at=created_at,
-            members=members,
-            media=media,
-            raw=raw
-        ))
-        self.session.commit()
+        note = self.session.query(Note.deleted).filter_by(id=note_id).first()
+        if note is None or note.deleted is None:
+            self.session.merge(Note(
+                id=note_id,
+                public_key=public_key,
+                content=content,
+                response_to=response_to,
+                thread_root=thread_root,
+                reshare=reshare,
+                created_at=created_at,
+                members=members,
+                media=media,
+                raw=raw
+            ))
+            self.session.commit()
 
     def is_note(self, note_id):
         return self.session.query(Note.id).filter_by(id=note_id).first()
@@ -198,6 +200,7 @@ class BijaDB:
                                   label("likes", like_counts.c.likes),
                                   Note.liked,
                                   Note.shared,
+                                  Note.deleted,
                                   Profile.name,
                                   Profile.pic,
                                   Profile.nip05).filter_by(id=note_id) \
@@ -231,6 +234,7 @@ class BijaDB:
                                   Note.media,
                                   Note.liked,
                                   Note.shared,
+                                  Note.deleted,
                                   label("likes", like_counts.c.likes),
                                   Profile.name,
                                   Profile.pic,
@@ -292,11 +296,12 @@ class BijaDB:
             Note.media,
             Note.liked,
             Note.shared,
+            Note.deleted,
             label("likes", like_counts.c.likes),
             Profile.name,
             Profile.pic,
             Profile.nip05,
-            Profile.nip05_validated)\
+            Profile.nip05_validated) \
             .outerjoin(like_counts, like_counts.c.event_id == Note.id) \
             .join(Note.profile) \
             .filter(text("note.created_at<{}".format(before))) \
@@ -335,6 +340,7 @@ class BijaDB:
             Note.media,
             Note.liked,
             Note.shared,
+            Note.deleted,
             label("likes", like_counts.c.likes),
             Profile.name,
             Profile.pic,
@@ -434,6 +440,14 @@ class BijaDB:
         ))
         self.session.commit()
 
+    def set_note_deleted(self, note_id, reason):
+        self.session.merge(Note(
+            id=note_id,
+            content=reason,
+            deleted=1
+        ))
+        self.session.commit()
+
     def get_like_count(self, note_id):
         return self.session.query(NoteReaction.event_id).filter(NoteReaction.event_id == note_id).filter(
             NoteReaction.content != '-').count()
@@ -508,6 +522,7 @@ class Note(Base):
     liked = Column(Boolean, default=False)
     shared = Column(Boolean, default=False)
     raw = Column(String)
+    deleted = Column(Integer)
 
     profile = relationship("Profile", back_populates="notes")
 
@@ -525,7 +540,8 @@ class Note(Base):
             self.seen,
             self.liked,
             self.shared,
-            self.raw
+            self.raw,
+            self.deleted
         }
 
 

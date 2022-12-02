@@ -138,7 +138,8 @@ class BijaEvents:
                 if e is not None and e.kind == EventKind.REACTION:
                     self.db.delete_reaction(tag[1])
                 if e is not None and e.kind == EventKind.TEXT_NOTE:
-                    print('DEL NOTE')
+                    print('DEL', event.content)
+                    self.db.set_note_deleted(tag[1], event.content)
 
     def handle_reaction_event(self, event):
         e_pk = None

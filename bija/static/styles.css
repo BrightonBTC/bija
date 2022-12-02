@@ -622,6 +622,10 @@ input[type=text].pname {
 .note-container.ancestor{
     border-bottom:0;
 }
+.note-container.deleted {
+    font-size: 10px;
+    opacity: 0.7;
+}
 .note-container .note-container {
     border: 2px solid var(--bdr-clr-2);
     margin: 5px;
