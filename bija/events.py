@@ -94,6 +94,10 @@ class BijaEvents:
             while self.relay_manager.message_pool.has_notices():
                 notice = self.relay_manager.message_pool.get_notice()
 
+            while self.relay_manager.message_pool.has_ok_notices():
+                notice = self.relay_manager.message_pool.get_ok_notice()
+                print('OK:', notice)
+
             while self.relay_manager.message_pool.has_eose_notices():
                 notice = self.relay_manager.message_pool.get_eose_notice()
 
