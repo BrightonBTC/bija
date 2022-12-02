@@ -1,6 +1,6 @@
-{% extends "base.html" %}
+{%- extends "base.html" -%}
 
-{% block content %}
+{%- block content -%}
 <div class="card">
     <table>
         <tr>
@@ -17,9 +17,9 @@
 <div class="card">
     <h3>Relays</h3>
     <ul>
-    {% for relay in relays: %}
+    {%- for relay in relays: -%}
         <li class="relay" data-url="{{relay.name}}"><span class="led"></span>{{relay.name}}<button class="del-relay">x</button></li>
-    {% endfor %}
+    {%- endfor -%}
     </ul>
     <button class="refresh_connections">reset connections</button>
     <form id="relay_adder">
@@ -27,4 +27,4 @@
         <input type="submit" id="addrelay" name="addrelay" class="right" value="+">
     </form>
 </div>
-{% endblock content %}
+{%- endblock content -%}

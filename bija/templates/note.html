@@ -5,14 +5,14 @@
     </h3>
     <div class="note-content" data-rel="{{thread_root}}" data-id="{{note['id']}}">
         <pre>{{note['content'] |safe}}{{note['media'] | process_media_attachments | safe}}</pre>
-        {% if note['reshare'] is not none %}
-            {% if note['reshare'] is string %}
+        {%- if note['reshare'] is not none -%}
+            {%- if note['reshare'] is string -%}
 
-            {% else %}
-            {% set item = note['reshare'] %}
-            {% include 'thread.item.html' %}
-            {% endif %}
-        {% endif %}
+            {%- else -%}
+            {%- set item = note['reshare'] -%}
+            {%- include 'thread.item.html' -%}
+            {%- endif -%}
+        {%- endif -%}
     </div>
-    {% include 'note.reply_form.html' %}
+    {%- include 'note.reply_form.html' -%}
 </div>

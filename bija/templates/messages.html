@@ -1,32 +1,32 @@
-{% extends "base.html" %}
+{%- extends "base.html" -%}
 
-{% block content %}
-{% for message in messages: %}
+{%- block content -%}
+{%- for message in messages: -%}
 
-{% if message.pic is not none %}
-    {% set pic=message.pic %}
-{% else %}
-    {% set pic="/identicon?id="+message.public_key %}
-{% endif %}
+{%- if message.pic is not none -%}
+    {%- set pic=message.pic -%}
+{%- else -%}
+    {%- set pic="/identicon?id="+message.public_key -%}
+{%- endif -%}
 
-{% if message['name'] is not none %}
-    {% set name=message.name %}
-{% else %}
-    {% set name=(message.public_key | truncate(21, False, '...')) %}
-{% endif %}
+{%- if message['name'] is not none -%}
+    {%- set name=message.name -%}
+{%- else -%}
+    {%- set name=(message.public_key | truncate(21, False, '...')) -%}
+{%- endif -%}
 
-{% if message.is_sender==1 %}
-    {% set sender=message.name %}
-{% else %}
-    {% set sender="You" %}
-{% endif %}
+{%- if message.is_sender==1 -%}
+    {%- set sender=message.name -%}
+{%- else -%}
+    {%- set sender="You" -%}
+{%- endif -%}
 
 <a class="msg-link" href="/message?pk={{message.public_key}}">
     <div class="msg-profile-pic">
         <img src='{{pic}}'>
-        {% if message.n>0 %}
+        {%- if message.n>0 -%}
         <span class="unseen">{{message.n}}</span>
-        {% endif %}
+        {%- endif -%}
     </div>
     <div class="msg-profile">
         <div class="msg-profile-name">{{name}}</div>
@@ -35,5 +35,5 @@
 
 </a>
 
-{% endfor %}
-{% endblock content %}
+{%- endfor -%}
+{%- endblock content -%}
