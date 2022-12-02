@@ -181,6 +181,11 @@ class BijaDB:
         return self.session.query(Profile.public_key).filter_by(public_key=pk).first()
 
     def get_note(self, note_id):
+        like_counts = self.session.query(
+            NoteReaction.id,
+            NoteReaction.event_id,
+            func.count(NoteReaction.id).label('likes')
+        ).group_by(NoteReaction.event_id).subquery()
         return self.session.query(Note.id,
                                   Note.public_key,
                                   Note.content,
@@ -190,11 +195,14 @@ class BijaDB:
                                   Note.created_at,
                                   Note.members,
                                   Note.media,
+                                  label("likes", like_counts.c.likes),
                                   Note.liked,
                                   Note.shared,
                                   Profile.name,
                                   Profile.pic,
-                                  Profile.nip05).filter_by(id=note_id).join(Note.profile).first()
+                                  Profile.nip05).filter_by(id=note_id) \
+            .outerjoin(like_counts, like_counts.c.event_id == Note.id) \
+            .join(Note.profile).first()
 
     def get_raw_note_data(self, note_id):
         return self.session.query(Note.raw).filter_by(id=note_id).first()
@@ -288,8 +296,9 @@ class BijaDB:
             Profile.name,
             Profile.pic,
             Profile.nip05,
-            Profile.nip05_validated).join(Note.profile) \
+            Profile.nip05_validated)\
             .outerjoin(like_counts, like_counts.c.event_id == Note.id) \
+            .join(Note.profile) \
             .filter(text("note.created_at<{}".format(before))) \
             .filter(text("(profile.following=1 OR profile.public_key='{}')".format(public_key))) \
             .order_by(Note.created_at.desc()).limit(50).all()
