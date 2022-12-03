@@ -175,7 +175,8 @@ class BijaEvents:
             picture,
             about,
             event.created_at,
-            json.dumps(event.to_json_object())
+            json.dumps(event.to_json_object()),
+            commit=False
         )
         if result.nip05 is not None and result.nip05_validated == 0:
             if self.validate_nip05(result.nip05, result.public_key):
@@ -265,7 +266,8 @@ class BijaEvents:
             event.created_at,
             json.dumps(members),
             media,
-            json.dumps(event.to_json_object())
+            json.dumps(event.to_json_object()),
+            commit=False
         )
         if subscription == 'primary':
             unseen_posts = self.db.get_unseen_in_feed(self.get_key())
@@ -440,12 +442,12 @@ class BijaEvents:
             new = set(keys) - set(following_pubkeys)
             removed = set(following_pubkeys) - set(keys)
             if len(new) > 0:
-                self.db.set_following(new)
+                self.db.set_following(new, True, False)
             if len(removed) > 0:
-                self.db.set_following(removed, False)
+                self.db.set_following(removed, False, False)
             self.subscribe_primary()
         elif subscription == 'profile':  # we received another users contacts
-            self.db.add_contact_list(event.public_key, keys)
+            self.db.add_contact_list(event.public_key, keys, False)
             self.subscribe_profile(event.public_key, timestamp_minus(TimePeriod.WEEK))
 
     def handle_private_message_event(self, event):
@@ -469,11 +471,12 @@ class BijaEvents:
                     event.content,
                     is_sender,
                     event.created_at,
-                    json.dumps(event.to_json_object())
+                    json.dumps(event.to_json_object()),
+                    False
                 )
             is_known = self.db.is_known_pubkey(event.public_key)
             if is_known is None:
-                self.db.add_profile(event.public_key, updated_at=0)
+                self.db.add_profile(event.public_key, updated_at=0, commit=False)
 
             if self.page['page'] == 'message' and self.page['identifier'] == pk:
                 messages = self.db.get_unseen_messages(pk)

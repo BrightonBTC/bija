@@ -78,7 +78,8 @@ class BijaDB:
                     nip05=None,
                     pic=None,
                     about=None,
-                    updated_at=None):
+                    updated_at=None,
+                    commit=True):
         if updated_at is None:
             updated_at = int(time.time())
         self.session.add(Profile(
@@ -89,22 +90,25 @@ class BijaDB:
             about=about,
             updated_at=updated_at
         ))
-        self.session.commit()
+        if commit:
+            self.session.commit()
 
-    def add_contact_list(self, public_key, keys: list):
+    def add_contact_list(self, public_key, keys: list, commit=True):
         self.session.merge(Profile(
             public_key=public_key,
             contacts=json.dumps(keys)
         ))
-        self.session.commit()
+        if commit:
+            self.session.commit()
 
-    def set_following(self, keys_list, following=True):
+    def set_following(self, keys_list, following=True, commit=True):
         for public_key in keys_list:
             self.session.merge(Profile(
                 public_key=public_key,
                 following=following
             ))
-        self.session.commit()
+        if commit:
+            self.session.commit()
 
     def get_following_pubkeys(self):
         keys = self.session.query(Profile).filter_by(following=1).all()
@@ -132,7 +136,8 @@ class BijaDB:
                     pic=None,
                     about=None,
                     updated_at=None,
-                    raw=None):
+                    raw=None,
+                    commit=True):
         self.session.merge(Profile(
             public_key=public_key,
             name=name,
@@ -142,12 +147,12 @@ class BijaDB:
             updated_at=updated_at,
             raw=raw
         ))
-        self.session.commit()
+        if commit:
+            self.session.commit()
         return self.session.query(Profile).filter_by(public_key=public_key).first()
 
     def set_valid_nip05(self, public_key):
         self.session.query(Profile).filter(Profile.public_key == public_key).update({'nip05_validated': True})
-        self.session.commit()
 
     def insert_note(self,
                     note_id,
@@ -159,7 +164,8 @@ class BijaDB:
                     created_at=None,
                     members=None,
                     media=None,
-                    raw=None):
+                    raw=None,
+                    commit=True):
         note = self.session.query(Note.deleted).filter_by(id=note_id).first()
         if note is None or note.deleted is None:
             self.session.merge(Note(
@@ -174,7 +180,8 @@ class BijaDB:
                 media=media,
                 raw=raw
             ))
-            self.session.commit()
+            if commit:
+                self.session.commit()
 
     def is_note(self, note_id):
         return self.session.query(Note.id).filter_by(id=note_id).first()
@@ -265,7 +272,8 @@ class BijaDB:
                                content,
                                is_sender,
                                created_at,
-                               raw):
+                               raw,
+                               commit=True):
         self.session.merge(PrivateMessage(
             id=msg_id,
             public_key=public_key,
@@ -274,7 +282,8 @@ class BijaDB:
             created_at=created_at,
             raw=raw
         ))
-        self.session.commit()
+        if commit:
+            self.session.commit()
 
     def get_feed(self, before, public_key):
 
@@ -415,9 +424,10 @@ class BijaDB:
             "profile.public_key = private_message.public_key AND private_message.public_key='{}'".format(public_key))) \
             .order_by(PrivateMessage.created_at.desc()).limit(100).all()
 
-    def set_message_thread_read(self, public_key):
+    def set_message_thread_read(self, public_key, commit=True):
         self.session.query(PrivateMessage).filter(PrivateMessage.public_key == public_key).update({'seen': True})
-        self.session.commit()
+        if commit:
+            self.session.commit()
 
     def add_note_reaction(self, eid, public_key, event_id, event_pk, content, members, raw):
         self.session.merge(NoteReaction(
