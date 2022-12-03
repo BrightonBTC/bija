@@ -476,34 +476,43 @@ class bijaNotes{
     }
 
     setEventListeners(){
-        const links = document.querySelectorAll(".reply-link");
-        for (const link of links) {
+        const notes = document.querySelectorAll(".note[data-processed='0']");
+        for (const note of notes) {
+            note.dataset.processed = '1'
+
+            const link = note.querySelector(".reply-link");
             this.setReplyLinkEvents(link)
-        }
-        const buttons = document.querySelectorAll("input[data-reply-submit]");
-        for (const btn of buttons) {
+
+            const btn = note.querySelector("input[data-reply-submit]");
             this.setReplyClickedEvents(btn)
-        }
-        const note_links = document.querySelectorAll(".note-content[data-rel]");
-        for (const note_link of note_links) {
+
+            const note_link = note.querySelector(".note-content[data-rel]");
             this.setContentClickedEvents(note_link)
-        }
-        const opt_els = document.querySelectorAll(".note-opts");
-        for (const opt_el of opt_els) {
+
+            const opt_el = note.querySelector(".note-opts");
             this.setOptsMenuEvents(opt_el)
-        }
-        const q_els = document.querySelectorAll(".quote-link");
-        for (const q_el of q_els) {
+
+            const q_el = note.querySelector(".quote-link");
             this.setQuoteClickedEvents(q_el)
-        }
-        const like_els = document.querySelectorAll("a.like");
-        for (const like_el of like_els) {
+
+            const like_el = note.querySelector("a.like");
             this.setLikeClickedEvents(like_el)
-        }
-        const content_els = document.querySelectorAll(".note-content pre");
-        for (const content_el of content_els) {
+
+            const content_el = note.querySelector(".note-content pre");
             this.setExpandableHeight(content_el)
+
+            const im_el = note.querySelector(".image-attachment img");
+            if(im_el){
+                this.setImageClickEvents(im_el)
+            }
         }
+    }
+
+    setImageClickEvents(elem){
+        elem.addEventListener("click", (event)=>{
+            const im = elem.parentElement.innerHTML
+            popup(im)
+        });
     }
 
     setExpandableHeight(elem){

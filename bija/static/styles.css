@@ -877,6 +877,15 @@ p.note-tools img{
     font-size: 12px;
 }
 
+.note-media img{
+    height: 300px;
+    width: 100%;
+    object-fit: cover;
+    border: 1px solid var(--bdr-clr-2);
+    border-radius: 10px;
+    cursor: pointer;
+}
+
 /* ---------- */
 
 /* Right column */
