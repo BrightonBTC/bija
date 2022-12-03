@@ -388,10 +388,13 @@ class BijaEvents:
                         tags.append(["p", m, preferred_relay])
             if 'parent_id' not in data or 'thread_root' not in data:
                 return False
-            elif data['thread_root'] == data['parent_id'] and is_hex_key(data['parent_id']):
-                response_to = data['parent_id']
-                tags.append(["e", data['parent_id'], preferred_relay, "reply"])
+            elif len(data['parent_id']) < 1 and is_hex_key(data['thread_root']):
+                print('root is parent')
+                thread_root = data['thread_root']
+                tags.append(["e", data['thread_root'], preferred_relay, "root"])
             elif is_hex_key(data['parent_id']) and is_hex_key(data['thread_root']):
+                thread_root = data['thread_root']
+                response_to = data['parent_id']
                 tags.append(["e", data['parent_id'], preferred_relay, "reply"])
                 tags.append(["e", data['thread_root'], preferred_relay, "root"])
         else:

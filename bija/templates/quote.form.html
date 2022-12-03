@@ -18,6 +18,7 @@
     </div>
     <div class="note-outer">
     {%- set note=item -%}
+    {%- set reply_chain={'root':'','reply':''} -%}
     {%- include 'note.html' -%}
     </div>
 </div>

@@ -1,11 +1,3 @@
-{%- if item['thread_root'] is not none -%}
-{%- set thread_root=item['thread_root'] -%}
-{%- elif item['response_to'] is not none -%}
-{%- set thread_root=item['response_to'] -%}
-{%- else -%}
-{%- set thread_root=item['id'] -%}
-{%- endif -%}
-
 {%- if item['thread_root'] is none and item['response_to'] is none -%}
 {%- set parent='' -%}
 {%- elif item['response_to'] is not none and item['thread_root'] is none -%}
@@ -16,8 +8,10 @@
 {%- set parent=item['response_to'] -%}
 {%- endif -%}
 
+{%- set reply_chain = item['thread_root'] | get_thread_root(item['response_to'], item['id']) -%}
+
 {%- if item['deleted'] is none -%}
-<div class="note-container" data-rel="{{thread_root}}" data-id="{{item['id']}}" data-parent="{{parent}}">
+<div class="note-container" data-rel="{{reply_chain.root}}" data-id="{{item['id']}}" data-parent="{{parent}}">
     <div class="thread-marker"></div>
     <div class="note-image">
         {%- set p=item -%}

@@ -23,13 +23,7 @@
             {%- endif -%}
         </div>
         {%- endif -%}
-        {%- if post['thread_root'] is not none -%}
-        {%- set thread_root=post['thread_root'] -%}
-        {%- elif post['response_to'] is not none -%}
-        {%- set thread_root=post['response_to'] -%}
-        {%- else -%}
-        {%- set thread_root=post['id'] -%}
-        {%- endif -%}
+        {%- set reply_chain = post['thread_root'] | get_thread_root(post['response_to'], post['id']) -%}
         {%- set note=post -%}
         {%- include 'note.html' -%}
     </div>
@@ -67,13 +61,7 @@
         {%- endif -%}
     </div>
     {%- endif -%}
-    {%- if post['thread_root'] is not none -%}
-    {%- set thread_root=post['thread_root'] -%}
-    {%- elif post['response_to'] is not none -%}
-    {%- set thread_root=post['response_to'] -%}
-    {%- else -%}
-    {%- set thread_root=post['id'] -%}
-    {%- endif -%}
+    {%- set reply_chain = post['thread_root'] | get_thread_root(post['response_to'], post['id']) -%}
     {%- set note=post -%}
     {%- include 'note.html' -%}
     </div>

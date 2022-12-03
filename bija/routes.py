@@ -486,6 +486,20 @@ def _jinja2_filter_media(json_string):
     return '';
 
 
+@app.template_filter('get_thread_root')
+def _jinja2_filter_thread_root(root, reply, parent_id):
+    out = {'root': '', 'reply': ''}
+    if root is None and reply is None:
+        out['root'] = parent_id
+    elif root is not None and reply is not None:
+        out = {'root': root, 'reply': parent_id}
+    elif root is not None:
+        out = {'root': root, 'reply': parent_id}
+    elif reply is not None:
+        out = {'root': reply, 'reply': parent_id}
+    return out
+
+
 def make_threaded(notes):
     threads = []
     thread_roots = []
