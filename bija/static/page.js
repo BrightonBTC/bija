@@ -702,7 +702,9 @@ class bijaFeed{
     }
 
     loadArticles(response){
-        document.getElementById("main-content").innerHTML += response;
+        const doc = new DOMParser().parseFromString(response, "text/html")
+        const htm = doc.body.firstChild
+        document.getElementById("main-content").append(htm);
         const o = this
         setTimeout(function(){
             o.loading = 0;

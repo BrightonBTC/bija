@@ -1,3 +1,4 @@
+<div>
 <div class="ts" data-ts="{{last}}"></div>
 {%- for thread in threads: -%}
 {%- if thread['responder_count'] > 0 -%}
@@ -37,7 +38,7 @@
 {%- set post = thread['response'] -%}
 
 {%- if thread['self'] is not none -%}
-{%- if post['response_to'] != thread['id'] or post['response_to'] is none and post['thread_root'] != thread['id']  -%}
+{%- if post['response_to'] is not none  -%}
 <div class="note-container connector">
     <div class="thread-marker"></div>
     <div class="note-image"></div>
@@ -73,3 +74,4 @@
 {%- endif -%}
 <hr class="thread-divider" />
 {%- endfor -%}
+</div>
