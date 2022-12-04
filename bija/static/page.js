@@ -13,6 +13,9 @@ window.addEventListener("load", function () {
         new bijaNotes();
         new bijaProfile();
     }
+    if(document.querySelector(".main[data-page='following']") != null){
+        new bijaProfile();
+    }
     if(document.querySelector(".main[data-page='messages_from']") != null){
         new bijaMessages()
     }

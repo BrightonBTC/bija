@@ -104,7 +104,7 @@ class BijaEvents:
             while self.relay_manager.message_pool.has_events():
                 msg = self.relay_manager.message_pool.get_event()
 
-                self.db.add_event(msg.event.id, msg.event.kind, False)
+                self.db.add_event(msg.event.id, msg.event.kind)
 
                 if msg.event.kind == EventKind.SET_METADATA:
                     self.handle_metadata_event(msg.event)
@@ -153,6 +153,8 @@ class BijaEvents:
                 e_id = tag[1]
         if e_id is not None and e_id is not None:
             self.db.add_note_reaction(event.id, event.public_key, e_id, e_pk, event.content, json.dumps(members), json.dumps(event.to_json_object()))
+            if event.public_key == self.get_key():
+                self.db.set_note_liked(e_id)
 
     def handle_metadata_event(self, event):
         s = json.loads(event.content)
@@ -175,8 +177,7 @@ class BijaEvents:
             picture,
             about,
             event.created_at,
-            json.dumps(event.to_json_object()),
-            commit=False
+            json.dumps(event.to_json_object())
         )
         if result.nip05 is not None and result.nip05_validated == 0:
             if self.validate_nip05(result.nip05, result.public_key):
@@ -266,8 +267,7 @@ class BijaEvents:
             event.created_at,
             json.dumps(members),
             media,
-            json.dumps(event.to_json_object()),
-            commit=False
+            json.dumps(event.to_json_object())
         )
         if subscription == 'primary':
             unseen_posts = self.db.get_unseen_in_feed(self.get_key())
@@ -442,12 +442,12 @@ class BijaEvents:
             new = set(keys) - set(following_pubkeys)
             removed = set(following_pubkeys) - set(keys)
             if len(new) > 0:
-                self.db.set_following(new, True, False)
+                self.db.set_following(new, True)
             if len(removed) > 0:
-                self.db.set_following(removed, False, False)
+                self.db.set_following(removed, False)
             self.subscribe_primary()
         elif subscription == 'profile':  # we received another users contacts
-            self.db.add_contact_list(event.public_key, keys, False)
+            self.db.add_contact_list(event.public_key, keys)
             self.subscribe_profile(event.public_key, timestamp_minus(TimePeriod.WEEK))
 
     def handle_private_message_event(self, event):
@@ -471,12 +471,11 @@ class BijaEvents:
                     event.content,
                     is_sender,
                     event.created_at,
-                    json.dumps(event.to_json_object()),
-                    False
+                    json.dumps(event.to_json_object())
                 )
             is_known = self.db.is_known_pubkey(event.public_key)
             if is_known is None:
-                self.db.add_profile(event.public_key, updated_at=0, commit=False)
+                self.db.add_profile(event.public_key, updated_at=0)
 
             if self.page['page'] == 'message' and self.page['identifier'] == pk:
                 messages = self.db.get_unseen_messages(pk)
