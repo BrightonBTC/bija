@@ -21,7 +21,6 @@ def encrypt_key(password, to_encrypt):
 
     f = Fernet(_key)
     encrypted_string = f.encrypt(to_encrypt)
-    print(encrypted_string.decode())
     return encrypted_string.decode()
 
 
@@ -37,5 +36,4 @@ def decrypt_key(password, to_decrypt):
 
     f = Fernet(_key)
     Pass = f.decrypt(to_decrypt)
-    print(Pass.decode())
     return Pass.decode()

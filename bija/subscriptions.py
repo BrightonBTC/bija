@@ -20,7 +20,6 @@ class Subscribe:
         self.relay_manager.add_subscription(self.name, self.filters)
         time.sleep(1)
         message = json.dumps(request)
-        print(message)
         self.relay_manager.publish_message(message)
 
 

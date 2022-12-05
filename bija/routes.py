@@ -121,10 +121,8 @@ def note_page():
     for note in notes:
         note = dict(note)
         if note['reshare'] is not None:
-            print('reshare found')
             reshare = DB.get_note(note['reshare'])
             if reshare is not None:
-                print('reshare found at db')
                 note['reshare'] = reshare
         members.append(note['public_key'])
         members = json.loads(note['members']) + members

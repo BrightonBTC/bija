@@ -377,7 +377,6 @@ class MetadataEvent:
         self.process_content()
 
     def process_content(self):
-        print('process_content')
         s = json.loads(self.event.content)
         if 'name' in s:
             self.name = s['name']
@@ -389,11 +388,8 @@ class MetadataEvent:
             self.picture = s['picture']
 
         if self.nip05 is not None:
-            print('self.nip05 is not None')
             current = self.db.get_profile(self.event.public_key)
-            print('current = self.db.get_profile')
             if current is None or current.nip05 != self.nip05:
-                print('current.nip05 != self.nip05')
                 if self.validate_nip05(self.nip05, self.event.public_key):
                     self.db.set_valid_nip05(self.event.public_key)
                     self.nip05_validated = True
@@ -402,7 +398,6 @@ class MetadataEvent:
 
     @staticmethod
     def validate_nip05(nip05, pk):
-        print('validate_nip05')
         validated_name = request_nip05(nip05)
         if validated_name is not None and validated_name == pk:
             return True

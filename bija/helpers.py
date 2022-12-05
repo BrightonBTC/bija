@@ -26,7 +26,6 @@ def get_urls_in_string(content: str):
 
 def validate_nip05(name: str):
     parts = name.split('@')
-    print(parts)
     if len(parts) == 2:
         if parts[0] == '_':
             test_str = 'test@{}'.format(parts[1])
@@ -36,7 +35,6 @@ def validate_nip05(name: str):
         test_str = 'test@{}'.format(parts[0])
         parts.insert(0, '_')
     regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
-    print(test_str)
     if re.fullmatch(regex, test_str) is not None:
         return parts
     else:
