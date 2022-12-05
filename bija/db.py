@@ -2,11 +2,12 @@ import json
 import time
 from os.path import exists
 
-from sqlalchemy import create_engine, Column, Integer, String, Time, ForeignKey, Boolean, text, distinct, func, or_
-from sqlalchemy.orm import declarative_base, sessionmaker, join, relationship, subqueryload, aliased
+from sqlalchemy import create_engine, text, func, or_
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import label
 
-Base = declarative_base()
+from bija.models import *
+
 DB_ENGINE = create_engine("sqlite:///bija.sqlite", echo=False)
 DB_SESSION = sessionmaker(autocommit=False, autoflush=False, bind=DB_ENGINE)
 
@@ -143,11 +144,10 @@ class BijaDB:
             raw=raw
         ))
         self.session.commit()
-        return self.session.query(Profile).filter_by(public_key=public_key).first()
+        # return self.get_profile(public_key)
 
     def set_valid_nip05(self, public_key):
         self.session.query(Profile).filter(Profile.public_key == public_key).update({'nip05_validated': True})
-        self.session.commit()
 
     def insert_note(self,
                     note_id,
@@ -160,27 +160,38 @@ class BijaDB:
                     members=None,
                     media=None,
                     raw=None):
-        self.session.merge(Note(
-            id=note_id,
-            public_key=public_key,
-            content=content,
-            response_to=response_to,
-            thread_root=thread_root,
-            reshare=reshare,
-            created_at=created_at,
-            members=members,
-            media=media,
-            raw=raw
-        ))
-        self.session.commit()
+        note = self.session.query(Note.deleted).filter_by(id=note_id).first()
+        if note is None or note.deleted is None:
+            self.session.merge(Note(
+                id=note_id,
+                public_key=public_key,
+                content=content,
+                response_to=response_to,
+                thread_root=thread_root,
+                reshare=reshare,
+                created_at=created_at,
+                members=members,
+                media=media,
+                raw=raw
+            ))
+            self.session.commit()
 
     def is_note(self, note_id):
         return self.session.query(Note.id).filter_by(id=note_id).first()
 
-    def is_known_pubkey(self, pk):
-        return self.session.query(Profile.public_key).filter_by(public_key=pk).first()
+    # def is_known_pubkey(self, pk):
+    #     return self.session.query(Profile.public_key).filter_by(public_key=pk).first()
+
+    def add_profile_if_not_exists(self, pk):
+        self.session.merge(Profile(public_key=pk))
+        self.session.commit()
 
     def get_note(self, note_id):
+        like_counts = self.session.query(
+            NoteReaction.id,
+            NoteReaction.event_id,
+            func.count(NoteReaction.id).label('likes')
+        ).group_by(NoteReaction.event_id).subquery()
         return self.session.query(Note.id,
                                   Note.public_key,
                                   Note.content,
@@ -190,11 +201,15 @@ class BijaDB:
                                   Note.created_at,
                                   Note.members,
                                   Note.media,
+                                  label("likes", like_counts.c.likes),
                                   Note.liked,
                                   Note.shared,
+                                  Note.deleted,
                                   Profile.name,
                                   Profile.pic,
-                                  Profile.nip05).filter_by(id=note_id).join(Note.profile).first()
+                                  Profile.nip05).filter_by(id=note_id) \
+            .outerjoin(like_counts, like_counts.c.event_id == Note.id) \
+            .join(Note.profile).first()
 
     def get_raw_note_data(self, note_id):
         return self.session.query(Note.raw).filter_by(id=note_id).first()
@@ -223,6 +238,7 @@ class BijaDB:
                                   Note.media,
                                   Note.liked,
                                   Note.shared,
+                                  Note.deleted,
                                   label("likes", like_counts.c.likes),
                                   Profile.name,
                                   Profile.pic,
@@ -284,14 +300,17 @@ class BijaDB:
             Note.media,
             Note.liked,
             Note.shared,
+            Note.deleted,
             label("likes", like_counts.c.likes),
             Profile.name,
             Profile.pic,
             Profile.nip05,
-            Profile.nip05_validated).join(Note.profile) \
+            Profile.nip05_validated) \
             .outerjoin(like_counts, like_counts.c.event_id == Note.id) \
+            .join(Note.profile) \
             .filter(text("note.created_at<{}".format(before))) \
             .filter(text("(profile.following=1 OR profile.public_key='{}')".format(public_key))) \
+            .filter(text("note.deleted is not 1")) \
             .order_by(Note.created_at.desc()).limit(50).all()
 
     def get_note_by_id_list(self, note_ids):
@@ -326,6 +345,7 @@ class BijaDB:
             Note.media,
             Note.liked,
             Note.shared,
+            Note.deleted,
             label("likes", like_counts.c.likes),
             Profile.name,
             Profile.pic,
@@ -333,8 +353,10 @@ class BijaDB:
             Profile.nip05_validated) \
             .outerjoin(like_counts, like_counts.c.event_id == Note.id) \
             .join(Note.profile) \
-            .filter(text("note.created_at<{}".format(before))).filter_by(
-            public_key=public_key).order_by(Note.created_at.desc()).limit(50).all()
+            .filter(text("note.created_at<{}".format(before))) \
+            .filter_by(public_key=public_key) \
+            .filter(text("note.deleted is not 1")) \
+            .order_by(Note.created_at.desc()).limit(50).all()
 
     def get_unseen_message_count(self):
         return self.session.query(PrivateMessage) \
@@ -386,6 +408,7 @@ class BijaDB:
 
     def get_message_thread(self, public_key):
         self.set_message_thread_read(public_key)
+        filter_text = "profile.public_key = private_message.public_key AND private_message.public_key='{}'"
         return self.session.query(
             PrivateMessage.is_sender,
             PrivateMessage.content,
@@ -393,8 +416,7 @@ class BijaDB:
             PrivateMessage.public_key,
             Profile.name,
             Profile.pic).join(Profile) \
-            .filter(text(
-            "profile.public_key = private_message.public_key AND private_message.public_key='{}'".format(public_key))) \
+            .filter(text(filter_text.format(public_key))) \
             .order_by(PrivateMessage.created_at.desc()).limit(100).all()
 
     def set_message_thread_read(self, public_key):
@@ -425,6 +447,14 @@ class BijaDB:
         ))
         self.session.commit()
 
+    def set_note_deleted(self, note_id, reason):
+        self.session.merge(Note(
+            id=note_id,
+            content=reason,
+            deleted=1
+        ))
+        self.session.commit()
+
     def get_like_count(self, note_id):
         return self.session.query(NoteReaction.event_id).filter(NoteReaction.event_id == note_id).filter(
             NoteReaction.content != '-').count()
@@ -433,150 +463,15 @@ class BijaDB:
         return self.session.query(NoteReaction).filter(NoteReaction.event_id == note_id). \
             filter(NoteReaction.public_key == public_key).all()
 
-    def add_event(self, event_id, kind, commit=True):
+    def add_event(self, event_id, kind):
         self.session.merge(Event(
             id=event_id,
             kind=kind
         ))
-        if commit:
-            self.session.commit()
+        self.session.commit()
 
     def get_event(self, event_id):
         return self.session.query(Event).filter(Event.id == event_id).first()
 
     def commit(self):
         self.session.commit()
-
-
-class Event(Base):
-    __tablename__ = "event"
-    id = Column(String(64), primary_key=True)
-    kind = Column(Integer)
-
-
-class Profile(Base):
-    __tablename__ = "profile"
-    public_key = Column(String(64), unique=True, primary_key=True)
-    name = Column(String)
-    nip05 = Column(String)
-    pic = Column(String)
-    about = Column(String)
-    updated_at = Column(Integer)
-    following = Column(Boolean)
-    contacts = Column(String)
-    nip05_validated = Column(Boolean, default=False)
-    raw = Column(String)
-
-    notes = relationship("Note", back_populates="profile")
-
-    def __repr__(self):
-        return {
-            self.public_key,
-            self.name,
-            self.nip05,
-            self.pic,
-            self.about,
-            self.updated_at,
-            self.following,
-            self.contacts,
-            self.nip05_validated,
-            self.raw
-        }
-
-
-class Note(Base):
-    __tablename__ = "note"
-    id = Column(String(64), unique=True, primary_key=True)
-    public_key = Column(String(64), ForeignKey("profile.public_key"))
-    content = Column(String)
-    response_to = Column(String(64))
-    thread_root = Column(String(64))
-    reshare = Column(String(64))
-    created_at = Column(Integer)
-    members = Column(String)
-    media = Column(String)
-    seen = Column(Boolean, default=False)
-    liked = Column(Boolean, default=False)
-    shared = Column(Boolean, default=False)
-    raw = Column(String)
-
-    profile = relationship("Profile", back_populates="notes")
-
-    def __repr__(self):
-        return {
-            self.id,
-            self.public_key,
-            self.content,
-            self.response_to,
-            self.thread_root,
-            self.reshare,
-            self.created_at,
-            self.members,
-            self.media,
-            self.seen,
-            self.liked,
-            self.shared,
-            self.raw
-        }
-
-
-class PrivateMessage(Base):
-    __tablename__ = "private_message"
-    id = Column(String(64), unique=True, primary_key=True)
-    public_key = Column(String(64), ForeignKey("profile.public_key"))
-    content = Column(String)
-    is_sender = Column(Boolean)  # true = public_key is sender, false I'm sender
-    created_at = Column(Integer)
-    seen = Column(Boolean, default=False)
-    raw = Column(String)
-
-    def __repr__(self):
-        return {
-            self.id,
-            self.public_key,
-            self.content,
-            self.is_sender,
-            self.created_at,
-            self.seen,
-            self.raw
-        }
-
-
-class Settings(Base):
-    __tablename__ = "settings"
-    key = Column(String(20), primary_key=True)
-    name = Column(String)
-    value = Column(String)
-
-
-class NoteReaction(Base):
-    __tablename__ = "note_reactions"
-    id = Column(String, primary_key=True)
-    public_key = Column(String)
-    event_id = Column(Integer)
-    event_pk = Column(Integer)
-    content = Column(String(7))
-    members = Column(String)
-    raw = Column(String)
-
-
-class MessageReaction(Base):
-    __tablename__ = "message_reactions"
-    id = Column(Integer, primary_key=True)
-    public_key = Column(String)
-    event = Column(Integer, ForeignKey("private_message.id"))
-    content = Column(String(7))
-
-
-# Private keys
-class PK(Base):
-    __tablename__ = "PK"
-    id = Column(Integer, primary_key=True)
-    key = Column(String)
-    enc = Column(Boolean)  # boolean
-
-
-class Relay(Base):
-    __tablename__ = "relay"
-    id = Column(Integer, primary_key=True)
-    name = Column(String, unique=True)

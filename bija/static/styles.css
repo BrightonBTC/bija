@@ -101,7 +101,7 @@ input[type=submit]:hover {
     font-size: 10px;
     font-weight:800;
     padding: 5px;
-    margin: 12px;
+    margin: 10px;
     background: var(--bg-clr3);
     border-radius: 5px;
 }
@@ -622,6 +622,10 @@ input[type=text].pname {
 .note-container.ancestor{
     border-bottom:0;
 }
+.note-container.deleted {
+    font-size: 10px;
+    opacity: 0.7;
+}
 .note-container .note-container {
     border: 2px solid var(--bdr-clr-2);
     margin: 5px;
@@ -665,6 +669,7 @@ input[type=text].pname {
 .note-container.root .thread-marker, .note-container.ancestor .thread-marker{
     display: block;
 }
+
 .note-container.reply .thread-marker{
     display: block;
     height: 90px;
@@ -672,6 +677,9 @@ input[type=text].pname {
     width: 130px;
     border-style: dotted;
     top: 0;
+}
+.note-container.deleted  .thread-marker{
+    display: none;
 }
 .note-container.reply .note-image{
     flex: 0 0 150px
@@ -711,6 +719,7 @@ input[type=text].pname {
     white-space: pre-wrap;
     cursor:pointer;
     background: var(--bg-clr2);
+    position: relative;
 }
 .note-content pre:hover{
     filter: brightness(1.5);
@@ -774,6 +783,40 @@ input[type=text].pname {
     margin-left: 15px;
     cursor: pointer;
 }
+.note-opts{
+    position: relative;
+}
+.note-opts img{
+    width: 12px;
+    margin-left: 15px;
+    cursor: pointer;
+}
+.note-opts .opts-menu{
+    padding: 5px;
+    font-size: 10px;
+    visibility: hidden;
+    position: absolute;
+    width: 100px;
+    background: var(--bg-clr1);
+    top: 5px;
+    right: 5px;
+    border: 1px solid var(--bdr-clr-2);
+    border-radius: 5px;
+    box-shadow: 1px 1px 3px #000;
+    z-index: 1000;
+}
+.note-opts .opts-menu li:hover {
+    filter: brightness(1.3);
+    color: var(--lnk-clr);
+}
+
+.note-opts .opts-menu li {
+    padding: 2px;
+    cursor: pointer;
+}
+.note-opts:hover .opts-menu{
+    visibility: visible;
+}
 
 .nip5{
     font-size: 14px;
@@ -816,6 +859,31 @@ p.note-tools img{
 }
 .popup .note-container{
     pointer-events:none;
+}
+.reveal{
+    background-image: linear-gradient(to top, var(--bg-clr2) 30%, transparent 100%);
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+    height: 60px;
+    padding: 30px;
+}
+.reveal span{
+    padding: 5px;
+    border-radius: 5px;
+    background: var(--btn-bg);
+    font-size: 12px;
+}
+
+.note-media img{
+    height: 300px;
+    width: 100%;
+    object-fit: cover;
+    border: 1px solid var(--bdr-clr-2);
+    border-radius: 10px;
+    cursor: pointer;
 }
 
 /* ---------- */

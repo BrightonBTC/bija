@@ -21,8 +21,8 @@
 
   <div class="row">
     <div class="left-column" id="main-content">
-      {% block content %}
-      {% endblock content %}
+      {%- block content -%}
+      {%- endblock content -%}
     </div>
     <div class="right-column">
         <form id="search" action="/search" method="get">
@@ -30,8 +30,8 @@
           <p class="sm">search for a pubkey or nip-05 address</p>
         </form>
         <div id="right_content">
-        {% block right_content %}
-        {% endblock right_content %}
+        {%- block right_content -%}
+        {%- endblock right_content -%}
         </div>
     </div>
   </div>

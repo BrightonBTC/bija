@@ -62,8 +62,12 @@ def feed():
         else:
             before = time.time()
         notes = DB.get_feed(before, get_key())
-        threads, last_ts = make_threaded(notes)
-        return render_template("feed.items.html", threads=threads, last=last_ts)
+        profile = DB.get_profile(get_key())
+        if len(notes) > 0:
+            threads, last_ts = make_threaded(notes)
+            return render_template("feed.items.html", threads=threads, last=last_ts, profile=profile)
+        else:
+            return 'END'
 
 
 @app.route('/login', methods=['POST'])
@@ -117,10 +121,8 @@ def note_page():
     for note in notes:
         note = dict(note)
         if note['reshare'] is not None:
-            print('reshare found')
             reshare = DB.get_note(note['reshare'])
             if reshare is not None:
-                print('reshare found at db')
                 note['reshare'] = reshare
         members.append(note['public_key'])
         members = json.loads(note['members']) + members
@@ -131,8 +133,8 @@ def note_page():
         p = DB.get_profile(member)
         if p is not None:
             profiles.append(p)
-
-    return render_template("thread.html", page_id="note", title="Note", notes=notes_processed, members=profiles)
+    profile = DB.get_profile(get_key())
+    return render_template("thread.html", page_id="note", title="Note", notes=notes_processed, members=profiles, profile=profile)
 
 
 @app.route('/quote_form', methods=['GET'])
@@ -140,7 +142,28 @@ def quote_form():
     note_id = request.args['id']
     note = DB.get_note(note_id)
     profile = DB.get_profile(get_key())
-    return render_template("quote.form.html", item=note, id=note_id, p=profile)
+    return render_template("quote.form.html", item=note, id=note_id, profile=profile)
+
+
+@app.route('/confirm_delete', methods=['GET'])
+def confirm_delete():
+    note_id = request.args['id']
+    return render_template("delete.confirm.html", id=note_id, )
+
+
+@app.route('/delete_note', methods=['POST'])
+def delete_note():
+    note_id = None
+    reason = None
+    event_id = None
+    for r in request.json:
+        if r[0] == 'note_id':
+            note_id = r[1]
+        elif r[0] == 'reason':
+            reason = r[1]
+    if note_id is not None:
+        event_id = EVENT_HANDLER.submit_delete([note_id], reason)
+    return render_template("upd.json", data=json.dumps({'event_id': event_id}))
 
 
 @app.route('/quote', methods=['POST'])
@@ -169,7 +192,8 @@ def quote_submit():
 def thread_item():
     note_id = request.args['id']
     note = DB.get_note(note_id)
-    return render_template("thread.item.html", item=note)
+    profile = DB.get_profile(get_key())
+    return render_template("thread.item.html", item=note, profile=profile)
 
 
 @app.route('/settings', methods=['GET', 'POST'])
@@ -208,9 +232,9 @@ def update_profile():
             valid_nip5 = EVENT_HANDLER.validate_nip05(profile['nip05'], get_key())
             out['nip05'] = valid_nip5
             if valid_nip5:
-                out['success'] = EVENT_HANDLER.update_profile(profile)
+                out['success'] = EVENT_HANDLER.submit_profile(profile)
         else:
-            out['success'] = EVENT_HANDLER.update_profile(profile)
+            out['success'] = EVENT_HANDLER.submit_profile(profile)
     return render_template("upd.json", data=json.dumps(out))
 
 
@@ -284,7 +308,7 @@ def submit_like():
                 ids = []
                 for event in like_events:
                     ids.append(event.id)
-                event_id = EVENT_HANDLER.delete_events(ids)
+                event_id = EVENT_HANDLER.submit_delete(ids)
 
     return render_template("upd.json", data=json.dumps({'event_id': event_id}))
 
@@ -325,7 +349,7 @@ def search_page():
             if profile is not None:
                 return redirect('/profile?pk={}'.format(profile.public_key))
             else:
-                pk = EVENT_HANDLER.request_nip05(term)
+                pk = request_nip05(term)
                 if pk is not None:
                     return redirect('/profile?pk={}'.format(pk))
                 else:
@@ -432,8 +456,13 @@ def _jinja2_filter_datetime(ts):
 
 
 @app.template_filter('decr')
-def _jinja2_filter_decr(content, pk):
-    return EVENT_HANDLER.decrypt(content, pk)
+def _jinja2_filter_decr(content, pubkey):
+    try:
+        k = bytes.fromhex(get_key("private"))
+        pk = PrivateKey(k)
+        return pk.decrypt_message(content, pubkey)
+    except ValueError:
+        return 'could not decrypt!'
 
 
 @app.template_filter('ident_string')
@@ -477,8 +506,22 @@ def _jinja2_filter_media(json_string):
     if len(a) > 0:
         media = a[0]
         if media[1] == 'image':
-            return '<div class="image-attachment"><img src="{}"></div>'.format(media[0])
+            return '<div class="image-attachment"><img src="{}"  crossorigin="anonymous"></div>'.format(media[0])
     return '';
+
+
+@app.template_filter('get_thread_root')
+def _jinja2_filter_thread_root(root, reply, parent_id):
+    out = {'root': '', 'reply': ''}
+    if root is None and reply is None:
+        out['root'] = parent_id
+    elif root is not None and reply is not None:
+        out = {'root': root, 'reply': parent_id}
+    elif root is not None:
+        out = {'root': root, 'reply': parent_id}
+    elif reply is not None:
+        out = {'root': reply, 'reply': parent_id}
+    return out
 
 
 def make_threaded(notes):

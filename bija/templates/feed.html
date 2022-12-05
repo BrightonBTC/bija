@@ -1,13 +1,13 @@
-{% extends "base.html" %}
+{%- extends "base.html" -%}
 
-{% block content %}
+{%- block content -%}
 <div id="note-poster" class="poster-form">
     <div class="pic">
-        {% if profile['pic'] is not none %}
+        {%- if profile['pic'] is not none -%}
             <img src="{{profile['pic']}}" class="user-image" onerror="defaultImage(this);"  />
-        {% else %}
+        {%- else -%}
             <img src="/identicon?id={{profile['public_key']}}" class="user-image" />
-        {% endif %}
+        {%- endif -%}
     </div>
     <form method="post" action="/" id="new_post_form">
         <textarea name="new_post" id="new_post" placeholder="Say something..."></textarea>
@@ -15,6 +15,6 @@
     </form>
 </div>
 <h2 class="posts-title">Recent activity in your network</h2>
-{% include 'feed.items.html' %}
+{%- include 'feed.items.html' -%}
 
-{% endblock content %}
+{%- endblock content -%}

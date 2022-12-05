@@ -1,10 +1,11 @@
+import os
 import sys
 from PyQt5 import QtCore, QtWidgets, QtGui, QtWebEngineWidgets
 from PyQt5.QtWidgets import QMainWindow
 
 
 def init_gui(application, socketio, port=5000, width=1100, height=800,
-             window_title="Bija Nostr Client", icon="http://localhost:5000/static/bija.png"):
+             window_title="Bija Nostr Client", icon="/static/bija.png"):
 
     ROOT_URL = 'http://localhost:{}'.format(port)
 
@@ -35,7 +36,9 @@ def init_gui(application, socketio, port=5000, width=1100, height=800,
     window = MainWindow()
     window.resize(width, height)
     window.setWindowTitle(window_title)
-    window.setWindowIcon(QtGui.QIcon(icon))
+
+    scriptDir = os.path.dirname(os.path.realpath(__file__))
+    window.setWindowIcon(QtGui.QIcon(scriptDir + os.path.sep + icon))
 
     # WebView Level
     window.webView = QtWebEngineWidgets.QWebEngineView(window)

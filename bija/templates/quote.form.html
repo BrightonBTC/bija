@@ -1,6 +1,7 @@
 <div class="poster-form">
     <div class="pic">
-        {% include 'profile.image.html' %}
+        {%- set p=profile -%}
+        {%- include 'profile.image.html' -%}
     </div>
     <form id="quote_form">
         <input type="hidden" name="quote_id" value="{{id}}">
@@ -12,11 +13,12 @@
 <div class="note-container">
     <div class="thread-marker"></div>
     <div class="note-image">
-        {% set p=item %}
-        {% include 'profile.image.html' %}
+        {%- set p=item -%}
+        {%- include 'profile.image.html' -%}
     </div>
     <div class="note-outer">
-    {% set note=item %}
-    {% include 'note.html' %}
+    {%- set note=item -%}
+    {%- set reply_chain={'root':'','reply':''} -%}
+    {%- include 'note.html' -%}
     </div>
 </div>

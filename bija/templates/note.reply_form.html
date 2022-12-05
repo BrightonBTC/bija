@@ -1,8 +1,8 @@
-{% if note['liked'] %}
-{% set liked_im = 'liked.svg' %}
-{% else %}
-{% set liked_im = 'like.svg' %}
-{% endif %}
+{%- if note['liked'] -%}
+{%- set liked_im = 'liked.svg' -%}
+{%- else -%}
+{%- set liked_im = 'like.svg' -%}
+{%- endif -%}
 <p class="note-tools">
     <span class="section">
         <a href="#" class="reply-link" data-rel="{{note['id']}}"><img src="/static/reply.svg"></a>
@@ -19,8 +19,8 @@
 </p>
 <form class="reply-form poster-form"  data-noteid="{{note['id']}}" >
     <input type="hidden" name="pubkey" value="{{note['public_key']}}">
-    <input type="hidden" name="thread_root" value="{{thread_root}}">
-    <input type="hidden" name="parent_id" value="{{note['id']}}">
+    <input type="hidden" name="thread_root" value="{{reply_chain.root}}">
+    <input type="hidden" name="parent_id" value="{{reply_chain.reply}}">
     <textarea name="reply"></textarea>
     <input type="submit" value="Reply" data-reply-submit="1" data-rel="{{note['id']}}" class="post-submit right">
 </form>

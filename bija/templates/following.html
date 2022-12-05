@@ -1,15 +1,15 @@
-{% extends "base.html" %}
+{%- extends "base.html" -%}
 
-{% block content %}
-{% include 'profile.header.html' %}
+{%- block content -%}
+{%- include 'profile.header.html' -%}
 <div class="following-list">
-{% for p in profiles: %}
+{%- for p in profiles: -%}
     <div class="following-item">
         <div class="pic">
-            {% include 'profile.image.html' %}
+            {%- include 'profile.image.html' -%}
         </div>
         <div class="name"><a href="/profile?pk={{p['public_key']}}">{{p['name'] | ident_string(p['public_key'], p['nip05'], p['nip05_validated']) | safe }}</a></div>
     </div>
-{% endfor %}
+{%- endfor -%}
 </div>
-{% endblock content %}
+{%- endblock content -%}
