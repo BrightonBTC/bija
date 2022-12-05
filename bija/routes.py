@@ -70,6 +70,12 @@ def feed():
             return 'END'
 
 
+@app.route('/alerts', methods=['GET'])
+def alerts_page():
+    alerts = DB.get_alerts(get_key())
+    return render_template("alerts.html", page_id="alerts", title="alerts", alerts=alerts)
+
+
 @app.route('/login', methods=['POST'])
 def login_page():
     EVENT_HANDLER.set_page('login', None)

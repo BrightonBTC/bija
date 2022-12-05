@@ -1,0 +1,29 @@
+{%- extends "base.html" -%}
+
+{%- block content -%}
+
+<ul class="alerts">
+{%- for alert in alerts: -%}
+    <li>
+    {%- if alert['kind'] == 3 -%}
+        {%- if alert['thread_root'] is not none -%}
+            {%- set root = alert['thread_root'] -%}
+        {%- else -%}
+            {%- set root = alert['event'] -%}
+        {%- endif -%}
+        {%- if alert['content'] == '+' or alert['content'] == '' -%}
+            {%- set content = "🤍" -%}
+        {%- else -%}
+            {%- set content = alert['content'] -%}
+        {%- endif -%}
+        <a href="/note?id={{root}}#{{alert['event']}}">
+        {{content}} {{alert['name'] | ident_string(alert['public_key'], none, none) | safe }} reacted
+        <div class="alert-content">
+            {{alert['note_content'][:121]| striptags}}...
+        </div>
+        </a>
+    {%- endif -%}
+    </li>
+{%- endfor -%}
+</ul>
+{%- endblock content -%}

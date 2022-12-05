@@ -126,6 +126,17 @@ class MessageReaction(Base):
     content = Column(String(7))
 
 
+class Alert(Base):
+    __tablename__ = "alerts"
+    id = Column(String(64), primary_key=True)  # the id of the new event
+    kind = Column(Integer)
+    event = Column(String(64))  # id of the event being referenced (commented on, liked...)
+    profile = Column(String(64))
+    ts = Column(Integer)
+    content = Column(String)
+    seen = Column(Boolean, default=False)
+
+
 # Private keys
 class PK(Base):
     __tablename__ = "PK"

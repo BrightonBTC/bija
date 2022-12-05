@@ -22,11 +22,11 @@ class BijaDB:
 
     def __init__(self, session):
         self.session = session
+        Base.metadata.create_all(DB_ENGINE)
         if not exists("bija.sqlite"):
             self.setup()
 
     def setup(self):
-        Base.metadata.create_all(DB_ENGINE)
         relays = []
         for r in DEFAULT_RELAYS:
             relays.append(Relay(name=r))
@@ -447,6 +447,9 @@ class BijaDB:
         ))
         self.session.commit()
 
+    def get_reaction_by_id(self, event_id):
+        return self.session.query(NoteReaction.content).filter_by(id=event_id).first()
+
     def set_note_deleted(self, note_id, reason):
         self.session.merge(Note(
             id=note_id,
@@ -472,6 +475,36 @@ class BijaDB:
 
     def get_event(self, event_id):
         return self.session.query(Event).filter(Event.id == event_id).first()
+
+    def add_alert(self, event_id, kind, profile, event, ts, content):
+        self.session.merge(Alert(
+            id=event_id,
+            kind=kind,
+            profile=profile,
+            event=event,
+            ts=ts,
+            content=content
+        ))
+        self.session.commit()
+
+    def get_alerts(self, public_key):
+        return self.session.query(
+            Alert.id,
+            Alert.kind,
+            Alert.event,
+            Alert.profile,
+            Alert.content,
+            Profile.name,
+            Profile.public_key,
+            label("note_id", Note.id),
+            Note.thread_root,
+            Note.response_to,
+            label("note_content", Note.content)
+        ) \
+            .join(Note, Note.id == Alert.event) \
+            .join(Profile, Profile.public_key == Alert.profile) \
+            .filter(Alert.seen == 0) \
+            .order_by(Alert.ts.desc()).limit(50).all()
 
     def commit(self):
         self.session.commit()

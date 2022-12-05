@@ -9,6 +9,7 @@ from bija.helpers import get_embeded_tag_indexes, \
     list_index_exists, get_urls_in_string, request_nip05
 from bija.subscriptions import *
 from bija.submissions import *
+from bija.alerts import *
 from python_nostr.nostr.event import EventKind
 from python_nostr.nostr.relay_manager import RelayManager
 
@@ -129,7 +130,15 @@ class BijaEvents:
         DeleteEvent(self.db, event)
 
     def receive_reaction_event(self, event):
-        ReactionEvent(self.db, event, self.get_key())
+        e = ReactionEvent(self.db, event, self.get_key())
+        note = self.db.get_note(e.event_id)
+        if e.event.public_key != self.get_key():
+            if note is not None and note.public_key == self.get_key():
+                reaction = self.db.get_reaction_by_id(e.event.id)
+                print(reaction)
+                Alert(
+                    e.event.id,
+                    e.event.created_at, AlertKind.REACTION, e.event.public_key, e.event_id, reaction['content'])
 
     def receive_metadata_event(self, event):
         meta = MetadataEvent(self.db, event)

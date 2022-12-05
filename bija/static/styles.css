@@ -888,6 +888,27 @@ p.note-tools img{
 
 /* ---------- */
 
+/* Alerts */
+.alert-content{
+    padding: 5px;
+    border-radius: 5px;
+    font-size: 12px;
+    color: var(--txt-clr2);
+}
+.alerts{
+
+}
+.alerts li {
+    border-bottom: 1px solid var(--bdr-clr-2);
+    padding: 10px 5px;
+}
+.alerts li a{
+    color: var(--txt-clr);
+}
+.alerts li:hover {
+    background: var(--bg-clr2);
+}
+
 /* Right column */
 #right_content {
     position: fixed;
