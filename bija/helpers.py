@@ -1,6 +1,10 @@
 import re
 import time
 from enum import IntEnum
+import logging
+import traceback
+
+import requests
 
 
 def is_valid_name(name: str) -> bool:
@@ -69,4 +73,33 @@ def list_index_exists(lst, i):
     try:
         return lst[i]
     except IndexError:
+        return None
+
+
+def request_nip05(nip05):
+    valid_parts = validate_nip05(nip05)
+    if valid_parts:
+        name = valid_parts[0]
+        address = valid_parts[1]
+        try:
+            response = requests.get(
+                'https://{}/.well-known/nostr.json'.format(address), params={'name': name}, timeout=2
+            )
+            if response.status_code == 200:
+                try:
+                    d = response.json()
+                    if name in d['names']:
+                        return d['names'][name]
+                except ValueError:
+                    return None
+                except Exception as e:
+                    logging.error(traceback.format_exc())
+            else:
+                return None
+        except ConnectionError:
+            return None
+        except Exception as e:
+            logging.error(traceback.format_exc())
+            return None
+    else:
         return None

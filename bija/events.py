@@ -1,21 +1,15 @@
-import json
-import logging
 import os
 import ssl
-import time
-import traceback
 from urllib.parse import urlparse
 
-import requests as requests
 from flask import render_template
 
 from bija.app import socketio
-from bija.helpers import timestamp_minus, TimePeriod, is_hex_key, validate_nip05, get_embeded_tag_indexes, \
-    list_index_exists, get_urls_in_string
-from python_nostr.nostr.event import EventKind, Event
-from python_nostr.nostr.filter import Filters, Filter
-from python_nostr.nostr.key import PrivateKey
-from python_nostr.nostr.message_type import ClientMessageType
+from bija.helpers import get_embeded_tag_indexes, \
+    list_index_exists, get_urls_in_string, request_nip05
+from bija.subscriptions import *
+from bija.submissions import *
+from python_nostr.nostr.event import EventKind
 from python_nostr.nostr.relay_manager import RelayManager
 
 
@@ -27,10 +21,10 @@ class BijaEvents:
         'identifier': None
     }
 
-    def __init__(self, db, session):
+    def __init__(self, db, s):
         self.should_run = True
         self.db = db
-        self.session = session
+        self.session = s
         self.relay_manager = RelayManager()
         self.open_connections()
 
@@ -107,22 +101,22 @@ class BijaEvents:
                 self.db.add_event(msg.event.id, msg.event.kind)
 
                 if msg.event.kind == EventKind.SET_METADATA:
-                    self.handle_metadata_event(msg.event)
+                    self.receive_metadata_event(msg.event)
 
                 if msg.event.kind == EventKind.CONTACTS:
-                    self.handle_contact_list_event(msg.event, msg.subscription_id)
+                    self.receive_contact_list_event(msg.event, msg.subscription_id)
 
                 if msg.event.kind == EventKind.TEXT_NOTE:
-                    self.handle_note_event(msg.event, msg.subscription_id)
+                    self.receive_note_event(msg.event, msg.subscription_id)
 
                 if msg.event.kind == EventKind.ENCRYPTED_DIRECT_MESSAGE:
-                    self.handle_private_message_event(msg.event)
+                    self.receive_private_message_event(msg.event)
 
                 if msg.event.kind == EventKind.DELETE:
-                    self.handle_del_event(msg.event)
+                    self.receive_del_event(msg.event)
 
                 if msg.event.kind == EventKind.REACTION:
-                    self.handle_reaction_event(msg.event)
+                    self.receive_reaction_event(msg.event)
             self.db.commit()
             time.sleep(1)
             print('running')
@@ -131,144 +125,32 @@ class BijaEvents:
                 self.get_connection_status()
                 i = 0
 
-    def handle_del_event(self, event):
-        for tag in event.tags:
-            if tag[0] == 'e':
-                e = self.db.get_event(tag[1])
-                if e is not None and e.kind == EventKind.REACTION:
-                    self.db.delete_reaction(tag[1])
-                if e is not None and e.kind == EventKind.TEXT_NOTE:
-                    print('DEL', event.content)
-                    self.db.set_note_deleted(tag[1], event.content)
+    def receive_del_event(self, event):
+        DeleteEvent(self.db, event)
 
-    def handle_reaction_event(self, event):
-        e_pk = None
-        e_id = None
-        members = []
-        for tag in event.tags:
-            if tag[0] == "p":
-                e_pk = tag[1]
-                members.append(tag[1])
-            if tag[0] == "e":
-                e_id = tag[1]
-        if e_id is not None and e_id is not None:
-            self.db.add_note_reaction(event.id, event.public_key, e_id, e_pk, event.content, json.dumps(members), json.dumps(event.to_json_object()))
-            if event.public_key == self.get_key():
-                self.db.set_note_liked(e_id)
+    def receive_reaction_event(self, event):
+        ReactionEvent(self.db, event, self.get_key())
 
-    def handle_metadata_event(self, event):
-        s = json.loads(event.content)
-        name = None
-        nip05 = None
-        about = None
-        picture = None
-        if 'name' in s:
-            name = s['name']
-        if 'nip05' in s:
-            nip05 = s['nip05']
-        if 'about' in s:
-            about = s['about']
-        if 'picture' in s:
-            picture = s['picture']
-        result = self.db.upd_profile(
-            event.public_key,
-            name,
-            nip05,
-            picture,
-            about,
-            event.created_at,
-            json.dumps(event.to_json_object())
-        )
-        if result.nip05 is not None and result.nip05_validated == 0:
-            if self.validate_nip05(result.nip05, result.public_key):
-                self.db.set_valid_nip05(result.public_key)
+    def receive_metadata_event(self, event):
+        meta = MetadataEvent(self.db, event)
         if self.page['page'] == 'profile' and self.page['identifier'] == event.public_key:
-            if picture is None or len(picture.strip()) == 0:
-                picture = '/identicon?id={}'.format(event.public_key)
+            if meta.picture is None or len(meta.picture.strip()) == 0:
+                meta.picture = '/identicon?id={}'.format(event.public_key)
             socketio.emit('profile_update', {
                 'public_key': event.public_key,
-                'name': name,
-                'nip05': nip05,
-                'nip05_validated': result.nip05_validated,
-                'pic': picture,
-                'about': about,
+                'name': meta.name,
+                'nip05': meta.nip05,
+                'nip05_validated': meta.nip05_validated,
+                'pic': meta.picture,
+                'about': meta.about,
                 'created_at': event.created_at
             })
 
-    def validate_nip05(self, nip05, pk):
-        validated_name = self.request_nip05(nip05)
-        if validated_name is not None and validated_name == pk:
-            return True
-        return False
+    def receive_note_event(self, event, subscription):
+        NoteEvent(self.db, event)
+        self.notify_on_note_event(event, subscription)
 
-    @staticmethod
-    def request_nip05(nip05):
-        valid_parts = validate_nip05(nip05)
-        if valid_parts:
-            name = valid_parts[0]
-            address = valid_parts[1]
-            try:
-                response = requests.get(
-                    'https://{}/.well-known/nostr.json'.format(address), params={'name': name}, timeout=2
-                )
-                if response.status_code == 200:
-                    try:
-                        d = response.json()
-                        if name in d['names']:
-                            return d['names'][name]
-                    except ValueError:
-                        return None
-                    except Exception as e:
-                        logging.error(traceback.format_exc())
-                else:
-                    return None
-            except ConnectionError:
-                return None
-            except Exception as e:
-                logging.error(traceback.format_exc())
-                return None
-        else:
-            return None
-
-    def handle_note_event(self, event, subscription):
-        response_to = None
-        thread_root = None
-        members = []
-        content, media, reshare, used_tags = self.process_note_content(event.content, event.tags)
-        if len(event.tags) > 0:
-            parents = []
-            for item in event.tags:
-                if item[1] not in used_tags:
-                    if item[0] == "p":
-                        members.append(item[1])
-                    elif item[0] == "e":
-                        if len(item) < 4 > 1:  # deprecate format
-                            parents.append(item[1])
-                        elif len(item) > 3 and item[3] in ["root", "reply"]:
-                            if item[3] == "root":
-                                thread_root = item[1]
-                            elif item[3] == "reply":
-                                response_to = item[1]
-                    if len(parents) == 1:
-                        response_to = parents[0]
-                    elif len(parents) > 1:
-                        thread_root = parents[0]
-                        response_to = parents[1]
-        is_known = self.db.is_known_pubkey(event.public_key)
-        if is_known is None:
-            self.db.add_profile(event.public_key, updated_at=0)
-        self.db.insert_note(
-            event.id,
-            event.public_key,
-            content,
-            response_to,
-            thread_root,
-            reshare,
-            event.created_at,
-            json.dumps(members),
-            media,
-            json.dumps(event.to_json_object())
-        )
+    def notify_on_note_event(self, event, subscription):
         if subscription == 'primary':
             unseen_posts = self.db.get_unseen_in_feed(self.get_key())
             if unseen_posts > 0:
@@ -278,218 +160,71 @@ class BijaEvents:
         elif subscription == 'note-thread':
             socketio.emit('new_in_thread', event.id)
 
-    def process_note_content(self, content, tags):
-        reshare = None
-        embeds = get_embeded_tag_indexes(content)
-        used_tags = []
-        for item in embeds:
-            item = int(item)
-            if item in tags and len(tags[item]) > 1:
-                used_tags.append(tags[item][1])
-            if list_index_exists(tags, item) and tags[item][0] == "p":
-                pk = tags[item][1]
-                profile = self.db.get_profile(pk)
-                if profile is not None:
-                    name = profile.name
-                else:
-                    name = '{}...{}'.format(pk[:3], pk[-5:])
-                content = content.replace(
-                    "#[{}]".format(item),
-                    "<a class='uname' href='/profile?pk={}'>@{}</a>".format(pk, name))
-            elif list_index_exists(tags, item) and tags[item][0] == "e":
-                event_id = tags[item][1]
-                content = content.replace(
-                    "#[{}]".format(item),
-                    "<a class='repost' href='/note?id={}#{}'>event:{}...</a>".format(event_id, event_id, event_id[:21]))
-                if reshare is None:
-                    reshare = event_id
-
-        urls = get_urls_in_string(content)
-        media = []
-        for url in urls:
-            parts = url.split('//')
-            if len(parts) < 2:
-                parts = ['', url]
-                url = 'https://' + url
-            if len(parts[1]) > 21:
-                link_text = parts[1][:21] + '...'
-            else:
-                link_text = parts[1]
-            content = content.replace(
-                url,
-                "<a href='{}'>{}</a>".format(url, link_text))
-            path = urlparse(url).path
-            extension = os.path.splitext(path)[1]
-            if extension.lower() in ['.png', '.svg', '.gif', '.jpg', '.jpeg']:
-                media.append((url, 'image'))
-        return content, json.dumps(media), reshare, used_tags
-
-    def delete_events(self, event_ids: list):
-        k = bytes.fromhex(self.get_key('private'))
-        private_key = PrivateKey(k)
-        tags = []
-        for event in event_ids:
-            tags.append(['e', event])
-        tags.append(['client', 'BIJA'])
-        created_at = int(time.time())
-        event = Event(private_key.public_key.hex(), '', tags=tags, created_at=created_at, kind=EventKind.DELETE)
-        event.sign(private_key.hex())
-
-        message = json.dumps([ClientMessageType.EVENT, event.to_json_object()], ensure_ascii=False)
-        print(message)
-        self.relay_manager.publish_message(message)
-        return event.id
-
-    def submit_like(self, note_id):
-        k = bytes.fromhex(self.get_key('private'))
-        private_key = PrivateKey(k)
-        r = self.db.get_preferred_relay()
-        preferred_relay = r.name
-        note = self.db.get_note(note_id)
-        members = json.loads(note.members)
-        tags = []
-        for m in members:
-            if is_hex_key(m) and m != note.public_key:
-                tags.append(["p", m, preferred_relay])
-        tags.append(["p", note.public_key, preferred_relay])
-        tags.append(["e", note.id, preferred_relay])
-        tags.append(['client', 'BIJA'])
-
-        created_at = int(time.time())
-        event = Event(private_key.public_key.hex(), '+', tags=tags, created_at=created_at, kind=EventKind.REACTION)
-        event.sign(private_key.hex())
-
-        message = json.dumps([ClientMessageType.EVENT, event.to_json_object()], ensure_ascii=False)
-        print(message)
-        self.relay_manager.publish_message(message)
-        return event.id
-
-    def submit_note(self, data, members=None):
-        k = bytes.fromhex(self.get_key('private'))
-        private_key = PrivateKey(k)
-        r = self.db.get_preferred_relay()
-        preferred_relay = r.name
-        tags = []
-        response_to = None
-        thread_root = None
-
-        if 'quote_id' in data:
-            note = "{} #[0]".format(data['comment'])
-            tags.append(["e", data['quote_id']])
-            if members is not None:
-                for m in members:
-                    if is_hex_key(m):
-                        tags.append(["p", m, preferred_relay])
-        elif 'new_post' in data:
-            note = data['new_post']
-        elif 'reply' in data:
-            note = data['reply']
-            if members is not None:
-                for m in members:
-                    if is_hex_key(m):
-                        tags.append(["p", m, preferred_relay])
-            if 'parent_id' not in data or 'thread_root' not in data:
-                return False
-            elif len(data['parent_id']) < 1 and is_hex_key(data['thread_root']):
-                print('root is parent')
-                thread_root = data['thread_root']
-                tags.append(["e", data['thread_root'], preferred_relay, "root"])
-            elif is_hex_key(data['parent_id']) and is_hex_key(data['thread_root']):
-                thread_root = data['thread_root']
-                response_to = data['parent_id']
-                tags.append(["e", data['parent_id'], preferred_relay, "reply"])
-                tags.append(["e", data['thread_root'], preferred_relay, "root"])
-        else:
-            return False
-
-        tags.append(['client', 'BIJA'])
-        created_at = int(time.time())
-        event = Event(private_key.public_key.hex(), note, tags=tags, created_at=created_at)
-        event.sign(private_key.hex())
-
-        message = json.dumps([ClientMessageType.EVENT, event.to_json_object()], ensure_ascii=False)
-        self.relay_manager.publish_message(message)
-        self.db.insert_note(
-            event.id,
-            private_key.public_key.hex(),
-            note,
-            response_to,
-            thread_root,
-            created_at
-        )
-        return event.id
-
-    def submit_follow_list(self):
-        k = bytes.fromhex(self.get_key('private'))
-        private_key = PrivateKey(k)
-        pk_list = self.db.get_following_pubkeys()
-        tags = []
-        for pk in pk_list:
-            tags.append(["p", pk])
-        created_at = int(time.time())
-        event = Event(private_key.public_key.hex(), "", tags=tags, created_at=created_at, kind=EventKind.CONTACTS)
-        event.sign(private_key.hex())
-        message = json.dumps([ClientMessageType.EVENT, event.to_json_object()], ensure_ascii=False)
-        self.relay_manager.publish_message(message)
-
-    def handle_contact_list_event(self, event, subscription):
-        keys = []
-        for p in event.tags:
-            if p[0] == "p":
-                keys.append(p[1])
-        if event.public_key == self.get_key():
-            following_pubkeys = self.db.get_following_pubkeys()
-            new = set(keys) - set(following_pubkeys)
-            removed = set(following_pubkeys) - set(keys)
-            if len(new) > 0:
-                self.db.set_following(new, True)
-            if len(removed) > 0:
-                self.db.set_following(removed, False)
+    def receive_contact_list_event(self, event, subscription):
+        e = ContactListEvent(self.db, event, self.get_key())
+        if e.changed:
             self.subscribe_primary()
-        elif subscription == 'profile':  # we received another users contacts
-            self.db.add_contact_list(event.public_key, keys)
+        if e.pubkey != self.get_key() and subscription == 'profile':
+            self.db.add_contact_list(event.public_key, e.keys)
             self.subscribe_profile(event.public_key, timestamp_minus(TimePeriod.WEEK))
 
-    def handle_private_message_event(self, event):
-        to = False
-        for p in event.tags:
-            if p[0] == "p":
-                to = p[1]
-        if to and [getattr(event, attr) for attr in ['id', 'public_key', 'content', 'created_at']]:
-            pk = None
-            is_sender = None
-            if to == self.get_key():
-                pk = event.public_key
-                is_sender = 1
-            elif event.public_key == self.get_key():
-                pk = to
-                is_sender = 0
-            if pk is not None and is_sender is not None:
-                self.db.insert_private_message(
-                    event.id,
-                    pk,
-                    event.content,
-                    is_sender,
-                    event.created_at,
-                    json.dumps(event.to_json_object())
-                )
-            is_known = self.db.is_known_pubkey(event.public_key)
-            if is_known is None:
-                self.db.add_profile(event.public_key, updated_at=0)
+    def receive_private_message_event(self, event):
 
-            if self.page['page'] == 'message' and self.page['identifier'] == pk:
-                messages = self.db.get_unseen_messages(pk)
-                if len(messages) > 0:
-                    profile = self.db.get_profile(self.get_key())
-                    self.db.set_message_thread_read(pk)
-                    out = render_template("message_thread.items.html", me=profile, messages=messages)
-                    socketio.emit('message', out)
-            else:
-                unseen_n = self.db.get_unseen_message_count()
-                socketio.emit('unseen_messages_n', unseen_n)
+        e = EncryptedMessageEvent(self.db, event, self.get_key())
 
-    def handle_deleted_event(self, event):
-        pass
+        if self.page['page'] == 'message' and self.page['identifier'] == e.pubkey:
+            messages = self.db.get_unseen_messages(e.pubkey)
+            if len(messages) > 0:
+                profile = self.db.get_profile(self.get_key())
+                self.db.set_message_thread_read(e.pubkey)
+                out = render_template("message_thread.items.html", me=profile, messages=messages)
+                socketio.emit('message', out)
+        else:
+            unseen_n = self.db.get_unseen_message_count()
+            socketio.emit('unseen_messages_n', unseen_n)
+
+    def subscribe_thread(self, root_id):
+        subscription_id = 'note-thread'
+        self.subscriptions.append(subscription_id)
+        SubscribeThread(subscription_id, self.relay_manager, self.db, root_id)
+
+    def subscribe_feed(self, ids):
+        subscription_id = 'main-feed'
+        self.subscriptions.append(subscription_id)
+        SubscribeFeed(subscription_id, self.relay_manager, self.db, ids)
+
+    def subscribe_profile(self, pubkey, since):
+        subscription_id = 'profile'
+        self.subscriptions.append(subscription_id)
+        SubscribeProfile(subscription_id, self.relay_manager, self.db, pubkey, since)
+
+    # create site wide subscription
+    def subscribe_primary(self):
+        self.subscriptions.append('primary')
+        SubscribePrimary('primary', self.relay_manager, self.db, self.get_key())
+
+    def submit_profile(self, profile):
+        e = SubmitProfile(self.relay_manager, self.db, self.session.get("keys"), profile)
+        return e.event_id
+
+    def submit_message(self, data):
+        e = SubmitEncryptedMessage(self.relay_manager, self.db, self.session.get("keys"), data)
+        return e.event_id
+
+    def submit_like(self, note_id):
+        e = SubmitLike(self.relay_manager, self.db, self.session.get("keys"), note_id)
+        return e.event_id
+
+    def submit_note(self, data, members=None):
+        e = SubmitNote(self.relay_manager, self.db, self.session.get("keys"), data, members)
+        return e.event_id
+
+    def submit_follow_list(self):
+        SubmitFollowList(self.relay_manager, self.db, self.session.get("keys"))
+
+    def submit_delete(self, event_ids: list, reason):
+        e = SubmitDelete(self.relay_manager, self.db, self.session.get("keys"), event_ids, reason)
+        return e.event_id
 
     def close_subscription(self, name):
         self.subscriptions.remove(name)
@@ -500,157 +235,288 @@ class BijaEvents:
             if s not in ['primary', 'following']:
                 self.close_subscription(s)
 
-    def subscribe_thread(self, root_id):
-        subscription_id = 'note-thread'
-        self.subscriptions.append(subscription_id)
-        ids = self.db.get_note_thread_ids(root_id)
-        if ids is None:
-            ids = [root_id]
-
-        print('thread subscription', ids)
-        filters = Filters([
-            Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE]),  # event responses
-            Filter(ids=ids, kinds=[EventKind.TEXT_NOTE])
-        ])
-        request = [ClientMessageType.REQUEST, subscription_id]
-        request.extend(filters.to_json_array())
-        self.relay_manager.add_subscription(subscription_id, filters)
-        time.sleep(1.25)
-        message = json.dumps(request)
-        self.relay_manager.publish_message(message)
-
-    def subscribe_feed(self, ids):
-        subscription_id = 'main-feed'
-        self.subscriptions.append(subscription_id)
-        print('feed subscription', ids)
-        filters = Filters([
-            Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE]),  # event responses
-            Filter(ids=ids, kinds=[EventKind.TEXT_NOTE])
-        ])
-        request = [ClientMessageType.REQUEST, subscription_id]
-        request.extend(filters.to_json_array())
-        self.relay_manager.add_subscription(subscription_id, filters)
-        time.sleep(1.25)
-        message = json.dumps(request)
-        self.relay_manager.publish_message(message)
-
-    def subscribe_profile(self, pubkey, since):
-        subscription_id = 'profile'
-        self.subscriptions.append(subscription_id)
-        profile = self.db.get_profile(pubkey)
-
-        f = [
-            Filter(authors=[pubkey], kinds=[EventKind.SET_METADATA, EventKind.CONTACTS]),
-            Filter(authors=[pubkey], kinds=[EventKind.TEXT_NOTE, EventKind.DELETE], since=since)
-        ]
-        if profile is not None and profile.contacts is not None:
-            contacts_filter = Filter(authors=json.loads(profile.contacts), kinds=[EventKind.SET_METADATA])
-            f.append(contacts_filter)
-
-        filters = Filters(f)
-        request = [ClientMessageType.REQUEST, subscription_id]
-        request.extend(filters.to_json_array())
-        self.relay_manager.add_subscription(subscription_id, filters)
-        time.sleep(1.25)
-        message = json.dumps(request)
-        self.relay_manager.publish_message(message)
-
-    # create site wide subscription
-    def subscribe_primary(self):
-        pubkey = self.get_key()
-        self.subscriptions.append('primary')
-        kinds = [EventKind.SET_METADATA,
-                 EventKind.TEXT_NOTE,
-                 EventKind.RECOMMEND_RELAY,
-                 EventKind.CONTACTS,
-                 EventKind.ENCRYPTED_DIRECT_MESSAGE,
-                 EventKind.DELETE,
-                 EventKind.REACTION]
-        profile_filter = Filter(authors=[pubkey], kinds=kinds)
-        kinds = [EventKind.TEXT_NOTE, EventKind.ENCRYPTED_DIRECT_MESSAGE, EventKind.REACTION]
-        mentions_filter = Filter(tags={'#p': [pubkey]}, kinds=kinds)
-        f = [profile_filter, mentions_filter]
-        following_pubkeys = self.db.get_following_pubkeys()
-
-        if len(following_pubkeys) > 0:
-            following_filter = Filter(
-                authors=following_pubkeys,
-                kinds=[EventKind.TEXT_NOTE, EventKind.REACTION, EventKind.DELETE],
-                since=timestamp_minus(TimePeriod.WEEK*4))  # TODO: should be configurable in user settings
-            following_profiles_filter = Filter(
-                authors=following_pubkeys,
-                kinds=[EventKind.SET_METADATA],
-            )
-            f.append(following_filter)
-            f.append(following_profiles_filter)
-
-        filters = Filters(f)
-
-        subscription_id = 'primary'
-        request = [ClientMessageType.REQUEST, subscription_id]
-        request.extend(filters.to_json_array())
-        self.relay_manager.add_subscription(subscription_id, filters)
-        time.sleep(1.25)
-        message = json.dumps(request)
-        self.relay_manager.publish_message(message)
-
-    def decrypt(self, message, public_key):
-        try:
-            k = bytes.fromhex(self.get_key('private'))
-            pk = PrivateKey(k)
-            return pk.decrypt_message(message, public_key)
-        except ValueError:
-            return 'could not decrypt!'
-
-    def encrypt(self, message, public_key):
-        try:
-            k = bytes.fromhex(self.get_key('private'))
-            pk = PrivateKey(k)
-            return pk.encrypt_message(message, public_key)
-        except ValueError:
-            return False
-
-    def update_profile(self, profile):
-        k = bytes.fromhex(self.get_key('private'))
-        private_key = PrivateKey(k)
-        created_at = int(time.time())
-
-        event = Event(
-            private_key.public_key.hex(),
-            json.dumps(profile),
-            kind=EventKind.SET_METADATA,
-            created_at=created_at)
-        event.sign(private_key.hex())
-
-        message = json.dumps([ClientMessageType.EVENT, event.to_json_object()], ensure_ascii=False)
-        self.relay_manager.publish_message(message)
-        print(event.to_json_object())
-        return event.id
-
-    def submit_message(self, data):
-        pk = None
-        txt = None
-        for v in data:
-            if v[0] == "new_message":
-                txt = v[1]
-            elif v[0] == "new_message_pk":
-                pk = v[1]
-        if pk is not None and txt is not None:
-            k = bytes.fromhex(self.session.get("keys")['private'])
-            private_key = PrivateKey(k)
-            tags = [['p', pk], ['client', 'BIJA']]
-            created_at = int(time.time())
-            enc = self.encrypt(txt, pk)
-            event = Event(private_key.public_key.hex(), enc, tags=tags, created_at=created_at,
-                          kind=EventKind.ENCRYPTED_DIRECT_MESSAGE)
-            event.sign(private_key.hex())
-
-            message = json.dumps([ClientMessageType.EVENT, event.to_json_object()], ensure_ascii=False)
-            self.relay_manager.publish_message(message)
-            return event.id
-        else:
-            return False
-
     def close(self):
         self.should_run = False
         self.relay_manager.close_connections()
+
+
+class ReactionEvent:
+    def __init__(self, db, event, my_pubkey):
+        self.db = db
+        self.event = event
+        self.pubkey = my_pubkey
+        self.event_id = None
+        self.event_pk = None
+        self.event_members = []
+
+        self.process()
+
+    def process(self):
+        self.process_tags()
+        if self.event_id is not None and self.event_pk is not None:
+            self.store()
+
+    def process_tags(self):
+        for tag in self.event.tags:
+            if tag[0] == "p":
+                self.event_pk = tag[1]
+                self.event_members.append(tag[1])
+            if tag[0] == "e":
+                self.event_id = tag[1]
+
+    def store(self):
+        self.db.add_note_reaction(
+            self.event.id,
+            self.event.public_key,
+            self.event_id,
+            self.event_pk,
+            self.event.content,
+            json.dumps(self.event_members),
+            json.dumps(self.event.to_json_object())
+        )
+        if self.event.public_key == self.pubkey:
+            self.db.set_note_liked(self.event_id)
+
+
+
+class DeleteEvent:
+    def __init__(self, db, event):
+        self.db = db
+        self.event = event
+        self.process()
+
+    def process(self):
+        for tag in self.event.tags:
+            if tag[0] == 'e':
+                e = self.db.get_event(tag[1])
+                if e is not None and e.kind == EventKind.REACTION:
+                    self.db.delete_reaction(tag[1])
+                if e is not None and e.kind == EventKind.TEXT_NOTE:
+                    self.db.set_note_deleted(tag[1], self.event.content)
+
+
+class ContactListEvent:
+    def __init__(self, db, event, pubkey):
+        self.db = db
+        self.event = event
+        self.pubkey = pubkey
+        self.keys = []
+        self.changed = False
+
+        self.compile_keys()
+        if event.public_key == self.pubkey:
+            self.set_following()
+
+    def compile_keys(self):
+        for p in self.event.tags:
+            if p[0] == "p":
+                self.keys.append(p[1])
+
+    def set_following(self):
+        following = self.db.get_following_pubkeys()
+        new = set(self.keys) - set(following)
+        removed = set(following) - set(self.keys)
+        if len(new) > 0:
+            self.changed = True
+            self.db.set_following(new, True)
+        if len(removed) > 0:
+            self.changed = True
+            self.db.set_following(removed, False)
+
+
+class EncryptedMessageEvent:
+    def __init__(self, db, event, my_pubkey):
+        self.my_pubkey = my_pubkey
+        self.db = db
+        self.event = event
+        self.is_sender = None
+        self.pubkey = None
+
+        self.process_data()
+
+    def process_data(self):
+        self.set_receiver_sender()
+        if self.pubkey is not None and self.is_sender is not None:
+            self.store()
+
+    def set_receiver_sender(self):
+        to = None
+        for p in self.event.tags:
+            if p[0] == "p":
+                to = p[1]
+        if to is not None and [getattr(self.event, attr) for attr in ['id', 'public_key', 'content', 'created_at']]:
+            if to == self.my_pubkey:
+                self.pubkey = self.event.public_key
+                self.is_sender = 1
+            elif self.event.public_key == self.my_pubkey:
+                self.pubkey = to
+                self.is_sender = 0
+
+    def store(self):
+        self.db.add_profile_if_not_exists(self.event.public_key)
+        self.db.insert_private_message(
+            self.event.id,
+            self.pubkey,
+            self.event.content,
+            self.is_sender,
+            self.event.created_at,
+            json.dumps(self.event.to_json_object())
+        )
+
+
+class MetadataEvent:
+    def __init__(self, db, event):
+        self.db = db
+        self.event = event
+        self.name = None
+        self.nip05 = None
+        self.about = None
+        self.picture = None
+        self.nip05_validated = False
+
+        self.process_content()
+
+    def process_content(self):
+        print('process_content')
+        s = json.loads(self.event.content)
+        if 'name' in s:
+            self.name = s['name']
+        if 'nip05' in s:
+            self.nip05 = s['nip05']
+        if 'about' in s:
+            self.about = s['about']
+        if 'picture' in s:
+            self.picture = s['picture']
+
+        if self.nip05 is not None:
+            print('self.nip05 is not None')
+            current = self.db.get_profile(self.event.public_key)
+            print('current = self.db.get_profile')
+            if current is None or current.nip05 != self.nip05:
+                print('current.nip05 != self.nip05')
+                if self.validate_nip05(self.nip05, self.event.public_key):
+                    self.db.set_valid_nip05(self.event.public_key)
+                    self.nip05_validated = True
+            else:
+                self.nip05_validated = current.nip05
+
+    @staticmethod
+    def validate_nip05(nip05, pk):
+        print('validate_nip05')
+        validated_name = request_nip05(nip05)
+        if validated_name is not None and validated_name == pk:
+            return True
+        return False
+
+
+class NoteEvent:
+    def __init__(self, db, event):
+        self.db = db
+        self.event = event
+        self.content = event.content
+        self.tags = event.tags
+        self.media = []
+        self.members = []
+        self.thread_root = None
+        self.response_to = None
+        self.reshare = None
+        self.used_tags = []
+
+        self.process_content()
+        self.tags = [x for x in self.tags if x not in self.used_tags]
+        self.process_tags()
+        self.update_db()
+
+    def process_content(self):
+        self.process_embedded_tags()
+        self.process_embedded_urls()
+
+    def process_embedded_urls(self):
+        urls = get_urls_in_string(self.content)
+        for url in urls:
+            parts = url.split('//')
+            if len(parts) < 2:
+                parts = ['', url]
+                url = 'https://' + url
+            if len(parts[1]) > 21:
+                link_text = parts[1][:21] + '...'
+            else:
+                link_text = parts[1]
+            self.content = self.content.replace(
+                url,
+                "<a href='{}'>{}</a>".format(url, link_text))
+            path = urlparse(url).path
+            extension = os.path.splitext(path)[1]
+            if extension.lower() in ['.png', '.svg', '.gif', '.jpg', '.jpeg']:
+                self.media.append((url, 'image'))
+
+    def process_embedded_tags(self):
+        embeds = get_embeded_tag_indexes(self.content)
+        for item in embeds:
+            self.process_embedded_tag(int(item))
+
+    def process_embedded_tag(self, item):
+        if list_index_exists(self.tags, item) and self.tags[item][0] == "p":
+            self.used_tags.append(self.tags[item])
+            self.process_p_tag(item)
+        elif list_index_exists(self.tags, item) and self.tags[item][0] == "e":
+            self.used_tags.append(self.tags[item])
+            self.process_e_tag(item)
+
+    def process_p_tag(self, item):
+        pk = self.tags[item][1]
+        profile = self.db.get_profile(pk)
+        if profile is not None and profile.name is not None:
+            name = profile.name
+        else:
+            name = '{}...{}'.format(pk[:3], pk[-5:])
+        self.content = self.content.replace(
+            "#[{}]".format(item),
+            "<a class='uname' href='/profile?pk={}'>@{}</a>".format(pk, name))
+
+    def process_e_tag(self, item):
+        event_id = self.tags[item][1]
+        if self.reshare is None:
+            self.reshare = event_id
+            self.content = self.content.replace("#[{}]".format(item), "")
+        else:
+            self.content = self.content.replace(
+                "#[{}]".format(item),
+                "<a href='/note?id={}#{}'>event:{}...</a>".format(event_id, event_id, event_id[:21]))
+
+    def process_tags(self):
+        if len(self.tags) > 0:
+            parents = []
+            for item in self.tags:
+                if item[0] == "p":
+                    self.members.append(item[1])
+                elif item[0] == "e":
+                    if len(item) < 4 > 1:  # deprecate format
+                        parents.append(item[1])
+                    elif len(item) > 3 and item[3] in ["root", "reply"]:
+                        if item[3] == "root":
+                            self.thread_root = item[1]
+                        elif item[3] == "reply":
+                            self.response_to = item[1]
+                if len(parents) == 1:
+                    self.response_to = parents[0]
+                elif len(parents) > 1:
+                    self.thread_root = parents[0]
+                    self.response_to = parents[1]
+
+    def update_db(self):
+        self.db.add_profile_if_not_exists(self.event.public_key)
+        self.db.insert_note(
+            self.event.id,
+            self.event.public_key,
+            self.content,
+            self.response_to,
+            self.thread_root,
+            self.reshare,
+            self.event.created_at,
+            json.dumps(self.members),
+            json.dumps(self.media),
+            json.dumps(self.event.to_json_object())
+        )
+
+

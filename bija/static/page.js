@@ -640,19 +640,47 @@ class bijaNotes{
                     fetchGet('/fetch_raw?id='+note_id, on_get_info, {}, 'json')
                 })
             }
+            else if(tool == 'del'){
+                tool_el.addEventListener('click', (e) => {
+                    const on_req_delete_confirm = function(response, data){
+                        if(response){
+                            popup(response)
+                            data.context.setDeleteForm()
+                        }
+                    }
+                    fetchGet('/confirm_delete?id='+note_id, on_req_delete_confirm, {context:this})
+                })
+            }
         }
+    }
+
+    setDeleteForm(){
+        const form = document.querySelector("#delete_form")
+        const btn = form.querySelector("input[type='submit']")
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const cb = function(response, data){
+                if(response['event_id']){
+                   notify('#', 'Note deleted')
+                }
+            }
+            fetchFromForm('/delete_note', form, cb, {}, 'json')
+        });
     }
 
     setQuoteForm(){
         const form = document.querySelector("#quote_form")
         const btn = form.querySelector("input[type='submit']")
         btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             const cb = function(response, data){
                 if(response['event_id']){
                    notify('/note?id='+response['event_id'], 'Note created. View now?')
                 }
             }
-            fetchFromForm('/submit_note', form, cb, {}, 'json')
+            fetchFromForm('/quote', form, cb, {}, 'json')
         });
     }
 

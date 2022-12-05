@@ -17,7 +17,7 @@ class Profile(Base):
     nip05 = Column(String)
     pic = Column(String)
     about = Column(String)
-    updated_at = Column(Integer)
+    updated_at = Column(Integer, default=0)
     following = Column(Boolean)
     contacts = Column(String)
     nip05_validated = Column(Boolean, default=False)

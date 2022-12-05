@@ -144,7 +144,7 @@ class BijaDB:
             raw=raw
         ))
         self.session.commit()
-        return self.get_profile(public_key)
+        # return self.get_profile(public_key)
 
     def set_valid_nip05(self, public_key):
         self.session.query(Profile).filter(Profile.public_key == public_key).update({'nip05_validated': True})
@@ -179,8 +179,12 @@ class BijaDB:
     def is_note(self, note_id):
         return self.session.query(Note.id).filter_by(id=note_id).first()
 
-    def is_known_pubkey(self, pk):
-        return self.session.query(Profile.public_key).filter_by(public_key=pk).first()
+    # def is_known_pubkey(self, pk):
+    #     return self.session.query(Profile.public_key).filter_by(public_key=pk).first()
+
+    def add_profile_if_not_exists(self, pk):
+        self.session.merge(Profile(public_key=pk))
+        self.session.commit()
 
     def get_note(self, note_id):
         like_counts = self.session.query(
@@ -471,5 +475,3 @@ class BijaDB:
 
     def commit(self):
         self.session.commit()
-
-

@@ -147,6 +147,27 @@ def quote_form():
     return render_template("quote.form.html", item=note, id=note_id, profile=profile)
 
 
+@app.route('/confirm_delete', methods=['GET'])
+def confirm_delete():
+    note_id = request.args['id']
+    return render_template("delete.confirm.html", id=note_id, )
+
+
+@app.route('/delete_note', methods=['POST'])
+def delete_note():
+    note_id = None
+    reason = None
+    event_id = None
+    for r in request.json:
+        if r[0] == 'note_id':
+            note_id = r[1]
+        elif r[0] == 'reason':
+            reason = r[1]
+    if note_id is not None:
+        event_id = EVENT_HANDLER.submit_delete([note_id], reason)
+    return render_template("upd.json", data=json.dumps({'event_id': event_id}))
+
+
 @app.route('/quote', methods=['POST'])
 def quote_submit():
     out = {}
@@ -213,9 +234,9 @@ def update_profile():
             valid_nip5 = EVENT_HANDLER.validate_nip05(profile['nip05'], get_key())
             out['nip05'] = valid_nip5
             if valid_nip5:
-                out['success'] = EVENT_HANDLER.update_profile(profile)
+                out['success'] = EVENT_HANDLER.submit_profile(profile)
         else:
-            out['success'] = EVENT_HANDLER.update_profile(profile)
+            out['success'] = EVENT_HANDLER.submit_profile(profile)
     return render_template("upd.json", data=json.dumps(out))
 
 
@@ -289,7 +310,7 @@ def submit_like():
                 ids = []
                 for event in like_events:
                     ids.append(event.id)
-                event_id = EVENT_HANDLER.delete_events(ids)
+                event_id = EVENT_HANDLER.submit_delete(ids)
 
     return render_template("upd.json", data=json.dumps({'event_id': event_id}))
 
@@ -330,7 +351,7 @@ def search_page():
             if profile is not None:
                 return redirect('/profile?pk={}'.format(profile.public_key))
             else:
-                pk = EVENT_HANDLER.request_nip05(term)
+                pk = request_nip05(term)
                 if pk is not None:
                     return redirect('/profile?pk={}'.format(pk))
                 else:
@@ -437,8 +458,13 @@ def _jinja2_filter_datetime(ts):
 
 
 @app.template_filter('decr')
-def _jinja2_filter_decr(content, pk):
-    return EVENT_HANDLER.decrypt(content, pk)
+def _jinja2_filter_decr(content, pubkey):
+    try:
+        k = bytes.fromhex(get_key("private"))
+        pk = PrivateKey(k)
+        return pk.decrypt_message(content, pubkey)
+    except ValueError:
+        return 'could not decrypt!'
 
 
 @app.template_filter('ident_string')
