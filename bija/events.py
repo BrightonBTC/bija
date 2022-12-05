@@ -375,6 +375,7 @@ class MetadataEvent:
         self.nip05_validated = False
 
         self.process_content()
+        self.store()
 
     def process_content(self):
         s = json.loads(self.event.content)
@@ -393,8 +394,10 @@ class MetadataEvent:
                 if self.validate_nip05(self.nip05, self.event.public_key):
                     self.db.set_valid_nip05(self.event.public_key)
                     self.nip05_validated = True
-            else:
+            elif current is not None:
                 self.nip05_validated = current.nip05
+            else:
+                self.nip05_validated = False
 
     @staticmethod
     def validate_nip05(nip05, pk):
@@ -402,6 +405,17 @@ class MetadataEvent:
         if validated_name is not None and validated_name == pk:
             return True
         return False
+
+    def store(self):
+        self.db.upd_profile(
+            self.event.public_key,
+            self.name,
+            self.nip05,
+            self.picture,
+            self.about,
+            self.event.created_at,
+            json.dumps(self.event.to_json_object())
+        )
 
 
 class NoteEvent:
