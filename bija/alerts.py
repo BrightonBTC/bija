@@ -13,6 +13,7 @@ class AlertKind(IntEnum):
     MENTION = 1
     MENTION_IN_REPLY = 2
     REACTION = 3
+    COMMENT_ON_THREAD = 4
 
 
 class Alert:
