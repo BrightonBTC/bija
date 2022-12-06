@@ -1,0 +1,16 @@
+{%- if profile['about'] is not none -%}
+    {%- set about=profile['about'] -%}
+{%- else -%}
+    {%- set about='' -%}
+{%- endif -%}
+
+<div class="profile-brief card">
+
+    <div class="profile-image profile-item">
+        {%- set p=profile -%}
+        {%- include 'profile.image.html' -%}
+    </div>
+    <div class="profile-details profile-item">
+        <a class="name" href="/profile?pk={{profile['public_key']}}">{{profile['name'] | ident_string(profile['public_key'], profile['nip05'], profile['nip05_validated']) | safe }}</a>
+    </div>
+</div>

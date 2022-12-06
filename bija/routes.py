@@ -70,6 +70,13 @@ def feed():
             return 'END'
 
 
+@app.route('/alerts', methods=['GET'])
+def alerts_page():
+    alerts = DB.get_alerts(get_key())
+    DB.set_alerts_read()
+    return render_template("alerts.html", page_id="alerts", title="alerts", alerts=alerts)
+
+
 @app.route('/login', methods=['POST'])
 def login_page():
     EVENT_HANDLER.set_page('login', None)
@@ -277,11 +284,12 @@ def private_message_page():
         pk = request.args['pk']
 
     profile = DB.get_profile(get_key())
+    them = DB.get_profile(pk)
 
     messages.reverse()
 
     return render_template("message_thread.html", page_id="messages_from", title="Messages From", messages=messages,
-                           me=profile, them=pk)
+                           me=profile, them=them)
 
 
 @app.route('/submit_message', methods=['POST', 'GET'])
@@ -332,7 +340,7 @@ def following_page():
         is_me = True
         profiles = DB.get_following()
     profile = DB.get_profile(k)
-    return render_template("following.html", page_id="following", title="Following", profile=profile, profiles=profiles,
+    return render_template("following.html", page_id="profile", title="Following", profile=profile, profiles=profiles,
                            is_me=is_me)
 
 
@@ -378,6 +386,10 @@ def io_connect(m):
     unseen_posts = DB.get_unseen_in_feed(get_key())
     if unseen_posts > 0:
         socketio.emit('unseen_posts_n', unseen_posts)
+
+    unseen_alerts = DB.get_unread_alert_count()
+    if unseen_alerts > 0:
+        socketio.emit('alert_n', unseen_alerts)
 
     EXECUTOR.submit(EVENT_HANDLER.get_connection_status)
 

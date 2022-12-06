@@ -7,7 +7,7 @@
 {%- endif -%}
 
 {%- if message.is_sender -%}
-    {%- if message.pic is not none -%}
+    {%- if message.pic is not none and message.pic|length > 0 -%}
         {%- set pic=message.pic -%}
     {%- else -%}
         {%- set pic="/identicon?id="+message.public_key -%}

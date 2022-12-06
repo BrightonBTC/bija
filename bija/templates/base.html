@@ -10,12 +10,12 @@
 
 <body>
 <div class="main" data-page="{{page_id}}">
-  <div class="topnav">
-    <a href="/"><img src="static/home.svg"><span class="title">feed</span><span id="n_unseen_posts" class="unseen"></span></a>
-    <a href="/profile"><img src="static/profile.svg"><span class="title">profile</span></a>
-    <a href="/messages"><img src="static/messages.svg"><span class="title">messages</span><span id="n_unseen_messages" class="unseen"></span></a>
-    <a href="#"><img src="static/notif.svg"><span class="title">alerts</span></a>
-    <a href="/settings"><img src="static/settings.svg"><span class="title">settings</span></a>
+  <div class="topnav nav-{{page_id}}">
+    <a href="/" class="home-link"><img src="static/home.svg"><span class="title">feed</span><span id="n_unseen_posts" class="unseen"></span></a>
+    <a href="/profile" class="profile-link"><img src="static/profile.svg"><span class="title">profile</span></a>
+    <a href="/messages" class="messages-link"><img src="static/messages.svg"><span class="title">messages</span><span id="n_unseen_messages" class="unseen"></span></a>
+    <a href="/alerts" class="alerts-link"><img src="static/notif.svg"><span class="title">alerts</span><span id="n_alerts" class="unseen"></span></a>
+    <a href="/settings" class="settings-link"><img src="static/settings.svg"><span class="title">settings</span></a>
     <span class="conn-status right"></span>
   </div>
 
