@@ -497,6 +497,7 @@ class BijaDB:
             Alert.seen,
             Profile.name,
             Profile.public_key,
+            Profile.pic,
             label("note_id", Note.id),
             Note.thread_root,
             Note.response_to,

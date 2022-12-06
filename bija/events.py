@@ -511,7 +511,7 @@ class NoteEvent:
         self.content = self.content.replace(
             "#[{}]".format(item),
             "<a class='uname' href='/profile?pk={}'>@{}</a>".format(pk, name))
-        if pk == self.my_pk:
+        if pk == self.my_pk and self.event.public_key != self.my_pk:
             self.mentions_me = True
 
     def process_e_tag(self, item):
@@ -530,7 +530,7 @@ class NoteEvent:
             for item in self.tags:
                 if item[0] == "p":
                     self.members.append(item[1])
-                    if item[1] == self.my_pk:
+                    if item[1] == self.my_pk and self.event.public_key != self.my_pk:
                         self.mentions_me = True
                 elif item[0] == "e":
                     if len(item) < 4 > 1:  # deprecate format

@@ -927,6 +927,15 @@ p.note-tools img{
 .alerts .reaction{
     font-size: 10px;
 }
+.alerts img.comment{
+    width: 20px;
+    margin-right: 10px;
+}
+.alerts .user-image{
+    width: 20px;
+    height: 20px;
+    margin-right:10px;
+}
 
 /* Right column */
 #right_content {

@@ -4,6 +4,11 @@
 
 <ul class="alerts">
 {%- for alert in alerts: -%}
+    {%- if alert.pic is not none and alert.pic|length > 0 -%}
+        {%- set pic=alert.pic -%}
+    {%- else -%}
+        {%- set pic="/identicon?id="+alert.public_key -%}
+    {%- endif -%}
     <li class="seen{{alert['seen']}}">
     {%- if alert['kind'] == 3 -%}
         {%- if alert['thread_root'] is not none -%}
@@ -17,9 +22,23 @@
             {%- set content = alert['content'] -%}
         {%- endif -%}
         <a href="/note?id={{root}}#{{alert['event']}}">
-        <span class="reaction">{{content}}</span> {{alert['name'] | ident_string(alert['public_key'], none, none) | safe }} reacted
+        <img class="user-image" src="{{pic}}"> <span class="reaction">{{content}}</span> {{alert['name'] | ident_string(alert['public_key'], none, none) | safe }} reacted
         <div class="alert-content">
             {{alert['note_content'][:210]| striptags}}
+        </div>
+        </a>
+    {%- elif alert['kind'] == 0 -%}
+        <a href="/note?id={{alert['thread_root']}}#{{alert['event']}}">
+        <img class="user-image" src="{{pic}}"> <img src="/static/speech-bubble.svg" class="comment"> {{alert['name'] | ident_string(alert['public_key'], none, none) | safe }} replied to your post
+        <div class="alert-content">
+            {{alert['content'][:210]| striptags}}
+        </div>
+        </a>
+    {%- elif alert['kind'] == 4 -%}
+        <a href="/note?id={{alert['thread_root']}}#{{alert['event']}}">
+        <img class="user-image" src="{{pic}}"> <img src="/static/speech-bubble.svg" class="comment"> {{alert['name'] | ident_string(alert['public_key'], none, none) | safe }} commented on your thread
+        <div class="alert-content">
+            {{alert['content'][:210]| striptags}}
         </div>
         </a>
     {%- endif -%}
