@@ -478,6 +478,9 @@ input[type=text].pname {
 /* ---------- */
 
 /* Messages page */
+.messages{
+    padding-top: 100%;
+}
 .unseen{
     position: absolute;
     z-index: 100;
@@ -894,6 +897,9 @@ p.note-tools img{
     border-radius: 5px;
     font-size: 12px;
     color: var(--txt-clr2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .alerts{
 
@@ -907,6 +913,9 @@ p.note-tools img{
 }
 .alerts li:hover {
     background: var(--bg-clr2);
+}
+.alerts .reaction{
+    font-size: 10px;
 }
 
 /* Right column */

@@ -73,6 +73,7 @@ def feed():
 @app.route('/alerts', methods=['GET'])
 def alerts_page():
     alerts = DB.get_alerts(get_key())
+    DB.set_alerts_read()
     return render_template("alerts.html", page_id="alerts", title="alerts", alerts=alerts)
 
 
@@ -384,6 +385,10 @@ def io_connect(m):
     unseen_posts = DB.get_unseen_in_feed(get_key())
     if unseen_posts > 0:
         socketio.emit('unseen_posts_n', unseen_posts)
+
+    unseen_alerts = DB.get_unread_alert_count()
+    if unseen_alerts > 0:
+        socketio.emit('alert_n', unseen_alerts)
 
     EXECUTOR.submit(EVENT_HANDLER.get_connection_status)
 

@@ -44,6 +44,7 @@ let SOCK = function(){
             el_unseen.innerText = data
         }
     });
+
     socket.on('unseen_posts_n', function(data) {
         let el_unseen = document.getElementById("n_unseen_posts")
         if(parseInt(data) == 0){
@@ -54,6 +55,17 @@ let SOCK = function(){
             el_unseen.innerText = data
         }
     });
+    socket.on('alert_n', function(data) {
+        let el_unseen = document.getElementById("n_alerts")
+        if(parseInt(data) == 0){
+            el_unseen.style.display = "none"
+        }
+        else{
+            el_unseen.style.display = "inline-block"
+            el_unseen.innerText = data
+        }
+    });
+
     socket.on('profile_update', function(data) {
         updateProfile(data)
     });

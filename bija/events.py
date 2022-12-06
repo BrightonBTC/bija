@@ -135,10 +135,12 @@ class BijaEvents:
         if e.event.public_key != self.get_key():
             if note is not None and note.public_key == self.get_key():
                 reaction = self.db.get_reaction_by_id(e.event.id)
-                print(reaction)
                 Alert(
                     e.event.id,
                     e.event.created_at, AlertKind.REACTION, e.event.public_key, e.event_id, reaction['content'])
+                n = self.db.get_unread_alert_count()
+                if n > 0:
+                    socketio.emit('alert_n', n)
 
     def receive_metadata_event(self, event):
         meta = MetadataEvent(self.db, event)

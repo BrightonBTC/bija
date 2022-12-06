@@ -494,6 +494,7 @@ class BijaDB:
             Alert.event,
             Alert.profile,
             Alert.content,
+            Alert.seen,
             Profile.name,
             Profile.public_key,
             label("note_id", Note.id),
@@ -503,8 +504,14 @@ class BijaDB:
         ) \
             .join(Note, Note.id == Alert.event) \
             .join(Profile, Profile.public_key == Alert.profile) \
-            .filter(Alert.seen == 0) \
             .order_by(Alert.ts.desc()).limit(50).all()
+
+    def get_unread_alert_count(self):
+        return self.session.query(Alert).filter(Alert.seen == 0).count()
+
+    def set_alerts_read(self):
+        self.session.query(Alert).filter(Alert.seen == 0).update({'seen': True})
+        self.session.commit()
 
     def commit(self):
         self.session.commit()
