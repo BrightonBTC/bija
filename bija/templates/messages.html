@@ -3,13 +3,13 @@
 {%- block content -%}
 {%- for message in messages: -%}
 
-{%- if message.pic is not none -%}
+{%- if message.pic is not none and message.pic|length > 0  -%}
     {%- set pic=message.pic -%}
 {%- else -%}
     {%- set pic="/identicon?id="+message.public_key -%}
 {%- endif -%}
 
-{%- if message['name'] is not none -%}
+{%- if message['name'] is not none and message['name']|length > 0  -%}
     {%- set name=message.name -%}
 {%- else -%}
     {%- set name=(message.public_key | truncate(21, False, '...')) -%}

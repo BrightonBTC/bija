@@ -4,7 +4,7 @@
 
 <ul class="alerts">
 {%- for alert in alerts: -%}
-    <li>
+    <li class="seen{{alert['seen']}}">
     {%- if alert['kind'] == 3 -%}
         {%- if alert['thread_root'] is not none -%}
             {%- set root = alert['thread_root'] -%}
@@ -17,9 +17,9 @@
             {%- set content = alert['content'] -%}
         {%- endif -%}
         <a href="/note?id={{root}}#{{alert['event']}}">
-        {{content}} {{alert['name'] | ident_string(alert['public_key'], none, none) | safe }} reacted
+        <span class="reaction">{{content}}</span> {{alert['name'] | ident_string(alert['public_key'], none, none) | safe }} reacted
         <div class="alert-content">
-            {{alert['note_content'][:121]| striptags}}...
+            {{alert['note_content'][:210]| striptags}}
         </div>
         </a>
     {%- endif -%}

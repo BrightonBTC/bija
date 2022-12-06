@@ -1,15 +1,20 @@
 {%- extends "base.html" -%}
 
 {%- block content -%}
-<div class="messages" id="messages_from" data-contact="{{them}}">
+<div class="messages" id="messages_from" data-contact="{{them.public_key}}">
 {%- include 'message_thread.items.html' -%}
 </div>
 <div id="message-poster">
   <form id="new_message_form">
       <textarea name="new_message" id="new_message" placeholder="Say something..."></textarea>
-      <input type="hidden" name="new_message_pk" id="new_message_pk" value="{{them}}">
+      <input type="hidden" name="new_message_pk" id="new_message_pk" value="{{them.public_key}}">
       <input type="button" name="new_message_submit" id="new_message_submit" value="Post">
   </form>
 </div>
 
 {%- endblock content -%}
+
+{%- block right_content -%}
+{%- set profile=them -%}
+{%- include 'profile.brief.html' -%}
+{%- endblock right_content -%}

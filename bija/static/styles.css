@@ -176,11 +176,21 @@ input[type=submit]:hover {
 .topnav .title {
     font-size: 12px;
 }
-
+.topnav.nav-home .home-link, .topnav.nav-profile .profile-link, .topnav.nav-messages .messages-link, .topnav.nav-messages_from .messages-link, .topnav.nav-alerts .alerts-link, .topnav.nav-settings .settings-link{
+    color: var(--lnk-clr);
+    font-weight: 800;
+    background: var(--bg-clr1);
+}
+.row{
+    border-right: 1px solid var(--bdr-clr-1);
+    padding-right: 20px;
+}
 .left-column {
     float: left;
     width: 75%;
-    padding-left:20px;
+    padding-left: 20px;
+    padding-right: 20px;
+    border-right: 1px solid var(--bdr-clr-1);
 }
 
 .right-column {
@@ -960,6 +970,28 @@ p.note-tools img{
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+.profile-brief.card {
+    display: flex;
+    padding: 10px;
+    align-items: center;
+}
+.profile-brief .profile-image {
+    flex: 0 0 30px;
+}
+.profile-brief .profile-image img {
+    width: 30px;
+    height: 30px;
+}
+.profile-brief a.name{
+    color: var(--txt-clr);
+}
+.profile-brief .uname{
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 150px;
+    display: inline-block;
 }
 /* ---------- */
 
