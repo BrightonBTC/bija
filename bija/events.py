@@ -158,8 +158,24 @@ class BijaEvents:
             })
 
     def receive_note_event(self, event, subscription):
-        NoteEvent(self.db, event)
+        e = NoteEvent(self.db, event, self.get_key())
+        if e.mentions_me:
+            self.alert_on_note_event(e)
         self.notify_on_note_event(event, subscription)
+
+    def alert_on_note_event(self, event):
+        if event.response_to is not None:
+            reply = self.db.get_note(event.response_to)
+            if reply is not None and reply.public_key == self.get_key():
+                Alert(
+                    event.event.id,
+                    event.event.created_at, AlertKind.REPLY, event.event.public_key, event.response_to, event.content)
+        elif event.thread_root is not None:
+            root = self.db.get_note(event.thread_root)
+            if root is not None and root.public_key == self.get_key():
+                Alert(
+                    event.event.id,
+                    event.event.created_at, AlertKind.COMMENT_ON_THREAD, event.event.public_key, event.thread_root, event.content)
 
     def notify_on_note_event(self, event, subscription):
         if subscription == 'primary':
@@ -430,7 +446,7 @@ class MetadataEvent:
 
 
 class NoteEvent:
-    def __init__(self, db, event):
+    def __init__(self, db, event, my_pk):
         self.db = db
         self.event = event
         self.content = event.content
@@ -441,6 +457,8 @@ class NoteEvent:
         self.response_to = None
         self.reshare = None
         self.used_tags = []
+        self.my_pk = my_pk
+        self.mentions_me = False
 
         self.process_content()
         self.tags = [x for x in self.tags if x not in self.used_tags]
@@ -493,6 +511,8 @@ class NoteEvent:
         self.content = self.content.replace(
             "#[{}]".format(item),
             "<a class='uname' href='/profile?pk={}'>@{}</a>".format(pk, name))
+        if pk == self.my_pk:
+            self.mentions_me = True
 
     def process_e_tag(self, item):
         event_id = self.tags[item][1]
@@ -510,6 +530,8 @@ class NoteEvent:
             for item in self.tags:
                 if item[0] == "p":
                     self.members.append(item[1])
+                    if item[1] == self.my_pk:
+                        self.mentions_me = True
                 elif item[0] == "e":
                     if len(item) < 4 > 1:  # deprecate format
                         parents.append(item[1])
