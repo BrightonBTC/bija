@@ -494,7 +494,7 @@ input[type=text].pname {
 .unseen{
     position: absolute;
     z-index: 100;
-    top: 10px;
+    top: 8px;
     font-size: 9px;
     font-weight: 800;
     background: #00ff00;
@@ -505,7 +505,7 @@ input[type=text].pname {
     padding: 1px;
     display: none;
     text-align: center;
-    right: 0;
+    left: 25px;
 }
 .msg-link .unseen{
     display: block;
