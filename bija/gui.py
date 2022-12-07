@@ -1,27 +1,15 @@
 import os
 import sys
-from PyQt5 import QtCore, QtWidgets, QtGui, QtWebEngineWidgets
-from PyQt5.QtWidgets import QMainWindow
+from PyQt6 import QtCore, QtWidgets, QtGui, QtWebEngineWidgets
+from PyQt6.QtGui import QDesktopServices
 
 
 def init_gui(application, socketio, port=5000, width=1100, height=800,
              window_title="Bija Nostr Client", icon="/static/bija.png"):
 
-    ROOT_URL = 'http://localhost:{}'.format(port)
-
-    # open links in browser from http://stackoverflow.com/a/3188942/1103397 :D thanks to
-    # https://github.com/marczellm/qhangups/blob/cfed73ee4383caed1568c0183a9906180f01cb00/qhangups/WebEnginePage.py
-    def link_clicked(url, typ, ismainframe):
-        ready_url = url.toEncoded().data().decode()
-        is_clicked = typ == QtWebEngineWidgets.QWebEnginePage.NavigationTypeLinkClicked
-        is_not_internal = ROOT_URL not in ready_url
-        if is_clicked and is_not_internal:
-            QtGui.QDesktopServices.openUrl(url)
-            return False
-        return True
+    ROOT_URL = 'http://127.0.0.1:{}/'.format(port)
 
     def run_app():
-        # application.run(port=port, threaded=True)
         socketio.run(application)
 
     # Application Level
@@ -30,7 +18,6 @@ def init_gui(application, socketio, port=5000, width=1100, height=800,
     webapp.__del__ = webapp.wait
     webapp.run = run_app
     webapp.start()
-    qtapp.aboutToQuit.connect(webapp.terminate)
 
     # Main Window Level
     window = MainWindow()
@@ -40,19 +27,25 @@ def init_gui(application, socketio, port=5000, width=1100, height=800,
     scriptDir = os.path.dirname(os.path.realpath(__file__))
     window.setWindowIcon(QtGui.QIcon(scriptDir + os.path.sep + icon))
 
+    def url_changed(url):
+        url_s = url.url()
+        if ROOT_URL not in url_s:
+            QDesktopServices.openUrl(url)
+            window.webView.back()
+
+
     # WebView Level
     window.webView = QtWebEngineWidgets.QWebEngineView(window)
     window.setCentralWidget(window.webView)
+    window.webView.urlChanged.connect(url_changed)
+
 
     # WebPage Level
-    page = QtWebEngineWidgets.QWebEnginePage()
-    page.acceptNavigationRequest = link_clicked
-    page.load(QtCore.QUrl(ROOT_URL))
-    window.webView.setPage(page)
+    window.webView.load(QtCore.QUrl(ROOT_URL))
 
     window.show()
 
-    return qtapp.exec_()
+    return qtapp.exec()
 
 
 class Ui_MainWindow(object):
@@ -65,12 +58,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setupUi(self)
 
-
-
     def closeEvent(self, event):
-        page = QtWebEngineWidgets.QWebEnginePage()
-        page.load(QtCore.QUrl("http://localhost:5000/shutdown"))
-        self.webView.setPage(page)
+        page = QtWebEngineWidgets.QWebEngineView()
+        page.load(QtCore.QUrl("http://127.0.0.1:5000/shutdown"))
 
         print("Close clicked")
         # Ask for confirmation

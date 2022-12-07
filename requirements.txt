@@ -17,12 +17,6 @@ pbd==0.9
 Pillow==9.3.0
 pycparser==2.21
 pydenticon==0.3.1
-PyQt5==5.15.7
-PyQt5-Qt5==5.15.2
-PyQt5-sip==12.11.0
-PyQt5-stubs==5.15.6.0
-PyQtWebEngine==5.15.6
-PyQtWebEngine-Qt5==5.15.2
 python-engineio==4.3.4
 python-socketio==5.7.2
 rel==0.4.7
@@ -35,3 +29,4 @@ zope.event==4.5.0
 zope.interface==5.5.1
 
 requests~=2.28.1
+PyQt6~=6.4.0
