@@ -518,7 +518,7 @@ def _jinja2_filter_media(json_string):
     if len(a) > 0:
         media = a[0]
         if media[1] == 'image':
-            return '<div class="image-attachment"><img src="{}"  crossorigin="anonymous"></div>'.format(media[0])
+            return '<div class="image-attachment"><img src="{}"></div>'.format(media[0])
     return '';
 
 
