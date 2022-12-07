@@ -903,38 +903,47 @@ p.note-tools img{
 
 /* Alerts */
 .alert-content{
-    padding: 5px;
+    padding: 15px 0;
     border-radius: 5px;
-    font-size: 12px;
     color: var(--txt-clr2);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 .alerts{
 
 }
 .alerts li {
     border-bottom: 1px solid var(--bdr-clr-2);
-    padding: 10px 5px;
+    padding: 20px 5px 10px;
+    position: relative;
 }
 .alerts li a{
     color: var(--txt-clr);
+    display: flex;
 }
 .alerts li:hover {
     background: var(--bg-clr2);
 }
 .alerts .reaction{
-    font-size: 10px;
+    font-size: 15px;
+    position: absolute;
+    left: 35px;
+    filter: drop-shadow(2px 4px 6px black);
+    top: 15px;
+}
+.alerts .alert-image{
+    flex: 0 0 50px;
+}
+.alerts .alert-main{
+    flex:1;
+    padding-left: 10px;
 }
 .alerts img.comment{
     width: 20px;
     margin-right: 10px;
 }
 .alerts .user-image{
-    width: 20px;
-    height: 20px;
-    margin-right:10px;
+    width: 40px;
+    height: 40px;
+    margin-right: 10px;
 }
 
 /* Right column */
