@@ -281,7 +281,10 @@ input[type=submit]:hover {
     border-color: red !important;
     color: red;
 }
-
+.clipboard{
+    width: 12px;
+    cursor: pointer;
+}
 /* ---------- */
 
 /* Feed */

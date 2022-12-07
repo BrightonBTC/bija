@@ -23,6 +23,13 @@ window.addEventListener("load", function () {
         new bijaSettings()
     }
     SOCK()
+
+    const btns = document.querySelectorAll('.clipboard');
+    for (const btn of btns) {
+        btn.addEventListener('click', (e) => {
+            clipboard(btn.dataset.str)
+        });
+    }
 });
 
 let SOCK = function(){
@@ -167,7 +174,7 @@ let updateMessageThread = function(data){
             window.scrollTo(0, document.body.scrollHeight);
         }
         else{
-            notify('#', 'new messages')
+            notify('new messages')
         }
     }
 }
@@ -185,7 +192,7 @@ class bijaNotePoster{
             e.preventDefault();
             const cb = function(response, data){
                 if(response['event_id']){
-                   notify('/note?id='+response['event_id'], 'Note created. View now?')
+                   notify('Note created. View now?', '/note?id='+response['event_id'])
                 }
             }
             fetchFromForm('/submit_note', form, cb, {}, 'json');
@@ -214,7 +221,7 @@ class bijaSettings{
 
             const cb = function(response, data){
                 if(response['success']){
-                   notify('#', 'relay added')
+                   notify('relay added')
                 }
             }
             fetchFromForm('/add_relay', form, cb, {}, 'json')
@@ -408,7 +415,7 @@ class bijaMessages{
         const cb = function(response, data){
             if(response['event_id']){
                window.scrollTo(0, document.body.scrollHeight);
-               notify('#', 'Message sent')
+               notify('Message sent')
                document.querySelector("#new_message").value = ''
            }
         }
@@ -461,15 +468,15 @@ class bijaProfile{
 
     updateProfile(response, data){
         if(response['success']){
-            notify('#', 'Profile updated')
+            notify('Profile updated')
             document.querySelector("#nip5").classList.remove('error')
         }
         else if(response['nip05'] === false){
-            notify('#', 'Nip05 identifier could not be validated')
+            notify('Nip05 identifier could not be validated')
             document.querySelector("#nip5").classList.add('error')
         }
         else{
-            notify('#', 'Something went wrong updating your profile. Check for any errors and try again.')
+            notify('Something went wrong updating your profile. Check for any errors and try again.')
         }
     }
 
@@ -674,7 +681,7 @@ class bijaNotes{
             e.stopPropagation();
             const cb = function(response, data){
                 if(response['event_id']){
-                   notify('#', 'Note deleted')
+                   notify('Note deleted')
                 }
             }
             fetchFromForm('/delete_note', form, cb, {}, 'json')
@@ -689,7 +696,7 @@ class bijaNotes{
             e.stopPropagation();
             const cb = function(response, data){
                 if(response['event_id']){
-                   notify('/note?id='+response['event_id'], 'Note created. View now?')
+                   notify('Note created. View now?', '/note?id='+response['event_id'])
                 }
             }
             fetchFromForm('/quote', form, cb, {}, 'json')
@@ -700,7 +707,7 @@ class bijaNotes{
         const form = document.querySelector(".reply-form[data-noteid='"+id+"']")
         const cb = function(response, data){
             if(response['event_id']){
-                notify('/note?id='+response['event_id'], 'Note created. View now?')
+                notify('Note created. View now?', '/note?id='+response['event_id'])
                 data.form.dataset.vis = '0'
                 data.form.style.display = "none"
             }
@@ -809,22 +816,27 @@ function handleUpdaterResponse(page, d){
                     window.scrollTo(0, document.body.scrollHeight);
                 }
                 else{
-                    notify('#', 'new messages')
+                    notify('new messages')
                 }
             }
     }
 }
 
-function notify(link, text){
+function notify(text, link=false){
     n = document.querySelector(".notify")
     if(n !== null) n.remove()
-    a = document.createElement("a")
-    a.innerText = text
-    a.href = link
-    document.body.append(a)
-    a.classList.add('notify')
+    if(link){
+        el = document.createElement("a")
+        el.href = link
+    }
+    else{
+        el = document.createElement("span")
+    }
+    el.innerText = text
+    document.body.append(el)
+    el.classList.add('notify')
     setTimeout(function(){
-        a.remove()
+        el.remove()
     }, 3500);
 }
 
@@ -880,4 +892,9 @@ function fetchFromForm(url, form_el, cb, cb_data = {}, response_type='text'){
     }).catch(function(err) {
         console.log(err)
     });
+}
+
+function clipboard(str){
+    navigator.clipboard.writeText(str);
+    notify('copied')
 }
