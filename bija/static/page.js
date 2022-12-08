@@ -140,10 +140,7 @@ let notifyNewProfilePosts = function(ts){
     else{
         latest = 0
     }
-    console.log('new')
     if(ts > latest){
-        console.log('latest /'+latest)
-        console.log('ts /'+ts)
         elem = document.querySelector("#profile-posts")
         notifications = document.querySelectorAll(".new-posts")
         if(elem && notifications.length < 1){
