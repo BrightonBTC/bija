@@ -440,15 +440,18 @@ def submit_note():
         elif 'reply' in data and 'parent_id' not in data:
             out['error'] = 'No parent id identified for response'
         else:
-            members = None
+            members = []
             if 'parent_id' in data:
                 note = DB.get_note(data['parent_id'])
                 if note:
                     members = json.loads(note.members)
                     if note.public_key not in members:
                         members.insert(0, note.public_key)
-
             event_id = EVENT_HANDLER.submit_note(data, members)
+            if 'thread_root' in data:
+                out['root'] = data['thread_root']
+            else:
+                out['root'] = event_id
             out['event_id'] = event_id
     return render_template("upd.json", title="Home", data=json.dumps(out))
 

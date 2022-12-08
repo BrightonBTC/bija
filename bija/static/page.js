@@ -192,7 +192,8 @@ class bijaNotePoster{
             e.preventDefault();
             const cb = function(response, data){
                 if(response['event_id']){
-                   notify('Note created. View now?', '/note?id='+response['event_id'])
+                    window.location.href = '/note?id='+response['root']+'#'+response['event_id']
+//                   notify('Note created. View now?', '/note?id='+response['root']+'#'+response['event_id'])
                 }
             }
             fetchFromForm('/submit_note', form, cb, {}, 'json');
@@ -706,7 +707,8 @@ class bijaNotes{
             e.stopPropagation();
             const cb = function(response, data){
                 if(response['event_id']){
-                   notify('Note created. View now?', '/note?id='+response['event_id'])
+                    window.location.href = '/note?id='+response['event_id']+'#'+response['event_id']
+//                   notify('Note created. View now?', '/note?id='+response['event_id']+'#'+response['event_id'])
                 }
             }
             fetchFromForm('/quote', form, cb, {}, 'json')
@@ -717,7 +719,8 @@ class bijaNotes{
         const form = document.querySelector(".reply-form[data-noteid='"+id+"']")
         const cb = function(response, data){
             if(response['event_id']){
-                notify('Note created. View now?', '/note?id='+response['event_id'])
+                window.location.href = '/note?u='+Date.now()+'&id='+response['root']+'#'+response['event_id']
+//                notify('Note created. View now?', '/note?id='+response['root']+'#'+response['event_id'])
                 data.form.dataset.vis = '0'
                 data.form.style.display = "none"
             }

@@ -26,7 +26,7 @@ class Submit:
         event.sign(self.keys['private'])
         self.event_id = event.id
         message = json.dumps([ClientMessageType.EVENT, event.to_json_object()], ensure_ascii=False)
-        self.relay_manager.publish_message(message)
+        #self.relay_manager.publish_message(message)
 
 
 class SubmitDelete(Submit):
@@ -72,12 +72,13 @@ class SubmitLike(Submit):
 
 
 class SubmitNote(Submit):
-    def __init__(self, relay_manager, db, keys, data, members=None):
+    def __init__(self, relay_manager, db, keys, data, members=[]):
         super().__init__(relay_manager, db, keys)
         self.data = data
         self.members = members
         self.response_to = None
         self.thread_root = None
+        self.reshare = None
         self.compose()
         self.send()
         self.store()
@@ -86,6 +87,7 @@ class SubmitNote(Submit):
         data = self.data
         if 'quote_id' in data:
             self.content = "{} #[0]".format(data['comment'])
+            self.reshare = data['quote_id']
             self.tags.append(["e", data['quote_id']])
             if self.members is not None:
                 for m in self.members:
@@ -113,13 +115,17 @@ class SubmitNote(Submit):
             self.event_id = False
 
     def store(self):
+        print(self.created_at,
+            json.dumps(self.members))
         self.db.insert_note(
             self.event_id,
             self.keys['public'],
             self.content,
             self.response_to,
             self.thread_root,
-            self.created_at
+            self.reshare,
+            self.created_at,
+            json.dumps(self.members)
         )
 
 

@@ -158,7 +158,7 @@ class BijaDB:
                     reshare=None,
                     created_at=None,
                     members=None,
-                    media=None,
+                    media='[]',
                     raw=None):
         note = self.session.query(Note.deleted).filter_by(id=note_id).first()
         if note is None or note.deleted is None:
