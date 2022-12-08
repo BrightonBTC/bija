@@ -387,7 +387,9 @@ class BijaDB:
     def get_most_recent_for_pk(self, pubkey):
         q = self.session.query(Note.created_at).join(Note.profile) \
             .filter(text("profile.public_key='{}'".format(pubkey))).order_by(Note.created_at.desc()).first()
-        return q['created_at']
+        if q is not None:
+            return q['created_at']
+        return None
 
     def set_all_seen_in_feed(self, public_key):
         notes = self.session.query(Note).join(Note.profile) \
