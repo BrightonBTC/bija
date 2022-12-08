@@ -141,7 +141,9 @@ def note_page():
         if p is not None:
             profiles.append(p)
     profile = DB.get_profile(get_key())
-    return render_template("thread.html", page_id="note", title="Note", notes=notes_processed, members=profiles, profile=profile)
+    return render_template("thread.html",
+                           page_id="note", title="Note", notes=notes_processed, members=profiles, profile=profile,
+                           root=note_id)
 
 
 @app.route('/quote_form', methods=['GET'])

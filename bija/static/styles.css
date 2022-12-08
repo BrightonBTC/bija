@@ -682,7 +682,7 @@ input[type=text].pname {
     bottom: 10px;
 }
 
-.note-container.root .thread-marker, .note-container.ancestor .thread-marker{
+.note-container.ancestor .thread-marker{
     display: block;
 }
 
@@ -738,7 +738,13 @@ input[type=text].pname {
     position: relative;
 }
 .note-content pre:hover{
-    filter: brightness(1.5);
+    filter: brightness(1.2);
+}
+.feed-block .note-content pre *{
+    pointer-events: none;
+}
+.feed-block .note-content pre a {
+    color: var(--txt-clr2);
 }
 
 .note-container.main .note-content{

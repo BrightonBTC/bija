@@ -251,6 +251,7 @@ class bijaSettings{
 class bijaThread{
 
     constructor(){
+        this.root = false;
         this.focussed = false;
         this.replies = [];
         this.setFolding();
@@ -298,14 +299,16 @@ class bijaThread{
 
     setFolding(){
         this.focussed = window.location.hash.substring(1);
+        const container_el = document.querySelector('#thread-items')
+        this.root = container_el.dataset.root
         const note_elems = document.querySelectorAll(".note-container")
         for (const n of note_elems) {
             n.classList.remove('main', 'ancestor', 'reply')
             n.style.display = 'none'
         }
+        this.showRoot()
         this.showReplies()
         this.showMain()
-        document.querySelector(".note-container").classList.add('root')
     }
 
     showMain(){
@@ -338,6 +341,13 @@ class bijaThread{
             n.classList.add('reply')
             n.style.display = 'flex'
             this.setReplyCount(n)
+        }
+    }
+    showRoot(){
+        this.root_el = document.querySelector(".note-container[data-id='"+this.root+"']")
+        if (this.root_el) {
+            this.root_el.classList.add('root')
+            this.root_el.style.display = 'flex'
         }
     }
 

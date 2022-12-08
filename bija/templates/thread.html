@@ -1,6 +1,6 @@
 {%- extends "base.html" -%}
 {%- block content -%}
-<div id="thread-items">
+<div id="thread-items" data-root="{{root}}">
 {%- for item in notes: -%}
 {%- include 'thread.item.html' -%}
 {%- endfor -%}

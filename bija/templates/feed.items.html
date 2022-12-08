@@ -1,10 +1,10 @@
-<div>
+<div class="feed-block">
 <div class="ts" data-ts="{{last}}"></div>
 {%- for thread in threads: -%}
 {%- if thread['responder_count'] > 0 -%}
-{%- set root_class = 'note-container root' -%}
+{%- set root_class = 'note-container root ancestor' -%}
 {%- else -%}
-{%- set root_class = 'note-container' -%}
+{%- set root_class = 'note-container root' -%}
 {%- endif -%}
 {%- if thread['self'] is not none -%}
 {%- set post = thread['self'] -%}
