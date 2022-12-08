@@ -115,7 +115,7 @@ def profile_page():
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     if 'pk' in request.args and is_hex_key(request.args['pk']) and request.args['pk'] != get_key():
         EVENT_HANDLER.set_page('profile', request.args['pk'])
-        EXECUTOR.submit(EVENT_HANDLER.subscribe_profile, request.args['pk'], timestamp_minus(TimePeriod.WEEK))
+        EXECUTOR.submit(EVENT_HANDLER.subscribe_profile, request.args['pk'], timestamp_minus(TimePeriod.WEEK*4))
         k = request.args['pk']
         is_me = False
     else:
@@ -127,6 +127,8 @@ def profile_page():
     threads, last_ts = make_threaded(notes)
     profile = DB.get_profile(k)
     latest = DB.get_most_recent_for_pk(k)
+    if latest is None:
+        latest = 0
     if profile is None:
         DB.add_profile(k)
         profile = DB.get_profile(k)

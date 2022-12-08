@@ -39,7 +39,7 @@ class SubscribePrimary(Subscribe):
                  EventKind.DELETE,
                  EventKind.REACTION]
         profile_filter = Filter(authors=[self.pubkey], kinds=kinds)
-        kinds = [EventKind.TEXT_NOTE, EventKind.ENCRYPTED_DIRECT_MESSAGE, EventKind.REACTION]
+        kinds = [EventKind.TEXT_NOTE, EventKind.ENCRYPTED_DIRECT_MESSAGE, EventKind.REACTION, EventKind.CONTACTS]
         mentions_filter = Filter(tags={'#p': [self.pubkey]}, kinds=kinds)
         f = [profile_filter, mentions_filter]
         following_pubkeys = self.db.get_following_pubkeys()
@@ -48,7 +48,8 @@ class SubscribePrimary(Subscribe):
             following_filter = Filter(
                 authors=following_pubkeys,
                 kinds=[EventKind.TEXT_NOTE, EventKind.REACTION, EventKind.DELETE],
-                since=timestamp_minus(TimePeriod.WEEK * 4))  # TODO: should be configurable in user settings
+                since=timestamp_minus(TimePeriod.WEEK)  # TODO: should be configurable in user settings
+            )
             following_profiles_filter = Filter(
                 authors=following_pubkeys,
                 kinds=[EventKind.SET_METADATA],

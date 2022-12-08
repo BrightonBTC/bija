@@ -19,6 +19,7 @@ class Profile(Base):
     about = Column(String)
     updated_at = Column(Integer, default=0)
     following = Column(Boolean)
+    follower = Column(Boolean)
     contacts = Column(String)
     nip05_validated = Column(Boolean, default=False)
     raw = Column(String)
@@ -34,6 +35,7 @@ class Profile(Base):
             self.about,
             self.updated_at,
             self.following,
+            self.follower,
             self.contacts,
             self.nip05_validated,
             self.raw

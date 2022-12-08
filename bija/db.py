@@ -102,6 +102,13 @@ class BijaDB:
             ))
         self.session.commit()
 
+    def set_follower(self, public_key, follower=True):
+        self.session.merge(Profile(
+            public_key=public_key,
+            follower=follower
+        ))
+        self.session.commit()
+
     def get_following_pubkeys(self):
         keys = self.session.query(Profile).filter_by(following=1).all()
         out = []
@@ -154,6 +161,7 @@ class BijaDB:
                     created_at=None,
                     members=None,
                     media='[]',
+                    seen=0,
                     raw=None):
         note = self.session.query(Note.deleted).filter_by(id=note_id).first()
         if note is None or note.deleted is None:
@@ -167,6 +175,7 @@ class BijaDB:
                 created_at=created_at,
                 members=members,
                 media=media,
+                seen=seen,
                 raw=raw
             ))
             self.session.commit()
