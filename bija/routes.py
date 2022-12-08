@@ -1,4 +1,5 @@
 import json
+import os
 from collections import OrderedDict
 from datetime import datetime
 from threading import Thread, Event
@@ -8,8 +9,11 @@ from flask_executor import Executor
 import pydenticon
 
 from bija.app import app, socketio
+from bija.config import DEFAULT_RELAYS
 from bija.db import BijaDB
 from bija.events import BijaEvents
+from bija.gui import MainWindow
+from python_nostr.nostr.bech32 import bech32_decode, decode, convertbits
 from python_nostr.nostr.key import PrivateKey
 
 from bija.password import encrypt_key, decrypt_key
@@ -36,6 +40,8 @@ class LoginState(IntEnum):
     LOGGED_IN = 0
     WITH_KEY = 1
     WITH_PASSWORD = 2
+    SET_RELAYS = 3
+    NEW_KEYS = 4
 
 
 @app.route('/')
@@ -77,20 +83,31 @@ def alerts_page():
     return render_template("alerts.html", page_id="alerts", title="alerts", alerts=alerts)
 
 
-@app.route('/login', methods=['POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login_page():
     EVENT_HANDLER.set_page('login', None)
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     login_state = get_login_state()
+    message = None
+    data = None
     if request.method == 'POST':
         if process_login():
-            EXECUTOR.submit(EVENT_HANDLER.subscribe_primary)
-            EXECUTOR.submit(EVENT_HANDLER.message_pool_handler)
-            return redirect("/")
+            has_relays = DB.get_preferred_relay()
+            if session.get('new_keys') is not None:
+                login_state = LoginState.NEW_KEYS
+                data = session.get('keys')
+                session['new_keys'] = None
+            elif has_relays is None:
+                login_state = LoginState.SET_RELAYS
+                data = DEFAULT_RELAYS
+            else:
+                EXECUTOR.submit(EVENT_HANDLER.subscribe_primary)
+                EXECUTOR.submit(EVENT_HANDLER.message_pool_handler)
+                return redirect("/")
         else:
-            return render_template("login.html", title="Login", message="Incorrect key or password",
-                                   login_type=login_state)
-    return render_template("login.html", page_id="login", title="Login", login_type=login_state)
+            message = "Incorrect key or password"
+    return render_template("login.html",
+                           page_id="login", title="Login", login_type=login_state, message=message, data=data)
 
 
 @app.route('/profile', methods=['GET'])
@@ -222,12 +239,28 @@ def settings_page():
             settings = {}
             relays = DB.get_relays()
             EVENT_HANDLER.get_connection_status()
+            k = session.get("keys")
+
+            keys = {
+                "private": [k['private'], hex64_to_bech32("nsec", k['private'])],
+                "public": [k['public'], hex64_to_bech32("npub", k['public'])]
+            }
             return render_template(
                 "settings.html",
                 page_id="settings",
-                title="Settings", relays=relays, settings=settings, k=session.get("keys"))
+                title="Settings", relays=relays, settings=settings, k=keys)
     else:
         return render_template("login.html", title="Login", login_type=login_state)
+
+
+@app.route('/destroy_account')
+def destroy_account():
+    EVENT_HANDLER.close()
+    DB.reset()
+    session.clear()
+    if os.path.exists("bija.sqlite"):
+        os.remove("bija.sqlite")
+    return render_template("restart.html")
 
 
 @app.route('/upd_profile', methods=['POST', 'GET'])
@@ -602,7 +635,9 @@ def get_login_state():
 
 
 def process_login():
-    if 'login' in request.form.keys():
+    if 'confirm_new_keys' in request.form.keys():
+        return True
+    elif 'login' in request.form.keys():
         saved_pk = DB.get_saved_pk()
         k = decrypt_key(request.form['pw'].strip(), saved_pk.key)
         if is_hex_key(k):
@@ -614,12 +649,25 @@ def process_login():
     elif 'load_private_key' in request.form.keys():
         if len(request.form['private_key'].strip()) < 1:  # generate a new key
             private_key = None
+            session["new_keys"] = True
         elif is_hex_key(request.form['private_key'].strip()):
             private_key = request.form['private_key'].strip()
+        elif is_bech32_key(request.form['private_key'].strip()):
+            private_key = bech32_to_hex64('nsec', request.form['private_key'].strip())
+            if not private_key:
+                return False
         else:
             return False
         set_session_keys(private_key)
         return True
+
+    elif 'add_relays' in request.form.keys():
+        added = False
+        for item in request.form.getlist('relay'):
+            DB.insert_relay(item)
+            added = True
+        EVENT_HANDLER.open_connections()
+        return added
 
 
 def process_key_save(pk):
@@ -654,3 +702,10 @@ def set_session_keys(k):
     process_key_save(private_key)
     if DB.get_profile(public_key) is None:
         DB.add_profile(public_key)
+
+
+def shutdown_server():
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func is None:
+        raise RuntimeError('Not running with the Werkzeug Server')
+    func()

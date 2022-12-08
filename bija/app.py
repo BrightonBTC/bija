@@ -20,9 +20,8 @@ from bija.routes import *
 
 def main():
     init_gui(app, socketio)
+    #socketio.run(app)
 
 
 if __name__ == '__main__':
     main()
-    # init_gui(app, socketio)
-    # app.run()

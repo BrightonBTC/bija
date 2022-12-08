@@ -15,7 +15,7 @@ def init_gui(application, socketio, port=5000, width=1100, height=800,
     # Application Level
     qtapp = QtWidgets.QApplication(sys.argv)
     webapp = QtCore.QThread()
-    webapp.__del__ = webapp.wait
+    #webapp.__del__ = webapp.wait
     webapp.run = run_app
     webapp.start()
 
@@ -56,21 +56,11 @@ class Ui_MainWindow(object):
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self, *args, obj=None, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
+        self.ui = Ui_MainWindow()
         self.setupUi(self)
 
     def closeEvent(self, event):
         page = QtWebEngineWidgets.QWebEngineView()
         page.load(QtCore.QUrl("http://127.0.0.1:5000/shutdown"))
-
-        print("Close clicked")
-        # Ask for confirmation
-        answer = QtWidgets.QMessageBox.question(self,
-        "Confirm Exit...",
-        "Are you sure you want to exit?\nAll data will be lost.",
-        QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
-
-        event.ignore()
-        if answer == QtWidgets.QMessageBox.Yes:
-            event.accept()
 
 

@@ -215,12 +215,16 @@ class bijaSettings{
     }
 
     setEventListeners(){
+
+        this.setPrivateKeyReveal()
         this.setUpdateConnsClickedEvent()
 
         const relays = document.querySelectorAll(".relay[data-url]");
         for (const relay of relays) {
             this.setRelayRemoveClickedEvent(relay)
         }
+
+        this.setDeleteKeysClicked()
 
         const relay_btn = document.querySelector("#addrelay");
         relay_btn.addEventListener("click", (event)=>{
@@ -234,6 +238,42 @@ class bijaSettings{
                 }
             }
             fetchFromForm('/add_relay', form, cb, {}, 'json')
+        });
+    }
+
+    setDeleteKeysClicked(){
+        const btn = document.querySelector('#del_keys')
+        btn.addEventListener("click", (event)=>{
+            event.preventDefault();
+            event.stopPropagation();
+            const container = document.createElement('div')
+            const txt = document.createElement('p')
+            const btn = document.createElement('input')
+            btn.setAttribute('type', 'button')
+            btn.setAttribute('value', 'confirm')
+            txt.innerText = "This action is irreversible! Make sure you've backed up your private key if you intend to access this account in the future. Clicking confirm below will completey remove all your data";
+            container.append(txt)
+            container.append(btn)
+            popup('')
+            document.querySelector('.popup').append(container)
+            btn.addEventListener("click", (event)=>{
+                window.location.href = '/destroy_account'
+            })
+        });
+    }
+
+    setPrivateKeyReveal(){
+        const key_el = document.querySelector('.privkey')
+        const reveal = document.querySelector('.show-key')
+        reveal.addEventListener("click", (event)=>{
+            if(key_el.classList.contains('show')){
+                key_el.classList.remove('show')
+                reveal.src = '/static/eye.svg'
+            }
+            else{
+                key_el.classList.add('show')
+                reveal.src = '/static/eye-off.svg'
+            }
         });
     }
 

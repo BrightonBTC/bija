@@ -6,6 +6,32 @@ import traceback
 
 import requests
 
+from python_nostr.nostr import bech32
+from python_nostr.nostr.bech32 import bech32_encode, bech32_decode, convertbits
+
+
+def hex64_to_bech32(prefix: str, hex_key: str):
+    if is_hex_key(hex_key):
+        converted_bits = bech32.convertbits(bytes.fromhex(hex_key), 8, 5)
+        return bech32_encode(prefix, converted_bits, bech32.Encoding.BECH32)
+
+
+def bech32_to_hex64(prefix: str, b_key: str):
+    hrp, data, spec = bech32_decode(b_key)
+    if hrp != prefix:
+        return False
+    decoded = convertbits(data, 5, 8, False)
+    private_key = bytes(decoded).hex()
+    if not is_hex_key(private_key):
+        return False
+    return private_key
+
+# TODO: regex for this
+def is_bech32_key(key_str: str) -> bool:
+    if key_str[:4] == 'nsec' and len(key_str) == 63:
+        return True
+    return True
+
 
 def is_valid_name(name: str) -> bool:
     regex = re.compile(r'([a-zA-Z_0-9][a-zA-Z_\-0-9]+[a-zA-Z_0-9])+')

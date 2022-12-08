@@ -64,7 +64,7 @@ a{
     text-decoration:none;
 }
 
-input[type=text], textarea {
+input[type=text], input[type=password], textarea {
     width: 100%;
     padding: 12px 20px;
     margin: 8px 0;
@@ -337,6 +337,27 @@ input.post-submit {
 .im-settings-container input{
     flex: 1;
 }
+.show-key{
+    width:16px;
+    cursor: pointer;
+}
+.privkey{
+    filter: blur(3px);
+    pointer-events: none;
+}
+.privkey.show{
+    filter: unset;
+    pointer-events: all;
+}
+.key-format {
+    font-size: 10px;
+    color: var(--mnu-clr);
+    border-radius: 5px;
+    background: var(--bg-clr3);
+    padding: 2px;
+    font-weight: 800;
+}
+
 /* ---------- */
 
 
@@ -484,7 +505,7 @@ input[type=text].pname {
     margin-left:2%;
     float:right;
 }
-.profileloader input[type=text] {
+.profileloader input[type=text], .profileloader input[type=password] {
     width:80%;
 }
 

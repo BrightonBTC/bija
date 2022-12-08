@@ -11,11 +11,6 @@ from bija.models import *
 DB_ENGINE = create_engine("sqlite:///bija.sqlite", echo=False)
 DB_SESSION = sessionmaker(autocommit=False, autoflush=False, bind=DB_ENGINE)
 
-DEFAULT_RELAYS = [
-    'wss://nostr.drss.io',
-    'wss://nostr-pub.wellorder.net',
-    'wss://nostr-relay.wlvs.space'
-]
 
 
 class BijaDB:
@@ -23,15 +18,15 @@ class BijaDB:
     def __init__(self, session):
         self.session = session
         Base.metadata.create_all(DB_ENGINE)
-        if not exists("bija.sqlite"):
-            self.setup()
+        # if not exists("bija.sqlite"):
+        #     self.setup()
 
-    def setup(self):
-        relays = []
-        for r in DEFAULT_RELAYS:
-            relays.append(Relay(name=r))
-        self.session.add_all(relays)
-        self.session.commit()
+    # def setup(self):
+    #     relays = []
+    #     for r in DEFAULT_RELAYS:
+    #         relays.append(Relay(name=r))
+    #     self.session.add_all(relays)
+    #     self.session.commit()
 
     def reset(self):
         self.session.query(Profile).delete()
