@@ -385,7 +385,7 @@ def io_connect(m):
     if unseen_messages > 0:
         socketio.emit('unseen_messages_n', unseen_messages)
 
-    unseen_posts = DB.get_unseen_in_feed(get_key())
+    unseen_posts = DB.get_unseen_in_feed()
     if unseen_posts > 0:
         socketio.emit('unseen_posts_n', unseen_posts)
 

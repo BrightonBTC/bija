@@ -380,9 +380,9 @@ class BijaDB:
             out.append(dict(item))
         return out
 
-    def get_unseen_in_feed(self, public_key):
+    def get_unseen_in_feed(self):
         return self.session.query(Note, Profile).join(Note.profile) \
-            .filter(text("(profile.following=1 OR profile.public_key='{}') and note.seen=0".format(public_key))).count()
+            .filter(text("(profile.following=1) and note.seen=0")).count()
 
     def set_all_seen_in_feed(self, public_key):
         notes = self.session.query(Note).join(Note.profile) \

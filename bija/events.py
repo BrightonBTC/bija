@@ -179,7 +179,7 @@ class BijaEvents:
 
     def notify_on_note_event(self, event, subscription):
         if subscription == 'primary':
-            unseen_posts = self.db.get_unseen_in_feed(self.get_key())
+            unseen_posts = self.db.get_unseen_in_feed()
             if unseen_posts > 0:
                 socketio.emit('unseen_posts_n', unseen_posts)
         elif subscription == 'profile':
