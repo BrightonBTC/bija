@@ -384,6 +384,11 @@ class BijaDB:
         return self.session.query(Note, Profile).join(Note.profile) \
             .filter(text("(profile.following=1) and note.seen=0")).count()
 
+    def get_most_recent_for_pk(self, pubkey):
+        q = self.session.query(Note.created_at).join(Note.profile) \
+            .filter(text("profile.public_key='{}'".format(pubkey))).order_by(Note.created_at.desc()).first()
+        return q['created_at']
+
     def set_all_seen_in_feed(self, public_key):
         notes = self.session.query(Note).join(Note.profile) \
             .filter(text("profile.following=1 OR profile.public_key='{}'".format(public_key)))

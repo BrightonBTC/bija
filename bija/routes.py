@@ -109,11 +109,12 @@ def profile_page():
     # t, i = make_threaded(notes)
     threads, last_ts = make_threaded(notes)
     profile = DB.get_profile(k)
+    latest = DB.get_most_recent_for_pk(k)
     if profile is None:
         DB.add_profile(k)
         profile = DB.get_profile(k)
     return render_template("profile.html", page_id="profile", title="Profile", threads=threads, last=last_ts,
-                           profile=profile, is_me=is_me)
+                           latest=latest, profile=profile, is_me=is_me)
 
 
 @app.route('/note', methods=['GET'])

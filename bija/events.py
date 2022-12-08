@@ -183,7 +183,7 @@ class BijaEvents:
             if unseen_posts > 0:
                 socketio.emit('unseen_posts_n', unseen_posts)
         elif subscription == 'profile':
-            socketio.emit('new_profile_posts', True)
+            socketio.emit('new_profile_posts', self.db.get_most_recent_for_pk(event.public_key))
         elif subscription == 'note-thread':
             socketio.emit('new_in_thread', event.id)
 

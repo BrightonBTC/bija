@@ -2,7 +2,7 @@
 {%- block content -%}
 {%- include 'profile.header.html' -%}
 <h2 class="posts-title">Public posts</h2>
-<div id="profile-posts">
+<div id="profile-posts" data-latest="{{latest}}">
     {%- include 'feed.items.html' -%}
 </div>
 {%- endblock content -%}

@@ -76,8 +76,8 @@ let SOCK = function(){
     socket.on('profile_update', function(data) {
         updateProfile(data)
     });
-    socket.on('new_profile_posts', function() {
-        notifyNewProfilePosts()
+    socket.on('new_profile_posts', function(ts) {
+        notifyNewProfilePosts(ts)
     });
     socket.on('new_in_thread', function(id) {
         document.dispatchEvent(new CustomEvent("newNote", {
@@ -132,19 +132,30 @@ let SOCK = function(){
         }
     });
 }
-let notifyNewProfilePosts = function(){
-    elem = document.querySelector("#profile-posts")
-    notifications = document.querySelectorAll(".new-posts")
-    if(elem && notifications.length < 1){
-        notification = document.createElement('a')
-        notification.innerText = 'Show new posts';
-        notification.href = ''
-        notification.classList.add('new-posts')
-        elem.prepend(notification)
+let notifyNewProfilePosts = function(ts){
+    first_note = document.querySelector('#profile-posts[data-latest]')
+    if(first_note){
+        latest = first_note.dataset.latest
+    }
+    else{
+        latest = 0
+    }
+    console.log('new')
+    if(ts > latest){
+        console.log('latest /'+latest)
+        console.log('ts /'+ts)
+        elem = document.querySelector("#profile-posts")
+        notifications = document.querySelectorAll(".new-posts")
+        if(elem && notifications.length < 1){
+            notification = document.createElement('a')
+            notification.innerText = 'Show new posts';
+            notification.href = ''
+            notification.classList.add('new-posts')
+            elem.prepend(notification)
+        }
     }
 }
 let updateProfile = function(profile){
-    console.log('UPDATE PROFILE')
     document.querySelector(".profile-about").innerText = profile.about
     document.querySelector("#profile").dataset.updated_ts = profile.updated_at
     const name_els = document.querySelectorAll(".uname[data-pk='"+profile.public_key+"']");
