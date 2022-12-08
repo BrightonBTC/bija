@@ -26,7 +26,7 @@ class Submit:
         event.sign(self.keys['private'])
         self.event_id = event.id
         message = json.dumps([ClientMessageType.EVENT, event.to_json_object()], ensure_ascii=False)
-        #self.relay_manager.publish_message(message)
+        self.relay_manager.publish_message(message)
 
 
 class SubmitDelete(Submit):
