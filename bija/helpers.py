@@ -3,6 +3,7 @@ import time
 from enum import IntEnum
 import logging
 import traceback
+from typing import Match, List, Any
 
 import requests
 
@@ -26,6 +27,7 @@ def bech32_to_hex64(prefix: str, b_key: str):
         return False
     return private_key
 
+
 # TODO: regex for this
 def is_bech32_key(key_str: str) -> bool:
     if key_str[:4] == 'nsec' and len(key_str) == 63:
@@ -36,6 +38,11 @@ def is_bech32_key(key_str: str) -> bool:
 def is_valid_name(name: str) -> bool:
     regex = re.compile(r'([a-zA-Z_0-9][a-zA-Z_\-0-9]+[a-zA-Z_0-9])+')
     return re.fullmatch(regex, name) is not None
+
+
+def get_at_tags(content: str) -> list[Any]:
+    regex = re.compile(r'(@[a-zA-Z_0-9][a-zA-Z_\-0-9]+[a-zA-Z_0-9])+')
+    return re.findall(regex, content)
 
 
 def get_embeded_tag_indexes(content: str):

@@ -412,10 +412,17 @@ class BijaDB:
         return self.session.query(Profile.name, Profile.nip05, Profile.public_key).filter(
                 or_(
                     Profile.name.like(f"{name_str}%"),
-                    Profile.nip05.like(f"{name_str}%"),
                     Profile.public_key.like(f"{name_str}%")
                 )
             ).order_by(Profile.following.desc()).limit(10).all()
+
+    def get_profile_by_name_or_pk(self, name_str):
+        return self.session.query(Profile.public_key).filter(
+                or_(
+                    Profile.name == name_str,
+                    Profile.public_key == name_str
+                )
+            ).order_by(Profile.following.desc()).first()
 
     def get_message_list(self):
         return DB_ENGINE.execute(text("""SELECT 

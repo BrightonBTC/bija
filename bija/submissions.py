@@ -1,7 +1,7 @@
 import json
 import time
 
-from bija.helpers import is_hex_key
+from bija.helpers import is_hex_key, get_at_tags
 from python_nostr.nostr.event import EventKind, Event
 from python_nostr.nostr.key import PrivateKey
 from python_nostr.nostr.message_type import ClientMessageType
@@ -26,6 +26,7 @@ class Submit:
         event.sign(self.keys['private'])
         self.event_id = event.id
         message = json.dumps([ClientMessageType.EVENT, event.to_json_object()], ensure_ascii=False)
+        print(message)
         self.relay_manager.publish_message(message)
 
 
@@ -113,10 +114,18 @@ class SubmitNote(Submit):
                 self.tags.append(["e", data['thread_root'], self.preferred_relay, "root"])
         else:
             self.event_id = False
+        self.process_mentions()
+
+    def process_mentions(self):
+        matches = get_at_tags(self.content)
+        for match in matches:
+            name = self.db.get_profile_by_name_or_pk(match[1:])
+            if name is not None:
+                self.tags.append(["p", name['public_key']])
+                index = len(self.tags) - 1
+                self.content = self.content.replace(match, "#[{}]".format(index))
 
     def store(self):
-        print(self.created_at,
-            json.dumps(self.members))
         self.db.insert_note(
             self.event_id,
             self.keys['public'],
