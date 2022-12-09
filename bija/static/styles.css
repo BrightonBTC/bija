@@ -1003,6 +1003,7 @@ p.note-tools img{
 }
 #search {
     position: fixed;
+    width:220px;
 }
 
 #search input{

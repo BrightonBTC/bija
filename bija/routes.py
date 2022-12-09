@@ -392,6 +392,12 @@ def search_page():
         term = request.args['search_term']
         if is_hex_key(request.args['search_term']):
             return redirect('/profile?pk={}'.format(term))
+        elif is_bech32_key('npub', term):
+            b_key = bech32_to_hex64('npub', term)
+            if b_key:
+                return redirect('/profile?pk={}'.format(b_key))
+            else:
+                message = 'invalid npub'
         elif validate_nip05(term):
             profile = DB.get_pk_by_nip05(term)
             if profile is not None:
@@ -666,7 +672,7 @@ def process_login():
             session["new_keys"] = True
         elif is_hex_key(request.form['private_key'].strip()):
             private_key = request.form['private_key'].strip()
-        elif is_bech32_key(request.form['private_key'].strip()):
+        elif is_bech32_key('nsec', request.form['private_key'].strip()):
             private_key = bech32_to_hex64('nsec', request.form['private_key'].strip())
             if not private_key:
                 return False

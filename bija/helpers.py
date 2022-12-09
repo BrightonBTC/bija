@@ -29,8 +29,8 @@ def bech32_to_hex64(prefix: str, b_key: str):
 
 
 # TODO: regex for this
-def is_bech32_key(key_str: str) -> bool:
-    if key_str[:4] == 'nsec' and len(key_str) == 63:
+def is_bech32_key(hrp: str, key_str: str) -> bool:
+    if key_str[:4] == hrp and len(key_str) == 63:
         return True
     return True
 
