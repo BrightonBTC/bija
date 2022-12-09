@@ -537,7 +537,10 @@ def _jinja2_filter_decr(content, pubkey):
 
 
 @app.template_filter('ident_string')
-def _jinja2_filter_ident(name, pk, nip5=None, validated=None):
+def _jinja2_filter_ident(name, pk, nip5=None, validated=None, long=True):
+    html = "<span class='uname' data-pk='{}'><span class='name'>{}</span> "
+    if long:
+        html = html + "<span class='nip5'>{}</span>"
     if validated and nip5 is not None:
         if nip5[0:2] == "_@":
             nip5 = nip5[2:]
@@ -557,7 +560,7 @@ def _jinja2_filter_ident(name, pk, nip5=None, validated=None):
 def _jinja2_filter_responders(the_dict, n):
     names = []
     for pk, name in the_dict.items():
-        names.append([pk, _jinja2_filter_ident(name, pk)])
+        names.append([pk, _jinja2_filter_ident(name, pk, long=False)])
 
     if n == 1:
         return '<a href="/profile?pk={}">@{}</a> commented'.format(names[0][0], names[0][1])
@@ -646,7 +649,6 @@ def get_login_state():
         if saved_pk.enc == 0:
             set_session_keys(saved_pk.key)
             EXECUTOR.submit(EVENT_HANDLER.subscribe_primary)
-            # EXECUTOR.submit(EVENT_HANDLER.get_active_relays)
             EXECUTOR.submit(EVENT_HANDLER.message_pool_handler)
             return LoginState.LOGGED_IN
         else:

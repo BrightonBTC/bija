@@ -159,7 +159,7 @@ let notifyNewProfilePosts = function(ts){
     }
 }
 let updateProfile = function(profile){
-    document.querySelector(".profile-about").innerText = profile.about
+    document.querySelector(".profile-about").innerHTML = profile.about
     document.querySelector("#profile").dataset.updated_ts = profile.updated_at
     const name_els = document.querySelectorAll(".uname[data-pk='"+profile.public_key+"']");
     for (const name_el of name_els) {
@@ -207,9 +207,7 @@ class bijaNoteTools{
 
     setEventListeners(){
         const reply_els = document.querySelectorAll('textarea.note-textarea');
-        let i = 0
         for(const reply_el of reply_els){
-            console.log(i)
             if(!reply_el.dataset.toolset){
                 reply_el.dataset.toolset = true
                 this.setNameHintFetch(reply_el)

@@ -474,6 +474,10 @@ input.post-submit {
 #profile.editing .profile-item{
     display:none;
 }
+#profile pre a{
+    color: var(--txt-clr);
+    text-decoration: underline;
+}
 input[type=text].pname {
     background-image: url(at.png);
     background-position: 10px center;
@@ -756,6 +760,7 @@ input[type=text].pname {
     cursor:pointer;
     background: var(--bg-clr2);
     position: relative;
+    word-break: break-word;
 }
 .note-content pre:hover{
     filter: brightness(1.2);

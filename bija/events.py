@@ -1,12 +1,18 @@
+import logging
 import os
 import ssl
+import urllib
+from socket import timeout
+from urllib import request
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 
+from bs4 import BeautifulSoup
 from flask import render_template
 
 from bija.app import socketio
 from bija.helpers import get_embeded_tag_indexes, \
-    list_index_exists, get_urls_in_string, request_nip05
+    list_index_exists, get_urls_in_string, request_nip05, url_linkify
 from bija.subscriptions import *
 from bija.submissions import *
 from bija.alerts import *
@@ -416,6 +422,9 @@ class MetadataEvent:
         if 'nip05' in s:
             self.nip05 = s['nip05']
         if 'about' in s:
+            urls = get_urls_in_string(s['about'])
+            for url in urls:
+                s['about'] = url_linkify(s['about'], url)
             self.about = s['about']
         if 'picture' in s:
             self.picture = s['picture']
@@ -452,6 +461,7 @@ class MetadataEvent:
 
 class NoteEvent:
     def __init__(self, db, event, my_pk):
+        self.og = []
         self.db = db
         self.event = event
         self.content = event.content
@@ -477,21 +487,51 @@ class NoteEvent:
     def process_embedded_urls(self):
         urls = get_urls_in_string(self.content)
         for url in urls:
-            parts = url.split('//')
-            if len(parts) < 2:
-                parts = ['', url]
-                url = 'https://' + url
-            if len(parts[1]) > 21:
-                link_text = parts[1][:21] + '...'
-            else:
-                link_text = parts[1]
-            self.content = self.content.replace(
-                url,
-                "<a href='{}'>{}</a>".format(url, link_text))
+            self.content = url_linkify(self.content, url)
+            # parts = url.split('//')
+            # if len(parts) < 2:
+            #     parts = ['', url]
+            #     url = 'https://' + url
+            # if len(parts[1]) > 21:
+            #     link_text = parts[1][:21] + '...'
+            # else:
+            #     link_text = parts[1]
+            # self.content = self.content.replace(
+            #     url,
+            #     "<a href='{}'>{}</a>".format(url, link_text))
             path = urlparse(url).path
             extension = os.path.splitext(path)[1]
             if extension.lower() in ['.png', '.svg', '.gif', '.jpg', '.jpeg']:
                 self.media.append((url, 'image'))
+        if len(self.media) < 1 and len(urls) > 0:
+            response = None
+            try:
+                response = urllib.request.urlopen(urls[0], timeout=2).read().decode('utf-8')
+
+            except HTTPError as error:
+                logging.error('HTTP Error: Data of %s not retrieved because %s\nURL: %s', urls[0], error, url)
+            except URLError as error:
+                if isinstance(error.reason, timeout):
+                    logging.error('Timeout Error: Data of %s not retrieved because %s\nURL: %s', urls[0], error, url)
+                else:
+                    logging.error('URL Error: Data of %s not retrieved because %s\nURL: %s', urls[0], error, url)
+            except:
+                logging.error('Unknown error')
+
+            if response is not None:
+                soup = BeautifulSoup(response,
+                                     'html.parser')
+
+                og = {}
+                if soup.findAll("meta", property="og:title"):
+                    og['title'] = soup.find("meta", property="og:title")["content"]
+                if soup.findAll("meta", property="og:description"):
+                    og['description'] = soup.find("meta", property="og:description")["content"]
+                if soup.findAll("meta", property="og:image"):
+                    og['image'] = soup.find("meta", property="og:image")["content"]
+
+                self.og = og
+
 
     def process_embedded_tags(self):
         embeds = get_embeded_tag_indexes(self.content)
@@ -563,7 +603,7 @@ class NoteEvent:
             self.event.created_at,
             json.dumps(self.members),
             json.dumps(self.media),
-            json.dumps(self.event.to_json_object())
+            json.dumps({'raw': self.event.to_json_object(), 'og': self.og})
         )
 
 

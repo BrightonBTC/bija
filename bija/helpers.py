@@ -57,6 +57,20 @@ def get_urls_in_string(content: str):
     return [x[0] for x in url]
 
 
+def url_linkify(content, url):
+    parts = url.split('//')
+    if len(parts) < 2:
+        parts = ['', url]
+        url = 'https://' + url
+    if len(parts[1]) > 21:
+        link_text = parts[1][:21] + '&#8230;'
+    else:
+        link_text = parts[1]
+    return content.replace(
+        url,
+        "<a href='{}'>{}</a>".format(url, link_text))
+
+
 def validate_nip05(name: str):
     parts = name.split('@')
     if len(parts) == 2:
