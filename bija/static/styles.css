@@ -928,9 +928,7 @@ p.note-tools img{
     cursor: pointer;
 }
 .name-hints{
-    position: absolute;
     background: var(--bg-clr3);
-    z-index: 100;
     border-radius: 5px;
 }
 .name-hints ul{

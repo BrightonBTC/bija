@@ -28,6 +28,8 @@ window.addEventListener("load", function () {
     }
     SOCK()
 
+    new bijaNoteTools()
+
     const btns = document.querySelectorAll('.clipboard');
     for (const btn of btns) {
         btn.addEventListener('click', (e) => {
@@ -187,6 +189,84 @@ let updateMessageThread = function(data){
         }
         else{
             notify('new messages')
+        }
+    }
+}
+
+// tools common to all post forms (new note, reply, quote...)
+class bijaNoteTools{
+    constructor(){
+        this.setEventListeners()
+        document.addEventListener('newContentLoaded', ()=>{
+            this.setEventListeners()
+        });
+        document.addEventListener('quoteFormLoaded', ()=>{
+            this.setEventListeners()
+        });
+    }
+
+    setEventListeners(){
+        const reply_els = document.querySelectorAll('textarea.note-textarea');
+        let i = 0
+        for(const reply_el of reply_els){
+            console.log(i)
+            if(!reply_el.dataset.toolset){
+                reply_el.dataset.toolset = true
+                this.setNameHintFetch(reply_el)
+            }
+        }
+    }
+
+    setNameHintFetch(reply_el){
+        reply_el.addEventListener("keyup", (event)=>{
+            const hint_elem = reply_el.parentElement.querySelector('.name-hints')
+            hint_elem.innerHTML = ''
+            const matches = match_mentions(reply_el.value);
+            if(matches){
+                let name = false
+                for(const match of matches){
+                    const match_pos = reply_el.value.search(match)+match.length
+                    if(match_pos == reply_el.selectionEnd){
+                        name = match.substring(1);
+                        break;
+                    }
+                }
+                if(name){
+                    const cb = function(response, data){
+                        if(response['result']){
+                            console.log(data)
+                            data.context.showNameHints(data.hint_elem, data.reply_elem, response['result'], data.search)
+                        }
+                    }
+                    fetchGet('/search_name?name='+name, cb, {
+                        'context':this,
+                        'hint_elem':hint_elem,
+                        'reply_elem':reply_el,
+                        'search':name
+                        }, 'json')
+                }
+            }
+
+        });
+    }
+
+    showNameHints(hint_elem, reply_elem, results, search_str){
+        if(results.length > 0){
+            const ul = document.createElement('ul')
+            ul.classList.add('hint-list')
+            for(const name of results) {
+                let li = document.createElement('li')
+                if(!name['name'] || name['name'].length < 1){
+                    name['name'] = name['public_key']
+                }
+                li.innerText = name['name']
+                li.addEventListener("click", (event)=>{
+                    reply_elem.value = reply_elem.value.replace('@'+search_str, '@'+name['name'])
+                    hint_elem.innerHTML = ''
+                });
+                ul.append(li)
+            }
+            hint_elem.append(ul)
         }
     }
 }
@@ -590,63 +670,6 @@ class bijaNotes{
             if(im_el){
                 this.setImageClickEvents(im_el)
             }
-            const reply_el = note.querySelector('textarea.reply');
-            if(reply_el){
-                this.setNameHintFetch(reply_el)
-            }
-        }
-    }
-
-    setNameHintFetch(reply_el){
-        reply_el.addEventListener("keyup", (event)=>{
-            const hint_elem = reply_el.parentElement.querySelector('.name-hints')
-            hint_elem.innerHTML = ''
-            const matches = match_mentions(reply_el.value);
-            if(matches){
-                let name = false
-                for(const match of matches){
-                    const match_pos = reply_el.value.search(match)+match.length
-                    if(match_pos == reply_el.selectionEnd){
-                        name = match.substring(1);
-                        break;
-                    }
-                }
-                if(name){
-                    const cb = function(response, data){
-                        if(response['result']){
-                            console.log(data)
-                            data.context.showNameHints(data.hint_elem, data.reply_elem, response['result'], data.search)
-                        }
-                    }
-                    fetchGet('/search_name?name='+name, cb, {
-                        'context':this,
-                        'hint_elem':hint_elem,
-                        'reply_elem':reply_el,
-                        'search':name
-                        }, 'json')
-                }
-            }
-
-        });
-    }
-
-    showNameHints(hint_elem, reply_elem, results, search_str){
-        if(results.length > 0){
-            const ul = document.createElement('ul')
-            ul.classList.add('hint-list')
-            for(const name of results) {
-                let li = document.createElement('li')
-                if(!name['name'] || name['name'].length < 1){
-                    name['name'] = name['public_key']
-                }
-                li.innerText = name['name']
-                li.addEventListener("click", (event)=>{
-                    reply_elem.value = reply_elem.value.replace('@'+search_str, '@'+name['name'])
-                    hint_elem.innerHTML = ''
-                });
-                ul.append(li)
-            }
-            hint_elem.append(ul)
         }
     }
 
@@ -811,6 +834,7 @@ class bijaNotes{
     setQuoteForm(){
         const form = document.querySelector("#quote_form")
         const btn = form.querySelector("input[type='submit']")
+        document.dispatchEvent(new Event('quoteFormLoaded'))
         btn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
