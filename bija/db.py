@@ -161,7 +161,6 @@ class BijaDB:
                     created_at=None,
                     members=None,
                     media='[]',
-                    seen=0,
                     raw=None):
         note = self.session.query(Note.deleted).filter_by(id=note_id).first()
         if note is None or note.deleted is None:
@@ -175,7 +174,6 @@ class BijaDB:
                 created_at=created_at,
                 members=members,
                 media=media,
-                seen=seen,
                 raw=raw
             ))
             self.session.commit()
@@ -402,9 +400,22 @@ class BijaDB:
             note.seen = True
         self.session.commit()
 
+    def set_note_seen(self, note_id):
+        self.session.query(Note).filter(Note.id == note_id).update({'seen': True})
+        self.session.commit()
+
     def get_profile_updates(self, public_key, last_update):
         return self.session.query(Profile).filter_by(public_key=public_key).filter(
             text("profile.updated_at>{}".format(last_update))).first()
+
+    def search_profile_name(self, name_str):
+        return self.session.query(Profile.name, Profile.nip05, Profile.public_key).filter(
+                or_(
+                    Profile.name.like(f"{name_str}%"),
+                    Profile.nip05.like(f"{name_str}%"),
+                    Profile.public_key.like(f"{name_str}%")
+                )
+            ).order_by(Profile.following.desc()).limit(10).all()
 
     def get_message_list(self):
         return DB_ENGINE.execute(text("""SELECT 

@@ -113,6 +113,7 @@ def login_page():
 @app.route('/profile', methods=['GET'])
 def profile_page():
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
+    page_id = 'profile'
     if 'pk' in request.args and is_hex_key(request.args['pk']) and request.args['pk'] != get_key():
         EVENT_HANDLER.set_page('profile', request.args['pk'])
         EXECUTOR.submit(EVENT_HANDLER.subscribe_profile, request.args['pk'], timestamp_minus(TimePeriod.WEEK*4))
@@ -122,6 +123,7 @@ def profile_page():
         k = get_key()
         EVENT_HANDLER.set_page('profile', k)
         is_me = True
+        page_id = 'profile-me'
     notes = DB.get_notes_by_pubkey(k, int(time.time()), timestamp_minus(TimePeriod.DAY))
     # t, i = make_threaded(notes)
     threads, last_ts = make_threaded(notes)
@@ -132,7 +134,7 @@ def profile_page():
     if profile is None:
         DB.add_profile(k)
         profile = DB.get_profile(k)
-    return render_template("profile.html", page_id="profile", title="Profile", threads=threads, last=last_ts,
+    return render_template("profile.html", page_id=page_id, title="Profile", threads=threads, last=last_ts,
                            latest=latest, profile=profile, is_me=is_me)
 
 
@@ -407,6 +409,17 @@ def search_page():
     return render_template("search.html", page_id="search", title="Search", message=message, results=results)
 
 
+@app.route('/search_name', methods=['GET'])
+def search_name():
+    out = {}
+    matches = DB.search_profile_name(request.args['name'])
+    if matches is not None:
+        out = [dict(row) for row in matches]
+    print(matches)
+    print(out)
+    return render_template("upd.json", data=json.dumps({'result': out}))
+
+
 @app.route('/identicon', methods=['GET'])
 def identicon():
     im = ident_im_gen.generate(request.args['id'], 120, 120, padding=(10, 10, 10, 10), output_format="png")
@@ -426,8 +439,7 @@ def io_connect(m):
         socketio.emit('unseen_posts_n', unseen_posts)
 
     unseen_alerts = DB.get_unread_alert_count()
-    if unseen_alerts > 0:
-        socketio.emit('alert_n', unseen_alerts)
+    socketio.emit('alert_n', unseen_alerts)
 
     EXECUTOR.submit(EVENT_HANDLER.get_connection_status)
 

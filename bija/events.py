@@ -158,7 +158,7 @@ class BijaEvents:
             })
 
     def receive_note_event(self, event, subscription):
-        e = NoteEvent(self.db, event, self.get_key(), subscription)
+        e = NoteEvent(self.db, event, self.get_key())
         if e.mentions_me:
             self.alert_on_note_event(e)
         self.notify_on_note_event(event, subscription)
@@ -183,19 +183,20 @@ class BijaEvents:
             if unseen_posts > 0:
                 socketio.emit('unseen_posts_n', unseen_posts)
         elif subscription == 'profile':
+            self.db.set_note_seen(event.id)
             socketio.emit('new_profile_posts', self.db.get_most_recent_for_pk(event.public_key))
         elif subscription == 'note-thread':
             socketio.emit('new_in_thread', event.id)
 
     def receive_contact_list_event(self, event, subscription):
         e = ContactListEvent(self.db, event, self.get_key())
+        self.db.add_profile_if_not_exists(event.public_key)
+        self.db.add_contact_list(event.public_key, e.keys)
         if e.changed:
             self.subscribe_primary()
         if event.public_key != self.get_key() and subscription == 'profile':
-            self.db.add_contact_list(event.public_key, e.keys)
             self.subscribe_profile(event.public_key, timestamp_minus(TimePeriod.WEEK))
         if self.get_key() in e.keys:
-            self.db.add_profile_if_not_exists(event.public_key)
             self.db.set_follower(event.public_key)
 
 
@@ -450,7 +451,7 @@ class MetadataEvent:
 
 
 class NoteEvent:
-    def __init__(self, db, event, my_pk, subscription):
+    def __init__(self, db, event, my_pk):
         self.db = db
         self.event = event
         self.content = event.content
@@ -463,7 +464,6 @@ class NoteEvent:
         self.used_tags = []
         self.my_pk = my_pk
         self.mentions_me = False
-        self.subscription = subscription
 
         self.process_content()
         self.tags = [x for x in self.tags if x not in self.used_tags]
@@ -552,9 +552,6 @@ class NoteEvent:
                     self.response_to = parents[1]
 
     def update_db(self):
-        seen = True
-        if self.subscription == 'primary':
-            seen = False
         self.db.add_profile_if_not_exists(self.event.public_key)
         self.db.insert_note(
             self.event.id,
@@ -566,7 +563,6 @@ class NoteEvent:
             self.event.created_at,
             json.dumps(self.members),
             json.dumps(self.media),
-            seen,
             json.dumps(self.event.to_json_object())
         )
 

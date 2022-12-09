@@ -176,7 +176,7 @@ input[type=submit]:hover {
 .topnav .title {
     font-size: 12px;
 }
-.topnav.nav-home .home-link, .topnav.nav-profile .profile-link, .topnav.nav-messages .messages-link, .topnav.nav-messages_from .messages-link, .topnav.nav-alerts .alerts-link, .topnav.nav-settings .settings-link{
+.topnav.nav-home .home-link, .topnav.nav-profile-me .profile-link, .topnav.nav-messages .messages-link, .topnav.nav-messages_from .messages-link, .topnav.nav-alerts .alerts-link, .topnav.nav-settings .settings-link{
     color: var(--lnk-clr);
     font-weight: 800;
     background: var(--bg-clr1);
@@ -630,7 +630,6 @@ input[type=text].pname {
 .note-container{
     display: flex;
     padding: 0 10px;
-    overflow: hidden;
     position: relative;
     font-size: 14px;
 }
@@ -928,7 +927,22 @@ p.note-tools img{
     border-radius: 10px;
     cursor: pointer;
 }
-
+.name-hints{
+    position: absolute;
+    background: var(--bg-clr3);
+    z-index: 100;
+    border-radius: 5px;
+}
+.name-hints ul{
+    padding: 5px;
+}
+.name-hints li {
+    padding: 2px;
+    cursor: pointer;
+}
+.name-hints li:hover {
+    background: var(--bg-clr2);
+}
 /* ---------- */
 
 /* Alerts */
