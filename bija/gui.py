@@ -2,6 +2,7 @@ import os
 import sys
 from PyQt6 import QtCore, QtWidgets, QtGui, QtWebEngineWidgets
 from PyQt6.QtGui import QDesktopServices
+from PyQt6.QtWebEngineCore import QWebEngineSettings
 
 
 def init_gui(application, socketio, port=5000, width=1100, height=800,
@@ -44,6 +45,7 @@ def init_gui(application, socketio, port=5000, width=1100, height=800,
     window.webView.load(QtCore.QUrl(ROOT_URL))
 
     window.show()
+    window.webView.settings().setAttribute(QWebEngineSettings.WebAttribute.JavascriptCanAccessClipboard, True)
 
     return qtapp.exec()
 
