@@ -171,7 +171,7 @@ let updateProfile = function(profile){
         }
         if(profile.nip05 !== null && profile.nip05.length > 0 && profile.nip05_validated){
             const nip5 = name_el.querySelector('.nip5')
-            if(nm){
+            if(nip5){
                 nip5.innerText = profile.nip05
             }
         }
