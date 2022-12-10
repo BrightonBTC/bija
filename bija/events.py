@@ -260,7 +260,7 @@ class BijaEvents:
     def submit_follow_list(self):
         SubmitFollowList(self.relay_manager, self.db, self.session.get("keys"))
 
-    def submit_delete(self, event_ids: list, reason):
+    def submit_delete(self, event_ids: list, reason=""):
         e = SubmitDelete(self.relay_manager, self.db, self.session.get("keys"), event_ids, reason)
         return e.event_id
 

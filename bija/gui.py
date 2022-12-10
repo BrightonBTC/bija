@@ -16,7 +16,6 @@ def init_gui(application, socketio, port=5000, width=1100, height=800,
     # Application Level
     qtapp = QtWidgets.QApplication(sys.argv)
     webapp = QtCore.QThread()
-    #webapp.__del__ = webapp.wait
     webapp.run = run_app
     webapp.start()
 
@@ -34,12 +33,10 @@ def init_gui(application, socketio, port=5000, width=1100, height=800,
             QDesktopServices.openUrl(url)
             window.webView.back()
 
-
     # WebView Level
     window.webView = QtWebEngineWidgets.QWebEngineView(window)
     window.setCentralWidget(window.webView)
     window.webView.urlChanged.connect(url_changed)
-
 
     # WebPage Level
     window.webView.load(QtCore.QUrl(ROOT_URL))
@@ -64,5 +61,3 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def closeEvent(self, event):
         page = QtWebEngineWidgets.QWebEngineView()
         page.load(QtCore.QUrl("http://127.0.0.1:5000/shutdown"))
-
-

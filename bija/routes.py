@@ -1,8 +1,7 @@
 import json
 import os
-from collections import OrderedDict
 from datetime import datetime
-from threading import Thread, Event
+from threading import Thread
 
 from flask import render_template, request, session, redirect, make_response
 from flask_executor import Executor
@@ -11,9 +10,7 @@ import pydenticon
 from bija.app import app, socketio
 from bija.config import DEFAULT_RELAYS
 from bija.db import BijaDB
-from bija.events import BijaEvents
-from bija.gui import MainWindow
-from python_nostr.nostr.bech32 import bech32_decode, decode, convertbits
+from bija.events import BijaEvents, MetadataEvent
 from python_nostr.nostr.key import PrivateKey
 
 from bija.password import encrypt_key, decrypt_key
@@ -78,7 +75,7 @@ def feed():
 
 @app.route('/alerts', methods=['GET'])
 def alerts_page():
-    alerts = DB.get_alerts(get_key())
+    alerts = DB.get_alerts()
     DB.set_alerts_read()
     return render_template("alerts.html", page_id="alerts", title="alerts", alerts=alerts)
 
@@ -276,7 +273,7 @@ def update_profile():
             if item[0] in ['name', 'about', 'picture', 'nip05']:
                 profile[item[0]] = item[1].strip()
         if 'nip05' in profile and len(profile['nip05']) > 0:
-            valid_nip5 = EVENT_HANDLER.validate_nip05(profile['nip05'], get_key())
+            valid_nip5 = MetadataEvent.validate_nip05(profile['nip05'], get_key())
             out['nip05'] = valid_nip5
             if valid_nip5:
                 out['success'] = EVENT_HANDLER.submit_profile(profile)
@@ -541,19 +538,18 @@ def _jinja2_filter_ident(name, pk, nip5=None, validated=None, long=True):
     html = "<span class='uname' data-pk='{}'><span class='name'>{}</span> "
     if long:
         html = html + "<span class='nip5'>{}</span>"
-    if validated and nip5 is not None:
+    if validated and nip5 is not None and long:
         if nip5[0:2] == "_@":
             nip5 = nip5[2:]
-        return "<span class='uname' data-pk='{}'><span class='name'>{}</span> <span class='nip5'>{}</span>".format(pk,
-                                                                                                                   name,
-                                                                                                                   nip5)
     elif name is None or len(name.strip()) < 1:
-        name = "<span class='uname' data-pk='{}'><span class='name'>{}...</span> <span class='nip5'></span></span>".format(
-            pk, pk[0:21])
-    else:
-        name = "<span class='uname' data-pk='{}'><span class='name'>{}</span> <span class='nip5'></span></span>".format(
-            pk, name)
-    return name
+        name = "{}&#8230;".format(pk[0:21])
+
+    if long:
+        if nip5 is None:
+            nip5 = ""
+        return html.format(pk, name, nip5)
+
+    return html.format(pk, name)
 
 
 @app.template_filter('responders_string')
@@ -563,15 +559,14 @@ def _jinja2_filter_responders(the_dict, n):
         names.append([pk, _jinja2_filter_ident(name, pk, long=False)])
 
     if n == 1:
-        return '<a href="/profile?pk={}">@{}</a> commented'.format(names[0][0], names[0][1])
+        html = '<a href="/profile?pk={}">@{}</a> commented'
+        return html.format(names[0][0], names[0][1])
     elif n == 2:
-        return '<a href="/profile?pk={}">@{}</a> and <a href="/profile?pk={}">@{}</a> commented'.format(names[0][0],
-                                                                                                        names[0][1],
-                                                                                                        names[1][0],
-                                                                                                        names[1][1])
+        html = '<a href="/profile?pk={}">@{}</a> and <a href="/profile?pk={}">@{}</a> commented'
+        return html.format(names[0][0], names[0][1], names[1][0], names[1][1])
     else:
-        return '<a href="/profile?pk={}">@{}</a>, <a href="/profile?pk={}">@{}</a> and {} other contacts commented'.format(
-            names[0][0], names[0][1], names[1][0], names[1][1], n - 2)
+        html = '<a href="/profile?pk={}">@{}</a>, <a href="/profile?pk={}">@{}</a> and {} other contacts commented'
+        return html.format(names[0][0], names[0][1], names[1][0], names[1][1], n - 2)
 
 
 @app.template_filter('process_media_attachments')
@@ -581,7 +576,7 @@ def _jinja2_filter_media(json_string):
         media = a[0]
         if media[1] == 'image':
             return '<div class="image-attachment"><img src="{}"></div>'.format(media[0])
-    return '';
+    return ''
 
 
 @app.template_filter('get_thread_root')

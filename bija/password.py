@@ -35,5 +35,5 @@ def decrypt_key(password, to_decrypt):
     _key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
 
     f = Fernet(_key)
-    Pass = f.decrypt(to_decrypt)
-    return Pass.decode()
+    pw = f.decrypt(to_decrypt)
+    return pw.decode()

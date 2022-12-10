@@ -1,6 +1,5 @@
 import json
 import time
-from os.path import exists
 
 from sqlalchemy import create_engine, text, func, or_
 from sqlalchemy.orm import sessionmaker
@@ -12,21 +11,11 @@ DB_ENGINE = create_engine("sqlite:///bija.sqlite", echo=False)
 DB_SESSION = sessionmaker(autocommit=False, autoflush=False, bind=DB_ENGINE)
 
 
-
 class BijaDB:
 
     def __init__(self, session):
         self.session = session
         Base.metadata.create_all(DB_ENGINE)
-        # if not exists("bija.sqlite"):
-        #     self.setup()
-
-    # def setup(self):
-    #     relays = []
-    #     for r in DEFAULT_RELAYS:
-    #         relays.append(Relay(name=r))
-    #     self.session.add_all(relays)
-    #     self.session.commit()
 
     def reset(self):
         self.session.query(Profile).delete()
@@ -521,7 +510,7 @@ class BijaDB:
         ))
         self.session.commit()
 
-    def get_alerts(self, public_key):
+    def get_alerts(self):
         return self.session.query(
             Alert.id,
             Alert.kind,

@@ -1,8 +1,9 @@
 
 <div class="note" data-dt="{{note['created_at']}}" data-processed="0">
     <h3>
+        {%- set fim = '' -%}
         {%- if note['following'] is not none and note['following']==1 -%}
-        {%- set fim = ' <img src="/static/following.svg" class="icon-sm" > ' -%}
+        {%- set fim = ' <img src="/static/following.svg" class="icon-sm" title="following"> ' -%}
         {%- endif -%}
         <a href="/profile?pk={{note['public_key']}}" class="profile-name">{{note['name'] | ident_string(note['public_key'], note['nip05'], note['nip05_validated']) | safe }}{{fim| safe}}</a>
         <span class="note-info">

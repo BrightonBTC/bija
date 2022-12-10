@@ -1,5 +1,3 @@
-import json
-import time
 from enum import IntEnum
 
 from bija.app import app
@@ -37,4 +35,3 @@ class Alert:
 
     def store(self):
         DB.add_alert(self.eid, self.kind, self.profile, self.event, self.ts, self.content)
-

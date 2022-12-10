@@ -3,7 +3,7 @@ import time
 from enum import IntEnum
 import logging
 import traceback
-from typing import Match, List, Any
+from typing import Any
 
 import requests
 
@@ -46,7 +46,7 @@ def get_at_tags(content: str) -> list[Any]:
 
 
 def get_embeded_tag_indexes(content: str):
-    regex = re.compile(r'\#\[([0-9]+)\]')
+    regex = re.compile(r'#\[([0-9]+)]')
     return re.findall(regex, content)
 
 
@@ -91,10 +91,10 @@ def validate_nip05(name: str):
 def is_valid_relay(url: str) -> bool:
     regex = re.compile(
         r'^wss?://' 
-        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
-        r'localhost|' #localhost...
-        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
-        r'(?::\d+)?' # optional port
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
+        r'localhost|'  # localhost...
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
+        r'(?::\d+)?'  # optional port
         r'(?:/?|[/?]\S+)$', re.IGNORECASE)
     return re.fullmatch(regex, url) is not None
 
