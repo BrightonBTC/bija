@@ -73,7 +73,8 @@ class SubscribeProfile(Subscribe):
 
         f = [
             Filter(authors=[self.pubkey], kinds=[EventKind.SET_METADATA, EventKind.CONTACTS]),
-            Filter(authors=[self.pubkey], kinds=[EventKind.TEXT_NOTE, EventKind.DELETE], since=self.since)
+            Filter(authors=[self.pubkey], kinds=[EventKind.TEXT_NOTE, EventKind.DELETE, EventKind.REACTION],
+                   since=self.since)
         ]
         if profile is not None and profile.contacts is not None:
             contacts_filter = Filter(authors=json.loads(profile.contacts), kinds=[EventKind.SET_METADATA])
@@ -95,8 +96,8 @@ class SubscribeThread(Subscribe):
             ids = [self.root]
 
         self.filters = Filters([
-            Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE]),  # event responses
-            Filter(ids=ids, kinds=[EventKind.TEXT_NOTE])
+            Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION]),  # event responses
+            Filter(ids=ids, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION])
         ])
 
 
@@ -109,6 +110,6 @@ class SubscribeFeed(Subscribe):
 
     def build_filters(self):
         filters = Filters([
-            Filter(tags={'#e': self.ids}, kinds=[EventKind.TEXT_NOTE]),  # event responses
-            Filter(ids=self.ids, kinds=[EventKind.TEXT_NOTE])
+            Filter(tags={'#e': self.ids}, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION]),  # event responses
+            Filter(ids=self.ids, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION])
         ])
