@@ -76,7 +76,7 @@ def url_linkify(content):
 
 
 def strip_tags(content: str):
-    return BeautifulSoup(content).get_text()
+    return BeautifulSoup(content, features="html.parser").get_text()
 
 
 def validate_nip05(name: str):

@@ -140,6 +140,10 @@ class BijaDB:
     def set_valid_nip05(self, public_key):
         self.session.query(Profile).filter(Profile.public_key == public_key).update({'nip05_validated': True})
 
+    def update_note_media(self, note_id, media):
+        self.session.query(Note).filter(Note.id == note_id).update({'media': media})
+        self.session.commit()
+
     def insert_note(self,
                     note_id,
                     public_key,

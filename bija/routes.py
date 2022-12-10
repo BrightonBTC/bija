@@ -577,6 +577,8 @@ def _jinja2_filter_media(json_string):
         media = a[0]
         if media[1] == 'image':
             return '<div class="image-attachment"><img src="{}"></div>'.format(media[0])
+        if media[1] == 'og':
+            return render_template("note.og.html", data=media[0])
     return ''
 
 

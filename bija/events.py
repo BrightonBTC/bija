@@ -1,16 +1,12 @@
-import logging
 import os
 import ssl
-import urllib
-from socket import timeout
-from urllib import request
-from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 
-from bs4 import BeautifulSoup
+import validators as validators
 from flask import render_template
 
 from bija.app import socketio
+from bija.deferred_tasks import TaskKind, DeferredTasks
 from bija.helpers import get_embeded_tag_indexes, \
     list_index_exists, get_urls_in_string, request_nip05, url_linkify, strip_tags
 from bija.subscriptions import *
@@ -18,6 +14,8 @@ from bija.submissions import *
 from bija.alerts import *
 from python_nostr.nostr.event import EventKind
 from python_nostr.nostr.relay_manager import RelayManager
+
+D_TASKS = DeferredTasks()
 
 
 class BijaEvents:
@@ -105,26 +103,30 @@ class BijaEvents:
             while self.relay_manager.message_pool.has_events():
                 msg = self.relay_manager.message_pool.get_event()
 
-                self.db.add_event(msg.event.id, msg.event.kind)
+                if self.db.get_event(msg.event.id) is None:
 
-                if msg.event.kind == EventKind.SET_METADATA:
-                    self.receive_metadata_event(msg.event)
+                    self.db.add_event(msg.event.id, msg.event.kind)
 
-                if msg.event.kind == EventKind.CONTACTS:
-                    self.receive_contact_list_event(msg.event, msg.subscription_id)
+                    if msg.event.kind == EventKind.SET_METADATA:
+                        self.receive_metadata_event(msg.event)
 
-                if msg.event.kind == EventKind.TEXT_NOTE:
-                    self.receive_note_event(msg.event, msg.subscription_id)
+                    if msg.event.kind == EventKind.CONTACTS:
+                        self.receive_contact_list_event(msg.event, msg.subscription_id)
 
-                if msg.event.kind == EventKind.ENCRYPTED_DIRECT_MESSAGE:
-                    self.receive_private_message_event(msg.event)
+                    if msg.event.kind == EventKind.TEXT_NOTE:
+                        self.receive_note_event(msg.event, msg.subscription_id)
 
-                if msg.event.kind == EventKind.DELETE:
-                    self.receive_del_event(msg.event)
+                    if msg.event.kind == EventKind.ENCRYPTED_DIRECT_MESSAGE:
+                        self.receive_private_message_event(msg.event)
 
-                if msg.event.kind == EventKind.REACTION:
-                    self.receive_reaction_event(msg.event)
+                    if msg.event.kind == EventKind.DELETE:
+                        self.receive_del_event(msg.event)
+
+                    if msg.event.kind == EventKind.REACTION:
+                        self.receive_reaction_event(msg.event)
+
             self.db.commit()
+            D_TASKS.next()
             time.sleep(1)
             print('running')
             i += 1
@@ -457,24 +459,25 @@ class MetadataEvent:
 
 class NoteEvent:
     def __init__(self, db, event, my_pk):
-        self.og = []
-        self.db = db
-        self.event = event
-        self.content = strip_tags(event.content)
-        self.tags = event.tags
-        self.media = []
-        self.members = []
-        self.thread_root = None
-        self.response_to = None
-        self.reshare = None
-        self.used_tags = []
-        self.my_pk = my_pk
-        self.mentions_me = False
+        if db.get_note(event.id) is None:
+            self.og = []
+            self.db = db
+            self.event = event
+            self.content = strip_tags(event.content)
+            self.tags = event.tags
+            self.media = []
+            self.members = []
+            self.thread_root = None
+            self.response_to = None
+            self.reshare = None
+            self.used_tags = []
+            self.my_pk = my_pk
+            self.mentions_me = False
 
-        self.process_content()
-        self.tags = [x for x in self.tags if x not in self.used_tags]
-        self.process_tags()
-        self.update_db()
+            self.process_content()
+            self.tags = [x for x in self.tags if x not in self.used_tags]
+            self.process_tags()
+            self.update_db()
 
     def process_content(self):
         self.process_embedded_tags()
@@ -489,33 +492,20 @@ class NoteEvent:
             if extension.lower() in ['.png', '.svg', '.gif', '.jpg', '.jpeg']:
                 self.media.append((url, 'image'))
         if len(self.media) < 1 and len(urls) > 0:
-            response = None
-            try:
-                response = urllib.request.urlopen(urls[0], timeout=2).read().decode('utf-8')
+            note = self.db.get_note(self.event.id)
+            already_scraped = False
+            scrape_fail_attempts = 0
+            if note is not None:
+                media = json.loads(note['media'])
+                for item in media:
+                    print(item[1], urls[0])
+                    if item[1] == 'og':
+                        already_scraped = True
+                    elif item[1] == 'scrape_failed':
+                        scrape_fail_attempts = int(item[0])
 
-            except HTTPError as error:
-                logging.error('HTTP Error: Data of %s not retrieved because %s\nURL: %s', urls[0], error, urls[0])
-            except URLError as error:
-                if isinstance(error.reason, timeout):
-                    logging.error('Timeout Error: Data of %s not retrieved because %s\nURL: %s',
-                                  urls[0], error, urls[0])
-                else:
-                    logging.error('URL Error: Data of %s not retrieved because %s\nURL: %s', urls[0], error, urls[0])
-            except:
-                logging.error('Unknown error')
-
-            if response is not None:
-                soup = BeautifulSoup(response,
-                                     'html.parser')
-                og = {}
-                if soup.findAll("meta", property="og:title"):
-                    og['title'] = soup.find("meta", property="og:title")["content"]
-                if soup.findAll("meta", property="og:description"):
-                    og['description'] = soup.find("meta", property="og:description")["content"]
-                if soup.findAll("meta", property="og:image"):
-                    og['image'] = soup.find("meta", property="og:image")["content"]
-
-                self.og = og
+            if (note is None or not already_scraped) and validators.url(urls[0]) and scrape_fail_attempts < 4:
+                D_TASKS.pool.add(TaskKind.FETCH_OG, {'url': urls[0], 'note_id': self.event.id})
 
     def process_embedded_tags(self):
         embeds = get_embeded_tag_indexes(self.content)

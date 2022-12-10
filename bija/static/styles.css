@@ -953,6 +953,13 @@ p.note-tools img{
 .name-hints li:hover {
     background: var(--bg-clr2);
 }
+.og {
+    border: 1px solid var(--bdr-clr-2);
+    margin: 5px 0 0 0;
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 12px;
+}
 /* ---------- */
 
 /* Alerts */
