@@ -164,10 +164,16 @@ let updateProfile = function(profile){
     const name_els = document.querySelectorAll(".uname[data-pk='"+profile.public_key+"']");
     for (const name_el of name_els) {
         if(profile.name.length > 0){
-            name_el.querySelector('.name').innerText = profile.name
+            const nm = name_el.querySelector('.name')
+            if(nm){
+                nm.innerText = profile.name
+            }
         }
         if(profile.nip05 !== null && profile.nip05.length > 0 && profile.nip05_validated){
-            name_el.querySelector('.nip5').innerText = profile.nip05
+            const nip5 = name_el.querySelector('.nip5')
+            if(nm){
+                nip5.innerText = profile.nip05
+            }
         }
     }
     const pic_els = document.querySelectorAll(".user-image[data-rel='"+profile.public_key+"']");
