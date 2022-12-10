@@ -765,7 +765,7 @@ class bijaNotes{
             }
             else{
                 form_el.dataset.vis = '1'
-                form_el.style.display = "block"
+                form_el.style.display = "flex"
             }
         });
     }

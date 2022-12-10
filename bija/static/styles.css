@@ -285,6 +285,10 @@ input[type=submit]:hover {
     width: 12px;
     cursor: pointer;
 }
+.icon-sm{
+    width: 14px;
+    height: 14px;
+}
 /* ---------- */
 
 /* Feed */
@@ -824,6 +828,9 @@ input[type=text].pname {
 .reply-form{
     display:none;
 }
+.reply-form.poster-form {
+    align-items: flex-end;
+}
 
 .info{
     font-size: 12px;
@@ -866,7 +873,7 @@ input[type=text].pname {
 }
 
 .nip5{
-    font-size: 14px;
+    font-size: 11px;
     font-style: italic;
     color: var(--txt-clr2);
 }

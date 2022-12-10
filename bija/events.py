@@ -181,7 +181,8 @@ class BijaEvents:
             if root is not None and root.public_key == self.get_key():
                 Alert(
                     event.event.id,
-                    event.event.created_at, AlertKind.COMMENT_ON_THREAD, event.event.public_key, event.thread_root, event.content)
+                    event.event.created_at, AlertKind.COMMENT_ON_THREAD, event.event.public_key, event.thread_root,
+                    event.content)
 
     def notify_on_note_event(self, event, subscription):
         if subscription == 'primary':
@@ -204,7 +205,6 @@ class BijaEvents:
             self.subscribe_profile(event.public_key, timestamp_minus(TimePeriod.WEEK))
         if self.get_key() in e.keys:
             self.db.set_follower(event.public_key)
-
 
     def receive_private_message_event(self, event):
 
@@ -314,7 +314,6 @@ class ReactionEvent:
         )
         if self.event.public_key == self.pubkey:
             self.db.set_note_liked(self.event_id)
-
 
 
 class DeleteEvent:
@@ -509,19 +508,19 @@ class NoteEvent:
                 response = urllib.request.urlopen(urls[0], timeout=2).read().decode('utf-8')
 
             except HTTPError as error:
-                logging.error('HTTP Error: Data of %s not retrieved because %s\nURL: %s', urls[0], error, url)
+                logging.error('HTTP Error: Data of %s not retrieved because %s\nURL: %s', urls[0], error, urls[0])
             except URLError as error:
                 if isinstance(error.reason, timeout):
-                    logging.error('Timeout Error: Data of %s not retrieved because %s\nURL: %s', urls[0], error, url)
+                    logging.error('Timeout Error: Data of %s not retrieved because %s\nURL: %s',
+                                  urls[0], error, urls[0])
                 else:
-                    logging.error('URL Error: Data of %s not retrieved because %s\nURL: %s', urls[0], error, url)
+                    logging.error('URL Error: Data of %s not retrieved because %s\nURL: %s', urls[0], error, urls[0])
             except:
                 logging.error('Unknown error')
 
             if response is not None:
                 soup = BeautifulSoup(response,
                                      'html.parser')
-
                 og = {}
                 if soup.findAll("meta", property="og:title"):
                     og['title'] = soup.find("meta", property="og:title")["content"]
@@ -531,7 +530,6 @@ class NoteEvent:
                     og['image'] = soup.find("meta", property="og:image")["content"]
 
                 self.og = og
-
 
     def process_embedded_tags(self):
         embeds = get_embeded_tag_indexes(self.content)
@@ -605,5 +603,3 @@ class NoteEvent:
             json.dumps(self.media),
             json.dumps({'raw': self.event.to_json_object(), 'og': self.og})
         )
-
-

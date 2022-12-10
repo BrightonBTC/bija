@@ -209,7 +209,9 @@ class BijaDB:
                                   Note.deleted,
                                   Profile.name,
                                   Profile.pic,
-                                  Profile.nip05).filter_by(id=note_id) \
+                                  Profile.nip05,
+                                  Profile.nip05_validated,
+                                  Profile.following).filter_by(id=note_id) \
             .outerjoin(like_counts, like_counts.c.event_id == Note.id) \
             .join(Note.profile).first()
 
@@ -245,7 +247,8 @@ class BijaDB:
                                   Profile.name,
                                   Profile.pic,
                                   Profile.nip05,
-                                  Profile.nip05_validated) \
+                                  Profile.nip05_validated,
+                                  Profile.following) \
             .filter(or_(Note.id.in_([i.response_to for i in items]), Note.id.in_([i.id for i in items]))) \
             .outerjoin(like_counts, like_counts.c.event_id == Note.id) \
             .join(Note.profile).order_by(Note.created_at.asc()).all()
@@ -307,7 +310,8 @@ class BijaDB:
             Profile.name,
             Profile.pic,
             Profile.nip05,
-            Profile.nip05_validated) \
+            Profile.nip05_validated,
+            Profile.following) \
             .outerjoin(like_counts, like_counts.c.event_id == Note.id) \
             .join(Note.profile) \
             .filter(text("note.created_at<{}".format(before))) \
@@ -352,7 +356,8 @@ class BijaDB:
             Profile.name,
             Profile.pic,
             Profile.nip05,
-            Profile.nip05_validated) \
+            Profile.nip05_validated,
+            Profile.following) \
             .outerjoin(like_counts, like_counts.c.event_id == Note.id) \
             .join(Note.profile) \
             .filter(text("note.created_at<{}".format(before))) \
