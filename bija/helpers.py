@@ -6,6 +6,7 @@ import traceback
 from typing import Any
 
 import requests
+from bs4 import BeautifulSoup
 
 from python_nostr.nostr import bech32
 from python_nostr.nostr.bech32 import bech32_encode, bech32_decode, convertbits
@@ -57,18 +58,25 @@ def get_urls_in_string(content: str):
     return [x[0] for x in url]
 
 
-def url_linkify(content, url):
-    parts = url.split('//')
-    if len(parts) < 2:
-        parts = ['', url]
-        url = 'https://' + url
-    if len(parts[1]) > 21:
-        link_text = parts[1][:21] + '&#8230;'
-    else:
-        link_text = parts[1]
-    return content.replace(
-        url,
-        "<a href='{}'>{}</a>".format(url, link_text))
+def url_linkify(content):
+    urls = get_urls_in_string(content)
+    for url in urls:
+        parts = url.split('//')
+        if len(parts) < 2:
+            parts = ['', url]
+            url = 'https://' + url
+        if len(parts[1]) > 21:
+            link_text = parts[1][:21] + '&#8230;'
+        else:
+            link_text = parts[1]
+        content = content.replace(
+            url,
+            "<a href='{}'>{}</a>".format(url, link_text))
+    return content
+
+
+def strip_tags(content: str):
+    return BeautifulSoup(content).get_text()
 
 
 def validate_nip05(name: str):

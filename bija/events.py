@@ -12,7 +12,7 @@ from flask import render_template
 
 from bija.app import socketio
 from bija.helpers import get_embeded_tag_indexes, \
-    list_index_exists, get_urls_in_string, request_nip05, url_linkify
+    list_index_exists, get_urls_in_string, request_nip05, url_linkify, strip_tags
 from bija.subscriptions import *
 from bija.submissions import *
 from bija.alerts import *
@@ -421,10 +421,7 @@ class MetadataEvent:
         if 'nip05' in s:
             self.nip05 = s['nip05']
         if 'about' in s:
-            urls = get_urls_in_string(s['about'])
-            for url in urls:
-                s['about'] = url_linkify(s['about'], url)
-            self.about = s['about']
+            self.about = strip_tags(s['about'])
         if 'picture' in s:
             self.picture = s['picture']
 
@@ -463,7 +460,7 @@ class NoteEvent:
         self.og = []
         self.db = db
         self.event = event
-        self.content = event.content
+        self.content = strip_tags(event.content)
         self.tags = event.tags
         self.media = []
         self.members = []
@@ -485,19 +482,8 @@ class NoteEvent:
 
     def process_embedded_urls(self):
         urls = get_urls_in_string(self.content)
+        self.content = url_linkify(self.content)
         for url in urls:
-            self.content = url_linkify(self.content, url)
-            # parts = url.split('//')
-            # if len(parts) < 2:
-            #     parts = ['', url]
-            #     url = 'https://' + url
-            # if len(parts[1]) > 21:
-            #     link_text = parts[1][:21] + '...'
-            # else:
-            #     link_text = parts[1]
-            # self.content = self.content.replace(
-            #     url,
-            #     "<a href='{}'>{}</a>".format(url, link_text))
             path = urlparse(url).path
             extension = os.path.splitext(path)[1]
             if extension.lower() in ['.png', '.svg', '.gif', '.jpg', '.jpeg']:

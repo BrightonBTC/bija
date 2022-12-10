@@ -352,7 +352,7 @@ class BijaDB:
             .filter(text("note.created_at<{}".format(before))) \
             .filter_by(public_key=public_key) \
             .filter(text("note.deleted is not 1")) \
-            .order_by(Note.created_at.desc()).limit(50).all()
+            .order_by(Note.created_at.desc()).limit(100).all()
 
     def get_unseen_message_count(self):
         return self.session.query(PrivateMessage) \

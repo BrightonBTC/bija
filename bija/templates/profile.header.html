@@ -23,7 +23,7 @@
     <div class="profile-details profile-item">
         <h1 class="profile-name">{{profile['name'] | ident_string(profile['public_key'], profile['nip05'], profile['nip05_validated']) | safe }}</h1>
         <p class="sm pk">@{{profile['public_key'] | truncate(21, False, '...')}} <img src="/static/copy.svg" class="clipboard" data-str="{{profile['public_key']}}"></p>
-        <pre class="profile-about">{{about| safe}}</pre>
+        <pre class="profile-about">{{about| linkify| safe}}</pre>
     </div>
     {%- if is_me -%}
         {%- if profile['name'] is not none -%}

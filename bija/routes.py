@@ -131,6 +131,7 @@ def profile_page():
     if profile is None:
         DB.add_profile(k)
         profile = DB.get_profile(k)
+
     return render_template("profile.html", page_id=page_id, title="Profile", threads=threads, last=last_ts,
                            latest=latest, profile=profile, is_me=is_me)
 
@@ -592,6 +593,9 @@ def _jinja2_filter_thread_root(root, reply, parent_id):
         out = {'root': reply, 'reply': parent_id}
     return out
 
+@app.template_filter('linkify')
+def _jinja2_filter_linkify(content):
+    return url_linkify(content)
 
 def make_threaded(notes):
     threads = []
