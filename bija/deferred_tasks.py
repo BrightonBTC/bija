@@ -9,6 +9,7 @@ from urllib.error import HTTPError, URLError
 from socket import timeout
 from urllib.request import Request
 
+import validators
 from bs4 import BeautifulSoup
 
 from bija.app import app
@@ -54,50 +55,6 @@ class DeferredTasks:
             print('fetch og for:', task.data['url'])
             if task.kind == TaskKind.FETCH_OG:
                 OGTags(task.data)
-                # note = DB.get_note(task.data['note_id'])
-                # response = self.fetch_og_tags(task.data)
-                # if response:
-                #     self.process_og_tags_response(note, response)
-
-
-    def fetch_og_tags(self, data):
-
-        url = data['url']
-
-        req = Request(url, headers={'User-Agent': 'Bija Nostr Client'})
-        try:
-            with urllib.request.urlopen(req, timeout=2) as response:
-                if response.status == 200:
-                    return response.read()
-                return False
-        except HTTPError as error:
-            print(error.status, error.reason)
-            return False
-        except URLError as error:
-            print(error.reason)
-            return False
-        except TimeoutError:
-            print("Request timed out")
-            return False
-
-    def process_og_tags_response(self, note, response):
-
-        if response is not None:
-            soup = BeautifulSoup(response,
-                                 'html.parser')
-            og = {}
-            if soup.findAll("meta", property="og:title"):
-                og['title'] = soup.find("meta", property="og:title")["content"]
-            if soup.findAll("meta", property="og:description"):
-                og['description'] = soup.find("meta", property="og:description")["content"]
-            if soup.findAll("meta", property="og:image"):
-                og['image'] = soup.find("meta", property="og:image")["content"]
-
-            media = json.loads(note['media'])
-            media.append([og, 'og'])
-            if len(og) > 2:
-                print('found')
-                DB.update_note_media(note.id, json.dumps(media))
 
 
 class OGTags:
@@ -133,14 +90,20 @@ class OGTags:
     def process(self, response):
         if response is not None:
             soup = BeautifulSoup(response, 'html.parser')
-            if soup.findAll("meta", property="og:title"):
-                self.og['title'] = soup.find("meta", property="og:title")["content"]
-            if soup.findAll("meta", property="og:description"):
-                self.og['description'] = soup.find("meta", property="og:description")["content"]
-            if soup.findAll("meta", property="og:image"):
-                self.og['image'] = soup.find("meta", property="og:image")["content"]
+            for prop in ['image', 'title', 'description', 'url']:
+                item = soup.find("meta", property="og:{}".format(prop))
+                if item is not None:
+                    content = item.get("content")
+                    if content is not None:
+                        if prop in ['url', 'image']:
+                            if validators.url(content):
+                                self.og[prop] = content
+                        else:
+                            self.og[prop] = content
 
             if len(self.og) > 0:
+                if 'url' not in self.og:
+                    self.og['url'] = self.url
                 self.store()
 
     def store(self):
