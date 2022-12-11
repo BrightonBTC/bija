@@ -1,20 +1,27 @@
 {%- extends "base.html" -%}
 
 {%- block content -%}
-<div class="card">
+<div class="card keys">
     <h3>Keys</h3>
     <h4>Public key:</h4>
     <p class="sm">Share your public key with contacts so that they can find and connect with you on Nostr.</p>
     <p>
         <span class="key-format">npub</span> {{k['public'][1]}} <img src="/static/copy.svg" class="clipboard" data-str="{{k['public'][1]}}"> <span class="sm">(preferred)</span>
-        <br>
+    </p>
+    <p>
         <span class="key-format">HEX</span> {{k['public'][0]}} <img src="/static/copy.svg" class="clipboard" data-str="{{k['public'][0]}}"> <span class="sm">(old style)</span>
     </p>
+    <hr>
     <h4>Private key: <img src="/static/eye.svg" class="show-key"></h4>
     <p class="sm">Keep your private key backed up somewhere secure and never share it with anyone else.</p>
     <p class="privkey">
-        <span class="key-format">nsec</span> {{k['private'][1]}} <img src="/static/copy.svg" class="clipboard" data-str="{{k['private'][1]}}"> <span class="sm">(preferred)</span>
-        <br>
+        <span class="key-format">Mnemonic phrase</span> <span class="sm">(preferred)</span>
+        <span class="mnemonic">{{k['private'][2]}}</span>
+    </p>
+    <p>
+        <span class="key-format">nsec</span> {{k['private'][1]}} <img src="/static/copy.svg" class="clipboard" data-str="{{k['private'][1]}}">
+    </p>
+    <p>
         <span class="key-format">HEX</span> {{k['private'][0]}} <img src="/static/copy.svg" class="clipboard" data-str="{{k['private'][0]}}"> <span class="sm">(old style)</span>
     </p>
 

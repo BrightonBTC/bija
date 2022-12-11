@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 from threading import Thread
 
+from pybip39 import Mnemonic, MnemonicType, Language
 from flask import render_template, request, session, redirect, make_response
 from flask_executor import Executor
 import pydenticon
@@ -65,9 +66,9 @@ def feed():
         else:
             before = time.time()
         notes = DB.get_feed(before, get_key())
-        profile = DB.get_profile(get_key())
         if len(notes) > 0:
             threads, last_ts = make_threaded(notes)
+            profile = DB.get_profile(get_key())
             return render_template("feed.items.html", threads=threads, last=last_ts, profile=profile)
         else:
             return 'END'
@@ -113,7 +114,7 @@ def profile_page():
     page_id = 'profile'
     if 'pk' in request.args and is_hex_key(request.args['pk']) and request.args['pk'] != get_key():
         EVENT_HANDLER.set_page('profile', request.args['pk'])
-        EXECUTOR.submit(EVENT_HANDLER.subscribe_profile, request.args['pk'], timestamp_minus(TimePeriod.WEEK*4))
+        EXECUTOR.submit(EVENT_HANDLER.subscribe_profile, request.args['pk'], timestamp_minus(TimePeriod.WEEK))
         k = request.args['pk']
         is_me = False
     else:
@@ -134,6 +135,22 @@ def profile_page():
 
     return render_template("profile.html", page_id=page_id, title="Profile", threads=threads, last=last_ts,
                            latest=latest, profile=profile, is_me=is_me)
+
+
+@app.route('/profile_feed', methods=['GET'])
+def profile_feed():
+    if request.method == 'GET':
+        if 'before' in request.args:
+            before = int(request.args['before'])
+        else:
+            before = time.time()
+        notes = DB.get_notes_by_pubkey(request.args['pk'], before, None)
+        if len(notes) > 0:
+            threads, last_ts = make_threaded(notes)
+            profile = DB.get_profile(get_key())
+            return render_template("feed.items.html", threads=threads, last=last_ts, profile=profile)
+        else:
+            return 'END'
 
 
 @app.route('/note', methods=['GET'])
@@ -242,9 +259,8 @@ def settings_page():
             relays = DB.get_relays()
             EVENT_HANDLER.get_connection_status()
             k = session.get("keys")
-
             keys = {
-                "private": [k['private'], hex64_to_bech32("nsec", k['private'])],
+                "private": [k['private'], hex64_to_bech32("nsec", k['private']), Mnemonic.from_entropy(bytes.fromhex(k['private']))],
                 "public": [k['public'], hex64_to_bech32("npub", k['public'])]
             }
             return render_template(
@@ -577,9 +593,27 @@ def _jinja2_filter_media(json_string):
         media = a[0]
         if media[1] == 'image':
             return '<div class="image-attachment"><img src="{}"></div>'.format(media[0])
-        if media[1] == 'og':
+        elif media[1] == 'og':
             return render_template("note.og.html", data=media[0])
+        elif media[1] == 'video':
+            return render_template("note.video.html", src=media[0], format=media[2])
     return ''
+
+
+@app.template_filter('process_note_content')
+def _jinja2_filter_note(content: str):
+    tags = get_at_tags(content)
+    for tag in tags:
+        pk = tag[1:]
+        if is_hex_key(pk):
+            name = '{}&#8230;{}'.format(pk[:3], pk[-5:])
+            profile = DB.get_profile(pk)
+            if profile is not None and profile.name is not None and len(profile.name) > 0:
+                name = profile.name
+            content = content.replace(
+                "@{}".format(pk),
+                "<a class='uname' href='/profile?pk={}'>@{}</a>".format(pk, name))
+    return content
 
 
 @app.template_filter('get_thread_root')
@@ -595,9 +629,11 @@ def _jinja2_filter_thread_root(root, reply, parent_id):
         out = {'root': reply, 'reply': parent_id}
     return out
 
+
 @app.template_filter('linkify')
 def _jinja2_filter_linkify(content):
     return url_linkify(content)
+
 
 def make_threaded(notes):
     threads = []

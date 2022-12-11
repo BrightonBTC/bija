@@ -348,10 +348,12 @@ input.post-submit {
 .privkey{
     filter: blur(3px);
     pointer-events: none;
+    user-select: none;
 }
 .privkey.show{
     filter: unset;
     pointer-events: all;
+    user-select: all;
 }
 .key-format {
     font-size: 10px;
@@ -360,6 +362,9 @@ input.post-submit {
     background: var(--bg-clr3);
     padding: 2px;
     font-weight: 800;
+}
+.keys p, .keys hr{
+    margin-bottom:10px;
 }
 
 /* ---------- */
@@ -913,6 +918,7 @@ p.note-tools img{
 }
 .popup .note-container{
     pointer-events:none;
+    user-select: none;
 }
 .reveal{
     background-image: linear-gradient(to top, var(--bg-clr2) 30%, transparent 100%);
@@ -953,12 +959,28 @@ p.note-tools img{
 .name-hints li:hover {
     background: var(--bg-clr2);
 }
-.og {
+.note .og {
     border: 1px solid var(--bdr-clr-2);
     margin: 5px 0 0 0;
     padding: 10px;
     border-radius: 5px;
     font-size: 12px;
+    display: block;
+    color: var(--txt-clr);
+}
+.note .og:hover {
+    color: var(--txt-clr);
+    border: 1px solid var(--bg-clr3);
+}
+.note .vid {
+    max-width: 100%;
+}
+.mnemonic{
+    background: var(--bg-clr2);
+    padding: 5px;
+    font-size: 20px;
+    display: block;
+    margin: 10px 0;
 }
 /* ---------- */
 
