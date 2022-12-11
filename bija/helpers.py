@@ -1,3 +1,4 @@
+import os
 import re
 import time
 from enum import IntEnum
@@ -156,3 +157,4 @@ def request_nip05(nip05):
             return None
     else:
         return None
+

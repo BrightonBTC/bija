@@ -1,7 +1,8 @@
 import os
 from threading import Thread
 
-from pybip39 import Mnemonic
+import bip39
+from bip39 import *
 from flask import request, session, redirect, make_response
 from flask_executor import Executor
 import pydenticon
@@ -32,27 +33,28 @@ ident_im_gen = pydenticon.Generator(6, 6, foreground=foreground, background=back
 
 
 class LoginState(IntEnum):
-    LOGGED_IN = 0
-    WITH_KEY = 1
-    WITH_PASSWORD = 2
-    SET_RELAYS = 3
-    NEW_KEYS = 4
+    SETUP = 0
+    LOGGED_IN = 2
+    WITH_KEY = 3
+    WITH_PASSWORD = 4
+    SET_RELAYS = 5
+    NEW_KEYS = 6
 
 
 @app.route('/')
 def index_page():
     EVENT_HANDLER.set_page('home', None)
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
-    DB.set_all_seen_in_feed(get_key())
     login_state = get_login_state()
     if login_state is LoginState.LOGGED_IN:
+        DB.set_all_seen_in_feed(get_key())
         notes = DB.get_feed(time.time(), get_key())
         threads, last_ts = make_threaded(notes)
         profile = DB.get_profile(get_key())
         return render_template("feed.html", page_id="home", title="Home", threads=threads, last=last_ts,
                                profile=profile)
     else:
-        return render_template("login.html", page_id="login", title="Login", login_type=login_state)
+        return render_template("login.html", page_id="login", title="Login", stage=login_state, LoginState=LoginState)
 
 
 @app.route('/feed', methods=['GET'])
@@ -90,7 +92,10 @@ def login_page():
             has_relays = DB.get_preferred_relay()
             if session.get('new_keys') is not None:
                 login_state = LoginState.NEW_KEYS
-                data = session.get('keys')
+                data = {
+                    'npub': get_key(),
+                    'mnem': bip39.encode_bytes(bytes.fromhex(get_key("private")))
+                }
                 session['new_keys'] = None
             elif has_relays is None:
                 login_state = LoginState.SET_RELAYS
@@ -102,7 +107,8 @@ def login_page():
         else:
             message = "Incorrect key or password"
     return render_template("login.html",
-                           page_id="login", title="Login", login_type=login_state, message=message, data=data)
+                           page_id="login", title="Login",
+                           stage=login_state, message=message, data=data, LoginState=LoginState)
 
 
 @app.route('/profile', methods=['GET'])
@@ -257,7 +263,7 @@ def settings_page():
             EVENT_HANDLER.get_connection_status()
             k = session.get("keys")
             keys = {
-                "private": [k['private'], hex64_to_bech32("nsec", k['private']), Mnemonic.from_entropy(bytes.fromhex(k['private']))],
+                "private": [k['private'], hex64_to_bech32("nsec", k['private']), bip39.encode_bytes(bytes.fromhex(k['private']))],
                 "public": [k['public'], hex64_to_bech32("npub", k['public'])]
             }
             return render_template(
@@ -581,13 +587,15 @@ def get_login_state():
     saved_pk = DB.get_saved_pk()
     if saved_pk is not None:
         if saved_pk.enc == 0:
+            print('here')
             set_session_keys(saved_pk.key)
             EXECUTOR.submit(EVENT_HANDLER.subscribe_primary)
+            print('here2')
             EXECUTOR.submit(EVENT_HANDLER.message_pool_handler)
             return LoginState.LOGGED_IN
         else:
             return LoginState.WITH_PASSWORD
-    return LoginState.WITH_KEY
+    return LoginState.SETUP
 
 
 def process_login():
@@ -603,7 +611,12 @@ def process_login():
             return False
 
     elif 'load_private_key' in request.form.keys():
-        if len(request.form['private_key'].strip()) < 1:  # generate a new key
+        if len(request.form['mnemonic'].strip()) > 0:
+            if len(request.form['mnemonic'].split()) == 24 and bip39.check_phrase(request.form['mnemonic']):
+                private_key = bip39.decode_phrase(request.form['mnemonic']).hex()
+            else:
+                return False
+        elif len(request.form['private_key'].strip()) < 1:  # generate a new key
             private_key = None
             session["new_keys"] = True
         elif is_hex_key(request.form['private_key'].strip()):
@@ -627,7 +640,7 @@ def process_login():
 
 
 def process_key_save(pk):
-    if 'save_key' in request.form.keys():
+    if 'password' in request.form.keys():
         pw = request.form['password'].strip()
         enc = 0
         if len(pw) > 0:
@@ -645,17 +658,20 @@ def get_key(k='public'):
 
 
 def set_session_keys(k):
+    print(k)
     if k is None:
         pk = PrivateKey()
     else:
         pk = PrivateKey(bytes.fromhex(k))
     private_key = pk.hex()
+    print(1)
     public_key = pk.public_key.hex()
     session["keys"] = {
         'private': private_key,
         'public': public_key
     }
     process_key_save(private_key)
+    print(2)
     if DB.get_profile(public_key) is None:
         DB.add_profile(public_key)
 

@@ -10,39 +10,65 @@
 <body>
 <div class="main">
     <h1>Login</h1>
-    <div class="card profileloader">
+
         {%- if message -%}
         <p class="alert">{{message}}</p>
         {%- endif -%}
         <form method="post" action="/login">
-        {%- if login_type == 2 -%}
-            <input type="password" id="pw" name="pw" placeholder="Saved password (this is not your private key)">
-            <input type="submit" id="login" name="login" value="Login">
 
-        {%- elif login_type == 1 -%}
-            <p>Enter a private key or create a new one to log in:</p>
-            <input type="text" id="private_key" name="private_key"  placeholder="Private Key (leave blank to create new)">
-            <div>
-              <input type="checkbox"  id="save_key" name="save_key"><label for="save_key">Save key for easy login?</label>
+        {%- if stage == LoginState.SETUP -%}
+            <div class="step1">
+                <div class="card profileloader setup">
+                    <input type="button" class="setup fresh" value="Create a fresh account">
+                </div>
+                <div class="card profileloader setup">
+                    <p>Already have a key you want to use?</p>
+                    <p class="sm">Enter your key below. You can use hex format, npub format or a 24 word mnemonic phrase.</p>
+                    <input type="text" id="private_key" name="private_key"  placeholder="Private Key (leave blank to create a new one)">
+                    <textarea name="mnemonic" class="mnemonic"></textarea>
+
+                    <input type="button" class="setup" value="next">
+                </div>
+            </div>
+            <div class="card profileloader pw_form">
+                <p>Require a password to log in? This will also encrypt your private key on disk.</p>
+                <input type="password" id="password" name="password"  placeholder="Password (leave blank for auto login)">
+                <input type="submit" id="load_private_key" name="load_private_key" value="Continue">
             </div>
 
-            <input type="password" id="password" name="password"  placeholder="Optional password to encrypt your key (you'll need this to login next time)">
-            <input type="submit" id="load_private_key" name="load_private_key" value="Load profile">
-        {%- elif login_type == 3 -%}
-            <p>In order to connect to the network you'll need to add at least 1 relay. You can update your relays at any time on the settings tab.</p>
+        {%- elif stage == LoginState.WITH_PASSWORD -%}
+            <div class="card profileloader">
+            <input type="password" id="pw" name="pw" placeholder="Saved password (this is not your private key)">
+            <input type="submit" id="login" name="login" value="Login">
+            </div>
+
+        {%- elif stage == LoginState.SET_RELAYS -%}
+            <div class="card profileloader">
+            <p>In order to connect to the network you'll need to add at least 1 relay. You can add to and update your relay list at any time on the settings tab.
+                For your convenience we've added afew to get you started.</p>
             {%- for relay in data -%}
                 <div>
                   <input type="checkbox" name="relay" class="relay_cb" value="{{relay}}" checked><label>{{relay}}</label>
                 </div>
             {%- endfor -%}
             <input type="submit" id="add_relays" name="add_relays" value="Add relays now">
-        {%- elif login_type == 4 -%}
-            <p>You generated a new private/public key pair. Make sure you back up the private key somewhere safe and never share it with anyone else.</p>
-            <ul>
-                <li style="color:green">Public Key: {{data['public']}} (share this with friends so they can find your account)</li>
-                <li style="color:red">Private Key: {{data['private']}} (for your eyes only, this is the key to your private data)</li>
-            </ul>
-            <input type="submit" id="confirm_new_keys" name="confirm_new_keys" value="Continue">
+            </div>
+
+        {%- elif stage == LoginState.NEW_KEYS -%}
+            <div class="card profileloader">
+                <p><strong>Account created! Make sure you back up the private key somewhere safe and never share it with anyone else.</strong></p>
+                <p>You can add other account details, like name and description, on the profile page once you've completed setup.</p>
+            </div>
+            <div class="card profileloader">
+                <p>There are various formats for backing up your private keys, and sharing your public ones. We recommend mnemonic for private and npub for public.
+                However, at present not all platforms support these.</p>
+                <span class="key-format">Mnemonic phrase</span>
+                <span class="mnemonic">{{data['mnem']}}</span>
+                <p><span class="key-format">npub</span> Public Key: {{data['npub']}} </p>
+                <p class="sm">* if you prefer other formats for your keys then you can refer to the settings page once logged in</p>
+                <input type="submit" id="confirm_new_keys" name="confirm_new_keys" value="Continue">
+            </div>
+
         {%- endif -%}
         </form>
     </div>
