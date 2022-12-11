@@ -255,8 +255,9 @@ class BijaDB:
         l1 = [i.id for i in items]
         l2 = [i.response_to for i in items]
         l3 = [i.thread_root for i in items]
+        l4 = [i.reshare for i in items]
 
-        out = list(dict.fromkeys(l1 + l2 + l3))
+        out = list(dict.fromkeys(l1 + l2 + l3 + l4))
         if None in out:
             out.remove(None)
             return out

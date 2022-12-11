@@ -128,7 +128,7 @@ class BijaEvents:
             self.db.commit()
             D_TASKS.next()
             time.sleep(1)
-            print('running')
+            print('running', time.time())
             i += 1
             if i == 60:
                 self.get_connection_status()
@@ -459,7 +459,7 @@ class MetadataEvent:
 
 class NoteEvent:
     def __init__(self, db, event, my_pk):
-        if db.get_note(event.id) is None:
+        if db.get_event(event.id) is None:
             self.og = []
             self.db = db
             self.event = event
@@ -487,10 +487,14 @@ class NoteEvent:
         urls = get_urls_in_string(self.content)
         self.content = url_linkify(self.content)
         for url in urls:
-            path = urlparse(url).path
-            extension = os.path.splitext(path)[1]
-            if extension.lower() in ['.png', '.svg', '.gif', '.jpg', '.jpeg']:
-                self.media.append((url, 'image'))
+            if validators.url(url):
+                path = urlparse(url).path
+                extension = os.path.splitext(path)[1]
+                if extension.lower() in ['.png', '.svg', '.gif', '.jpg', '.jpeg']:
+                    self.media.append((url, 'image'))
+                if extension.lower() in ['.mp4', '.mov', '.ogg', '.webm', '.avi']:
+                    self.media.append((url, 'video', extension.lower()[1:]))
+
         if len(self.media) < 1 and len(urls) > 0:
             note = self.db.get_note(self.event.id)
             already_scraped = False
@@ -522,14 +526,9 @@ class NoteEvent:
 
     def process_p_tag(self, item):
         pk = self.tags[item][1]
-        profile = self.db.get_profile(pk)
-        if profile is not None and profile.name is not None:
-            name = profile.name
-        else:
-            name = '{}...{}'.format(pk[:3], pk[-5:])
         self.content = self.content.replace(
             "#[{}]".format(item),
-            "<a class='uname' href='/profile?pk={}'>@{}</a>".format(pk, name))
+            "@{}".format(pk))
         if pk == self.my_pk and self.event.public_key != self.my_pk:
             self.mentions_me = True
 
@@ -541,7 +540,7 @@ class NoteEvent:
         else:
             self.content = self.content.replace(
                 "#[{}]".format(item),
-                "<a href='/note?id={}#{}'>event:{}...</a>".format(event_id, event_id, event_id[:21]))
+                "<a href='/note?id={}#{}'>event:{}&#8230;</a>".format(event_id, event_id, event_id[:21]))
 
     def process_tags(self):
         if len(self.tags) > 0:
