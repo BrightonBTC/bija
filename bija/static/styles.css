@@ -76,7 +76,7 @@ input[type=text], input[type=password], textarea {
     box-sizing: border-box;
 }
 
-input[type=submit] {
+input[type=submit], input[type=button], button {
   background-color: var(--btn-bg);
   color: var(--btn-txt);
   padding: 14px 20px;
@@ -86,7 +86,7 @@ input[type=submit] {
   cursor: pointer;
 }
 
-input[type=submit]:hover {
+input[type=submit]:hover, input[type=button]:hover, button:hover {
   background-color: var(--btn-bg-hvr);
   color: var(--btn-txt-hvr);
 }
@@ -341,19 +341,17 @@ input.post-submit {
 .im-settings-container input{
     flex: 1;
 }
-.show-key{
+.show-key img{
     width:16px;
-    cursor: pointer;
 }
-.privkey{
-    filter: blur(3px);
-    pointer-events: none;
-    user-select: none;
+.privkey {
+    padding: 10px;
+    border: 1px solid #f3810a;
+    border-radius: 5px;
+    display: none;
 }
-.privkey.show{
-    filter: unset;
-    pointer-events: all;
-    user-select: all;
+.privkey.show {
+    display: block;
 }
 .key-format {
     font-size: 10px;
@@ -803,7 +801,6 @@ input[type=text].pname {
     flex: 1;
 }
 .note{
-    overflow: hidden;
     padding: 0 10px;
     border-radius: 10px;
     background: var(--bg-clr1);

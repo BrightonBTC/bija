@@ -28,7 +28,7 @@
     <div class="msg-profile-pic"><img src='{{pic}}'></div>
     <div class="msg-profile">
         <div class="speech-bubble">
-            <div>{{message.content|decr(message.public_key)}}</div>
+            <div>{{message.content|decr(message.public_key, privkey)}}</div>
         </div>
         <p class="dt">{{message['created_at']|dt}}</p>
     </div>

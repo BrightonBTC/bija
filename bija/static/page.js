@@ -355,14 +355,15 @@ class bijaSettings{
     setPrivateKeyReveal(){
         const key_el = document.querySelector('.privkey')
         const reveal = document.querySelector('.show-key')
+        const im = reveal.querySelector('img')
         reveal.addEventListener("click", (event)=>{
             if(key_el.classList.contains('show')){
                 key_el.classList.remove('show')
-                reveal.src = '/static/eye.svg'
+                im.src = '/static/eye.svg'
             }
             else{
                 key_el.classList.add('show')
-                reveal.src = '/static/eye-off.svg'
+                im.src = '/static/eye-off.svg'
             }
         });
     }

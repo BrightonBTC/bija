@@ -12,9 +12,11 @@
         <span class="key-format">HEX</span> {{k['public'][0]}} <img src="/static/copy.svg" class="clipboard" data-str="{{k['public'][0]}}"> <span class="sm">(old style)</span>
     </p>
     <hr>
-    <h4>Private key: <img src="/static/eye.svg" class="show-key"></h4>
+    <h4>Private key: </h4>
     <p class="sm">Keep your private key backed up somewhere secure and never share it with anyone else.</p>
-    <p class="privkey">
+    <button class="show-key">Click to reveal  <img src="/static/eye.svg"></button>
+    <div class="privkey">
+    <p>
         <span class="key-format">Mnemonic phrase</span> <span class="sm">(preferred)</span>
         <span class="mnemonic">{{k['private'][2]}}</span>
     </p>
@@ -24,7 +26,7 @@
     <p>
         <span class="key-format">HEX</span> {{k['private'][0]}} <img src="/static/copy.svg" class="clipboard" data-str="{{k['private'][0]}}"> <span class="sm">(old style)</span>
     </p>
-
+    </div>
     <form method="post" action="/settings">
         <input type="button" name="del_keys" id="del_keys" class="right" value="Delete these keys">
     </form>
