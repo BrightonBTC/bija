@@ -1,19 +1,16 @@
-import os
 from threading import Thread
 
 import bip39
-from bip39 import *
+import pydenticon
 from flask import request, session, redirect, make_response
 from flask_executor import Executor
-import pydenticon
 
 from bija.app import app, socketio
 from bija.config import DEFAULT_RELAYS
 from bija.events import BijaEvents, MetadataEvent
-
-from bija.password import encrypt_key, decrypt_key
 from bija.helpers import *
 from bija.jinja_filters import *
+from bija.password import encrypt_key, decrypt_key
 
 thread = Thread()
 
@@ -263,8 +260,15 @@ def settings_page():
             EVENT_HANDLER.get_connection_status()
             k = session.get("keys")
             keys = {
-                "private": [k['private'], hex64_to_bech32("nsec", k['private']), bip39.encode_bytes(bytes.fromhex(k['private']))],
-                "public": [k['public'], hex64_to_bech32("npub", k['public'])]
+                "private": [
+                    k['private'],
+                    hex64_to_bech32("nsec", k['private']),
+                    bip39.encode_bytes(bytes.fromhex(k['private']))
+                ],
+                "public": [
+                    k['public'],
+                    hex64_to_bech32("npub", k['public'])
+                ]
             }
             return render_template(
                 "settings.html",
