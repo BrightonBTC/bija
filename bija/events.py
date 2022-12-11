@@ -104,8 +104,6 @@ class BijaEvents:
                 msg = self.relay_manager.message_pool.get_event()
                 if self.db.get_event(msg.event.id) is None:
 
-                    self.db.add_event(msg.event.id, msg.event.kind)
-
                     if msg.event.kind == EventKind.SET_METADATA:
                         self.receive_metadata_event(msg.event)
 
@@ -123,6 +121,8 @@ class BijaEvents:
 
                     if msg.event.kind == EventKind.REACTION:
                         self.receive_reaction_event(msg.event)
+
+                    self.db.add_event(msg.event.id, msg.event.kind)
 
             self.db.commit()
             D_TASKS.next()

@@ -502,7 +502,7 @@ class BijaDB:
         self.session.commit()
 
     def get_event(self, event_id):
-        return self.session.query(Event).filter(Event.id == event_id).first()
+        return self.session.query(Event.id, Event.kind).filter(Event.id == event_id).first()
 
     def add_alert(self, event_id, kind, profile, event, ts, content):
         self.session.merge(Alert(
