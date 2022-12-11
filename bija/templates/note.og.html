@@ -1,5 +1,20 @@
-<div class="og">
-    <p><strong>{{data['title']}}</strong></p>
-    <p>{{data['description']}}</p>
-    <img src="{{data['image']}}">
-</div>
+{%- if 'url' in data -%}
+    <a href="{{data['url']}}" class="og">
+{%- else -%}
+    <div class="og">
+{%- endif -%}
+    {%- if 'title' in data -%}
+        <p><strong>{{data['title']}}</strong></p>
+    {%- endif -%}
+    {%- if 'description' in data -%}
+        <p>{{data['description']|truncate(300, False, '...', 0)}}</p>
+    {%- endif -%}
+    {%- if 'image' in data -%}
+        <img src="{{data['image']}}"   data-dflt="/static/blank.png"  onerror="defaultImage(this);">
+    {%- endif -%}
+{%- if 'url' not in data -%}
+    </div>
+{%- else -%}
+        <span class="sm">{{data['url']}}</span>
+    </a>
+{%- endif -%}

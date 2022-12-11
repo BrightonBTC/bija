@@ -10,10 +10,12 @@ window.addEventListener("load", function () {
         new bijaThread();
     }
     if(document.querySelector(".main[data-page='profile']") != null){
+        new bijaFeed();
         new bijaNotes();
         new bijaProfile();
     }
     if(document.querySelector(".main[data-page='profile-me']") != null){
+        new bijaFeed();
         new bijaNotes();
         new bijaProfile();
     }
@@ -869,6 +871,8 @@ class bijaNotes{
 class bijaFeed{
 
     constructor(){
+        const main_el = document.querySelector(".main[data-page]")
+        this.page = main_el.dataset.page
         this.data = {};
         this.loading = 0;
         this.listener = () => this.loader(this);
@@ -898,7 +902,13 @@ class bijaFeed{
                 document.dispatchEvent(data.context.pageLoadedEvent);
             }
         }
-        fetchGet('/feed?before='+ts, cb, {'context': this})
+        if(this.page == 'home'){
+            fetchGet('/feed?before='+ts, cb, {'context': this})
+        }
+        else{
+            const profile_elem = document.querySelector("#profile")
+            fetchGet('/profile_feed?before='+ts+'&pk='+profile_elem.dataset.pk, cb, {'context': this})
+        }
     }
 
     loadArticles(response){
@@ -992,7 +1002,7 @@ function notify(text, link=false){
 
 function defaultImage(img){
     img.onerror = "";
-    img.src = '/identicon?id='+img.dataset.rel;
+    img.src = img.dataset.dflt;
 }
 
 function popup(htm){

@@ -23,7 +23,7 @@
         </span>
     </h3>
     <div class="note-content" data-rel="{{reply_chain.root}}" data-id="{{note['id']}}">
-        <pre>{{note['content'] |safe}}</pre>
+        <pre>{{note['content'] | process_note_content |safe}}</pre>
         <div class="note-media">{{note['media'] | process_media_attachments | safe}}</div>
         {%- if note['reshare'] is not none -%}
             {%- if note['reshare'] is string -%}
