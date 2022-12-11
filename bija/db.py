@@ -247,7 +247,7 @@ class BijaDB:
             .join(Note.profile).order_by(Note.created_at.asc()).all()
 
     def get_note_thread_ids(self, note_id):
-        items = self.session.query(Note.id, Note.response_to, Note.thread_root) \
+        items = self.session.query(Note.id, Note.response_to, Note.thread_root, Note.reshare) \
             .filter(
             text("note.id='{}' or note.response_to='{}' or note.thread_root='{}'".format(note_id, note_id, note_id))) \
             .all()

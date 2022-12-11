@@ -102,7 +102,6 @@ class BijaEvents:
 
             while self.relay_manager.message_pool.has_events():
                 msg = self.relay_manager.message_pool.get_event()
-
                 if self.db.get_event(msg.event.id) is None:
 
                     self.db.add_event(msg.event.id, msg.event.kind)
