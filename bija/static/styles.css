@@ -20,6 +20,11 @@
     --btn-bg-hvr: #276026;
     --btn-txt: #ffffff;
     --btn-txt-hvr: #dddf90;
+
+    --pad-tiny: 2px;
+    --pad-sm: 5px;
+    --pad-mid: 10px;
+    --pad-lg: 20px;
 }
 
 /* global styles */
@@ -57,7 +62,7 @@ img {
 }
 
 td, tr{
-    padding: 5px;
+    padding: var(--pad-sm);
 }
 
 a{
@@ -129,6 +134,21 @@ input[type=submit]:hover, input[type=button]:hover, button:hover {
     background: red;
 }
 /* ---------- */
+
+/* Global Components */
+
+.pad-tiny {
+    padding: var(--pad-tiny);
+}
+.pad-sm {
+    padding: var(--pad-sm);
+}
+.pad-mid {
+    padding: var(--pad-mid);
+}
+.pad-lg {
+    padding: var(--pad-lg);
+}
 
 /* Global UI */
 .main {
@@ -363,6 +383,10 @@ input.post-submit {
 }
 .keys p, .keys hr{
     margin-bottom:10px;
+}
+
+#relay_adder{
+    display: flex;
 }
 
 /* ---------- */

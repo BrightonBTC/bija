@@ -27,15 +27,12 @@
         <span class="key-format">HEX</span> {{k['private'][0]}} <img src="/static/copy.svg" class="clipboard" data-str="{{k['private'][0]}}"> <span class="sm">(old style)</span>
     </p>
     </div>
-    <form method="post" action="/settings">
-        <input type="button" name="del_keys" id="del_keys" class="right" value="Delete these keys">
-    </form>
 </div>
 <div class="card">
     <h3>Relays</h3>
     <ul>
     {%- for relay in relays: -%}
-        <li class="relay" data-url="{{relay.name}}"><span class="led"></span>{{relay.name}}<button class="del-relay">x</button></li>
+        <li class="relay" data-url="{{relay.name}}"><span class="led"></span>{{relay.name}} &nbsp; <button class="del-relay pad-tiny">x</button></li>
     {%- endfor -%}
     </ul>
     <button class="refresh_connections">reset connections</button>
@@ -44,4 +41,7 @@
         <input type="submit" id="addrelay" name="addrelay" class="right" value="+">
     </form>
 </div>
+<form method="post" action="/settings">
+    <input type="button" name="del_keys" id="del_keys" class="right" value="Delete this account">
+</form>
 {%- endblock content -%}
