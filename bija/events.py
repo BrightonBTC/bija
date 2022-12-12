@@ -16,6 +16,7 @@ from python_nostr.nostr.event import EventKind
 from python_nostr.nostr.relay_manager import RelayManager
 
 D_TASKS = DeferredTasks()
+DB = BijaDB(app.session)
 
 
 class BijaEvents:
@@ -26,15 +27,14 @@ class BijaEvents:
         'identifier': None
     }
 
-    def __init__(self, db, s):
+    def __init__(self, s):
         self.should_run = True
-        self.db = db
         self.session = s
         self.relay_manager = RelayManager()
         self.open_connections()
 
     def open_connections(self):
-        relays = self.db.get_relays()
+        relays = DB.get_relays()
         n_relays = 0
         for r in relays:
             n_relays += 1
@@ -103,8 +103,7 @@ class BijaEvents:
 
             while self.relay_manager.message_pool.has_events():
                 msg = self.relay_manager.message_pool.get_event()
-                if self.db.get_event(msg.event.id) is None:
-
+                if DB.get_event(msg.event.id) is None:
                     if msg.event.kind == EventKind.SET_METADATA:
                         self.receive_metadata_event(msg.event)
 
@@ -122,10 +121,9 @@ class BijaEvents:
 
                     if msg.event.kind == EventKind.REACTION:
                         self.receive_reaction_event(msg.event)
-
-                    self.db.add_event(msg.event.id, msg.event.kind)
-
-            self.db.commit()
+                    print(1)
+                    DB.add_event(msg.event.id, msg.event.kind)
+            DB.commit()
             D_TASKS.next()
             time.sleep(1)
             print('running', time.time())
@@ -135,23 +133,23 @@ class BijaEvents:
                 i = 0
 
     def receive_del_event(self, event):
-        DeleteEvent(self.db, event)
+        DeleteEvent(event)
 
     def receive_reaction_event(self, event):
-        e = ReactionEvent(self.db, event, self.get_key())
-        note = self.db.get_note(e.event_id)
+        e = ReactionEvent(event, self.get_key())
+        note = DB.get_note(e.event_id)
         if e.event.public_key != self.get_key():
             if note is not None and note.public_key == self.get_key():
-                reaction = self.db.get_reaction_by_id(e.event.id)
+                reaction = DB.get_reaction_by_id(e.event.id)
                 Alert(
                     e.event.id,
                     e.event.created_at, AlertKind.REACTION, e.event.public_key, e.event_id, reaction['content'])
-                n = self.db.get_unread_alert_count()
+                n = DB.get_unread_alert_count()
                 if n > 0:
                     socketio.emit('alert_n', n)
 
     def receive_metadata_event(self, event):
-        meta = MetadataEvent(self.db, event)
+        meta = MetadataEvent(event)
         if self.page['page'] == 'profile' and self.page['identifier'] == event.public_key:
             if meta.picture is None or len(meta.picture.strip()) == 0:
                 meta.picture = '/identicon?id={}'.format(event.public_key)
@@ -166,20 +164,20 @@ class BijaEvents:
             })
 
     def receive_note_event(self, event, subscription):
-        e = NoteEvent(self.db, event, self.get_key())
+        e = NoteEvent(event, self.get_key())
         if e.mentions_me:
             self.alert_on_note_event(e)
         self.notify_on_note_event(event, subscription)
 
     def alert_on_note_event(self, event):
         if event.response_to is not None:
-            reply = self.db.get_note(event.response_to)
+            reply = DB.get_note(event.response_to)
             if reply is not None and reply.public_key == self.get_key():
                 Alert(
                     event.event.id,
                     event.event.created_at, AlertKind.REPLY, event.event.public_key, event.response_to, event.content)
         elif event.thread_root is not None:
-            root = self.db.get_note(event.thread_root)
+            root = DB.get_note(event.thread_root)
             if root is not None and root.public_key == self.get_key():
                 Alert(
                     event.event.id,
@@ -188,82 +186,82 @@ class BijaEvents:
 
     def notify_on_note_event(self, event, subscription):
         if subscription == 'primary':
-            unseen_posts = self.db.get_unseen_in_feed()
+            unseen_posts = DB.get_unseen_in_feed()
             if unseen_posts > 0:
                 socketio.emit('unseen_posts_n', unseen_posts)
         elif subscription == 'profile':
-            self.db.set_note_seen(event.id)
-            socketio.emit('new_profile_posts', self.db.get_most_recent_for_pk(event.public_key))
+            DB.set_note_seen(event.id)
+            socketio.emit('new_profile_posts', DB.get_most_recent_for_pk(event.public_key))
         elif subscription == 'note-thread':
             socketio.emit('new_in_thread', event.id)
 
     def receive_contact_list_event(self, event, subscription):
-        e = ContactListEvent(self.db, event, self.get_key())
-        self.db.add_profile_if_not_exists(event.public_key)
-        self.db.add_contact_list(event.public_key, e.keys)
+        e = ContactListEvent(event, self.get_key())
+        DB.add_profile_if_not_exists(event.public_key)
+        DB.add_contact_list(event.public_key, e.keys)
         if e.changed:
             self.subscribe_primary()
         if event.public_key != self.get_key() and subscription == 'profile':
             self.subscribe_profile(event.public_key, timestamp_minus(TimePeriod.WEEK))
         if self.get_key() in e.keys:
-            self.db.set_follower(event.public_key)
+            DB.set_follower(event.public_key)
 
     def receive_private_message_event(self, event):
 
-        e = EncryptedMessageEvent(self.db, event, self.get_key())
-
+        e = EncryptedMessageEvent(event, self.get_key())
         if self.page['page'] == 'message' and self.page['identifier'] == e.pubkey:
-            messages = self.db.get_unseen_messages(e.pubkey)
+            messages = DB.get_unseen_messages(e.pubkey)
             if len(messages) > 0:
-                profile = self.db.get_profile(self.get_key())
-                self.db.set_message_thread_read(e.pubkey)
-                out = render_template("message_thread.items.html", me=profile, messages=messages)
+                profile = DB.get_profile(self.get_key())
+                DB.set_message_thread_read(e.pubkey)
+                out = render_template("message_thread.items.html",
+                                      me=profile, messages=messages, privkey=self.get_key('private'))
                 socketio.emit('message', out)
         else:
-            unseen_n = self.db.get_unseen_message_count()
+            unseen_n = DB.get_unseen_message_count()
             socketio.emit('unseen_messages_n', unseen_n)
 
     def subscribe_thread(self, root_id):
         subscription_id = 'note-thread'
         self.subscriptions.append(subscription_id)
-        SubscribeThread(subscription_id, self.relay_manager, self.db, root_id)
+        SubscribeThread(subscription_id, self.relay_manager, root_id)
 
     def subscribe_feed(self, ids):
         subscription_id = 'main-feed'
         self.subscriptions.append(subscription_id)
-        SubscribeFeed(subscription_id, self.relay_manager, self.db, ids)
+        SubscribeFeed(subscription_id, self.relay_manager, ids)
 
     def subscribe_profile(self, pubkey, since):
         subscription_id = 'profile'
         self.subscriptions.append(subscription_id)
-        SubscribeProfile(subscription_id, self.relay_manager, self.db, pubkey, since)
+        SubscribeProfile(subscription_id, self.relay_manager, pubkey, since)
 
     # create site wide subscription
     def subscribe_primary(self):
         self.subscriptions.append('primary')
-        SubscribePrimary('primary', self.relay_manager, self.db, self.get_key())
+        SubscribePrimary('primary', self.relay_manager, self.get_key())
 
     def submit_profile(self, profile):
-        e = SubmitProfile(self.relay_manager, self.db, self.session.get("keys"), profile)
+        e = SubmitProfile(self.relay_manager, self.session.get("keys"), profile)
         return e.event_id
 
     def submit_message(self, data):
-        e = SubmitEncryptedMessage(self.relay_manager, self.db, self.session.get("keys"), data)
+        e = SubmitEncryptedMessage(self.relay_manager, self.session.get("keys"), data)
         return e.event_id
 
     def submit_like(self, note_id):
-        e = SubmitLike(self.relay_manager, self.db, self.session.get("keys"), note_id)
+        e = SubmitLike(self.relay_manager, self.session.get("keys"), note_id)
         return e.event_id
 
     def submit_note(self, data, members=None):
-        e = SubmitNote(self.relay_manager, self.db, self.session.get("keys"), data, members)
+        e = SubmitNote(self.relay_manager, self.session.get("keys"), data, members)
         return e.event_id
 
     def submit_follow_list(self):
-        SubmitFollowList(self.relay_manager, self.db, self.session.get("keys"))
+        SubmitFollowList(self.relay_manager, self.session.get("keys"))
 
     def submit_delete(self, event_ids: list, reason=""):
-        e = SubmitDelete(self.relay_manager, self.db, self.session.get("keys"), event_ids, reason)
+        e = SubmitDelete(self.relay_manager, self.session.get("keys"), event_ids, reason)
         return e.event_id
 
     def close_subscription(self, name):
@@ -281,8 +279,7 @@ class BijaEvents:
 
 
 class ReactionEvent:
-    def __init__(self, db, event, my_pubkey):
-        self.db = db
+    def __init__(self, event, my_pubkey):
         self.event = event
         self.pubkey = my_pubkey
         self.event_id = None
@@ -305,7 +302,7 @@ class ReactionEvent:
                 self.event_id = tag[1]
 
     def store(self):
-        self.db.add_note_reaction(
+        DB.add_note_reaction(
             self.event.id,
             self.event.public_key,
             self.event_id,
@@ -315,28 +312,26 @@ class ReactionEvent:
             json.dumps(self.event.to_json_object())
         )
         if self.event.public_key == self.pubkey:
-            self.db.set_note_liked(self.event_id)
+            DB.set_note_liked(self.event_id)
 
 
 class DeleteEvent:
-    def __init__(self, db, event):
-        self.db = db
+    def __init__(self, event):
         self.event = event
         self.process()
 
     def process(self):
         for tag in self.event.tags:
             if tag[0] == 'e':
-                e = self.db.get_event(tag[1])
+                e = DB.get_event(tag[1])
                 if e is not None and e.kind == EventKind.REACTION:
-                    self.db.delete_reaction(tag[1])
+                    DB.delete_reaction(tag[1])
                 if e is not None and e.kind == EventKind.TEXT_NOTE:
-                    self.db.set_note_deleted(tag[1], self.event.content)
+                    DB.set_note_deleted(tag[1], self.event.content)
 
 
 class ContactListEvent:
-    def __init__(self, db, event, pubkey):
-        self.db = db
+    def __init__(self, event, pubkey):
         self.event = event
         self.pubkey = pubkey
         self.keys = []
@@ -352,21 +347,20 @@ class ContactListEvent:
                 self.keys.append(p[1])
 
     def set_following(self):
-        following = self.db.get_following_pubkeys()
+        following = DB.get_following_pubkeys()
         new = set(self.keys) - set(following)
         removed = set(following) - set(self.keys)
         if len(new) > 0:
             self.changed = True
-            self.db.set_following(new, True)
+            DB.set_following(new, True)
         if len(removed) > 0:
             self.changed = True
-            self.db.set_following(removed, False)
+            DB.set_following(removed, False)
 
 
 class EncryptedMessageEvent:
-    def __init__(self, db, event, my_pubkey):
+    def __init__(self, event, my_pubkey):
         self.my_pubkey = my_pubkey
-        self.db = db
         self.event = event
         self.is_sender = None
         self.pubkey = None
@@ -392,8 +386,8 @@ class EncryptedMessageEvent:
                 self.is_sender = 0
 
     def store(self):
-        self.db.add_profile_if_not_exists(self.event.public_key)
-        self.db.insert_private_message(
+        DB.add_profile_if_not_exists(self.event.public_key)
+        DB.insert_private_message(
             self.event.id,
             self.pubkey,
             self.event.content,
@@ -404,8 +398,7 @@ class EncryptedMessageEvent:
 
 
 class MetadataEvent:
-    def __init__(self, db, event):
-        self.db = db
+    def __init__(self, event):
         self.event = event
         self.name = None
         self.nip05 = None
@@ -428,10 +421,10 @@ class MetadataEvent:
             self.picture = s['picture']
 
         if self.nip05 is not None:
-            current = self.db.get_profile(self.event.public_key)
+            current = DB.get_profile(self.event.public_key)
             if current is None or current.nip05 != self.nip05:
                 if self.validate_nip05(self.nip05, self.event.public_key):
-                    self.db.set_valid_nip05(self.event.public_key)
+                    DB.set_valid_nip05(self.event.public_key)
                     self.nip05_validated = True
             elif current is not None:
                 self.nip05_validated = current.nip05
@@ -446,7 +439,7 @@ class MetadataEvent:
         return False
 
     def store(self):
-        self.db.upd_profile(
+        DB.upd_profile(
             self.event.public_key,
             self.name,
             self.nip05,
@@ -458,9 +451,8 @@ class MetadataEvent:
 
 
 class NoteEvent:
-    def __init__(self, db, event, my_pk):
-        if db.get_event(event.id) is None:
-            self.db = db
+    def __init__(self, event, my_pk):
+        if DB.get_event(event.id) is None:
             self.event = event
             self.content = strip_tags(event.content)
             self.tags = event.tags
@@ -495,7 +487,7 @@ class NoteEvent:
                     self.media.append((url, 'video', extension.lower()[1:]))
 
         if len(self.media) < 1 and len(urls) > 0:
-            note = self.db.get_note(self.event.id)
+            note = DB.get_note(self.event.id)
             already_scraped = False
             scrape_fail_attempts = 0
             if note is not None:
@@ -564,8 +556,8 @@ class NoteEvent:
                     self.response_to = parents[1]
 
     def update_db(self):
-        self.db.add_profile_if_not_exists(self.event.public_key)
-        self.db.insert_note(
+        DB.add_profile_if_not_exists(self.event.public_key)
+        DB.insert_note(
             self.event.id,
             self.event.public_key,
             self.content,

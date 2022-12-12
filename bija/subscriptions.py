@@ -1,16 +1,19 @@
 import json
 import time
 
+from bija.app import app
+from bija.db import BijaDB
 from bija.helpers import timestamp_minus, TimePeriod
 from python_nostr.nostr.event import EventKind
 from python_nostr.nostr.filter import Filter, Filters
 from python_nostr.nostr.message_type import ClientMessageType
 
+DB = BijaDB(app.session)
+
 
 class Subscribe:
-    def __init__(self, name, relay_manager, db):
+    def __init__(self, name, relay_manager):
         self.relay_manager = relay_manager
-        self.db = db
         self.name = name
         self.filters = None
 
@@ -24,8 +27,8 @@ class Subscribe:
 
 
 class SubscribePrimary(Subscribe):
-    def __init__(self, name, relay_manager, db, pubkey):
-        super().__init__(name, relay_manager, db)
+    def __init__(self, name, relay_manager, pubkey):
+        super().__init__(name, relay_manager)
         self.pubkey = pubkey
         self.build_filters()
         self.send()
@@ -42,7 +45,7 @@ class SubscribePrimary(Subscribe):
         kinds = [EventKind.TEXT_NOTE, EventKind.ENCRYPTED_DIRECT_MESSAGE, EventKind.REACTION, EventKind.CONTACTS]
         mentions_filter = Filter(tags={'#p': [self.pubkey]}, kinds=kinds)
         f = [profile_filter, mentions_filter]
-        following_pubkeys = self.db.get_following_pubkeys()
+        following_pubkeys = DB.get_following_pubkeys()
 
         if len(following_pubkeys) > 0:
             following_filter = Filter(
@@ -61,15 +64,15 @@ class SubscribePrimary(Subscribe):
 
 
 class SubscribeProfile(Subscribe):
-    def __init__(self, name, relay_manager, db, pubkey, since):
-        super().__init__(name, relay_manager, db)
+    def __init__(self, name, relay_manager, pubkey, since):
+        super().__init__(name, relay_manager)
         self.pubkey = pubkey
         self.since = since
         self.build_filters()
         self.send()
 
     def build_filters(self):
-        profile = self.db.get_profile(self.pubkey)
+        profile = DB.get_profile(self.pubkey)
 
         f = [
             Filter(authors=[self.pubkey], kinds=[EventKind.SET_METADATA, EventKind.CONTACTS]),
@@ -84,14 +87,14 @@ class SubscribeProfile(Subscribe):
 
 
 class SubscribeThread(Subscribe):
-    def __init__(self, name, relay_manager, db, root):
-        super().__init__(name, relay_manager, db)
+    def __init__(self, name, relay_manager, root):
+        super().__init__(name, relay_manager)
         self.root = root
         self.build_filters()
         self.send()
 
     def build_filters(self):
-        ids = self.db.get_note_thread_ids(self.root)
+        ids = DB.get_note_thread_ids(self.root)
         if ids is None:
             ids = [self.root]
 
@@ -102,8 +105,8 @@ class SubscribeThread(Subscribe):
 
 
 class SubscribeFeed(Subscribe):
-    def __init__(self, name, relay_manager, db, ids):
-        super().__init__(name, relay_manager, db)
+    def __init__(self, name, relay_manager, ids):
+        super().__init__(name, relay_manager)
         self.ids = ids
         self.build_filters()
         self.send()

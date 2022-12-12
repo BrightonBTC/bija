@@ -17,7 +17,7 @@ thread = Thread()
 
 DB = BijaDB(app.session)
 EXECUTOR = Executor(app)
-EVENT_HANDLER = BijaEvents(DB, session)
+EVENT_HANDLER = BijaEvents(session)
 
 foreground = ["rgb(45,79,255)",
               "rgb(254,180,44)",
