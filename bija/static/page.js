@@ -667,10 +667,14 @@ class bijaNotes{
             note.dataset.processed = '1'
 
             const link = note.querySelector(".reply-link");
-            this.setReplyLinkEvents(link)
+            if(link){
+                this.setReplyLinkEvents(link)
+            }
 
             const btn = note.querySelector("input[data-reply-submit]");
-            this.setReplyClickedEvents(btn)
+            if(btn){
+                this.setReplyClickedEvents(btn)
+            }
 
             const note_link = note.querySelector(".note-content[data-rel]");
             this.setContentClickedEvents(note_link)
@@ -679,10 +683,14 @@ class bijaNotes{
             this.setOptsMenuEvents(opt_el)
 
             const q_el = note.querySelector(".quote-link");
-            this.setQuoteClickedEvents(q_el)
+            if(q_el){
+                this.setQuoteClickedEvents(q_el)
+            }
 
             const like_el = note.querySelector("a.like");
-            this.setLikeClickedEvents(like_el)
+            if(like_el){
+                this.setLikeClickedEvents(like_el)
+            }
 
             const content_el = note.querySelector(".note-content pre");
             this.setExpandableHeight(content_el)

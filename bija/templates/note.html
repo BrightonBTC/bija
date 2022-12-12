@@ -30,9 +30,13 @@
                 <div class="note-container placeholder sm" data-id="{{note['reshare']}}">Event not yet seen on network ({{note['reshare']}})</div>
             {%- else -%}
             {%- set item = note['reshare'] -%}
+            {%- set is_reshare = true -%}
             {%- include 'thread.item.html' -%}
+            {%- set is_reshare = false -%}
             {%- endif -%}
         {%- endif -%}
     </div>
+    {%- if not is_reshare -%}
     {%- include 'note.reply_form.html' -%}
+    {%- endif -%}
 </div>
