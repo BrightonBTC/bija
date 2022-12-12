@@ -585,7 +585,7 @@ def process_login():
     elif 'login' in request.form.keys():
         saved_pk = DB.get_saved_pk()
         k = decrypt_key(request.form['pw'].strip(), saved_pk.key)
-        if is_hex_key(k):
+        if k and is_hex_key(k):
             set_session_keys(k)
             return True
         else:

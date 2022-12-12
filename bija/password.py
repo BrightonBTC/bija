@@ -1,4 +1,4 @@
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -35,5 +35,8 @@ def decrypt_key(password, to_decrypt):
     _key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
 
     f = Fernet(_key)
-    pw = f.decrypt(to_decrypt)
-    return pw.decode()
+    try:
+        pw = f.decrypt(to_decrypt)
+        return pw.decode()
+    except InvalidToken:
+        return False
