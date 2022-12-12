@@ -15,8 +15,8 @@ pip install -r ../requirements.tx
 python3 cli.py
 ```
 
-Or to build using pyinstaller:
-* This should theoretically also work for OSX but is untested (please let me know if you have success!). Bija currently has some dependencies that are incompatible with Windows though
+Or additionally to the above you could compile using pyinstaller:
+* This should theoretically also work for OSX but is untested (please let me know if you have success!). Bija currently has some dependencies that are incompatible with Windows though.
 ```
 pyinstaller cli.py --onefile -w -F --add-data "bija/templates:bija/templates" --add-data "bija/static:bija/static" --name "bija-nostr-client-v0.0.2-alpha"
 
