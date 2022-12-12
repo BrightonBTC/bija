@@ -1,32 +1,23 @@
-Python/Flask [Nostr](https://github.com/nostr-protocol/nostr) client wrapped in QT 
+# Bija Nostr Client
+
+Python [Nostr](https://github.com/nostr-protocol/nostr) client built with Flask and PyQT6
 
 This is experimental software in early development and comes without warranty.
 
-If you want to give a try you can find an alpha release for Linux on the [releases page](https://github.com/BrightonBTC/bija/releases) 
+If you want to give it a test run you can find early releases for Linux (Windows and OSX versions intended at a later date) on the [releases page](https://github.com/BrightonBTC/bija/releases) 
 
-Or, to get it up and running yourself you'll need to follow these steps: 
+Or, to get it up and running yourself: 
 
+```
+git clone https://github.com/BrightonBTC/bija
+cd bija
+pip install -r ../requirements.tx
+python3 cli.py
+```
 
-1) clone the repo and open it in a python 3.10 virtual env (using PyCharm or similar)
+Or to build using pyinstaller:
+* This should theoretically also work for OSX but is untested (please let me know if you have success!). Bija currently has some dependencies that are incompatible with Windows though
+```
+pyinstaller cli.py --onefile -w -F --add-data "bija/templates:bija/templates" --add-data "bija/static:bija/static" --name "bija-nostr-client-v0.0.2-alpha"
 
-`git clone https://github.com/BrightonBTC/bija`
-
-2) create a submodule for python-nostr and rename the dir
-
-`cd bija`
-
-`git submodule add https://github.com/BrightonBTC/python-nostr`
-
-`git mv python-nostr/ python_nostr/`
-
-3) install requirements
-
-`pip install -r ../requirements.txt`
-
-4) you may also need to install requirements for python-nostr
-
-`pip install -r ../python_nostr/requirements.txt`
-
-5) run cli.py
-
-`python3 cli.py`
+```
