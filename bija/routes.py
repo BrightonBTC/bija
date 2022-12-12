@@ -90,7 +90,7 @@ def login_page():
             if session.get('new_keys') is not None:
                 login_state = LoginState.NEW_KEYS
                 data = {
-                    'npub': get_key(),
+                    'npub': hex64_to_bech32("npub", get_key()),
                     'mnem': bip39.encode_bytes(bytes.fromhex(get_key("private")))
                 }
                 session['new_keys'] = None
