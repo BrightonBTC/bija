@@ -1,10 +1,14 @@
 import os
 import re
 import time
+import urllib
 from enum import IntEnum
 import logging
 import traceback
 from typing import Any
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlparse
+from urllib.request import Request
 
 import requests
 from bs4 import BeautifulSoup
@@ -80,7 +84,7 @@ def strip_tags(content: str):
     return BeautifulSoup(content, features="html.parser").get_text()
 
 
-def validate_nip05(name: str):
+def is_nip05(name: str):
     parts = name.split('@')
     if len(parts) == 2:
         if parts[0] == '_':
@@ -99,7 +103,7 @@ def validate_nip05(name: str):
 
 def is_valid_relay(url: str) -> bool:
     regex = re.compile(
-        r'^wss?://' 
+        r'^wss?://'
         r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
         r'localhost|'  # localhost...
         r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
@@ -113,9 +117,9 @@ def is_hex_key(k):
 
 
 class TimePeriod(IntEnum):
-    HOUR = 60*60
-    DAY = 60*60*24
-    WEEK = 60*60*24*7
+    HOUR = 60 * 60
+    DAY = 60 * 60 * 24
+    WEEK = 60 * 60 * 24 * 7
 
 
 def timestamp_minus(period: TimePeriod, multiplier: int = 1):
@@ -131,7 +135,7 @@ def list_index_exists(lst, i):
 
 
 def request_nip05(nip05):
-    valid_parts = validate_nip05(nip05)
+    valid_parts = is_nip05(nip05)
     if valid_parts:
         name = valid_parts[0]
         address = valid_parts[1]
@@ -158,3 +162,23 @@ def request_nip05(nip05):
     else:
         return None
 
+
+def request_relay_data(url):
+    parts = urlparse(url)
+    url = url.replace(parts.scheme, 'https')
+    get = Request(url, headers={'Accept': 'application/nostr+json'})
+    try:
+        with urllib.request.urlopen(get, timeout=2) as response:
+            if response.status == 200:
+                print(response.status)
+                return response.read()
+            return False
+    except HTTPError as error:
+        print(error.status, error.reason)
+        return False
+    except URLError as error:
+        print(error.reason)
+        return False
+    except TimeoutError:
+        print("Request timed out")
+        return False

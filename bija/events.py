@@ -8,7 +8,7 @@ from flask import render_template
 from bija.app import socketio
 from bija.deferred_tasks import TaskKind, DeferredTasks
 from bija.helpers import get_embeded_tag_indexes, \
-    list_index_exists, get_urls_in_string, request_nip05, url_linkify, strip_tags
+    list_index_exists, get_urls_in_string, request_nip05, url_linkify, strip_tags, request_relay_data
 from bija.subscriptions import *
 from bija.submissions import *
 from bija.alerts import *
@@ -59,6 +59,7 @@ class BijaEvents:
         self.relay_manager.remove_relay(url)
 
     def add_relay(self, url):
+        print(request_relay_data(url))
         self.relay_manager.add_relay(url)
 
     def get_connection_status(self):
