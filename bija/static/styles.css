@@ -854,7 +854,8 @@ input[type=text].pname {
     display:none;
 }
 .reply-form.poster-form {
-    align-items: flex-end;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 .info{
@@ -968,6 +969,7 @@ p.note-tools img{
 .name-hints{
     background: var(--bg-clr3);
     border-radius: 5px;
+    flex: 100%;
 }
 .name-hints ul{
     padding: 5px;
@@ -1058,13 +1060,22 @@ p.note-tools img{
     overflow: auto;
     -ms-overflow-style: none;
     scrollbar-width: none;
+    z-index:100;
 }
 #right_content::-webkit-scrollbar {
     display: none;
 }
+#right_content h3 {
+    font-size: 12px;
+    font-weight: 800;
+    border-bottom: 1px solid var(--bdr-clr-1);
+    color: var(--txt-clr2);
+    padding: 3px;
+}
 #search {
     position: fixed;
     width:220px;
+    z-index: 200;
 }
 
 #search input{
@@ -1073,6 +1084,9 @@ p.note-tools img{
 }
 #search p{
     padding: 0 20px;
+}
+#search_hints{
+    position:absolute;
 }
 .thread-members{
     border: 1px solid var(--bdr-clr-1);

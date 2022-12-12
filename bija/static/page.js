@@ -1,91 +1,49 @@
-window.addEventListener("load", function () {
-
-    if(document.querySelector(".main[data-page='home']") != null){
-        new bijaFeed();
-        new bijaNotes();
-        new bijaNotePoster();
-    }
-    if(document.querySelector(".main[data-page='note']") != null){
-        new bijaNotes();
-        new bijaThread();
-    }
-    if(document.querySelector(".main[data-page='profile']") != null){
-        new bijaFeed();
-        new bijaNotes();
-        new bijaProfile();
-    }
-    if(document.querySelector(".main[data-page='profile-me']") != null){
-        new bijaFeed();
-        new bijaNotes();
-        new bijaProfile();
-    }
-    if(document.querySelector(".main[data-page='following']") != null){
-        new bijaProfile();
-    }
-    if(document.querySelector(".main[data-page='messages_from']") != null){
-        new bijaMessages()
-    }
-    if(document.querySelector(".main[data-page='settings']") != null){
-        new bijaSettings()
-    }
-    SOCK()
-
-    new bijaNoteTools()
-
-    const btns = document.querySelectorAll('.clipboard');
-    for (const btn of btns) {
-        btn.addEventListener('click', (e) => {
-            clipboard(btn.dataset.str)
-        });
-    }
-});
-
-let SOCK = function(){
+function SOCK() {
 
     var socket = io.connect();
     socket.on('connect', function() {
         socket.emit('new_connect', {data: true});
     });
     socket.on('message', function(data) {
-        updateMessageThread(data)
+        updateMessageThread(data);
     });
     socket.on('unseen_messages_n', function(data) {
-        let el_unseen = document.getElementById("n_unseen_messages")
+        let el_unseen = document.getElementById("n_unseen_messages");
         if(parseInt(data) == 0){
-            el_unseen.style.display = "none"
+            el_unseen.style.display = "none";
         }
         else{
-            el_unseen.style.display = "inline-block"
-            el_unseen.innerText = data
+            el_unseen.style.display = "inline-block";
+            el_unseen.innerText = data;
         }
     });
 
     socket.on('unseen_posts_n', function(data) {
-        let el_unseen = document.getElementById("n_unseen_posts")
+        let el_unseen = document.getElementById("n_unseen_posts");
         if(parseInt(data) == 0){
-            el_unseen.style.display = "none"
+            el_unseen.style.display = "none";
         }
         else{
-            el_unseen.style.display = "inline-block"
-            el_unseen.innerText = data
+            el_unseen.style.display = "inline-block";
+            el_unseen.innerText = data;
         }
     });
     socket.on('alert_n', function(data) {
-        let el_unseen = document.getElementById("n_alerts")
+        let el_unseen = document.getElementById("n_alerts");
         if(parseInt(data) == 0){
-            el_unseen.style.display = "none"
+            el_unseen.style.display = "none";
         }
         else{
-            el_unseen.style.display = "inline-block"
-            el_unseen.innerText = data
+            el_unseen.style.display = "inline-block";
+            el_unseen.innerText = data;
         }
     });
 
     socket.on('profile_update', function(data) {
-        updateProfile(data)
+        updateProfile(data);
     });
     socket.on('new_profile_posts', function(ts) {
-        notifyNewProfilePosts(ts)
+        notifyNewProfilePosts(ts);
     });
     socket.on('new_in_thread', function(id) {
         document.dispatchEvent(new CustomEvent("newNote", {
@@ -94,65 +52,67 @@ let SOCK = function(){
     });
 
     socket.on('conn_status', function(data) {
-        const connections = {'connected': 0, 'recent': 0, 'disconnected': 0, 'none':0}
+        const connections = {'connected': 0, 'recent': 0, 'disconnected': 0, 'none':0};
         for(const relay in data){
-            r = data[relay]
-            let urel = document.querySelector(".relay[data-url='"+r[0]+"'] .led")
+            r = data[relay];
+            let urel = document.querySelector(".relay[data-url='"+r[0]+"'] .led");
             if(r[1] == null){
-                connections['none'] += 1
+                connections.none += 1;
                 if(urel){
-                    urel.setAttribute("class", "led none")
+                    urel.setAttribute("class", "led none");
                 }
             }
             else if(parseInt(r[1]) < 60){
-                connections['connected'] += 1
+                connections.connected += 1;
                 if(urel){
-                    urel.setAttribute("class", "led connected")
+                    urel.setAttribute("class", "led connected");
                 }
             }
             else if(parseInt(r[1]) < 180){
-                connections['recent'] += 1
+                connections.recent += 1;
                 if(urel){
-                    urel.setAttribute("class", "led recent")
+                    urel.setAttribute("class", "led recent");
                 }
             }
             else{
-                connections['disconnected'] += 1
+                connections.disconnected += 1;
                 if(urel){
-                    urel.setAttribute("class", "led disconnected")
+                    urel.setAttribute("class", "led disconnected");
                 }
             }
         }
-        const el = document.querySelector(".conn-status")
+        const el = document.querySelector(".conn-status");
         el.innerHTML = "";
         for (const [k, v] of Object.entries(connections)) {
             if(v > 0){
-                let span = document.createElement('span')
-                span.classList.add('status')
-                let span2 = document.createElement('span')
-                span2.classList.add('led', k)
-                let span3 = document.createElement('span')
-                span3.innerText = v
-                span.append(span2)
-                span.append(span3)
-                el.append(span)
+                let span = document.createElement('span');
+                span.classList.add('status');
+                let span2 = document.createElement('span');
+                span2.classList.add('led', k);
+                let span3 = document.createElement('span');
+                span3.innerText = v;
+                span.append(span2);
+                span.append(span3);
+                el.append(span);
             }
         }
     });
 }
+
+
 let notifyNewProfilePosts = function(ts){
-    first_note = document.querySelector('#profile-posts[data-latest]')
+    first_note = document.querySelector('#profile-posts[data-latest]');
     if(first_note){
-        latest = first_note.dataset.latest
+        latest = first_note.dataset.latest;
     }
     else{
-        latest = 0
+        latest = 0;
     }
     if(ts > latest){
-        elem = document.querySelector("#profile-posts")
-        notifications = document.querySelectorAll(".new-posts")
+        elem = document.querySelector("#profile-posts");
+        notifications = document.querySelectorAll(".new-posts");
         if(elem && notifications.length < 1){
-            notification = document.createElement('a')
+            notification = document.createElement('a');
             notification.innerText = 'Show new posts';
             notification.href = ''
             notification.classList.add('new-posts')
@@ -197,6 +157,58 @@ let updateMessageThread = function(data){
         }
         else{
             notify('new messages')
+        }
+    }
+}
+
+class bijaSearch{
+    constructor(){
+        this.setEventListeners()
+    }
+
+    setEventListeners(){
+        const search = document.querySelector('input[name="search_term"]');
+        search.addEventListener("keyup", (event)=>{
+            document.querySelector('#search_hints').innerHTML = ''
+            const val = search.value
+            if (val.substring(0, 1) == '@'){
+                this.searchByName(val.substring(1))
+            }
+        })
+    }
+
+    searchByName(name){
+        const cb = function(response, data){
+            if(response['result']){
+                console.log(data)
+                data.context.showNameHints(response['result'], data.search)
+            }
+        }
+        fetchGet('/search_name?name='+name, cb, {
+            'context':this,
+            'search':name
+        }, 'json')
+    }
+
+    showNameHints(results, search_str){
+        const reply_elem = document.querySelector('input[name="search_term"]')
+        const hint_elem = document.querySelector('#search_hints')
+        if(results.length > 0){
+            const ul = document.createElement('ul')
+            ul.classList.add('hint-list')
+            for(const name of results) {
+                let li = document.createElement('li')
+                if(!name['name'] || name['name'].length < 1){
+                    name['name'] = name['public_key']
+                }
+                li.innerText = name['name']
+                li.addEventListener("click", (event)=>{
+                    reply_elem.value = reply_elem.value.replace('@'+search_str, '@'+name['name'])
+                    hint_elem.innerHTML = ''
+                });
+                ul.append(li)
+            }
+            hint_elem.append(ul)
         }
     }
 }
@@ -249,7 +261,7 @@ class bijaNoteTools{
                         'hint_elem':hint_elem,
                         'reply_elem':reply_el,
                         'search':name
-                        }, 'json')
+                    }, 'json')
                 }
             }
 
@@ -1065,3 +1077,46 @@ function match_mentions(str){
     var pattern = /\B@[a-z0-9_-]+/gi;
     return str.match(pattern);
 }
+
+window.addEventListener("load", function () {
+
+    if (document.querySelector(".main[data-page='home']") != null){
+        new bijaFeed();
+        new bijaNotes();
+        new bijaNotePoster();
+    }
+    if (document.querySelector(".main[data-page='note']") != null){
+        new bijaNotes();
+        new bijaThread();
+    }
+    if (document.querySelector(".main[data-page='profile']") != null){
+        new bijaFeed();
+        new bijaNotes();
+        new bijaProfile();
+    }
+    if (document.querySelector(".main[data-page='profile-me']") != null){
+        new bijaFeed();
+        new bijaNotes();
+        new bijaProfile();
+    }
+    if (document.querySelector(".main[data-page='following']") != null){
+        new bijaProfile();
+    }
+    if (document.querySelector(".main[data-page='messages_from']") != null){
+        new bijaMessages();
+    }
+    if (document.querySelector(".main[data-page='settings']") != null){
+        new bijaSettings();
+    }
+    SOCK();
+
+    new bijaNoteTools();
+    new bijaSearch();
+
+    const btns = document.querySelectorAll('.clipboard');
+    for (const btn of btns) {
+        btn.addEventListener('click', (e) => {
+            clipboard(btn.dataset.str);
+        });
+    }
+});

@@ -123,7 +123,6 @@ def profile_page():
         is_me = True
         page_id = 'profile-me'
     notes = DB.get_notes_by_pubkey(k, int(time.time()), timestamp_minus(TimePeriod.DAY))
-    # t, i = make_threaded(notes)
     threads, last_ts = make_threaded(notes)
     profile = DB.get_profile(k)
     latest = DB.get_most_recent_for_pk(k)
@@ -411,7 +410,11 @@ def search_page():
     results = []
     if 'search_term' in request.args or len(request.args['search_term'].strip()) < 1:
         term = request.args['search_term']
-        if is_hex_key(request.args['search_term']):
+        if term[:1] == '@':
+            pk = DB.get_profile_by_name_or_pk(term[1:])
+            if pk is not None:
+                return redirect('/profile?pk={}'.format(pk.public_key))
+        elif is_hex_key(request.args['search_term']):
             return redirect('/profile?pk={}'.format(term))
         elif is_bech32_key('npub', term):
             b_key = bech32_to_hex64('npub', term)
@@ -419,7 +422,7 @@ def search_page():
                 return redirect('/profile?pk={}'.format(b_key))
             else:
                 message = 'invalid npub'
-        elif validate_nip05(term):
+        elif is_nip05(term):
             profile = DB.get_pk_by_nip05(term)
             if profile is not None:
                 return redirect('/profile?pk={}'.format(profile.public_key))
@@ -591,10 +594,8 @@ def get_login_state():
     saved_pk = DB.get_saved_pk()
     if saved_pk is not None:
         if saved_pk.enc == 0:
-            print('here')
             set_session_keys(saved_pk.key)
             EXECUTOR.submit(EVENT_HANDLER.subscribe_primary)
-            print('here2')
             EXECUTOR.submit(EVENT_HANDLER.message_pool_handler)
             return LoginState.LOGGED_IN
         else:
@@ -662,20 +663,17 @@ def get_key(k='public'):
 
 
 def set_session_keys(k):
-    print(k)
     if k is None:
         pk = PrivateKey()
     else:
         pk = PrivateKey(bytes.fromhex(k))
     private_key = pk.hex()
-    print(1)
     public_key = pk.public_key.hex()
     session["keys"] = {
         'private': private_key,
         'public': public_key
     }
     process_key_save(private_key)
-    print(2)
     if DB.get_profile(public_key) is None:
         DB.add_profile(public_key)
 
