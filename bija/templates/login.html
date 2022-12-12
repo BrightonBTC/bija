@@ -22,25 +22,29 @@
                     <input type="button" class="setup fresh" value="Create a fresh account">
                 </div>
                 <div class="card profileloader setup">
-                    <p>Already have a key you want to use?</p>
-                    <p class="sm">Enter your key below. You can use hex format, npub format or a 24 word mnemonic phrase.</p>
+                    <p>Already have a profile you want to use?</p>
+                    <p class="sm">Enter your key (either hex or npub format)</p>
                     <input type="text" id="private_key" name="private_key"  placeholder="Private Key (leave blank to create a new one)">
-                    <textarea name="mnemonic" class="mnemonic"></textarea>
+                    <p>OR enter your mnemonic.</p>
+                    <textarea name="mnemonic" placeholder="24 word mnemonic phrase"></textarea>
 
-                    <input type="button" class="setup" value="next">
+
                 </div>
+                <div><input type="button" class="setup right" value="Continue"></div>
             </div>
-            <div class="card profileloader pw_form">
-                <p>Require a password to log in? This will also encrypt your private key on disk.</p>
-                <input type="password" id="password" name="password"  placeholder="Password (leave blank for auto login)">
-                <input type="submit" id="load_private_key" name="load_private_key" value="Continue">
+            <div class="pw_form">
+                <div class="card profileloader ">
+                    <p>Require a password to log in? This will also encrypt your private key on disk.</p>
+                    <input type="password" id="password" name="password"  placeholder="Password (leave blank for auto login)">
+                </div>
+                <div><input type="submit" id="load_private_key" name="load_private_key" class="right" value="Continue"></div>
             </div>
-
         {%- elif stage == LoginState.WITH_PASSWORD -%}
             <div class="card profileloader">
             <input type="password" id="pw" name="pw" placeholder="Saved password (this is not your private key)">
-            <input type="submit" id="login" name="login" value="Login">
+
             </div>
+            <div><input type="submit" id="login" name="login" class="right" value="Login"></div>
 
         {%- elif stage == LoginState.SET_RELAYS -%}
             <div class="card profileloader">
@@ -48,27 +52,31 @@
                 For your convenience we've added afew to get you started.</p>
             {%- for relay in data -%}
                 <div>
-                  <input type="checkbox" name="relay" class="relay_cb" value="{{relay}}" checked><label>{{relay}}</label>
+                  <label><input type="checkbox" name="relay" class="relay_cb" value="{{relay}}" checked>{{relay}}</label>
                 </div>
             {%- endfor -%}
-            <input type="submit" id="add_relays" name="add_relays" value="Add relays now">
+
             </div>
+            <div><input type="submit" id="add_relays" name="add_relays" class="right" value="Add relays now"></div>
 
         {%- elif stage == LoginState.NEW_KEYS -%}
             <div class="card profileloader">
-                <p><strong>Account created! Make sure you back up the private key somewhere safe and never share it with anyone else.</strong></p>
-                <p>You can add other account details, like name and description, on the profile page once you've completed setup.</p>
+                <p><strong>Profile created! </strong></p>
+                <p class="sm">* You can add other details, like name and description, on the profile page once you've completed setup.</p>
             </div>
             <div class="card profileloader">
-                <p>There are various formats for backing up your private keys, and sharing your public ones. We recommend mnemonic for private and npub for public.
-                However, at present not all platforms support these.</p>
+                <h3>Public Key:  </h3>
+                <p>Share your public key with friends so that they can find you on the network.</p>
+                <p class="bg2 pad-tiny"><span class="key-format">npub</span> {{data['npub']}}</p>
+
+                <h3>Private Key:  </h3>
+                <p>Your mnemonic phrase is a representation of your private key. Back it up somewhere safe and never share it with anyone else.</p>
                 <span class="key-format">Mnemonic phrase</span>
                 <span class="mnemonic">{{data['mnem']}}</span>
-                <p><span class="key-format">npub</span> Public Key: {{data['npub']}} </p>
                 <p class="sm">* if you prefer other formats for your keys then you can refer to the settings page once logged in</p>
-                <input type="submit" id="confirm_new_keys" name="confirm_new_keys" value="Continue">
-            </div>
 
+            </div>
+            <div><input type="submit" id="confirm_new_keys" name="confirm_new_keys" class="right" value="I've backed up my mnemonic, continue"></div>
         {%- endif -%}
         </form>
     </div>

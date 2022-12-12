@@ -150,6 +150,16 @@ input[type=submit]:hover, input[type=button]:hover, button:hover {
     padding: var(--pad-lg);
 }
 
+.bg1{
+    background: var(--bg-clr1);
+}
+.bg2{
+    background: var(--bg-clr2);
+}
+.bg3{
+    background: var(--bg-clr3);
+}
+
 /* Global UI */
 .main {
   max-width:1000px;
@@ -539,7 +549,7 @@ input[type=text].pname {
     width:18%;
     margin-left:2%;
 }
-.profileloader input[type=text], .profileloader input[type=password] {
+.profileloader input[type=text], .profileloader input[type=password], .profileloader textarea{
     width:80%;
 }
 
