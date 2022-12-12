@@ -25,7 +25,7 @@
       {%- endblock content -%}
     </div>
     <div class="right-column">
-        <form id="search" action="/search" method="get">
+        <form id="search" action="/search" method="get" autocomplete="off">
           <input type="text" name="search_term" placeholder="Search">
             <div id="search_hints" class="name-hints"></div>
           <p class="sm">search for a pubkey (hex or npub), or nip-05 address</p>

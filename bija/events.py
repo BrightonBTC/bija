@@ -460,7 +460,6 @@ class MetadataEvent:
 class NoteEvent:
     def __init__(self, db, event, my_pk):
         if db.get_event(event.id) is None:
-            self.og = []
             self.db = db
             self.event = event
             self.content = strip_tags(event.content)
@@ -576,5 +575,5 @@ class NoteEvent:
             self.event.created_at,
             json.dumps(self.members),
             json.dumps(self.media),
-            json.dumps({'raw': self.event.to_json_object(), 'og': self.og})
+            json.dumps(self.event.to_json_object())
         )

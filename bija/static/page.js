@@ -204,7 +204,7 @@ class bijaSearch{
                 li.innerText = name['name']
                 li.addEventListener("click", (event)=>{
                     reply_elem.value = reply_elem.value.replace('@'+search_str, '@'+name['name'])
-                    hint_elem.innerHTML = ''
+                    reply_elem.parentElement.submit();
                 });
                 ul.append(li)
             }
@@ -280,6 +280,8 @@ class bijaNoteTools{
                 li.innerText = name['name']
                 li.addEventListener("click", (event)=>{
                     reply_elem.value = reply_elem.value.replace('@'+search_str, '@'+name['name'])
+                    reply_elem.selectionStart=reply_elem.value.length;
+                    reply_elem.focus();
                     hint_elem.innerHTML = ''
                 });
                 ul.append(li)

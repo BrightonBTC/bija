@@ -11,6 +11,7 @@ from bija.events import BijaEvents, MetadataEvent
 from bija.helpers import *
 from bija.jinja_filters import *
 from bija.password import encrypt_key, decrypt_key
+from bija.search import Search
 
 thread = Thread()
 
@@ -400,42 +401,17 @@ def following_page():
         is_me = True
         profiles = DB.get_following()
     profile = DB.get_profile(k)
-    return render_template("following.html", page_id="profile", title="Following", profile=profile, profiles=profiles,
+    return render_template("following.html", page_id="following", title="Following", profile=profile, profiles=profiles,
                            is_me=is_me)
 
 
 @app.route('/search', methods=['GET'])
 def search_page():
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
-    results = []
-    if 'search_term' in request.args or len(request.args['search_term'].strip()) < 1:
-        term = request.args['search_term']
-        if term[:1] == '@':
-            pk = DB.get_profile_by_name_or_pk(term[1:])
-            if pk is not None:
-                return redirect('/profile?pk={}'.format(pk.public_key))
-        elif is_hex_key(request.args['search_term']):
-            return redirect('/profile?pk={}'.format(term))
-        elif is_bech32_key('npub', term):
-            b_key = bech32_to_hex64('npub', term)
-            if b_key:
-                return redirect('/profile?pk={}'.format(b_key))
-            else:
-                message = 'invalid npub'
-        elif is_nip05(term):
-            profile = DB.get_pk_by_nip05(term)
-            if profile is not None:
-                return redirect('/profile?pk={}'.format(profile.public_key))
-            else:
-                pk = request_nip05(term)
-                if pk is not None:
-                    return redirect('/profile?pk={}'.format(pk))
-                else:
-                    message = "Nip-05 identifier could not be located"
-        else:
-            message = "Nothing found. Please try again with a valid public key or nip-05 identifier."
-    else:
-        message = "no search term found!"
+    search = Search()
+    results, goto, message = search.get()
+    if goto is not None:
+        return redirect(goto)
     return render_template("search.html", page_id="search", title="Search", message=message, results=results)
 
 
