@@ -1,23 +1,26 @@
 import json
 import time
 
+from bija.app import app
+from bija.db import BijaDB
 from bija.helpers import is_hex_key, get_at_tags
 from python_nostr.nostr.event import EventKind, Event
 from python_nostr.nostr.key import PrivateKey
 from python_nostr.nostr.message_type import ClientMessageType
 
+DB = BijaDB(app.session)
+
 
 class Submit:
-    def __init__(self, relay_manager, db, keys):
+    def __init__(self, relay_manager, keys):
         self.relay_manager = relay_manager
         self.keys = keys
-        self.db = db
         self.tags = []
         self.content = ""
         self.event_id = None
         self.kind = EventKind.TEXT_NOTE
         self.created_at = int(time.time())
-        r = self.db.get_preferred_relay()
+        r = DB.get_preferred_relay()
         self.preferred_relay = r.name
 
     def send(self):
@@ -26,13 +29,12 @@ class Submit:
         event.sign(self.keys['private'])
         self.event_id = event.id
         message = json.dumps([ClientMessageType.EVENT, event.to_json_object()], ensure_ascii=False)
-        print(message)
         self.relay_manager.publish_message(message)
 
 
 class SubmitDelete(Submit):
-    def __init__(self, relay_manager, db, keys, ids, reason=""):
-        super().__init__(relay_manager, db, keys)
+    def __init__(self, relay_manager, keys, ids, reason=""):
+        super().__init__(relay_manager, keys)
         self.kind = EventKind.DELETE
         self.ids = ids
         self.content = reason
@@ -46,16 +48,16 @@ class SubmitDelete(Submit):
 
 
 class SubmitProfile(Submit):
-    def __init__(self, relay_manager, db, keys, data):
-        super().__init__(relay_manager, db, keys)
+    def __init__(self, relay_manager, keys, data):
+        super().__init__(relay_manager, keys)
         self.kind = EventKind.SET_METADATA
         self.content = json.dumps(data)
         self.send()
 
 
 class SubmitLike(Submit):
-    def __init__(self, relay_manager, db, keys, note_id, content="+"):
-        super().__init__(relay_manager, db, keys)
+    def __init__(self, relay_manager, keys, note_id, content="+"):
+        super().__init__(relay_manager, keys)
         self.content = content
         self.note_id = note_id
         self.kind = EventKind.REACTION
@@ -63,7 +65,7 @@ class SubmitLike(Submit):
         self.send()
 
     def compose(self):
-        note = self.db.get_note(self.note_id)
+        note = DB.get_note(self.note_id)
         members = json.loads(note.members)
         for m in members:
             if is_hex_key(m) and m != note.public_key:
@@ -73,8 +75,8 @@ class SubmitLike(Submit):
 
 
 class SubmitNote(Submit):
-    def __init__(self, relay_manager, db, keys, data, members=[]):
-        super().__init__(relay_manager, db, keys)
+    def __init__(self, relay_manager, keys, data, members=[]):
+        super().__init__(relay_manager, keys)
         self.data = data
         self.members = members
         self.response_to = None
@@ -119,14 +121,14 @@ class SubmitNote(Submit):
     def process_mentions(self):
         matches = get_at_tags(self.content)
         for match in matches:
-            name = self.db.get_profile_by_name_or_pk(match[1:])
+            name = DB.get_profile_by_name_or_pk(match[1:])
             if name is not None:
                 self.tags.append(["p", name['public_key']])
                 index = len(self.tags) - 1
                 self.content = self.content.replace(match, "#[{}]".format(index))
 
     def store(self):
-        self.db.insert_note(
+        DB.insert_note(
             self.event_id,
             self.keys['public'],
             self.content,
@@ -139,21 +141,21 @@ class SubmitNote(Submit):
 
 
 class SubmitFollowList(Submit):
-    def __init__(self, relay_manager, db, keys):
-        super().__init__(relay_manager, db, keys)
+    def __init__(self, relay_manager, keys):
+        super().__init__(relay_manager, keys)
         self.kind = EventKind.CONTACTS
         self.compose()
         self.send()
 
     def compose(self):
-        pk_list = self.db.get_following_pubkeys()
+        pk_list = DB.get_following_pubkeys()
         for pk in pk_list:
             self.tags.append(["p", pk])
 
 
 class SubmitEncryptedMessage(Submit):
-    def __init__(self, relay_manager, db, keys, data):
-        super().__init__(relay_manager, db, keys)
+    def __init__(self, relay_manager, keys, data):
+        super().__init__(relay_manager, keys)
         self.kind = EventKind.ENCRYPTED_DIRECT_MESSAGE
         self.data = data
         self.compose()
