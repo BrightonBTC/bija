@@ -15,7 +15,7 @@ def init_gui(application, socketio, port=5000, width=1100, height=800,
     # ROOT_URL = 'http://127.0.0.1:{}/'.format(port)
 
     def run_app():
-        socketio.run(application)
+        socketio.run(application, host="0.0.0.0")
 
     # Application Level
     qtapp = QtWidgets.QApplication(sys.argv)
