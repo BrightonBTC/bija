@@ -1,8 +1,9 @@
+from functools import wraps
 from threading import Thread
 
 import bip39
 import pydenticon
-from flask import request, session, redirect, make_response
+from flask import request, session, redirect, make_response, url_for
 from flask_executor import Executor
 
 from bija.app import app, socketio
@@ -39,20 +40,27 @@ class LoginState(IntEnum):
     NEW_KEYS = 6
 
 
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        login_state = get_login_state()
+        if login_state is not LoginState.LOGGED_IN:
+            return redirect(url_for('login_page', next=request.url))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 @app.route('/')
+@login_required
 def index_page():
     EVENT_HANDLER.set_page('home', None)
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
-    login_state = get_login_state()
-    if login_state is LoginState.LOGGED_IN:
-        DB.set_all_seen_in_feed(get_key())
-        notes = DB.get_feed(time.time(), get_key())
-        threads, last_ts = make_threaded(notes)
-        profile = DB.get_profile(get_key())
-        return render_template("feed.html", page_id="home", title="Home", threads=threads, last=last_ts,
-                               profile=profile)
-    else:
-        return render_template("login.html", page_id="login", title="Login", stage=login_state, LoginState=LoginState)
+    DB.set_all_seen_in_feed(get_key())
+    notes = DB.get_feed(time.time(), get_key())
+    threads, last_ts = make_threaded(notes)
+    profile = DB.get_profile(get_key())
+    return render_template("feed.html", page_id="home", title="Home", threads=threads, last=last_ts,
+                           profile=profile)
 
 
 @app.route('/feed', methods=['GET'])
@@ -72,6 +80,7 @@ def feed():
 
 
 @app.route('/alerts', methods=['GET'])
+@login_required
 def alerts_page():
     alerts = DB.get_alerts()
     DB.set_alerts_read()
@@ -110,6 +119,7 @@ def login_page():
 
 
 @app.route('/profile', methods=['GET'])
+@login_required
 def profile_page():
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     page_id = 'profile'
@@ -154,6 +164,7 @@ def profile_feed():
 
 
 @app.route('/note', methods=['GET'])
+@login_required
 def note_page():
     EVENT_HANDLER.set_page('note', request.args['id'])
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
@@ -243,6 +254,7 @@ def thread_item():
 
 
 @app.route('/settings', methods=['GET', 'POST'])
+@login_required
 def settings_page():
     login_state = get_login_state()
     if login_state is LoginState.LOGGED_IN:
