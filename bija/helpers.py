@@ -38,7 +38,7 @@ def bech32_to_hex64(prefix: str, b_key: str):
 def is_bech32_key(hrp: str, key_str: str) -> bool:
     if key_str[:4] == hrp and len(key_str) == 63:
         return True
-    return True
+    return False
 
 
 def is_valid_name(name: str) -> bool:
