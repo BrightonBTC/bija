@@ -26,6 +26,7 @@ class BijaEvents:
         'page': None,
         'identifier': None
     }
+    active_events = {}  # events that are open in the current ui view
 
     def __init__(self, s):
         self.should_run = True
@@ -73,6 +74,7 @@ class BijaEvents:
         socketio.emit('conn_status', out)
 
     def set_page(self, page, identifier):
+        self.active_events = {}
         self.page = {
             'page': page,
             'identifier': identifier
@@ -121,7 +123,6 @@ class BijaEvents:
 
                     if msg.event.kind == EventKind.REACTION:
                         self.receive_reaction_event(msg.event)
-                    print(1)
                     DB.add_event(msg.event.id, msg.event.kind)
             DB.commit()
             D_TASKS.next()
@@ -227,6 +228,10 @@ class BijaEvents:
         SubscribeThread(subscription_id, self.relay_manager, root_id)
 
     def subscribe_feed(self, ids):
+        if 'notes' in self.active_events:
+            self.active_events['notes'] += ids
+        else:
+            self.active_events['notes'] = ids
         subscription_id = 'main-feed'
         self.subscriptions.append(subscription_id)
         SubscribeFeed(subscription_id, self.relay_manager, ids)
@@ -549,8 +554,16 @@ class NoteEvent:
                             self.thread_root = item[1]
                         elif item[3] == "reply":
                             self.response_to = item[1]
+
+            if self.thread_root is None and self.response_to is not None:
+                self.thread_root = self.response_to
+                self.response_to = None
+            elif self.thread_root is not None and self.thread_root == self.response_to:
+                self.response_to = None
+
+            if self.thread_root is None:
                 if len(parents) == 1:
-                    self.response_to = parents[0]
+                    self.thread_root = parents[0]
                 elif len(parents) > 1:
                     self.thread_root = parents[0]
                     self.response_to = parents[1]

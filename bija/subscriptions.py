@@ -112,7 +112,7 @@ class SubscribeFeed(Subscribe):
         self.send()
 
     def build_filters(self):
-        filters = Filters([
+        self.filters = Filters([
             Filter(tags={'#e': self.ids}, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION]),  # event responses
             Filter(ids=self.ids, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION])
         ])
