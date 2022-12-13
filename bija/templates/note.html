@@ -3,21 +3,21 @@
     <h3>
         {%- set fim = '' -%}
         {%- if note['following'] is not none and note['following']==1 -%}
-        {%- set fim = ' <img src="/static/following.svg" class="icon-sm" title="following"> ' -%}
+        {%- set fim = '<img src="/static/following.svg" title="following" class="icon"> ' -%}
         {%- endif -%}
-        <a href="/profile?pk={{note['public_key']}}" class="profile-name">{{note['name'] | ident_string(note['public_key'], note['nip05'], note['nip05_validated']) | safe }}{{fim| safe}}</a>
+        <a href="/profile?pk={{note['public_key']}}" class="profile-name">{{fim| safe}}{{note['name'] | ident_string(note['public_key'], note['nip05'], note['nip05_validated']) | safe }}</a>
         <span class="note-info">
             <span class="sm dt">
                 {{note['created_at']|dt}}
             </span>
             <span class="note-opts" data-id="{{note['id']}}">
-                <img src="/static/note-tools.svg">
-                <ul class="opts-menu">
+                <img src="/static/note-tools.svg" class="icon">
+                <ul class="opts-menu rnd pad-sm">
                     {%- if note['public_key'] == profile['public_key'] -%}
-                    <li data-action="del">delete</li>
+                    <li data-action="del pad-tiny">delete</li>
                     {%- endif -%}
-                    <li data-action="share">share</li>
-                    <li data-action="nfo">info</li>
+                    <li data-action="share pad-tiny">share</li>
+                    <li data-action="nfo pad-tiny">info</li>
                 </ul>
             </span>
         </span>

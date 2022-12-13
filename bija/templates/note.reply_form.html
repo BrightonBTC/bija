@@ -3,25 +3,25 @@
 {%- else -%}
 {%- set liked_im = 'like.svg' -%}
 {%- endif -%}
-<p class="note-tools">
+<p class="note-tools pad-sm">
     <span class="section">
-        <a href="#" class="reply-link" data-rel="{{note['id']}}"><img src="/static/reply.svg"></a>
-        <span class="reply-n counts"></span>
+        <a href="#" class="reply-link" data-rel="{{note['id']}}"><img src="/static/reply.svg" class="icon"></a>
+        <span class="reply-n counts rnd"></span>
     </span>
     <span class="section">
-        <a href="#" class="quote-link" data-rel="{{note['id']}}"><img src="/static/reshare.svg"></a>
-        <span class="quote-n counts"></span>
+        <a href="#" class="quote-link" data-rel="{{note['id']}}"><img src="/static/reshare.svg" class="icon"></a>
+        <span class="quote-n counts rnd"></span>
     </span>
     <span class="section">
-        <a href="#" class="like" data-rel="{{note['id']}}" data-liked="{{note['liked']}}"><img src="/static/{{liked_im}}"></a>
-        <span class="likes counts">{{note['likes'] if note['likes'] is not none}}</span>
+        <a href="#" class="like" data-rel="{{note['id']}}" data-liked="{{note['liked']}}"><img src="/static/{{liked_im}}" class="icon"></a>
+        <span class="likes counts rnd">{{note['likes'] if note['likes'] is not none}}</span>
     </span>
 </p>
-<form class="reply-form poster-form"  data-noteid="{{note['id']}}" >
+<form class="reply-form poster-form rnd pad-mid"  data-noteid="{{note['id']}}" >
     <input type="hidden" name="pubkey" value="{{note['public_key']}}">
     <input type="hidden" name="thread_root" value="{{reply_chain.root}}">
     <input type="hidden" name="parent_id" value="{{reply_chain.reply}}">
     <textarea name="reply" class="note-textarea"></textarea>
-    <input type="submit" value="Reply" data-reply-submit="1" data-rel="{{note['id']}}" class="post-submit right">
+    <input type="submit" value="Reply" data-reply-submit="1" data-rel="{{note['id']}}" class="post-submit right pad-sm">
     <div class="name-hints"></div>
 </form>

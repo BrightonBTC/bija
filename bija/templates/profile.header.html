@@ -12,7 +12,7 @@
     {%- set updated_at='0' -%}
 {%- endif -%}
 
-<div class="profile" id="profile" data-updated_ts="{{updated_at}}" data-pk="{{profile['public_key']}}">
+<div class="profile rnd" id="profile" data-updated_ts="{{updated_at}}" data-pk="{{profile['public_key']}}">
     <div class="profile-tools">
         {%- include 'profile.tools.html' -%}
     </div>
@@ -22,7 +22,7 @@
     </div>
     <div class="profile-details profile-item">
         <h1 class="profile-name">{{profile['name'] | ident_string(profile['public_key'], profile['nip05'], profile['nip05_validated']) | safe }}</h1>
-        <p class="sm pk">@{{profile['public_key'] | truncate(21, False, '...')}} <img src="/static/copy.svg" class="clipboard" data-str="{{profile['public_key']}}"></p>
+        <p class="sm pk">@{{profile['public_key'] | truncate(21, False, '...')}} <img src="/static/copy.svg" class="clipboard icon-sm" data-str="{{profile['public_key']}}"></p>
         <pre class="profile-about">{{about| linkify| safe}}</pre>
     </div>
     {%- if is_me -%}
@@ -47,7 +47,7 @@
     </form>
     {%- endif -%}
 </div>
-<div class="profile-menu">
+<div class="profile-menu rnd">
     {%- if is_me -%}
         <a href="/profile">posts</a>
         <a href="/following">following</a>

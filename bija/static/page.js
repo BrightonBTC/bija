@@ -1032,7 +1032,7 @@ function popup(htm){
     overlay = document.createElement('div')
     overlay.classList.add('popup-overlay')
     the_popup = document.createElement('div')
-    the_popup.classList.add('popup')
+    the_popup.classList.add('popup', 'rnd')
     the_popup.innerHTML = htm
     overlay.onclick = function(){
         overlay.remove();

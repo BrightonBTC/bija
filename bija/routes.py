@@ -311,11 +311,12 @@ def add_relay():
     success = False
     if request.method == 'POST':
         for item in request.json:
-            if item[0] == 'newrelay' and is_valid_relay(item[1]):
+            ws = item[1].strip()
+            if item[0] == 'newrelay' and is_valid_relay(ws):
                 success = True
-                DB.insert_relay(item[1])
-                EVENT_HANDLER.add_relay(item[1])
-    return render_template("upd.json", data=json.dumps({'ad_relay': success}))
+                DB.insert_relay(ws)
+                EVENT_HANDLER.add_relay(ws)
+    return render_template("upd.json", data=json.dumps({'add_relay': success}))
 
 
 @app.route('/reset_relays', methods=['POST', 'GET'])

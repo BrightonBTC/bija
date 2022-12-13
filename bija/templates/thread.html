@@ -9,10 +9,10 @@
 
 
 {%- block right_content -%}
-<h3>in this thread</h3>
+<h3 class="pad-tiny">in this thread</h3>
 <ul class="thread-members">
 {%- for p in members: -%}
-    <li>
+    <li class="pad-mid">
     {%- include 'profile.image.html' -%}
     <a href="/profile?pk={{p['public_key']}}" class="profile-name">{{p['name'] | ident_string(p['public_key'], p['nip05'], p['nip05_validated']) | safe }}</a>
     </li>

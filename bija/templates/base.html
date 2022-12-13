@@ -10,21 +10,21 @@
 
 <body>
 <div class="main" data-page="{{page_id}}">
-  <div class="topnav nav-{{page_id}}">
-    <a href="/" class="home-link"><img src="static/home.svg"><span class="title">feed</span><span id="n_unseen_posts" class="unseen"></span></a>
-    <a href="/profile" class="profile-link"><img src="static/profile.svg"><span class="title">profile</span></a>
-    <a href="/messages" class="messages-link"><img src="static/messages.svg"><span class="title">messages</span><span id="n_unseen_messages" class="unseen"></span></a>
-    <a href="/alerts" class="alerts-link"><img src="static/notif.svg"><span class="title">alerts</span><span id="n_alerts" class="unseen"></span></a>
-    <a href="/settings" class="settings-link"><img src="static/settings.svg"><span class="title">settings</span></a>
-    <span class="conn-status right"></span>
+  <div class="topnav nav-{{page_id}} rnd">
+    <a href="/" class="home-link"><img src="static/home.svg"><span class="title desktop-only">feed</span><span id="n_unseen_posts" class="unseen"></span></a>
+    <a href="/profile" class="profile-link"><img src="static/profile.svg"><span class="title desktop-only">profile</span></a>
+    <a href="/messages" class="messages-link"><img src="static/messages.svg"><span class="title desktop-only">messages</span><span id="n_unseen_messages" class="unseen"></span></a>
+    <a href="/alerts" class="alerts-link"><img src="static/notif.svg"><span class="title desktop-only">alerts</span><span id="n_alerts" class="unseen"></span></a>
+    <a href="/settings" class="settings-link"><img src="static/settings.svg"><span class="title desktop-only">settings</span></a>
+    <span class="conn-status right rnd pad-sm desktop-only"></span>
   </div>
 
-  <div class="row">
+  <div class="row pad-lg">
     <div class="left-column" id="main-content">
       {%- block content -%}
       {%- endblock content -%}
     </div>
-    <div class="right-column">
+    <div class="right-column desktop-only">
         <form id="search" action="/search" method="get" autocomplete="off">
           <input type="text" name="search_term" placeholder="Search">
             <div id="search_hints" class="name-hints"></div>

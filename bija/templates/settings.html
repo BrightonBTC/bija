@@ -5,26 +5,37 @@
     <h3>Keys</h3>
     <h4>Public key:</h4>
     <p class="sm">Share your public key with contacts so that they can find and connect with you on Nostr.</p>
-    <p>
-        <span class="key-format">npub</span> {{k['public'][1]}} <img src="/static/copy.svg" class="clipboard" data-str="{{k['public'][1]}}"> <span class="sm">(preferred)</span>
+    <p class="key-box">
+        <span class="key-format">npub</span>
+        <span class="key">{{k['public'][1]}}</span>
+        <img src="/static/copy.svg" class="clipboard icon-sm" data-str="{{k['public'][1]}}">
+        <span class="sm desktop-only">(preferred)</span>
     </p>
-    <p>
-        <span class="key-format">HEX</span> {{k['public'][0]}} <img src="/static/copy.svg" class="clipboard" data-str="{{k['public'][0]}}"> <span class="sm">(old style)</span>
+    <p class="key-box">
+        <span class="key-format">HEX</span>
+        <span class="key">{{k['public'][0]}}</span>
+        <img src="/static/copy.svg" class="clipboard icon-sm" data-str="{{k['public'][0]}}">
+        <span class="sm desktop-only">(old style)</span>
     </p>
     <hr>
     <h4>Private key: </h4>
     <p class="sm">Keep your private key backed up somewhere secure and never share it with anyone else.</p>
-    <button class="show-key">Click to reveal  <img src="/static/eye.svg"></button>
-    <div class="privkey">
+    <button class="show-key img-btn"><span>Click to reveal</span>  <img src="/static/eye.svg" class="icon-lg"></button>
+    <div class="privkey pad-mid rnd">
     <p>
         <span class="key-format">Mnemonic phrase</span> <span class="sm">(preferred)</span>
-        <span class="mnemonic">{{k['private'][2]}}</span>
+        <span class="mnemonic pad-sm">{{k['private'][2]}}</span>
     </p>
-    <p>
-        <span class="key-format">nsec</span> {{k['private'][1]}} <img src="/static/copy.svg" class="clipboard" data-str="{{k['private'][1]}}">
+    <p class="key-box">
+        <span class="key-format">nsec</span>
+        <span class="key">{{k['private'][1]}}</span>
+        <img src="/static/copy.svg" class="clipboard icon-sm" data-str="{{k['private'][1]}}">
     </p>
-    <p>
-        <span class="key-format">HEX</span> {{k['private'][0]}} <img src="/static/copy.svg" class="clipboard" data-str="{{k['private'][0]}}"> <span class="sm">(old style)</span>
+    <p class="key-box">
+        <span class="key-format">HEX</span>
+        <span class="key">{{k['private'][0]}}</span>
+        <img src="/static/copy.svg" class="clipboard icon-sm" data-str="{{k['private'][0]}}">
+        <span class="sm desktop-only">(old style)</span>
     </p>
     </div>
 </div>
@@ -32,7 +43,7 @@
     <h3>Relays</h3>
     <ul>
     {%- for relay in relays: -%}
-        <li class="relay" data-url="{{relay.name}}"><span class="led"></span>{{relay.name}} &nbsp; <button class="del-relay pad-tiny">x</button></li>
+        <li class="relay" data-url="{{relay.name}}"><span class="led"></span>{{relay.name}} &nbsp; <img src="/static/close.svg" class="del-relay icon"></li>
     {%- endfor -%}
     </ul>
     <button class="refresh_connections">reset connections</button>

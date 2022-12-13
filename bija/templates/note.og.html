@@ -1,7 +1,7 @@
 {%- if 'url' in data -%}
-    <a href="{{data['url']}}" class="og">
+    <a href="{{data['url']}}" class="og rnd pad-mid">
 {%- else -%}
-    <div class="og">
+    <div class="og rnd pad-mid">
 {%- endif -%}
     {%- if 'title' in data -%}
         <p><strong>{{data['title']}}</strong></p>
@@ -15,6 +15,6 @@
 {%- if 'url' not in data -%}
     </div>
 {%- else -%}
-        <span class="sm">{{data['url']}}</span>
+        <span class="sm og-url">{{data['url']}}</span>
     </a>
 {%- endif -%}
