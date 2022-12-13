@@ -53,13 +53,17 @@ def login_required(f):
 @app.route('/')
 @login_required
 def index_page():
+    session['page'] = 'index'
+    session['notes_in_view'] = None
     EVENT_HANDLER.set_page('home', None)
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     DB.set_all_seen_in_feed(get_key())
     notes = DB.get_feed(time.time(), get_key())
-    threads, last_ts = make_threaded(notes)
+    t = NoteThread(notes)
+    EVENT_HANDLER.subscribe_feed(list(t.ids))
+    session['notes_in_view'] = t.ids
     profile = DB.get_profile(get_key())
-    return render_template("feed.html", page_id="home", title="Home", threads=threads, last=last_ts,
+    return render_template("feed.html", page_id="home", title="Home", threads=t.threads, last=t.last_ts,
                            profile=profile)
 
 
@@ -72,9 +76,10 @@ def feed():
             before = time.time()
         notes = DB.get_feed(before, get_key())
         if len(notes) > 0:
-            threads, last_ts = make_threaded(notes)
+            t = NoteThread(notes)
+            EVENT_HANDLER.subscribe_feed(list(t.ids))
             profile = DB.get_profile(get_key())
-            return render_template("feed.items.html", threads=threads, last=last_ts, profile=profile)
+            return render_template("feed.items.html", threads=t.threads, last=t.last_ts, profile=profile)
         else:
             return 'END'
 
@@ -121,6 +126,8 @@ def login_page():
 @app.route('/profile', methods=['GET'])
 @login_required
 def profile_page():
+    session['page'] = 'profile'
+    session['notes_in_view'] = None
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     page_id = 'profile'
     if 'pk' in request.args and is_hex_key(request.args['pk']) and request.args['pk'] != get_key():
@@ -134,7 +141,7 @@ def profile_page():
         is_me = True
         page_id = 'profile-me'
     notes = DB.get_notes_by_pubkey(k, int(time.time()), timestamp_minus(TimePeriod.DAY))
-    threads, last_ts = make_threaded(notes)
+    t = NoteThread(notes)
     profile = DB.get_profile(k)
     latest = DB.get_most_recent_for_pk(k)
     if latest is None:
@@ -143,7 +150,7 @@ def profile_page():
         DB.add_profile(k)
         profile = DB.get_profile(k)
 
-    return render_template("profile.html", page_id=page_id, title="Profile", threads=threads, last=last_ts,
+    return render_template("profile.html", page_id=page_id, title="Profile", threads=t.threads, last=t.last_ts,
                            latest=latest, profile=profile, is_me=is_me)
 
 
@@ -156,9 +163,9 @@ def profile_feed():
             before = time.time()
         notes = DB.get_notes_by_pubkey(request.args['pk'], before, None)
         if len(notes) > 0:
-            threads, last_ts = make_threaded(notes)
+            t = NoteThread(notes)
             profile = DB.get_profile(get_key())
-            return render_template("feed.items.html", threads=threads, last=last_ts, profile=profile)
+            return render_template("feed.items.html", threads=t.threads, last=t.last_ts, profile=profile)
         else:
             return 'END'
 
@@ -534,47 +541,83 @@ def shutdown():
     quit()
 
 
-def make_threaded(notes):
-    threads = []
-    thread_roots = []
-    last_ts = None
-    for note in notes:
-        note = dict(note)
-        last_ts = note['created_at']
-        if note['thread_root'] is not None:
-            thread_roots.append(note['thread_root'])
-        elif note['response_to'] is not None:
-            thread_roots.append(note['response_to'])
-        elif note['thread_root'] is None and note['response_to'] is None:
-            thread_roots.append(note['id'])
+class NoteThread:
+    def __init__(self, notes):
+        self.notes = notes
+        self.threads = []
+        self.roots = []
+        self.ids = set()
+        self.last_ts = None
 
-    thread_roots = list(dict.fromkeys(thread_roots))
+        self.get_roots()
+        self.build()
 
-    for root in thread_roots:
+    def get_roots(self):
+        roots = []
+        for note in self.notes:
+            note = dict(note)
+            self.last_ts = note['created_at']
+            if note['thread_root'] is not None:
+                roots.append(note['thread_root'])
+                self.add_id(note['thread_root'])
+            elif note['response_to'] is not None:
+                roots.append(note['response_to'])
+                self.add_id(note['response_to'])
+            elif note['thread_root'] is None and note['response_to'] is None:
+                roots.append(note['id'])
+                self.add_id(note['id'])
+
+        self.roots = list(dict.fromkeys(roots))
+
+    def add_id(self, note_id):
+        if note_id not in self.ids:
+            self.ids.add(note_id)
+
+    def build(self):
+        for root in self.roots:
+            t = self.build_thread(root)
+            self.threads.append(t)
+
+    def build_thread(self, root):
         t = {'self': None, 'id': root, 'response': None, 'responders': {}}
         responders = []
-        for note in notes:
-            note = dict(note)
-            if note['reshare'] is not None:
-                reshare = DB.get_note(note['reshare'])
-                if reshare is not None:
-                    note['reshare'] = reshare
-            if note['id'] == root:
+        for _note in self.notes:
+            note = dict(_note)
+
+            is_root, is_response = self.is_in_thread(note, root)
+            if is_root:
+                self.notes.remove(_note)
                 t['self'] = note
-            elif note['response_to'] == root or note['thread_root'] == root:
+            elif is_response:
+                self.notes.remove(_note)
                 if t['response'] is None:
                     t['response'] = note
                 if len(t['responders']) < 2:
                     t['responders'][note['public_key']] = note['name']
                 responders.append(note['public_key'])
+
+            if (is_root or is_response) and note['reshare'] is not None:
+                reshare = DB.get_note(note['reshare'])
+                self.add_id(note['reshare'])
+                if reshare is not None:
+                    note['reshare'] = reshare
+
         responders = list(dict.fromkeys(responders))
         t['responder_count'] = len(responders)
 
         if t['self'] is None:
             t['self'] = DB.get_note(root)
-        threads.append(t)
+        return t
 
-    return threads, last_ts
+    @staticmethod
+    def is_in_thread(note, root):
+        is_root = False
+        is_response = False
+        if note['id'] == root:
+            is_root = True
+        elif note['response_to'] == root or note['thread_root'] == root:
+            is_response = True
+        return is_root, is_response
 
 
 def get_login_state():

@@ -2,7 +2,7 @@ import json
 import time
 
 from sqlalchemy import create_engine, text, func, or_
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.sql import label
 
 from bija.models import *
@@ -187,6 +187,14 @@ class BijaDB:
             NoteReaction.event_id,
             func.count(NoteReaction.id).label('likes')
         ).group_by(NoteReaction.event_id).subquery()
+
+        reply = aliased(Note)
+        reply_counts = self.session.query(
+            reply.id,
+            reply.response_to,
+            func.count(reply.id).label('replies')
+        ).group_by(reply.response_to).subquery()
+
         return self.session.query(Note.id,
                                   Note.public_key,
                                   Note.content,
@@ -197,6 +205,7 @@ class BijaDB:
                                   Note.members,
                                   Note.media,
                                   label("likes", like_counts.c.likes),
+                                  label("replies", reply_counts.c.replies),
                                   Note.liked,
                                   Note.shared,
                                   Note.deleted,
@@ -206,6 +215,7 @@ class BijaDB:
                                   Profile.nip05_validated,
                                   Profile.following).filter_by(id=note_id) \
             .outerjoin(like_counts, like_counts.c.event_id == Note.id) \
+            .outerjoin(reply_counts, reply_counts.c.response_to == Note.id) \
             .join(Note.profile).first()
 
     def get_raw_note_data(self, note_id):
@@ -287,6 +297,13 @@ class BijaDB:
             func.count(NoteReaction.id).label('likes')
         ).group_by(NoteReaction.event_id).subquery()
 
+        reply = aliased(Note)
+        reply_counts = self.session.query(
+            reply.id,
+            reply.response_to,
+            func.count(reply.id).label('replies')
+        ).group_by(reply.response_to).subquery()
+
         return self.session.query(
             Note.id,
             Note.public_key,
@@ -301,12 +318,14 @@ class BijaDB:
             Note.shared,
             Note.deleted,
             label("likes", like_counts.c.likes),
+            label("replies", reply_counts.c.replies),
             Profile.name,
             Profile.pic,
             Profile.nip05,
             Profile.nip05_validated,
             Profile.following) \
             .outerjoin(like_counts, like_counts.c.event_id == Note.id) \
+            .outerjoin(reply_counts, reply_counts.c.response_to == Note.id) \
             .join(Note.profile) \
             .filter(text("note.created_at<{}".format(before))) \
             .filter(text("(profile.following=1 OR profile.public_key='{}')".format(public_key))) \
@@ -409,19 +428,19 @@ class BijaDB:
 
     def search_profile_name(self, name_str):
         return self.session.query(Profile.name, Profile.nip05, Profile.public_key).filter(
-                or_(
-                    Profile.name.like(f"{name_str}%"),
-                    Profile.public_key.like(f"{name_str}%")
-                )
-            ).order_by(Profile.following.desc()).limit(10).all()
+            or_(
+                Profile.name.like(f"{name_str}%"),
+                Profile.public_key.like(f"{name_str}%")
+            )
+        ).order_by(Profile.following.desc()).limit(10).all()
 
     def get_profile_by_name_or_pk(self, name_str):
         return self.session.query(Profile.public_key).filter(
-                or_(
-                    Profile.name == name_str,
-                    Profile.public_key == name_str
-                )
-            ).order_by(Profile.following.desc()).first()
+            or_(
+                Profile.name == name_str,
+                Profile.public_key == name_str
+            )
+        ).order_by(Profile.following.desc()).first()
 
     def get_message_list(self):
         return DB_ENGINE.execute(text("""SELECT 

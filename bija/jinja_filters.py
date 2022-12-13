@@ -93,16 +93,14 @@ def _jinja2_filter_note(content: str):
 
 
 @app.template_filter('get_thread_root')
-def _jinja2_filter_thread_root(root, reply, parent_id):
+def _jinja2_filter_thread_root(root, reply, note_id):
     out = {'root': '', 'reply': ''}
     if root is None and reply is None:
-        out['root'] = parent_id
+        out['root'] = note_id
     elif root is not None and reply is not None:
-        out = {'root': root, 'reply': parent_id}
-    elif root is not None:
-        out = {'root': root, 'reply': parent_id}
-    elif reply is not None:
-        out = {'root': reply, 'reply': parent_id}
+        out = {'root': root, 'reply': reply}
+    elif root is not None and reply is None:
+        out = {'root': root, 'reply': note_id}
     return out
 
 
