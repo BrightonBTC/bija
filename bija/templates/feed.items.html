@@ -1,77 +1,80 @@
 <div class="feed-block">
 <div class="ts" data-ts="{{last}}"></div>
 {%- for thread in threads: -%}
-{%- if thread['responder_count'] > 0 -%}
-{%- set root_class = 'note-container root ancestor' -%}
-{%- else -%}
-{%- set root_class = 'note-container root' -%}
-{%- endif -%}
-{%- if thread['self'] is not none -%}
-{%- set post = thread['self'] -%}
-{%- if post['deleted'] is none -%}
-<div class="{{root_class}}">
-    <div class="thread-marker"></div>
-    <div class="note-image">
-        {%- set p=post -%}
-        {%- include 'profile.image.html' -%}
-    </div>
-    <div class="note-outer">
-        {%- if thread['responder_count'] > 0 -%}
-        <div class="response-accounts">
-            {{ thread['responders'] | responders_string(thread['responder_count']) | safe }}
-            {%- if thread['self'] is none -%}
-            on a <a href="/note?id={{thread['id']}}#{{thread['id']}}">thread</a>
-            {%- endif -%}
-        </div>
-        {%- endif -%}
-        {%- set reply_chain = post['thread_root'] | get_thread_root(post['response_to'], post['id']) -%}
-        {%- set note=post -%}
-        {%- include 'note.html' -%}
-    </div>
-</div>
-{%- else -%}
-{%- set item=post -%}
-{%- include 'deleted.note.html' -%}
-{%- endif -%}
-{%- endif -%}
-{%- if thread['response'] is not none -%}
-{%- set post = thread['response'] -%}
 
-{%- if thread['self'] is not none -%}
-{%- if post['response_to'] is not none  -%}
-<div class="note-container connector">
-    <div class="thread-marker"></div>
-    <div class="note-image"></div>
-    <a href="/note?id={{thread['id']}}#{{post['id']}}">View thread</a>
-</div>
-{%- endif -%}
-{%- endif -%}
-{%- if post['deleted'] is none -%}
-<div class="note-container">
-    <div class="thread-marker"></div>
-    <div class="note-image">
-        {%- set p=post -%}
-        {%- include 'profile.image.html' -%}
-    </div>
-    <div class="note-outer">
-    {%- if thread['responder_count'] > 0 and thread['self'] is none -%}
-    <div class="response-accounts">
-        {{ thread['responders'] | responders_string(thread['responder_count']) | safe }}
-        {%- if thread['self'] is none -%}
-        on a <a href="/note?id={{thread['id']}}#{{thread['id']}}">thread</a>
-        {%- endif -%}
-    </div>
+    {%- if thread['responder_count'] > 0 -%}
+        {%- set root_class = 'note-container root ancestor' -%}
+    {%- else -%}
+        {%- set root_class = 'note-container root' -%}
     {%- endif -%}
-    {%- set reply_chain = post['thread_root'] | get_thread_root(post['response_to'], post['id']) -%}
-    {%- set note=post -%}
-    {%- include 'note.html' -%}
-    </div>
-</div>
-{%- else -%}
-{%- set item=post -%}
-{%- include 'deleted.note.html' -%}
-{%- endif -%}
-{%- endif -%}
-<hr class="thread-divider" />
+
+    {%- if thread['self'] is not none -%}
+        {%- set post = thread['self'] -%}
+
+        {%- if post['deleted'] is none -%}
+        <div class="{{root_class}}">
+            <div class="thread-marker"></div>
+            <div class="note-image">
+                {%- set p=post -%}
+                {%- include 'profile.image.html' -%}
+            </div>
+            <div class="note-outer">
+                {%- if thread['responder_count'] > 0 -%}
+                <div class="response-accounts">
+                    {{ thread['responders'] | responders_string(thread['responder_count']) | safe }}
+                    {%- if thread['self'] is none -%}
+                    on a <a href="/note?id={{thread['id']}}#{{thread['id']}}">thread</a>
+                    {%- endif -%}
+                </div>
+                {%- endif -%}
+                {%- set reply_chain = post['thread_root'] | get_thread_root(post['response_to'], post['id']) -%}
+                {%- set note=post -%}
+                {%- include 'note.html' -%}
+            </div>
+        </div>
+        {%- else -%}
+            {%- set item=post -%}
+            {%- include 'deleted.note.html' -%}
+        {%- endif -%}
+    {%- endif -%}
+
+    {%- if thread['response'] is not none -%}
+        {%- set post = thread['response'] -%}
+
+        {%- if thread['self'] is not none and post['response_to'] is not none -%}
+            <div class="note-container connector">
+                <div class="thread-marker"></div>
+                <div class="note-image"></div>
+                <a href="/note?id={{thread['id']}}#{{post['id']}}">View thread</a>
+            </div>
+        {%- endif -%}
+
+        {%- if post['deleted'] is none -%}
+        <div class="note-container">
+            <div class="thread-marker"></div>
+            <div class="note-image">
+                {%- set p=post -%}
+                {%- include 'profile.image.html' -%}
+            </div>
+            <div class="note-outer">
+            {%- if thread['responder_count'] > 0 and thread['self'] is none -%}
+            <div class="response-accounts">
+                {{ thread['responders'] | responders_string(thread['responder_count']) | safe }}
+                {%- if thread['self'] is none -%}
+                on a <a href="/note?id={{thread['id']}}#{{thread['id']}}">thread</a>
+                {%- endif -%}
+            </div>
+            {%- endif -%}
+            {%- set reply_chain = post['thread_root'] | get_thread_root(post['response_to'], post['id']) -%}
+            {%- set note=post -%}
+            {%- include 'note.html' -%}
+            </div>
+        </div>
+        {%- else -%}
+        {%- set item=post -%}
+        {%- include 'deleted.note.html' -%}
+        {%- endif -%}
+    {%- endif -%}
+    <hr class="thread-divider" />
 {%- endfor -%}
 </div>
