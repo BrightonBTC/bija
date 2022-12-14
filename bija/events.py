@@ -105,6 +105,7 @@ class BijaEvents:
 
             while self.relay_manager.message_pool.has_events():
                 msg = self.relay_manager.message_pool.get_event()
+                print(msg.event.kind)
                 if DB.get_event(msg.event.id) is None:
                     if msg.event.kind == EventKind.SET_METADATA:
                         self.receive_metadata_event(msg.event)
@@ -297,6 +298,7 @@ class ReactionEvent:
         self.process_tags()
         if self.event_id is not None and self.event_pk is not None:
             self.store()
+            self.update_referenced()
 
     def process_tags(self):
         for tag in self.event.tags:
@@ -318,6 +320,10 @@ class ReactionEvent:
         )
         if self.event.public_key == self.pubkey:
             DB.set_note_liked(self.event_id)
+
+    def update_referenced(self):
+        if self.event.content != "-":
+            DB.increment_note_like_count(self.event_id)
 
 
 class DeleteEvent:
@@ -474,6 +480,7 @@ class NoteEvent:
             self.tags = [x for x in self.tags if x not in self.used_tags]
             self.process_tags()
             self.update_db()
+            self.update_referenced()
 
     def process_content(self):
         self.process_embedded_tags()
@@ -582,3 +589,13 @@ class NoteEvent:
             json.dumps(self.media),
             json.dumps(self.event.to_json_object())
         )
+
+    def update_referenced(self):
+        # is this a reply to another note?
+        if self.response_to is not None:
+            DB.increment_note_reply_count(self.response_to)
+        elif self.thread_root is not None:
+            DB.increment_note_reply_count(self.thread_root)
+        # is this a re-share of another note?
+        elif self.reshare is not None:
+            DB.increment_note_share_count(self.reshare)

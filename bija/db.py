@@ -2,6 +2,7 @@ import json
 import time
 
 from sqlalchemy import create_engine, text, func, or_
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.sql import label
 
@@ -182,18 +183,6 @@ class BijaDB:
         self.session.commit()
 
     def get_note(self, note_id):
-        like_counts = self.session.query(
-            NoteReaction.id,
-            NoteReaction.event_id,
-            func.count(NoteReaction.id).label('likes')
-        ).group_by(NoteReaction.event_id).subquery()
-
-        reply = aliased(Note)
-        reply_counts = self.session.query(
-            reply.id,
-            reply.response_to,
-            func.count(reply.id).label('replies')
-        ).group_by(reply.response_to).subquery()
 
         return self.session.query(Note.id,
                                   Note.public_key,
@@ -204,8 +193,9 @@ class BijaDB:
                                   Note.created_at,
                                   Note.members,
                                   Note.media,
-                                  label("likes", like_counts.c.likes),
-                                  label("replies", reply_counts.c.replies),
+                                  ReactionTally.likes,
+                                  ReactionTally.replies,
+                                  ReactionTally.shares,
                                   Note.liked,
                                   Note.shared,
                                   Note.deleted,
@@ -214,8 +204,7 @@ class BijaDB:
                                   Profile.nip05,
                                   Profile.nip05_validated,
                                   Profile.following).filter_by(id=note_id) \
-            .outerjoin(like_counts, like_counts.c.event_id == Note.id) \
-            .outerjoin(reply_counts, reply_counts.c.response_to == Note.id) \
+            .outerjoin(ReactionTally, ReactionTally.event_id == Note.id) \
             .join(Note.profile).first()
 
     def get_raw_note_data(self, note_id):
@@ -246,14 +235,16 @@ class BijaDB:
                                   Note.liked,
                                   Note.shared,
                                   Note.deleted,
-                                  label("likes", like_counts.c.likes),
+                                  ReactionTally.likes,
+                                  ReactionTally.replies,
+                                  ReactionTally.shares,
                                   Profile.name,
                                   Profile.pic,
                                   Profile.nip05,
                                   Profile.nip05_validated,
                                   Profile.following) \
             .filter(or_(Note.id.in_([i.response_to for i in items]), Note.id.in_([i.id for i in items]))) \
-            .outerjoin(like_counts, like_counts.c.event_id == Note.id) \
+            .outerjoin(ReactionTally, ReactionTally.event_id == Note.id) \
             .join(Note.profile).order_by(Note.created_at.asc()).all()
 
     def get_note_thread_ids(self, note_id):
@@ -291,19 +282,6 @@ class BijaDB:
 
     def get_feed(self, before, public_key):
 
-        like_counts = self.session.query(
-            NoteReaction.id,
-            NoteReaction.event_id,
-            func.count(NoteReaction.id).label('likes')
-        ).group_by(NoteReaction.event_id).subquery()
-
-        reply = aliased(Note)
-        reply_counts = self.session.query(
-            reply.id,
-            reply.response_to,
-            func.count(reply.id).label('replies')
-        ).group_by(reply.response_to).subquery()
-
         return self.session.query(
             Note.id,
             Note.public_key,
@@ -317,15 +295,15 @@ class BijaDB:
             Note.liked,
             Note.shared,
             Note.deleted,
-            label("likes", like_counts.c.likes),
-            label("replies", reply_counts.c.replies),
+            ReactionTally.likes,
+            ReactionTally.replies,
+            ReactionTally.shares,
             Profile.name,
             Profile.pic,
             Profile.nip05,
             Profile.nip05_validated,
             Profile.following) \
-            .outerjoin(like_counts, like_counts.c.event_id == Note.id) \
-            .outerjoin(reply_counts, reply_counts.c.response_to == Note.id) \
+            .outerjoin(ReactionTally, ReactionTally.event_id == Note.id) \
             .join(Note.profile) \
             .filter(text("note.created_at<{}".format(before))) \
             .filter(text("(profile.following=1 OR profile.public_key='{}')".format(public_key))) \
@@ -364,14 +342,16 @@ class BijaDB:
             Note.media,
             Note.liked,
             Note.shared,
+            ReactionTally.likes,
+            ReactionTally.replies,
+            ReactionTally.shares,
             Note.deleted,
-            label("likes", like_counts.c.likes),
             Profile.name,
             Profile.pic,
             Profile.nip05,
             Profile.nip05_validated,
             Profile.following) \
-            .outerjoin(like_counts, like_counts.c.event_id == Note.id) \
+            .outerjoin(ReactionTally, ReactionTally.event_id == Note.id) \
             .join(Note.profile) \
             .filter(text("note.created_at<{}".format(before))) \
             .filter_by(public_key=public_key) \
@@ -559,6 +539,39 @@ class BijaDB:
 
     def set_alerts_read(self):
         self.session.query(Alert).filter(Alert.seen == 0).update({'seen': True})
+        self.session.commit()
+
+    def increment_note_reply_count(self, event_id):
+        replies = 1
+        tally = self.session.query(ReactionTally.replies).filter(ReactionTally.event_id == event_id).first()
+        if tally is not None:
+            replies = tally.replies + 1
+        self.session.merge(ReactionTally(
+            event_id=event_id,
+            replies=replies
+        ))
+        self.session.commit()
+
+    def increment_note_share_count(self, event_id):
+        shares = 1
+        tally = self.session.query(ReactionTally.shares).filter(ReactionTally.event_id == event_id).first()
+        if tally is not None:
+            shares = tally.shares + 1
+        self.session.merge(ReactionTally(
+            event_id=event_id,
+            shares=shares
+        ))
+        self.session.commit()
+
+    def increment_note_like_count(self, event_id):
+        likes = 1
+        tally = self.session.query(ReactionTally.likes).filter(ReactionTally.event_id == event_id).first()
+        if tally is not None:
+            likes = tally.likes + 1
+        self.session.merge(ReactionTally(
+            event_id=event_id,
+            likes=likes
+        ))
         self.session.commit()
 
     def commit(self):

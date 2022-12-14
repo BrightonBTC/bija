@@ -10,7 +10,7 @@
     </span>
     <span class="section">
         <a href="#" class="quote-link" data-rel="{{note['id']}}"><img src="/static/reshare.svg" class="icon"></a>
-        <span class="quote-n counts rnd"></span>
+        <span class="quote-n counts rnd">{{note['shares'] if note['shares']}}</span>
     </span>
     <span class="section">
         <a href="#" class="like" data-rel="{{note['id']}}" data-liked="{{note['liked']}}"><img src="/static/{{liked_im}}" class="icon"></a>

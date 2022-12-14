@@ -128,6 +128,14 @@ class MessageReaction(Base):
     content = Column(String(7))
 
 
+class ReactionTally(Base):
+    __tablename__ = "reaction_tally"
+    event_id = Column(String(64), primary_key=True)
+    likes = Column(Integer, default=0)
+    shares = Column(Integer, default=0)
+    replies = Column(Integer, default=0)
+
+
 class Alert(Base):
     __tablename__ = "alerts"
     id = Column(String(64), primary_key=True)  # the id of the new event
