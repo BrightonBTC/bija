@@ -34,6 +34,7 @@ def _jinja2_filter_ident(name, pk, nip5=None, validated=None, long=True):
     if validated and nip5 is not None and long:
         if nip5[0:2] == "_@":
             nip5 = nip5[2:]
+        nip5 = nip5 + " <img src='/static/verified.svg' class='icon-sm'>"
     elif name is None or len(name.strip()) < 1:
         name = "{}&#8230;".format(pk[0:21])
 
