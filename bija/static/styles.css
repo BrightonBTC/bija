@@ -595,7 +595,6 @@ input[type=text].pname {
     color: #000;
     border-radius: var(--rnd-lg);
     min-width: 11px;
-    height: 12px;
     padding: var(--spacing-tiny);
     display: none;
     text-align: center;

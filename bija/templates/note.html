@@ -14,10 +14,10 @@
                 <img src="/static/note-tools.svg" class="icon">
                 <ul class="opts-menu rnd pad-sm">
                     {%- if note['public_key'] == profile['public_key'] -%}
-                    <li data-action="del pad-tiny">delete</li>
+                    <li data-action="del" class="pad-tiny">delete</li>
                     {%- endif -%}
-                    <li data-action="share pad-tiny">share</li>
-                    <li data-action="nfo pad-tiny">info</li>
+                    <li data-action="share" class="pad-tiny">share</li>
+                    <li data-action="nfo" class="pad-tiny">info</li>
                 </ul>
             </span>
         </span>
