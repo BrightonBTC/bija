@@ -11,6 +11,7 @@ from bija.config import DEFAULT_RELAYS
 from bija.events import BijaEvents, MetadataEvent
 from bija.helpers import *
 from bija.jinja_filters import *
+from bija.notes import FeedThread, NoteThread
 from bija.password import encrypt_key, decrypt_key
 from bija.search import Search
 
@@ -50,18 +51,23 @@ def login_required(f):
     return decorated_function
 
 
+# @app.after_request
+# def after_request_callback():
+#     method = request.method
+#     path = request.path
+#
+#     if path == "/" and method == "POST":
+#         myfunction()
+
 @app.route('/')
 @login_required
 def index_page():
-    session['page'] = 'index'
-    session['notes_in_view'] = None
-    EVENT_HANDLER.set_page('home', None)
+    EXECUTOR.submit(EVENT_HANDLER.set_page('home', None))
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     DB.set_all_seen_in_feed(get_key())
     notes = DB.get_feed(time.time(), get_key())
-    t = NoteThread(notes)
-    EVENT_HANDLER.subscribe_feed(list(t.ids))
-    session['notes_in_view'] = t.ids
+    t = FeedThread(notes)
+    EXECUTOR.submit(EVENT_HANDLER.subscribe_feed(list(t.ids)))
     profile = DB.get_profile(get_key())
     return render_template("feed.html", page_id="home", title="Home", threads=t.threads, last=t.last_ts,
                            profile=profile)
@@ -76,7 +82,7 @@ def feed():
             before = time.time()
         notes = DB.get_feed(before, get_key())
         if len(notes) > 0:
-            t = NoteThread(notes)
+            t = FeedThread(notes)
             EVENT_HANDLER.subscribe_feed(list(t.ids))
             profile = DB.get_profile(get_key())
             return render_template("feed.items.html", threads=t.threads, last=t.last_ts, profile=profile)
@@ -141,7 +147,7 @@ def profile_page():
         is_me = True
         page_id = 'profile-me'
     notes = DB.get_notes_by_pubkey(k, int(time.time()), timestamp_minus(TimePeriod.DAY))
-    t = NoteThread(notes)
+    t = FeedThread(notes)
     profile = DB.get_profile(k)
     latest = DB.get_most_recent_for_pk(k)
     if latest is None:
@@ -163,7 +169,7 @@ def profile_feed():
             before = time.time()
         notes = DB.get_notes_by_pubkey(request.args['pk'], before, None)
         if len(notes) > 0:
-            t = NoteThread(notes)
+            t = FeedThread(notes)
             profile = DB.get_profile(get_key())
             return render_template("feed.items.html", threads=t.threads, last=t.last_ts, profile=profile)
         else:
@@ -173,31 +179,16 @@ def profile_feed():
 @app.route('/note', methods=['GET'])
 @login_required
 def note_page():
-    EVENT_HANDLER.set_page('note', request.args['id'])
-    EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     note_id = request.args['id']
+    EVENT_HANDLER.set_page('note', note_id)
+    EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     EXECUTOR.submit(EVENT_HANDLER.subscribe_thread, note_id)
-    notes = DB.get_note_thread(note_id)
-    notes_processed = []
-    members = []
-    for note in notes:
-        note = dict(note)
-        if note['reshare'] is not None:
-            reshare = DB.get_note(note['reshare'])
-            if reshare is not None:
-                note['reshare'] = reshare
-        members.append(note['public_key'])
-        members = json.loads(note['members']) + members
-        notes_processed.append(note)
-    members = list(dict.fromkeys(members))
-    profiles = []
-    for member in members:
-        p = DB.get_profile(member)
-        if p is not None:
-            profiles.append(p)
+
+    t = NoteThread(note_id)
+
     profile = DB.get_profile(get_key())
     return render_template("thread.html",
-                           page_id="note", title="Note", notes=notes_processed, members=profiles, profile=profile,
+                           page_id="note", title="Note", notes=t.notes, members=t.profiles, profile=profile,
                            root=note_id)
 
 
@@ -539,85 +530,6 @@ def remove_session(*args, **kwargs):
 def shutdown():
     EVENT_HANDLER.close()
     quit()
-
-
-class NoteThread:
-    def __init__(self, notes):
-        self.notes = notes
-        self.threads = []
-        self.roots = []
-        self.ids = set()
-        self.last_ts = None
-
-        self.get_roots()
-        self.build()
-
-    def get_roots(self):
-        roots = []
-        for note in self.notes:
-            note = dict(note)
-            self.last_ts = note['created_at']
-            if note['thread_root'] is not None:
-                roots.append(note['thread_root'])
-                self.add_id(note['thread_root'])
-            elif note['response_to'] is not None:
-                roots.append(note['response_to'])
-                self.add_id(note['response_to'])
-            elif note['thread_root'] is None and note['response_to'] is None:
-                roots.append(note['id'])
-                self.add_id(note['id'])
-
-        self.roots = list(dict.fromkeys(roots))
-
-    def add_id(self, note_id):
-        if note_id not in self.ids:
-            self.ids.add(note_id)
-
-    def build(self):
-        for root in self.roots:
-            t = self.build_thread(root)
-            self.threads.append(t)
-
-    def build_thread(self, root):
-        t = {'self': None, 'id': root, 'response': None, 'responders': {}}
-        responders = []
-        for _note in self.notes:
-            note = dict(_note)
-
-            is_root, is_response = self.is_in_thread(note, root)
-            if is_root:
-                self.notes.remove(_note)
-                t['self'] = note
-            elif is_response:
-                self.notes.remove(_note)
-                if t['response'] is None:
-                    t['response'] = note
-                if len(t['responders']) < 2:
-                    t['responders'][note['public_key']] = note['name']
-                responders.append(note['public_key'])
-
-            if (is_root or is_response) and note['reshare'] is not None:
-                reshare = DB.get_note(note['reshare'])
-                self.add_id(note['reshare'])
-                if reshare is not None:
-                    note['reshare'] = reshare
-
-        responders = list(dict.fromkeys(responders))
-        t['responder_count'] = len(responders)
-
-        if t['self'] is None:
-            t['self'] = DB.get_note(root)
-        return t
-
-    @staticmethod
-    def is_in_thread(note, root):
-        is_root = False
-        is_response = False
-        if note['id'] == root:
-            is_root = True
-        elif note['response_to'] == root or note['thread_root'] == root:
-            is_response = True
-        return is_root, is_response
 
 
 def get_login_state():

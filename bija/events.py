@@ -1,5 +1,6 @@
 import os
 import ssl
+import time
 from urllib.parse import urlparse
 
 import validators as validators
@@ -229,13 +230,19 @@ class BijaEvents:
         SubscribeThread(subscription_id, self.relay_manager, root_id)
 
     def subscribe_feed(self, ids):
+        tm = time.time()
         if 'notes' in self.active_events:
             self.active_events['notes'] += ids
         else:
             self.active_events['notes'] = ids
+        print(tm - time.time())
+        tm = time.time()
         subscription_id = 'main-feed'
         self.subscriptions.append(subscription_id)
+        print(tm - time.time())
+        tm = time.time()
         SubscribeFeed(subscription_id, self.relay_manager, ids)
+        print(tm - time.time())
 
     def subscribe_profile(self, pubkey, since):
         subscription_id = 'profile'

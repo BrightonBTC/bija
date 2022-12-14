@@ -118,6 +118,19 @@ class BijaDB:
             out.append(dict(p))
         return out
 
+    # get basic info for a list of pubkeys
+    def get_profile_briefs(self, public_keys: list):
+        profiles = self.session.query(
+            Profile.public_key,
+            Profile.name,
+            Profile.pic,
+            Profile.nip05,
+            Profile.nip05_validated).filter(Profile.public_key.in_(public_keys)).all()
+        out = []
+        for p in profiles:
+            out.append(dict(p))
+        return out
+
     def upd_profile(self,
                     public_key,
                     name=None,
@@ -308,7 +321,7 @@ class BijaDB:
             .filter(text("note.created_at<{}".format(before))) \
             .filter(text("(profile.following=1 OR profile.public_key='{}')".format(public_key))) \
             .filter(text("note.deleted is not 1")) \
-            .order_by(Note.created_at.desc()).limit(50).all()
+            .order_by(Note.created_at.desc()).limit(100).all()
 
     def get_note_by_id_list(self, note_ids):
         return self.session.query(

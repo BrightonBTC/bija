@@ -21,7 +21,6 @@ class Subscribe:
         request = [ClientMessageType.REQUEST, self.name]
         request.extend(self.filters.to_json_array())
         self.relay_manager.add_subscription(self.name, self.filters)
-        time.sleep(1)
         message = json.dumps(request)
         self.relay_manager.publish_message(message)
 
