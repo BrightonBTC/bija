@@ -585,6 +585,7 @@ def process_login():
             DB.insert_relay(item)
             added = True
         EVENT_HANDLER.open_connections()
+        time.sleep(1)
         return added
 
 
