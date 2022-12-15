@@ -58,22 +58,9 @@ class BijaDB:
         ))
         self.session.commit()
 
-    def add_profile(self,
-                    public_key,
-                    name=None,
-                    nip05=None,
-                    pic=None,
-                    about=None,
-                    updated_at=None):
-        if updated_at is None:
-            updated_at = int(time.time())
+    def add_profile(self, public_key):
         self.session.add(Profile(
-            public_key=public_key,
-            name=name,
-            nip05=nip05,
-            pic=pic,
-            about=about,
-            updated_at=updated_at
+            public_key=public_key
         ))
         self.session.commit()
 
