@@ -97,8 +97,28 @@ function SOCK() {
             }
         }
     });
-}
 
+    socket.on('new_reaction', function(note_id) {
+        updateInteractionCount(note_id, '.likes');
+    });
+    socket.on('new_reply', function(note_id) {
+        updateInteractionCount(note_id, '.reply-n');
+    });
+    socket.on('new_reshare', function(note_id) {
+        updateInteractionCount(note_id, '.quote-n');
+    });
+}
+let updateInteractionCount = function(note_id, cls){
+    const note_el = document.querySelector('.note[data-id="'+note_id+'"]');
+    if(note_el){
+        like_el = note_el.querySelector(cls);
+        if(like_el){
+            n = like_el.innerText.trim()
+            if(n.length < 1) n = 0;
+            like_el.innerText = parseInt(n) + 1
+        }
+    }
+}
 
 let notifyNewProfilePosts = function(ts){
     first_note = document.querySelector('#profile-posts[data-latest]');

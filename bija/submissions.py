@@ -1,4 +1,5 @@
 import json
+import logging
 import time
 
 from bija.app import app
@@ -9,10 +10,13 @@ from python_nostr.nostr.key import PrivateKey
 from python_nostr.nostr.message_type import ClientMessageType
 
 DB = BijaDB(app.session)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class Submit:
     def __init__(self, relay_manager, keys):
+        logger.info('SUBMISSION initiated')
         self.relay_manager = relay_manager
         self.keys = keys
         self.tags = []
@@ -29,7 +33,9 @@ class Submit:
         event.sign(self.keys['private'])
         self.event_id = event.id
         message = json.dumps([ClientMessageType.EVENT, event.to_json_object()], ensure_ascii=False)
+        logger.info('SUBMIT: {}'.format(message))
         self.relay_manager.publish_message(message)
+        logger.info('PUBLISHED')
 
 
 class SubmitDelete(Submit):
@@ -58,6 +64,7 @@ class SubmitProfile(Submit):
 class SubmitLike(Submit):
     def __init__(self, relay_manager, keys, note_id, content="+"):
         super().__init__(relay_manager, keys)
+        logger.info('SUBMIT like')
         self.content = content
         self.note_id = note_id
         self.kind = EventKind.REACTION

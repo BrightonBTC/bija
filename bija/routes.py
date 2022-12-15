@@ -15,6 +15,9 @@ from bija.notes import FeedThread, NoteThread
 from bija.password import encrypt_key, decrypt_key
 from bija.search import Search
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
 thread = Thread()
 
 DB = BijaDB(app.session)
@@ -132,13 +135,10 @@ def login_page():
 @app.route('/profile', methods=['GET'])
 @login_required
 def profile_page():
-    session['page'] = 'profile'
-    session['notes_in_view'] = None
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     page_id = 'profile'
     if 'pk' in request.args and is_hex_key(request.args['pk']) and request.args['pk'] != get_key():
         EVENT_HANDLER.set_page('profile', request.args['pk'])
-        EXECUTOR.submit(EVENT_HANDLER.subscribe_profile, request.args['pk'], timestamp_minus(TimePeriod.WEEK))
         k = request.args['pk']
         is_me = False
     else:
@@ -156,6 +156,8 @@ def profile_page():
         DB.add_profile(k)
         profile = DB.get_profile(k)
 
+    EXECUTOR.submit(EVENT_HANDLER.subscribe_profile, k, timestamp_minus(TimePeriod.WEEK), list(t.ids))
+
     return render_template("profile.html", page_id=page_id, title="Profile", threads=t.threads, last=t.last_ts,
                            latest=latest, profile=profile, is_me=is_me)
 
@@ -171,6 +173,9 @@ def profile_feed():
         if len(notes) > 0:
             t = FeedThread(notes)
             profile = DB.get_profile(get_key())
+            EXECUTOR.submit(
+                EVENT_HANDLER.subscribe_profile, request.args['pk'], t.last_ts - TimePeriod.WEEK, list(t.ids)
+            )
             return render_template("feed.items.html", threads=t.threads, last=t.last_ts, profile=profile)
         else:
             return 'END'
@@ -182,9 +187,9 @@ def note_page():
     note_id = request.args['id']
     EVENT_HANDLER.set_page('note', note_id)
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
-    EXECUTOR.submit(EVENT_HANDLER.subscribe_thread, note_id)
 
     t = NoteThread(note_id)
+    EXECUTOR.submit(EVENT_HANDLER.subscribe_thread, note_id, t.note_ids)
 
     profile = DB.get_profile(get_key())
     return render_template("thread.html",
@@ -397,7 +402,7 @@ def submit_like():
 def following_page():
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     if 'pk' in request.args and is_hex_key(request.args['pk']):
-        EXECUTOR.submit(EVENT_HANDLER.subscribe_profile, request.args['pk'], timestamp_minus(TimePeriod.WEEK))
+        EXECUTOR.submit(EVENT_HANDLER.subscribe_profile, request.args['pk'], timestamp_minus(TimePeriod.WEEK), [])
         k = request.args['pk']
         is_me = False
         p = DB.get_profile(k)

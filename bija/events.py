@@ -1,3 +1,4 @@
+import logging
 import os
 import ssl
 import time
@@ -15,6 +16,11 @@ from bija.submissions import *
 from bija.alerts import *
 from python_nostr.nostr.event import EventKind
 from python_nostr.nostr.relay_manager import RelayManager
+
+logger = logging.getLogger(__name__)
+FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
+logging.basicConfig(format=FORMAT)
+logger.setLevel(logging.INFO)
 
 D_TASKS = DeferredTasks()
 DB = BijaDB(app.session)
@@ -99,14 +105,12 @@ class BijaEvents:
 
             while self.relay_manager.message_pool.has_ok_notices():
                 notice = self.relay_manager.message_pool.get_ok_notice()
-                print('OK:', notice)
 
             while self.relay_manager.message_pool.has_eose_notices():
                 notice = self.relay_manager.message_pool.get_eose_notice()
 
             while self.relay_manager.message_pool.has_events():
                 msg = self.relay_manager.message_pool.get_event()
-                print(msg.event.kind)
                 if DB.get_event(msg.event.id) is None:
                     if msg.event.kind == EventKind.SET_METADATA:
                         self.receive_metadata_event(msg.event)
@@ -129,7 +133,8 @@ class BijaEvents:
             DB.commit()
             D_TASKS.next()
             time.sleep(1)
-            print('running', time.time())
+            logger.info('Event loop {}'.format(int(time.time())))
+            # print(int(time.time()))
             i += 1
             if i == 60:
                 self.get_connection_status()
@@ -141,6 +146,9 @@ class BijaEvents:
     def receive_reaction_event(self, event):
         e = ReactionEvent(event, self.get_key())
         note = DB.get_note(e.event_id)
+        if e.event.content != '-' and 'notes' in self.active_events and e.event_id in self.active_events['notes']:
+            logger.info('Reaction on active note detected, signal to UI')
+            socketio.emit('new_reaction', e.event_id)
         if e.event.public_key != self.get_key():
             if note is not None and note.public_key == self.get_key():
                 reaction = DB.get_reaction_by_id(e.event.id)
@@ -171,6 +179,17 @@ class BijaEvents:
         if e.mentions_me:
             self.alert_on_note_event(e)
         self.notify_on_note_event(event, subscription)
+
+        if 'notes' in self.active_events:
+            if e.response_to in self.active_events['notes']:
+                logger.info('Detected response to active note {}'.format(e.response_to))
+                socketio.emit('new_reply', e.response_to)
+            elif e.response_to is None and e.thread_root in self.active_events['notes']:
+                logger.info('Detected response to active note {}'.format(e.thread_root))
+                socketio.emit('new_reply', e.thread_root)
+            if e.reshare in self.active_events['notes']:
+                logger.info('Detected reshare on active note {}'.format(e.reshare))
+                socketio.emit('new_reshare', e.reshare)
 
     def alert_on_note_event(self, event):
         if event.response_to is not None:
@@ -205,7 +224,7 @@ class BijaEvents:
         if e.changed:
             self.subscribe_primary()
         if event.public_key != self.get_key() and subscription == 'profile':
-            self.subscribe_profile(event.public_key, timestamp_minus(TimePeriod.WEEK))
+            self.subscribe_profile(event.public_key, timestamp_minus(TimePeriod.WEEK), [])
         if self.get_key() in e.keys:
             DB.set_follower(event.public_key)
 
@@ -224,27 +243,26 @@ class BijaEvents:
             unseen_n = DB.get_unseen_message_count()
             socketio.emit('unseen_messages_n', unseen_n)
 
-    def subscribe_thread(self, root_id):
+    def subscribe_thread(self, root_id, ids):
+        self.active_events['notes'] = ids
         subscription_id = 'note-thread'
         self.subscriptions.append(subscription_id)
         SubscribeThread(subscription_id, self.relay_manager, root_id)
 
     def subscribe_feed(self, ids):
-        tm = time.time()
         if 'notes' in self.active_events:
             self.active_events['notes'] += ids
         else:
             self.active_events['notes'] = ids
-        print(tm - time.time())
-        tm = time.time()
         subscription_id = 'main-feed'
         self.subscriptions.append(subscription_id)
-        print(tm - time.time())
-        tm = time.time()
         SubscribeFeed(subscription_id, self.relay_manager, ids)
-        print(tm - time.time())
 
-    def subscribe_profile(self, pubkey, since):
+    def subscribe_profile(self, pubkey, since, ids):
+        if 'notes' in self.active_events:
+            self.active_events['notes'] += ids
+        else:
+            self.active_events['notes'] = ids
         subscription_id = 'profile'
         self.subscriptions.append(subscription_id)
         SubscribeProfile(subscription_id, self.relay_manager, pubkey, since)

@@ -89,6 +89,7 @@ class NoteThread:
     def __init__(self, root):
         self.root = root
         self.notes = []
+        self.note_ids = []
         self.public_keys = []
         self.profiles = []
 
@@ -108,6 +109,7 @@ class NoteThread:
             public_keys = json.loads(note['members']) + public_keys
             self.add_public_keys(public_keys)
             self.notes.append(note)
+            self.note_ids.append(note['id'])
 
     def add_public_keys(self, public_keys: list):
         for k in public_keys:
