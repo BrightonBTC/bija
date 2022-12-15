@@ -13,14 +13,14 @@ class Event(Base):
 class Profile(Base):
     __tablename__ = "profile"
     public_key = Column(String(64), unique=True, primary_key=True)
-    name = Column(String)
-    nip05 = Column(String)
-    pic = Column(String)
-    about = Column(String)
+    name = Column(String, nullable=True)
+    nip05 = Column(String, nullable=True)
+    pic = Column(String, nullable=True)
+    about = Column(String, nullable=True)
     updated_at = Column(Integer, default=0)
-    following = Column(Boolean)
-    follower = Column(Boolean)
-    contacts = Column(String)
+    following = Column(Boolean, default=False)
+    follower = Column(Boolean, default=False)
+    contacts = Column(String, nullable=True)
     nip05_validated = Column(Boolean, default=False)
     raw = Column(String)
 
