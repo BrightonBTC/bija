@@ -3,7 +3,7 @@
 {%- block content -%}
 <div id="note-poster" class="poster-form rnd pad-mid">
     <div class="pic pad-sm">
-        {%- if profile['pic'] is not none -%}
+        {%- if profile['pic'] is not none and profile['pic']|length > 0 -%}
             <img src="{{profile['pic']}}" class="user-image" onerror="defaultImage(this);"  />
         {%- else -%}
             <img src="/identicon?id={{profile['public_key']}}" class="user-image" />
