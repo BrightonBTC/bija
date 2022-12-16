@@ -175,6 +175,9 @@ class BijaEvents:
             })
 
     def receive_note_event(self, event, subscription):
+        if subscription == 'search':
+            print('SEARCH', event.to_json_object())
+            return
         e = NoteEvent(event, self.get_key())
         if e.mentions_me:
             self.alert_on_note_event(e)
@@ -271,6 +274,9 @@ class BijaEvents:
     def subscribe_primary(self):
         self.subscriptions.append('primary')
         SubscribePrimary('primary', self.relay_manager, self.get_key())
+
+    def subscribe_search(self, term):
+        SubscribeSearch('search', self.relay_manager, term)
 
     def submit_profile(self, profile):
         e = SubmitProfile(self.relay_manager, self.session.get("keys"), profile)
@@ -441,9 +447,15 @@ class MetadataEvent:
         self.about = None
         self.picture = None
         self.nip05_validated = False
+        if self.is_fresh():
+            self.process_content()
+            self.store()
 
-        self.process_content()
-        self.store()
+    def is_fresh(self):
+        ts = DB.get_profile_last_upd(self.event.public_key)
+        if ts is None or ts.updated_at < self.event.created_at:
+            return True
+        return False
 
     def process_content(self):
         s = json.loads(self.event.content)

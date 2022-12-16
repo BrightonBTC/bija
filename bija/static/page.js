@@ -719,6 +719,12 @@ class bijaNotes{
             if(im_el){
                 this.setImageClickEvents(im_el)
             }
+
+            const like_n_el = note.querySelector(".likes.counts");
+            if(like_n_el){
+                this.setLikeCountClickEvents(like_n_el, note.dataset.id)
+            }
+
         }
     }
 
@@ -863,6 +869,36 @@ class bijaNotes{
                 })
             }
         }
+    }
+
+    setLikeCountClickEvents(elem, id){
+        elem.addEventListener('click', (e) => {
+            const cb = function(response, data){
+                console.log(response)
+                popup('')
+                data.context.displayReactionDetails(response.data)
+
+            }
+            fetchGet('/get_reactions?id='+id, cb, {'context': this}, 'json')
+        });
+    }
+
+    displayReactionDetails(response){
+        const container = document.createElement('ul')
+        for (var i = 0; i < response.length; i++){
+            let li = document.createElement('li')
+            if(response[i].content == null || response[i].content.length < 1 || response[i].content == "+"){
+                response[i].content = "🤍"
+            }
+            if(response[i].name == null || response[i].name.length < 1){
+                response[i].name = response[i].public_key.substring(0, 21)+"..."
+            }
+
+            li.innerHTML = '<span>'+response[i].content+'</span><span>'+response[i].name+'</span>';
+            container.append(li)
+        }
+        const p = document.querySelector('.popup')
+        p.append(container)
     }
 
     setDeleteForm(){

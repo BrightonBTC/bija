@@ -105,6 +105,9 @@ class BijaDB:
             out.append(dict(p))
         return out
 
+    def get_profile_last_upd(self, public_key):
+        return self.session.query(Profile.updated_at).filter_by(public_key=public_key).first()
+
     # get basic info for a list of pubkeys
     def get_profile_briefs(self, public_keys: list):
         profiles = self.session.query(
@@ -212,12 +215,6 @@ class BijaDB:
 
     def get_note_thread(self, note_id):
 
-        like_counts = self.session.query(
-            NoteReaction.id,
-            NoteReaction.event_id,
-            func.count(NoteReaction.id).label('likes')
-        ).group_by(NoteReaction.event_id).subquery()
-
         items = self.session.query(Note.id, Note.response_to) \
             .filter(
             text("note.id='{}' or note.response_to='{}' or note.thread_root='{}'".format(note_id, note_id, note_id))) \
@@ -324,12 +321,6 @@ class BijaDB:
 
     def get_notes_by_pubkey(self, public_key, before, after):
 
-        like_counts = self.session.query(
-            NoteReaction.id,
-            NoteReaction.event_id,
-            func.count(NoteReaction.id).label('likes')
-        ).group_by(NoteReaction.event_id).subquery()
-
         return self.session.query(
             Note.id,
             Note.public_key,
@@ -402,9 +393,9 @@ class BijaDB:
         self.session.query(Note).filter(Note.id == note_id).update({'seen': True})
         self.session.commit()
 
-    def get_profile_updates(self, public_key, last_update):
-        return self.session.query(Profile).filter_by(public_key=public_key).filter(
-            text("profile.updated_at>{}".format(last_update))).first()
+    # def get_profile_updates(self, public_key, last_update):
+    #     return self.session.query(Profile).filter_by(public_key=public_key).filter(
+    #         text("profile.updated_at>{}".format(last_update))).first()
 
     def search_profile_name(self, name_str):
         return self.session.query(Profile.name, Profile.nip05, Profile.public_key).filter(
@@ -473,6 +464,21 @@ class BijaDB:
             liked=liked
         ))
         self.session.commit()
+
+    def get_note_reactions(self, note_id):
+        stmt = (
+            self.session.query(
+                Profile.name,
+                Profile.public_key.label('pk')
+            )
+            .subquery()
+        )
+        return self.session.query(
+            NoteReaction.content,
+            NoteReaction.public_key,
+            stmt.c.name
+        ).outerjoin(stmt, NoteReaction.public_key == stmt.c.pk)\
+            .filter(NoteReaction.event_id == note_id).all()
 
     def get_reaction_by_id(self, event_id):
         return self.session.query(NoteReaction.content).filter_by(id=event_id).first()

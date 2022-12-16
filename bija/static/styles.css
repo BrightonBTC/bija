@@ -339,7 +339,7 @@ input[type=submit]:hover, input[type=button]:hover, button:hover {
     left: 50%;
     transform: translate(-50%, 0%);
     padding: var(--spacing-mid);
-    width: 700px;
+    max-width: 80%;
     max-height: 80%;
     overflow: auto;
     z-index: 1001;

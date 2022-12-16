@@ -62,6 +62,20 @@ class SubscribePrimary(Subscribe):
         self.filters = Filters(f)
 
 
+class SubscribeSearch(Subscribe):
+    def __init__(self, name, relay_manager, term):
+        super().__init__(name, relay_manager)
+        self.term = term
+        self.build_filters()
+        self.send()
+
+    def build_filters(self):
+        f = [
+            Filter(kinds=[EventKind.TEXT_NOTE], tags={'#t': [self.term]})
+        ]
+        self.filters = Filters(f)
+
+
 class SubscribeProfile(Subscribe):
     def __init__(self, name, relay_manager, pubkey, since):
         super().__init__(name, relay_manager)

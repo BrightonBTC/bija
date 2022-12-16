@@ -4,7 +4,7 @@ import time
 
 from bija.app import app
 from bija.db import BijaDB
-from bija.helpers import is_hex_key, get_at_tags
+from bija.helpers import is_hex_key, get_at_tags, get_hash_tags
 from python_nostr.nostr.event import EventKind, Event
 from python_nostr.nostr.key import PrivateKey
 from python_nostr.nostr.message_type import ClientMessageType
@@ -123,6 +123,7 @@ class SubmitNote(Submit):
                 self.tags.append(["e", data['thread_root'], self.preferred_relay, "root"])
         else:
             self.event_id = False
+        self.process_hash_tags()
         self.process_mentions()
 
     def process_mentions(self):
@@ -133,6 +134,12 @@ class SubmitNote(Submit):
                 self.tags.append(["p", name['public_key']])
                 index = len(self.tags) - 1
                 self.content = self.content.replace(match, "#[{}]".format(index))
+
+    def process_hash_tags(self):
+        matches = get_hash_tags(self.content)
+        if len(matches) > 0:
+            for match in matches:
+                self.tags.append(["t", match[1:]])
 
     def store(self):
         DB.insert_note(

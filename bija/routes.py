@@ -425,9 +425,12 @@ def following_page():
 def search_page():
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     search = Search()
-    results, goto, message = search.get()
+    results, goto, message, action = search.get()
     if goto is not None:
         return redirect(goto)
+    if action is not None:
+        if action == 'hash':
+            EXECUTOR.submit(EVENT_HANDLER.subscribe_search, request.args['search_term'][1:])
     return render_template("search.html", page_id="search", title="Search", message=message, results=results)
 
 
@@ -492,6 +495,16 @@ def follow():
 def fetch_raw():
     d = DB.get_raw_note_data(request.args['id'])
     return render_template("upd.json", data=json.dumps({'data': d.raw}))
+
+
+@app.route('/get_reactions', methods=['GET'])
+def get_reactions():
+    d = DB.get_note_reactions(request.args['id'])
+    results = []
+    for r in d:
+        r = dict(r)
+        results.append(r)
+    return render_template("upd.json", data=json.dumps({'data': results}))
 
 
 @app.route('/submit_note', methods=['POST', 'GET'])
