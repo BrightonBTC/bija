@@ -52,3 +52,4 @@ zope.interface==5.5.2
 beautifulsoup4~=4.11.1
 validators~=0.20.0
 bip39~=0.0.2
+arrow~=1.2.3
