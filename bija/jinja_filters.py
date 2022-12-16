@@ -1,7 +1,7 @@
 import json
-from datetime import datetime
 
 from flask import render_template
+import arrow
 
 from bija.app import app
 from bija.db import BijaDB
@@ -13,7 +13,8 @@ DB = BijaDB(app.session)
 
 @app.template_filter('dt')
 def _jinja2_filter_datetime(ts):
-    return datetime.fromtimestamp(ts).strftime('%Y-%m-%d @ %H:%M')
+    t = arrow.get(ts)
+    return t.humanize()
 
 
 @app.template_filter('decr')
