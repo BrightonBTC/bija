@@ -99,9 +99,7 @@ def _jinja2_filter_thread_root(root, reply, note_id):
     out = {'root': '', 'reply': ''}
     if root is None and reply is None:
         out['root'] = note_id
-    elif root is not None and reply is not None:
-        out = {'root': root, 'reply': reply}
-    elif root is not None and reply is None:
+    else:
         out = {'root': root, 'reply': note_id}
     return out
 
