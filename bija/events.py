@@ -112,6 +112,7 @@ class BijaEvents:
             while self.relay_manager.message_pool.has_events():
                 msg = self.relay_manager.message_pool.get_event()
                 if DB.get_event(msg.event.id) is None:
+                    logger.info('New event: {}'.format(msg.event.kind))
                     if msg.event.kind == EventKind.SET_METADATA:
                         self.receive_metadata_event(msg.event)
 
@@ -145,19 +146,24 @@ class BijaEvents:
 
     def receive_reaction_event(self, event):
         e = ReactionEvent(event, self.get_key())
-        note = DB.get_note(e.event_id)
-        if e.event.content != '-' and 'notes' in self.active_events and e.event_id in self.active_events['notes']:
-            logger.info('Reaction on active note detected, signal to UI')
-            socketio.emit('new_reaction', e.event_id)
-        if e.event.public_key != self.get_key():
-            if note is not None and note.public_key == self.get_key():
-                reaction = DB.get_reaction_by_id(e.event.id)
-                Alert(
-                    e.event.id,
-                    e.event.created_at, AlertKind.REACTION, e.event.public_key, e.event_id, reaction['content'])
-                n = DB.get_unread_alert_count()
-                if n > 0:
-                    socketio.emit('alert_n', n)
+        if e.valid:
+            note = DB.get_note(e.event_id)
+            if e.event.content != '-' and 'notes' in self.active_events and e.event_id in self.active_events['notes']:
+                socketio.emit('new_reaction', e.event_id)
+                logger.info('Reaction on active note detected, signal to UI')
+            if e.event.public_key != self.get_key():
+                logger.info('Reaction is not from me')
+                if note is not None and note.public_key == self.get_key():
+                    logger.info('Get reaction from DB')
+                    reaction = DB.get_reaction_by_id(e.event.id)
+                    logger.info('Compose reaction alert')
+                    Alert(
+                        e.event.id,
+                        e.event.created_at, AlertKind.REACTION, e.event.public_key, e.event_id, reaction.content)
+                    logger.info('Get unread alert count')
+                    n = DB.get_unread_alert_count()
+                    if n > 0:
+                        socketio.emit('alert_n', n)
 
     def receive_metadata_event(self, event):
         meta = MetadataEvent(event)
@@ -322,14 +328,18 @@ class ReactionEvent:
         self.event_id = None
         self.event_pk = None
         self.event_members = []
+        self.valid = False
 
         self.process()
 
     def process(self):
         self.process_tags()
         if self.event_id is not None and self.event_pk is not None:
+            self.valid = True
             self.store()
             self.update_referenced()
+        else:
+            logger.debug('Invalid reaction event could not be stored.')
 
     def process_tags(self):
         for tag in self.event.tags:
