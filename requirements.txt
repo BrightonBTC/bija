@@ -24,17 +24,8 @@ proxy-tools==0.1.0
 pycairo==1.23.0
 pycparser==2.21
 pydenticon==0.3.1
-PyGObject==3.42.2
 pyinstaller==5.7.0
 pyinstaller-hooks-contrib==2022.14
-PyQt6==6.4.0
-PyQt6-Qt==6.0.1
-PyQt6-Qt6==6.4.1
-PyQt6-sip==13.4.0
-PyQt6-WebEngine==6.4.0
-PyQt6-WebEngine-Qt6==6.4.1
-PyQtWebEngine==5.15.6
-PyQtWebEngine-Qt5==5.15.2
 python-engineio==4.3.4
 python-socketio==5.7.2
 pywebview==3.7.2

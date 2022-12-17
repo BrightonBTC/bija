@@ -5,7 +5,6 @@ from flask_session import Session
 from sqlalchemy.orm import scoped_session
 import bija.db as db
 from bija.args import args
-from bija.gui import init_gui
 
 
 app = Flask(__name__, template_folder='../bija/templates')
@@ -22,10 +21,7 @@ from bija.routes import *
 
 
 def main():
-    if args.noqt:
-        socketio.run(app, host="0.0.0.0", port=args.port)
-    else:
-        init_gui(app, socketio)
+    socketio.run(app, host="0.0.0.0", port=args.port)
 
 
 if __name__ == '__main__':
