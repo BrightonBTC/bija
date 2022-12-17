@@ -6,15 +6,17 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.sql import label
 
+from bija.args import args
 from bija.models import *
 
-DB_ENGINE = create_engine("sqlite:///bija.sqlite", echo=False)
+DB_ENGINE = create_engine("sqlite:///{}.sqlite".format(args.db), echo=False)
 DB_SESSION = sessionmaker(autocommit=False, autoflush=False, bind=DB_ENGINE)
 
 
 class BijaDB:
 
     def __init__(self, session):
+
         self.session = session
         Base.metadata.create_all(DB_ENGINE)
 
