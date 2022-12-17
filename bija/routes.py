@@ -54,14 +54,6 @@ def login_required(f):
     return decorated_function
 
 
-# @app.after_request
-# def after_request_callback():
-#     method = request.method
-#     path = request.path
-#
-#     if path == "/" and method == "POST":
-#         myfunction()
-
 @app.route('/')
 @login_required
 def index_page():
@@ -100,6 +92,13 @@ def alerts_page():
     DB.set_alerts_read()
     return render_template("alerts.html", page_id="alerts", title="alerts", alerts=alerts)
 
+
+@app.route('/logout', methods=['GET'])
+def logout_page():
+    remove_session()
+    EVENT_HANDLER.close()
+    quit()
+    return 'Server shutting down...'
 
 @app.route('/login', methods=['GET', 'POST'])
 def login_page():

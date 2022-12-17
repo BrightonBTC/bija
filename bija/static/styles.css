@@ -238,7 +238,9 @@ input[type=submit]:hover, input[type=button]:hover, button:hover {
     align-items: center;
     position: relative;
 }
-
+.topnav a.logout{
+    float: right;
+}
 .topnav a:hover, .topnav a:active{
     background-color: var(--bg-clr3);
     color: var(--mnu-clr-hvr);
@@ -358,6 +360,7 @@ input[type=submit]:hover, input[type=button]:hover, button:hover {
 .clipboard{
     cursor: pointer;
 }
+
 /* ---------- */
 
 /* Feed */

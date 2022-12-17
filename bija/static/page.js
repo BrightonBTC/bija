@@ -1185,4 +1185,15 @@ window.addEventListener("load", function () {
             clipboard(btn.dataset.str);
         });
     }
+
+    const logout = document.querySelector('.logout')
+    if(logout){
+        logout.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            fetchGet('/logout', function(){
+                document.querySelector('.main').innerHTML = 'Shutting down...'
+            }, {})
+        });
+    }
 });
