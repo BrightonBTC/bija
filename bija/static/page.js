@@ -145,13 +145,13 @@ let updateProfile = function(profile){
     document.querySelector("#profile").dataset.updated_ts = profile.updated_at
     const name_els = document.querySelectorAll(".uname[data-pk='"+profile.public_key+"']");
     for (const name_el of name_els) {
-        if(profile.name.length > 0){
+        if(profile.nip05 != null && profile.name.length > 0){
             const nm = name_el.querySelector('.name')
             if(nm){
                 nm.innerText = profile.name
             }
         }
-        if(profile.nip05 !== null && profile.nip05.length > 0 && profile.nip05_validated){
+        if(profile.nip05 != null && profile.nip05.length > 0 && profile.nip05_validated){
             const nip5 = name_el.querySelector('.nip5')
             if(nip5){
                 nip5.innerText = profile.nip05
