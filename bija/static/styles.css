@@ -107,7 +107,7 @@ input[type=text], input[type=password], textarea {
 input[type=submit], input[type=button], button {
   background-color: var(--btn-bg);
   color: var(--btn-txt);
-  padding: var(--spacing-mid);
+  padding: var(--spacing-sm);
   margin: 8px 0;
   border: none;
   border-radius: var(--rnd);
@@ -288,6 +288,8 @@ input[type=submit]:hover, input[type=button]:hover, button:hover {
     border-radius: var(--rnd-sm);
     border: 1px solid var(--bdr-clr-2);
     background: var(--bg-clr1);
+    width: 100%;
+    float: left;
 }
 
 .notify {
@@ -391,6 +393,17 @@ input[type=submit]:hover, input[type=button]:hover, button:hover {
 
 input.post-submit {
     width: auto;
+}
+.media_uploads{
+    width: 100%;
+}
+.media_uploads img{
+    margin: var(--spacing-mid);
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border: 5px solid var(--bdr-clr-1);
+    border-radius: var(--rnd-mid);
 }
 
 
@@ -1032,6 +1045,17 @@ p.note-tools {
     display: block;
     margin: var(--spacing-mid) 0;
 }
+.toolbar * {
+    margin: var(--spacing-sm);
+}
+.toolbar {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    flex-direction: row-reverse;
+    justify-content: flex-start;
+}
+
 /* ---------- */
 
 /* Alerts */

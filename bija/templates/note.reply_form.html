@@ -21,7 +21,10 @@
     <input type="hidden" name="pubkey" value="{{note['public_key']}}">
     <input type="hidden" name="thread_root" value="{{reply_chain.root}}">
     <input type="hidden" name="parent_id" value="{{reply_chain.reply}}">
-    <textarea name="reply" class="note-textarea"></textarea>
-    <input type="submit" value="Reply" data-reply-submit="1" data-rel="{{note['id']}}" class="post-submit right pad-sm">
+    <textarea name="reply" class="note-textarea" placeholder="your response here..."></textarea>
+    <div class="toolbar">
+        <input type="submit" value="Reply" data-reply-submit="1" data-rel="{{note['id']}}" class="post-submit right pad-sm">
+    </div>
+    <div class="media_uploads"></div>
     <div class="name-hints"></div>
 </form>

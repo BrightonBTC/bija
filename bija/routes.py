@@ -1,3 +1,4 @@
+import sys
 from functools import wraps
 from threading import Thread
 
@@ -47,6 +48,7 @@ class LoginState(IntEnum):
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        session['settings'] = DB.get_settings()
         login_state = get_login_state()
         if login_state is not LoginState.LOGGED_IN:
             return redirect(url_for('login_page', next=request.url))
@@ -96,9 +98,10 @@ def alerts_page():
 @app.route('/logout', methods=['GET'])
 def logout_page():
     remove_session()
+    session.clear()
     EVENT_HANDLER.close()
-    quit()
-    return 'Server shutting down...'
+    sys.exit()
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login_page():
@@ -258,38 +261,53 @@ def thread_item():
 @app.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings_page():
-    login_state = get_login_state()
-    if login_state is LoginState.LOGGED_IN:
-        if request.method == 'POST' and 'del_keys' in request.form.keys():
-            print("RESET DB")
-            EVENT_HANDLER.close()
-            DB.reset()
-            session.clear()
-            return redirect('/')
-        else:
-            EVENT_HANDLER.set_page('settings', None)
-            EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
-            settings = {}
-            relays = DB.get_relays()
-            EVENT_HANDLER.get_connection_status()
-            k = session.get("keys")
-            keys = {
-                "private": [
-                    k['private'],
-                    hex64_to_bech32("nsec", k['private']),
-                    bip39.encode_bytes(bytes.fromhex(k['private']))
-                ],
-                "public": [
-                    k['public'],
-                    hex64_to_bech32("npub", k['public'])
-                ]
-            }
-            return render_template(
-                "settings.html",
-                page_id="settings",
-                title="Settings", relays=relays, settings=settings, k=keys)
+    if request.method == 'POST' and 'del_keys' in request.form.keys():
+        print("RESET DB")
+        EVENT_HANDLER.close()
+        DB.reset()
+        session.clear()
+        return redirect('/')
     else:
-        return render_template("login.html", title="Login", login_type=login_state)
+        EVENT_HANDLER.set_page('settings', None)
+        EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
+        settings = {
+            'cloudinary_cloud': '',
+            'cloudinary_upload_preset': ''
+        }
+        cs = DB.get_settings_by_keys(['cloudinary_cloud', 'cloudinary_upload_preset'])
+        if cs is not None:
+            for item in cs:
+                item = dict(item)
+                settings[item['key']] = item['value']
+
+        relays = DB.get_relays()
+        EVENT_HANDLER.get_connection_status()
+        k = session.get("keys")
+        keys = {
+            "private": [
+                k['private'],
+                hex64_to_bech32("nsec", k['private']),
+                bip39.encode_bytes(bytes.fromhex(k['private']))
+            ],
+            "public": [
+                k['public'],
+                hex64_to_bech32("npub", k['public'])
+            ]
+        }
+        return render_template(
+            "settings.html",
+            page_id="settings",
+            title="Settings", relays=relays, settings=settings, k=keys)
+
+
+@app.route('/update_settings', methods=['POST'])
+def update_settings():
+    items = {}
+    for item in request.json:
+        items[item[0]] = item[1].strip()
+    print(items)
+    DB.upd_settings_by_keys(items)
+    return render_template("upd.json", data=json.dumps({'success': 1}))
 
 
 @app.route('/destroy_account')

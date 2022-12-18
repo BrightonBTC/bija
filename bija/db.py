@@ -582,5 +582,24 @@ class BijaDB:
         ))
         self.session.commit()
 
+    def get_settings_by_keys(self, keys: list):
+        return self.session.query(Settings.key, Settings.value).filter(Settings.key.in_(keys)).all()
+
+    def get_settings(self):
+        out = {}
+        settings = self.session.query(Settings.key, Settings.value).all()
+        for item in settings:
+            out[item.key] = item.value
+        return out
+
+    def upd_settings_by_keys(self, settings: dict):
+        for setting in settings.items():
+            print(setting)
+            self.session.merge(Settings(
+                key=setting[0],
+                value=setting[1],
+            ))
+        self.session.commit()
+
     def commit(self):
         self.session.commit()

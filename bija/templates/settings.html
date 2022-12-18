@@ -52,11 +52,22 @@
         <input type="submit" id="addrelay" name="addrelay" class="right" value="+">
     </form>
 </div>
+
+
+<div class="card">
+    <h3>Cloudinary</h3>
+    <p>Add media uploads to your posts by adding a cloudinary account.</p>
+    <p>You'll need the name of your cloud and the name of an upload preset (create one in the Uploads section of your Cloudinary settings)</p>
+<form id="cloudinary_cfg">
+    <input type="text" name="cloudinary_cloud" placeholder="cloud name" value="{{settings['cloudinary_cloud']}}">
+    <input type="text" name="cloudinary_upload_preset" placeholder="upload preset" value="{{settings['cloudinary_upload_preset']}}">
+    <input type="button" id="upd_cloudinary" class="right" value="Update/add">
+</form>
+</div>
+
+<div class="card">
 <form method="post" action="/settings">
     <input type="button" name="del_keys" id="del_keys" class="right" value="Delete this account">
 </form>
-
-<div class="card">
-<input type="text" class="colour">
 </div>
 {%- endblock content -%}

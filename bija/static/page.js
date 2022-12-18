@@ -325,7 +325,6 @@ class bijaNotePoster{
             const cb = function(response, data){
                 if(response['event_id']){
                     window.location.href = '/note?id='+response['root']+'#'+response['event_id']
-//                   notify('Note created. View now?', '/note?id='+response['root']+'#'+response['event_id'])
                 }
             }
             fetchFromForm('/submit_note', form, cb, {}, 'json');
@@ -363,6 +362,19 @@ class bijaSettings{
             }
             fetchFromForm('/add_relay', form, cb, {}, 'json')
         });
+
+        const cld_btn = document.querySelector("#upd_cloudinary");
+        cld_btn.addEventListener("click", (event)=>{
+            event.preventDefault();
+            event.stopPropagation();
+            const form = document.querySelector("#cloudinary_cfg")
+
+            const cb = function(response, data){
+                notify('updated')
+            }
+            fetchFromForm('/update_settings', form, cb, {}, 'json')
+        });
+
     }
 
     setDeleteKeysClicked(){
@@ -724,7 +736,10 @@ class bijaNotes{
             if(like_n_el){
                 this.setLikeCountClickEvents(like_n_el, note.dataset.id)
             }
-
+            if(cloudinary_cloud != null){
+                const upload_form = note.querySelector('.reply-form')
+                setCloudUploads(upload_form)
+            }
         }
     }
 
@@ -1113,6 +1128,30 @@ function fetchGet(url, cb, cb_data = {}, response_type='text'){
     });
 }
 
+function uploadToCloud(form_el){
+    const files = form_el.querySelector("[type=file]").files;
+    const cloudFormData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+        let file = files[i];
+        cloudFormData.append("file", file);
+        cloudFormData.append("upload_preset", cloudinary_upload_preset);
+        const cloud_url = 'https://api.cloudinary.com/v1_1/'+cloudinary_cloud+'/auto/upload'
+        fetch(cloud_url, {
+            method: "POST",
+            body: cloudFormData
+        }).then((response) => {
+            return response.text();
+        }).then((data) => {
+            d = JSON.parse(data)
+            const im = document.createElement('img')
+            im.src = d.secure_url
+            form_el.querySelector('.media_uploads').append(im)
+            const uploads_input = form_el.querySelector('[name="uploads"]')
+            uploads_input.value += ' '+d.secure_url
+        });
+    }
+}
+
 function fetchFromForm(url, form_el, cb, cb_data = {}, response_type='text'){
     const formData = new FormData(form_el);
     const data = [...formData.entries()];
@@ -1142,6 +1181,35 @@ function clipboard(str){
 function match_mentions(str){
     var pattern = /\B@[a-z0-9_-]+/gi;
     return str.match(pattern);
+}
+
+function setCloudUploads(form){
+
+    if(form){
+        const toolbar = form.querySelector('.toolbar')
+        const label = document.createElement('label')
+        toolbar.append(label)
+        const input = document.createElement('input')
+        input.setAttribute('type', 'file')
+        input.setAttribute('name', 'img')
+        input.setAttribute('multiple', true)
+        label.append(input)
+        const icon = document.createElement('img')
+        icon.src = '/static/img.svg'
+        icon.classList.add('icon-lg')
+        label.append(icon)
+
+        const hidden_input = document.createElement('input')
+        hidden_input.setAttribute('type', 'hidden')
+        hidden_input.setAttribute('name', 'uploads')
+        form.append(hidden_input)
+        input.style.display = 'none';
+        input.addEventListener('change', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            uploadToCloud(form)
+        });
+    }
 }
 
 window.addEventListener("load", function () {
@@ -1186,13 +1254,18 @@ window.addEventListener("load", function () {
         });
     }
 
+    if(cloudinary_cloud != null){
+        const upload_form = document.querySelector('#new_post_form')
+        setCloudUploads(upload_form)
+    }
+
     const logout = document.querySelector('.logout')
     if(logout){
         logout.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
             fetchGet('/logout', function(){
-                document.querySelector('.main').innerHTML = 'Shutting down...'
+                document.querySelector('.main').innerHTML = "<h1>Shutting down...</h1><p>You'll need to close this tab before starting a new Bija session.</p>"
             }, {})
         });
     }

@@ -4,11 +4,18 @@
   <meta charset="utf-8">
   <link rel="stylesheet" href='/static/styles.css' />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+  {%- if session['settings'] is not none and session['settings']['cloudinary_cloud'] is not none -%}
+  <script>
+    const cloudinary_cloud = "{{ session['settings']['cloudinary_cloud'] }}";
+    const cloudinary_upload_preset = "{{ session['settings']['cloudinary_upload_preset'] }}";
+  </script>
+{%- endif -%}
   <script src="/static/page.js"></script>
   <title>{{ title }}</title>
 </head>
 
 <body>
+
 <div class="main" data-page="{{page_id}}">
   <div class="topnav nav-{{page_id}} rnd">
     <a href="/" class="home-link"><img src="static/home.svg"><span class="title desktop-only">feed</span><span id="n_unseen_posts" class="unseen"></span></a>

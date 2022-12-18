@@ -123,6 +123,8 @@ class SubmitNote(Submit):
                 self.tags.append(["e", data['thread_root'], self.preferred_relay, "root"])
         else:
             self.event_id = False
+        if 'uploads' in data:
+            self.content += data['uploads']
         self.process_hash_tags()
         self.process_mentions()
 
