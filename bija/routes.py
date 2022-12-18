@@ -470,6 +470,31 @@ def identicon():
     return response
 
 
+@app.route('/emojis', methods=['GET'])
+def emojis_req():
+    d = {
+        'emojis': [],
+        'categories': []
+    }
+    if 's' in request.args and len(request.args['s'].strip()) > 0:
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        f = open(dir_path+'/emoji.json')
+        data = json.load(f)
+        n = 0
+        for cat in data:
+            d['categories'].append(cat['name'])
+            for item in cat['emojis']:
+                if n < 50 and request.args['s'] in item['name']:
+                    d['emojis'].append(item['emoji'])
+                    n += 1
+        f.close()
+    else:
+        d = {
+            'emojis': ['😄', '🤣', '🙃', '🤩', '🥲', '😝', '👍', '👎']
+        }
+    return render_template("upd.json", data=json.dumps(d))
+
+
 @socketio.on('connect')
 def io_connect(m):
     unseen_messages = DB.get_unseen_message_count()

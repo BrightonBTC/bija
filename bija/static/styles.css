@@ -1045,8 +1045,8 @@ p.note-tools {
     display: block;
     margin: var(--spacing-mid) 0;
 }
-.toolbar * {
-    margin: var(--spacing-sm);
+.toolbar > * {
+    margin: var(--spacing-mid);
 }
 .toolbar {
     width: 100%;
@@ -1054,6 +1054,30 @@ p.note-tools {
     align-items: center;
     flex-direction: row-reverse;
     justify-content: flex-start;
+    position: relative;
+}
+.emoji_selector{
+    display: flex;
+    align-items: flex-start;
+    font-size: var(--fs-mid1);
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: var(--bg-clr3);
+    right: 25%;
+}
+.emoji_selector div *{
+    float: left;
+    margin: var(--spacing-sm);
+}
+.emoji_selector input{
+    display: none;
+    width: 30%;
+    margin: 0;
+    padding: var(--spacing-sm);
+}
+.emoji_selector.show input{
+    display: block;
 }
 
 /* ---------- */

@@ -740,6 +740,10 @@ class bijaNotes{
                 const upload_form = note.querySelector('.reply-form')
                 setCloudUploads(upload_form)
             }
+            const emoji_link = note.querySelector(".emojis");
+            if(emoji_link){
+                new Emojis(note)
+            }
         }
     }
 
@@ -966,6 +970,10 @@ class bijaFeed{
 
     constructor(){
         const main_el = document.querySelector(".main[data-page]")
+        if(main_el.dataset.page=='home'){
+            new Emojis(main_el.querySelector('#note-poster'))
+        }
+
         this.page = main_el.dataset.page
         this.data = {};
         this.loading = 0;
@@ -1014,6 +1022,52 @@ class bijaFeed{
             o.loading = 0;
         }, 200)
 
+    }
+}
+
+class Emojis{
+    constructor(target_el){
+        this.target_el = target_el
+        this.search_el = target_el.querySelector('.emoji_selector input')
+        this.trigger_btn = target_el.querySelector('.emojis')
+        this.emoji_container = target_el.querySelector('.emoji_selector')
+        this.emoji_div = target_el.querySelector('.emoji_selector div')
+        this.textarea = target_el.querySelector('.poster-form textarea')
+
+        this.setEventsListeners()
+    }
+    setEventsListeners(){
+        this.textarea.addEventListener("keydown", (event)=>{
+            this.emoji_container.classList.remove('show')
+            this.search_el.value = ''
+            this.emoji_div.innerHTML = ""
+        });
+        this.trigger_btn.addEventListener("click", (event)=>{
+            fetchGet('/emojis', this.loadEmojis, {'context': this}, 'json')
+        });
+        this.search_el.addEventListener("keyup", (event)=>{
+            fetchGet('/emojis?s='+this.search_el.value, this.loadEmojis, {'context': this}, 'json')
+        });
+    }
+    loadEmojis(response, data){
+        if(response){
+            data.context.emoji_div.innerHTML = ""
+            data.context.emoji_container.classList.add('show')
+
+            for(const item of response.emojis){
+                const a = document.createElement('a')
+                a.href = '#'
+                a.innerText = item
+                a.addEventListener("click", (event)=>{
+                    event.stopPropagation();
+                    event.preventDefault();
+                    data.context.textarea.value += a.innerText
+                    data.context.search_el.value = ''
+                    fetchGet('/emojis', data.context.loadEmojis, {'context': data.context}, 'json')
+                });
+                data.context.emoji_div.append(a)
+            }
+        }
     }
 }
 
@@ -1265,7 +1319,8 @@ window.addEventListener("load", function () {
             e.preventDefault();
             e.stopPropagation();
             fetchGet('/logout', function(){
-                document.querySelector('.main').innerHTML = "<h1>Shutting down...</h1><p>You'll need to close this tab before starting a new Bija session.</p>"
+                document.querySelector('.main').innerHTML = "<h1>Shutting down...</h1>"+
+                "<p class='alert'>You'll need to close this tab and clear the session cookie from your browser before starting a new Bija session.</p>"
             }, {})
         });
     }

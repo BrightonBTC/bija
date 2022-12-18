@@ -23,7 +23,9 @@
     <input type="hidden" name="parent_id" value="{{reply_chain.reply}}">
     <textarea name="reply" class="note-textarea" placeholder="your response here..."></textarea>
     <div class="toolbar">
+        <div class="emoji_selector"><input type="text"><div></div></div>
         <input type="submit" value="Reply" data-reply-submit="1" data-rel="{{note['id']}}" class="post-submit right pad-sm">
+        <span><img class="icon-lg emojis" src="/static/emoji.svg"></span>
     </div>
     <div class="media_uploads"></div>
     <div class="name-hints"></div>
