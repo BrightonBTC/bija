@@ -1,4 +1,4 @@
-{%- if is_me -%}
+{%- if is_me  and page_id == 'profile-me' -%}
     <a href="#" class="profile-edit-btn">edit</a>
 {%- elif profile['following'] !=  1 -%}
     <a href="#" class="follow-btn" data-rel="{{profile['public_key']}}" data-state="1">&#43; follow</a>

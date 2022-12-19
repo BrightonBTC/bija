@@ -28,7 +28,7 @@
         <p><span class="sm rnd pad-sm bg1"> {{ item }}</span><span class="sm pad-sm">{{ meta[item] }}</span></p>
         {%- endfor -%}
     </div>
-    {%- if is_me -%}
+    {%- if is_me and page_id == 'profile-me' -%}
         {%- if profile['name'] is not none -%}
             {%- set pname=profile['name'] -%}
         {%- else -%}
