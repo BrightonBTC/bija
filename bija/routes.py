@@ -160,8 +160,17 @@ def profile_page():
 
     EXECUTOR.submit(EVENT_HANDLER.subscribe_profile, k, timestamp_minus(TimePeriod.WEEK), list(t.ids))
 
+    metadata = {}
+    if profile.raw is not None and len(profile.raw) > 0:
+        raw = json.loads(profile.raw)
+        meta = json.loads(raw['content'])
+        for item in meta.keys():
+            if item not in ['name', 'picture', 'about', 'nip05']:
+                metadata[item] = meta[item]
+
     return render_template("profile.html", page_id=page_id, title="Profile", threads=t.threads, last=t.last_ts,
-                           latest=latest, profile=profile, is_me=is_me)
+                           latest=latest, profile=profile, is_me=is_me, meta=metadata)
+
 
 
 @app.route('/profile_feed', methods=['GET'])
@@ -307,6 +316,7 @@ def update_settings():
         items[item[0]] = item[1].strip()
     print(items)
     DB.upd_settings_by_keys(items)
+    session['settings'] = DB.get_settings()
     return render_template("upd.json", data=json.dumps({'success': 1}))
 
 

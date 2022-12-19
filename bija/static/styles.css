@@ -553,6 +553,7 @@ input.post-submit {
 }
 #profile .profile-item{
     display:block;
+    overflow: hidden;
 }
 #profile.editing .profile-item{
     display:none;

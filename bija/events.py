@@ -359,6 +359,8 @@ class ReactionEvent:
             json.dumps(self.event_members),
             json.dumps(self.event.to_json_object())
         )
+        DB.add_profile_if_not_exists(self.event_pk)
+        DB.add_profile_if_not_exists(self.event.public_key)
         if self.event.public_key == self.pubkey:
             DB.set_note_liked(self.event_id)
 

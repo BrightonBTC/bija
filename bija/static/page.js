@@ -145,7 +145,8 @@ let updateProfile = function(profile){
     document.querySelector("#profile").dataset.updated_ts = profile.updated_at
     const name_els = document.querySelectorAll(".uname[data-pk='"+profile.public_key+"']");
     for (const name_el of name_els) {
-        if(profile.nip05 != null && profile.name.length > 0){
+
+        if(profile.name != null && profile.name.length > 0){
             const nm = name_el.querySelector('.name')
             if(nm){
                 nm.innerText = profile.name
@@ -736,7 +737,7 @@ class bijaNotes{
             if(like_n_el){
                 this.setLikeCountClickEvents(like_n_el, note.dataset.id)
             }
-            if(cloudinary_cloud != null){
+            if(typeof cloudinary_cloud !== "undefined"){
                 const upload_form = note.querySelector('.reply-form')
                 setCloudUploads(upload_form)
             }
@@ -1308,7 +1309,7 @@ window.addEventListener("load", function () {
         });
     }
 
-    if(cloudinary_cloud != null){
+    if(typeof cloudinary_cloud !== "undefined"){
         const upload_form = document.querySelector('#new_post_form')
         setCloudUploads(upload_form)
     }

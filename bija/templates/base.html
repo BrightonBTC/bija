@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <link rel="stylesheet" href='/static/styles.css' />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
-  {%- if session['settings'] is not none and session['settings']['cloudinary_cloud'] is not none -%}
+  {%- if session['settings'] is not none and session['settings']['cloudinary_cloud'] is not none and session['settings']['cloudinary_cloud']|length > 0 -%}
   <script>
     const cloudinary_cloud = "{{ session['settings']['cloudinary_cloud'] }}";
     const cloudinary_upload_preset = "{{ session['settings']['cloudinary_upload_preset'] }}";
