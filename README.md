@@ -16,7 +16,7 @@ cd bija
 pip install -r ./requirements.txt
 python3 cli.py
 ```
-*nb. requires python3.10+
+*nb. requires python3.10+*
 
 You can now access bija at http://localhost:5000
 
