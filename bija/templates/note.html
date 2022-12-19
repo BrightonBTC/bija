@@ -13,7 +13,7 @@
             <span class="note-opts" data-id="{{note['id']}}">
                 <img src="/static/note-tools.svg" class="icon">
                 <ul class="opts-menu rnd pad-sm">
-                    {%- if note['public_key'] == profile['public_key'] -%}
+                    {%- if note['public_key'] == session['keys']['public'] -%}
                     <li data-action="del" class="pad-tiny">delete</li>
                     {%- endif -%}
                     <li data-action="share" class="pad-tiny">share</li>
@@ -29,10 +29,9 @@
             {%- if note['reshare'] is string -%}
                 <div class="note-container placeholder sm" data-id="{{note['reshare']}}">Event not yet seen on network ({{note['reshare']}})</div>
             {%- else -%}
-            {%- set item = note['reshare'] -%}
-            {%- set is_reshare = true -%}
+            {%- with item = note['reshare'], is_reshare = true -%}
             {%- include 'thread.item.html' -%}
-            {%- set is_reshare = false -%}
+            {%- endwith -%}
             {%- endif -%}
         {%- endif -%}
     </div>

@@ -17,8 +17,9 @@
         {%- include 'profile.tools.html' -%}
     </div>
     <div class="profile-image profile-item">
-        {%- set p=profile -%}
+        {%- with p=profile -%}
         {%- include 'profile.image.html' -%}
+        {%- endwith -%}
     </div>
     <div class="profile-details profile-item">
         <h1 class="profile-name">{{profile['name'] | ident_string(profile['public_key'], profile['nip05'], profile['nip05_validated']) | safe }}</h1>
