@@ -13,7 +13,7 @@ Or, to get it up and running yourself:
 ```
 git clone https://github.com/BrightonBTC/bija
 cd bija
-pip install -r ../requirements.tx
+pip install -r ./requirements.txt
 python3 cli.py
 ```
 *nb. requires python3.10+
