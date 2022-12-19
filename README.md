@@ -1,6 +1,8 @@
 # Bija Nostr Client
 
-Python [Nostr](https://github.com/nostr-protocol/nostr) client built with Flask and PyQT6
+Python [Nostr](https://github.com/nostr-protocol/nostr) client with backend that runs on a local flask server, and front end in your browser
+
+*nb. earlier versions of Bija opened a Qt window. That's not currently available, you can only load the UI in a browser at this time.*
 
 This is experimental software in early development and comes without warranty.
 
@@ -11,10 +13,16 @@ Or, to get it up and running yourself:
 ```
 git clone https://github.com/BrightonBTC/bija
 cd bija
-pip install -r ./requirements.txt
+pip install -r ../requirements.tx
 python3 cli.py
 ```
+You can now access bija at http://localhost:5000
 
+In the event that something else is running on port 5000 you can pass `--port XXXX` to cli.py and if you want to use/create a different db, for example if you want to manage different accounts `--db name` (default is called bija)
+eg.
+```
+python3 cli.py --port 5001 --db mydb
+```
 Or additionally to the above you could compile using pyinstaller:
 * This should theoretically also work for OSX but is untested (please let me know if you have success!). Bija currently has some dependencies that are incompatible with Windows though.
 ```
