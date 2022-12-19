@@ -725,9 +725,6 @@ class bijaNotes{
                 this.setLikeClickedEvents(like_el)
             }
 
-            const content_el = note.querySelector(".note-content pre");
-            this.setExpandableHeight(content_el)
-
             const im_el = note.querySelector(".image-attachment img");
             if(im_el){
                 this.setImageClickEvents(im_el)
@@ -745,7 +742,28 @@ class bijaNotes{
             if(emoji_link){
                 new Emojis(note)
             }
+            const read_more_link = note.querySelector(".read-more");
+            if(read_more_link){
+                this.setReadMoreClicks(read_more_link, note.dataset.id)
+            }
+
         }
+    }
+
+    setReadMoreClicks(elem, id){
+        elem.addEventListener('click', (e) => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const cb = function(response, data){
+                if(response != '0'){
+                    const note_el = document.querySelector('.note[data-id="'+data.id+'"]')
+                    const content_el = note_el.querySelector('.note-content pre')
+                    content_el.innerHTML = response
+                }
+            }
+            fetchGet('/read_more?id='+id, cb, {'id': id})
+        })
     }
 
     setImageClickEvents(elem){
@@ -755,32 +773,6 @@ class bijaNotes{
         });
     }
 
-    setExpandableHeight(elem){
-        if(elem.offsetHeight > 150){
-            elem.style.height = '150px'
-            elem.style.overflow = 'hidden'
-            elem.style.paddingBottom = '60px'
-            elem.dataset.state = 0
-            const reveal_btn = document.createElement('div')
-            reveal_btn.classList.add('reveal')
-            reveal_btn.innerHTML = '<span>show more</span>'
-            elem.append(reveal_btn)
-            reveal_btn.addEventListener("click", (event)=>{
-                event.stopPropagation();
-                const btn = elem.querySelector('span')
-                if(elem.dataset.state == 0){
-                    elem.style.height = 'auto'
-                    elem.dataset.state = 1
-                    btn.innerText = 'show less'
-                }
-                else{
-                    elem.style.height = '150px'
-                    elem.dataset.state = 0
-                    btn.innerText = 'show more'
-                }
-            });
-        }
-    }
     
     setReplyClickedEvents(elem){
         elem.addEventListener("click", (event)=>{

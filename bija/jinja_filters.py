@@ -1,4 +1,5 @@
 import json
+import textwrap
 
 from flask import render_template
 import arrow
@@ -79,7 +80,9 @@ def _jinja2_filter_media(json_string):
 
 
 @app.template_filter('process_note_content')
-def _jinja2_filter_note(content: str):
+def _jinja2_filter_note(content: str, limit=200):
+    if limit is not None:
+        content = textwrap.shorten(content, width=limit, placeholder="... <a href='#' class='read-more'>more</a>")
     tags = get_at_tags(content)
     for tag in tags:
         pk = tag[1:]

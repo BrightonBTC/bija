@@ -1210,7 +1210,7 @@ p.note-tools {
   10%, 80% { opacity: 1 }
 }
 
-@media screen and (max-width: 1000px) {
+@media screen and (max-width: 800px) {
     :root {
         --spacing-tiny: 5px;
         --spacing-sm: 10px;

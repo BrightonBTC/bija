@@ -165,7 +165,7 @@ def profile_page():
         raw = json.loads(profile.raw)
         meta = json.loads(raw['content'])
         for item in meta.keys():
-            if item not in ['name', 'picture', 'about', 'nip05']:
+            if item in ['website', 'lud06', 'lud16']:
                 metadata[item] = meta[item]
 
     return render_template("profile.html", page_id=page_id, title="Profile", threads=t.threads, last=t.last_ts,
@@ -267,6 +267,14 @@ def thread_item():
     return render_template("thread.item.html", item=note, profile=profile)
 
 
+@app.route('/read_more', methods=['GET'])
+def read_more():
+    note_id = request.args['id']
+    note = DB.get_note(note_id)
+    return render_template("note.content.html", note=note)
+
+
+
 @app.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings_page():
@@ -336,7 +344,8 @@ def update_profile():
     if request.method == 'POST':
         profile = {}
         for item in request.json:
-            if item[0] in ['name', 'about', 'picture', 'nip05']:
+            valid_vals = ['name', 'about', 'picture', 'nip05', 'website', 'lud06', 'lud16']
+            if item[0] in valid_vals and len(item[1].strip()) > 0:
                 profile[item[0]] = item[1].strip()
         if 'nip05' in profile and len(profile['nip05']) > 0:
             valid_nip5 = MetadataEvent.validate_nip05(profile['nip05'], get_key())
