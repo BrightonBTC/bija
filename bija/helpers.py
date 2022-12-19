@@ -62,8 +62,8 @@ def get_embeded_tag_indexes(content: str):
 
 
 def get_urls_in_string(content: str):
-    regex = re.compile(r'(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\('
-                       r'[^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:\'".,<>?«»“”‘’]))')
+    print(content)
+    regex = re.compile(r'((https?):((//)|(\\\\))+([\w\d:#@%/;$()~_?\+-=\\\.&](#!)?)*)')
     url = re.findall(regex, content)
     return [x[0] for x in url]
 
