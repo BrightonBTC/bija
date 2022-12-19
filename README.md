@@ -16,16 +16,20 @@ cd bija
 pip install -r ../requirements.tx
 python3 cli.py
 ```
+*nb. requires python3.10+
+
 You can now access bija at http://localhost:5000
 
-In the event that something else is running on port 5000 you can pass `--port XXXX` to cli.py and if you want to use/create a different db, for example if you want to manage different accounts `--db name` (default is called bija)
+In the event that something else is running on port 5000 you can pass `--port XXXX` to cli.py and if you want to use/create a different db, for example if you want to manage multiple accounts then use `--db name` (default is called bija)
+
 eg.
+
 ```
 python3 cli.py --port 5001 --db mydb
 ```
 Or additionally to the above you could compile using pyinstaller:
 * This should theoretically also work for OSX but is untested (please let me know if you have success!). Bija currently has some dependencies that are incompatible with Windows though.
 ```
-pyinstaller cli.py --onefile -w -F --add-data "bija/templates:bija/templates" --add-data "bija/static:bija/static" --name "bija-nostr-client-v0.0.2-alpha"
+pyinstaller cli.py --onefile -w -F --add-data "bija/templates:bija/templates" --add-data "bija/static:bija/static" --name "bija-nostr-client"
 
 ```
