@@ -8,6 +8,7 @@ from flask import request, session, redirect, make_response, url_for
 from flask_executor import Executor
 
 from bija.app import app, socketio
+from bija.args import SETUP_PK, SETUP_PW
 from bija.config import DEFAULT_RELAYS
 from bija.events import BijaEvents, MetadataEvent
 from bija.helpers import *
@@ -483,6 +484,31 @@ def search_name():
     return render_template("upd.json", data=json.dumps({'result': out}))
 
 
+@app.route('/get_privkey', methods=['GET', 'POST'])
+def get_privkey():
+    passed = False
+    pk = DB.get_saved_pk()
+    keys = None
+    if pk.enc == 0:
+        passed = True
+    elif request.method == 'POST' and pk.enc == 1:
+        for item in request.json:
+            if item[0] == 'pw':
+                k = decrypt_key(item[1], pk.key)
+                if k == get_key('private'):
+                    passed = True
+    if passed:
+        k = session.get("keys")
+        keys = {
+            "private": [
+                k['private'],
+                hex64_to_bech32("nsec", k['private']),
+                bip39.encode_bytes(bytes.fromhex(k['private']))
+            ]
+        }
+    return render_template("privkey.html", passed=passed, k=keys)
+
+
 @app.route('/identicon', methods=['GET'])
 def identicon():
     im = ident_im_gen.generate(request.args['id'], 120, 120, padding=(10, 10, 10, 10), output_format="png")
@@ -614,6 +640,15 @@ def shutdown():
 
 
 def get_login_state():
+    if SETUP_PK is not None and session.get("keys") is None:
+        DB.save_pk(encrypt_key(SETUP_PW, SETUP_PK), 1)
+        for r in DEFAULT_RELAYS:
+            DB.insert_relay(r)
+        EVENT_HANDLER.open_connections()
+        EXECUTOR.submit(EVENT_HANDLER.subscribe_primary)
+        EXECUTOR.submit(EVENT_HANDLER.message_pool_handler)
+        set_session_keys(SETUP_PK)
+        return LoginState.LOGGED_IN
     if session.get("keys") is not None:
         return LoginState.LOGGED_IN
     saved_pk = DB.get_saved_pk()

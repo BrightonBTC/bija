@@ -22,21 +22,7 @@
     <p class="sm">Keep your private key backed up somewhere secure and never share it with anyone else.</p>
     <button class="show-key img-btn"><span>Click to reveal</span>  <img src="/static/eye.svg" class="icon-lg"></button>
     <div class="privkey pad-mid rnd">
-    <p>
-        <span class="key-format">Mnemonic phrase</span> <span class="sm">(preferred)</span>
-        <span class="mnemonic pad-sm">{{k['private'][2]}}</span>
-    </p>
-    <p class="key-box">
-        <span class="key-format">nsec</span>
-        <span class="key">{{k['private'][1]}}</span>
-        <img src="/static/copy.svg" class="clipboard icon-sm" data-str="{{k['private'][1]}}">
-    </p>
-    <p class="key-box">
-        <span class="key-format">HEX</span>
-        <span class="key">{{k['private'][0]}}</span>
-        <img src="/static/copy.svg" class="clipboard icon-sm" data-str="{{k['private'][0]}}">
-        <span class="sm desktop-only">(old style)</span>
-    </p>
+
     </div>
 </div>
 <div class="card">

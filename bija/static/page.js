@@ -427,6 +427,22 @@ class bijaSettings{
             else{
                 key_el.classList.add('show')
                 im.src = '/static/eye-off.svg'
+                const cb = function(response, data){
+                    data.elem.innerHTML = response
+                    const reveal_btn = document.querySelector('button.reveal_pk')
+                    const reveal_form = document.querySelector('#reveal_pk')
+                    reveal_btn.addEventListener("click", (event)=>{
+                        event.preventDefault();
+                        event.stopPropagation();
+                        const cb = function(response, data){
+                            data.elem.innerHTML = response
+                        }
+                        const form = document.querySelector("#new_message_form")
+                        fetchFromForm('/get_privkey', reveal_form, cb, {'elem':data.elem})
+                    })
+                }
+                fetchGet('/get_privkey', cb, {'elem': key_el})
+
             }
         });
     }

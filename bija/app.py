@@ -5,7 +5,7 @@ from flask_session import Session
 from sqlalchemy.orm import scoped_session
 import bija.db as db
 from bija.args import args
-
+from bija.setup import setup
 
 app = Flask(__name__, template_folder='../bija/templates')
 socketio = SocketIO(app)

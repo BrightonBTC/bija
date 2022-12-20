@@ -8,7 +8,6 @@ from sqlalchemy.sql import label
 
 from bija.args import args
 from bija.models import *
-
 DB_ENGINE = create_engine("sqlite:///{}.sqlite".format(args.db), echo=False)
 DB_SESSION = sessionmaker(autocommit=False, autoflush=False, bind=DB_ENGINE)
 
