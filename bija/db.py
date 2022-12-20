@@ -141,7 +141,6 @@ class BijaDB:
             raw=raw
         ))
         self.session.commit()
-        # return self.get_profile(public_key)
 
     def set_valid_nip05(self, public_key):
         self.session.query(Profile).filter(Profile.public_key == public_key).update({'nip05_validated': True})

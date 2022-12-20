@@ -107,7 +107,23 @@ function SOCK() {
     socket.on('new_reshare', function(note_id) {
         updateInteractionCount(note_id, '.quote-n');
     });
+    socket.on('search_result', function(event) {
+        addSearchResult(event);
+    });
 }
+
+let addSearchResult = function(event){
+    const results_el = document.querySelector('.search-results');
+    if(results_el){
+        const card = document.createElement('a')
+        card.classList.add('card')
+        card.href = "/note?id="+event.id
+        card.innerText = event.content
+        results_el.append(card)
+    }
+}
+
+
 let updateInteractionCount = function(note_id, cls){
     const note_el = document.querySelector('.note[data-id="'+note_id+'"]');
     if(note_el){

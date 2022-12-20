@@ -1205,6 +1205,12 @@ p.note-tools {
 }
 /* ---------- */
 
+/* Search page */
+.search-results .card{
+    color: var(--txt-clr);
+}
+
+/* ---------- */
 @keyframes fadeInOut {
   0%,100% { opacity: 0 }
   10%, 80% { opacity: 1 }

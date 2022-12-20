@@ -436,6 +436,7 @@ def submit_like():
 
 @app.route('/following', methods=['GET'])
 def following_page():
+    EVENT_HANDLER.set_page('following', request.args['pk'])
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     if 'pk' in request.args and is_hex_key(request.args['pk']):
         EXECUTOR.submit(EVENT_HANDLER.subscribe_profile, request.args['pk'], timestamp_minus(TimePeriod.WEEK), [])
@@ -459,6 +460,7 @@ def following_page():
 
 @app.route('/search', methods=['GET'])
 def search_page():
+    EVENT_HANDLER.set_page('search', request.args['search_term'])
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     search = Search()
     results, goto, message, action = search.get()

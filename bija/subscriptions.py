@@ -71,7 +71,7 @@ class SubscribeSearch(Subscribe):
 
     def build_filters(self):
         f = [
-            Filter(kinds=[EventKind.TEXT_NOTE], tags={'#t': [self.term]})
+            Filter(kinds=[EventKind.TEXT_NOTE], tags={'#t': [self.term]}, limit=10)
         ]
         self.filters = Filters(f)
 

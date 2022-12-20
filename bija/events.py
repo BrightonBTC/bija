@@ -1,6 +1,7 @@
 import logging
 import os
 import ssl
+import textwrap
 import time
 from urllib.parse import urlparse
 
@@ -130,7 +131,9 @@ class BijaEvents:
 
                     if msg.event.kind == EventKind.REACTION:
                         self.receive_reaction_event(msg.event)
-                    DB.add_event(msg.event.id, msg.event.kind)
+
+                    if msg.subscription_id != 'search':
+                        DB.add_event(msg.event.id, msg.event.kind)
             DB.commit()
             D_TASKS.next()
             time.sleep(1)
@@ -139,6 +142,7 @@ class BijaEvents:
             i += 1
             if i == 60:
                 self.get_connection_status()
+                socketio.emit('subscriptions', self.subscriptions)
                 i = 0
 
     def receive_del_event(self, event):
@@ -182,7 +186,15 @@ class BijaEvents:
 
     def receive_note_event(self, event, subscription):
         if subscription == 'search':
-            print('SEARCH', event.to_json_object())
+            socketio.emit('search_result', {
+                'id': event.id,
+                'content': textwrap.shorten(
+                    strip_tags(event.content),
+                    width=200,
+                    replace_whitespace=False,
+                    break_long_words=True,
+                    placeholder="...")
+            })
             return
         e = NoteEvent(event, self.get_key())
         if e.mentions_me:
@@ -282,6 +294,8 @@ class BijaEvents:
         SubscribePrimary('primary', self.relay_manager, self.get_key())
 
     def subscribe_search(self, term):
+        logger.info('Subscribe search {}'.format(term))
+        self.subscriptions.append('search')
         SubscribeSearch('search', self.relay_manager, term)
 
     def submit_profile(self, profile):
@@ -472,13 +486,13 @@ class MetadataEvent:
     def process_content(self):
         s = json.loads(self.event.content)
         if 'name' in s:
-            self.name = s['name']
+            self.name = s['name'].strip()
         if 'nip05' in s:
-            self.nip05 = s['nip05']
+            self.nip05 = s['nip05'].strip()
         if 'about' in s:
             self.about = strip_tags(s['about'])
         if 'picture' in s:
-            self.picture = s['picture']
+            self.picture = s['picture'].strip()
 
         if self.nip05 is not None:
             current = DB.get_profile(self.event.public_key)
@@ -513,6 +527,7 @@ class MetadataEvent:
 class NoteEvent:
     def __init__(self, event, my_pk):
         if DB.get_event(event.id) is None:
+            logger.info('New note')
             self.event = event
             self.content = strip_tags(event.content)
             self.tags = event.tags
@@ -532,26 +547,36 @@ class NoteEvent:
             self.update_referenced()
 
     def process_content(self):
+        logger.info('process note content')
         self.process_embedded_tags()
         self.process_embedded_urls()
 
     def process_embedded_urls(self):
+        logger.info('process note urls')
         urls = get_urls_in_string(self.content)
+        logger.info(urls)
         self.content = url_linkify(self.content)
+        logger.info(self.content)
         for url in urls:
+            logger.info('process {}'.format(url))
             if validators.url(url):
+                logger.info('{} validated'.format(url))
                 path = urlparse(url).path
                 extension = os.path.splitext(path)[1]
                 if extension.lower() in ['.png', '.svg', '.gif', '.jpg', '.jpeg']:
+                    logger.info('{} is image'.format(url))
                     self.media.append((url, 'image'))
                 if extension.lower() in ['.mp4', '.mov', '.ogg', '.webm', '.avi']:
+                    logger.info('{} is vid'.format(url))
                     self.media.append((url, 'video', extension.lower()[1:]))
 
         if len(self.media) < 1 and len(urls) > 0:
+            logger.info('note has urls')
             note = DB.get_note(self.event.id)
             already_scraped = False
             scrape_fail_attempts = 0
             if note is not None:
+                logger.info('note {} already in db'.format(self.event.id))
                 media = json.loads(note['media'])
                 for item in media:
                     print(item[1], urls[0])
@@ -561,14 +586,17 @@ class NoteEvent:
                         scrape_fail_attempts = int(item[0])
 
             if (note is None or not already_scraped) and validators.url(urls[0]) and scrape_fail_attempts < 4:
+                logger.info('add {} to tasks for scraping'.format(urls[0]))
                 D_TASKS.pool.add(TaskKind.FETCH_OG, {'url': urls[0], 'note_id': self.event.id})
 
     def process_embedded_tags(self):
+        logger.info('process note embedded tags')
         embeds = get_embeded_tag_indexes(self.content)
         for item in embeds:
             self.process_embedded_tag(int(item))
 
     def process_embedded_tag(self, item):
+        logger.info('process note tag {}'.format(item))
         if list_index_exists(self.tags, item) and self.tags[item][0] == "p":
             self.used_tags.append(self.tags[item])
             self.process_p_tag(item)
@@ -577,6 +605,7 @@ class NoteEvent:
             self.process_e_tag(item)
 
     def process_p_tag(self, item):
+        logger.info('process note p tag')
         pk = self.tags[item][1]
         self.content = self.content.replace(
             "#[{}]".format(item),
@@ -585,6 +614,7 @@ class NoteEvent:
             self.mentions_me = True
 
     def process_e_tag(self, item):
+        logger.info('process note e tag')
         event_id = self.tags[item][1]
         if self.reshare is None:
             self.reshare = event_id
@@ -595,6 +625,7 @@ class NoteEvent:
                 "<a href='/note?id={}#{}'>event:{}&#8230;</a>".format(event_id, event_id, event_id[:21]))
 
     def process_tags(self):
+        logger.info('process note tags')
         if len(self.tags) > 0:
             parents = []
             for item in self.tags:
@@ -625,6 +656,7 @@ class NoteEvent:
                     self.response_to = parents[1]
 
     def update_db(self):
+        logger.info('update db new note')
         DB.add_profile_if_not_exists(self.event.public_key)
         DB.insert_note(
             self.event.id,
@@ -640,6 +672,7 @@ class NoteEvent:
         )
 
     def update_referenced(self):
+        logger.info('update refs new note')
         # is this a reply to another note?
         if self.response_to is not None:
             DB.increment_note_reply_count(self.response_to)
