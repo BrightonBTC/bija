@@ -6,7 +6,7 @@ import arrow
 
 from bija.app import app
 from bija.db import BijaDB
-from bija.helpers import get_at_tags, is_hex_key, url_linkify
+from bija.helpers import get_at_tags, is_hex_key, url_linkify, strip_tags
 from python_nostr.nostr.key import PrivateKey
 
 DB = BijaDB(app.session)
@@ -81,9 +81,11 @@ def _jinja2_filter_media(json_string):
 
 @app.template_filter('process_note_content')
 def _jinja2_filter_note(content: str, limit=200):
-    if limit is not None:
-        content = textwrap.shorten(content, width=limit, placeholder="... <a href='#' class='read-more'>more</a>")
     tags = get_at_tags(content)
+
+    if limit is not None and len(strip_tags(content)) > limit:
+        content = textwrap.shorten(strip_tags(content), width=limit, replace_whitespace=False, break_long_words=True,
+                                   placeholder="... <a href='#' class='read-more'>more</a>")
     for tag in tags:
         pk = tag[1:]
         if is_hex_key(pk):
