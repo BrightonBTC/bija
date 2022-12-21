@@ -950,12 +950,15 @@ class Emojis{
     }
     setEventsListeners(){
         this.textarea.addEventListener("keydown", (event)=>{
-            this.emoji_container.classList.remove('show')
-            this.search_el.value = ''
-            this.emoji_div.innerHTML = ""
+            this.closeEmojisContainer()
         });
         this.trigger_btn.addEventListener("click", (event)=>{
-            fetchGet('/emojis', this.loadEmojis, {'context': this}, 'json')
+            let is_showed = this.emoji_container.classList.contains('show')
+            if (is_showed) {
+                this.closeEmojisContainer()
+            } else {
+                fetchGet('/emojis', this.loadEmojis, {'context': this}, 'json')
+            }
         });
         this.search_el.addEventListener("keyup", (event)=>{
             fetchGet('/emojis?s='+this.search_el.value, this.loadEmojis, {'context': this}, 'json')
@@ -980,6 +983,11 @@ class Emojis{
                 data.context.emoji_div.append(a)
             }
         }
+    }
+    closeEmojisContainer() {
+        this.emoji_container.classList.remove('show')
+        this.search_el.value = ''
+        this.emoji_div.innerHTML = ""
     }
 }
 
