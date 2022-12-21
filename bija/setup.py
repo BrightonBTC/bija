@@ -27,7 +27,7 @@ def setup():
             pk = input('Private key:')
             if pk.lower() == 'new':
                 step = 2
-            if is_hex_key(pk):
+            elif is_hex_key(pk):
                 step = 2
                 PK = pk
             elif is_bech32_key('nsec', pk):
@@ -68,8 +68,8 @@ def setup():
             print(f"{bcolors.OKBLUE}Bech32{bcolors.ENDC} ", hex64_to_bech32('npub', public_key))
             print('-----------------')
 
-            finish = input("Once you've backed up your keys press enter to continue")
-            if finish:
+            finish = input("I've backed up my keys. Type (y) to continue.")
+            if finish.lower().strip() == 'y':
                 complete = True
 
     return PK, PW
