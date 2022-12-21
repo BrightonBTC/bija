@@ -816,7 +816,7 @@ input[type=text].pname {
 }
 
 .note-container.connector{
-    height: 40px;
+    height: 20px;
     align-items: center;
 }
 .note-container.connector a{
@@ -840,20 +840,12 @@ input[type=text].pname {
 .note-content pre{
     margin:0;
     white-space: pre-wrap;
-    cursor:pointer;
     background: var(--bg-clr2);
     position: relative;
     word-break: break-word;
+    font-size: var(--fs-mid1);
 }
-.note-content pre:hover{
-    filter: brightness(1.2);
-}
-.feed-block .note-content pre *{
-    pointer-events: none;
-}
-.feed-block .note-content pre a {
-    color: var(--txt-clr2);
-}
+
 
 .note-container.main .note-content{
     cursor:auto;
@@ -862,7 +854,7 @@ input[type=text].pname {
 .thread-divider{
     border: 0;
     border-bottom: 1px solid var(--bdr-clr-1);
-    margin-bottom: 50px;
+    margin-bottom: 30px;
 }
 
 .note-outer{

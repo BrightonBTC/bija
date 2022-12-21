@@ -2,7 +2,13 @@
 {%- block content -%}
 <div id="thread-items" data-root="{{root}}">
 {%- for item in notes: -%}
-{%- include 'thread.item.html' -%}
+    {%- if item is string -%}
+        <div class="note-container placeholder" data-id="{{item}}">
+            <div class="note-content"><a href="/note?id={{item}}">Event:{{item}} not yet seen on network</a></div>
+        </div>
+    {%- else -%}
+        {%- include 'thread.item2.html' -%}
+    {%- endif -%}
 {%- endfor -%}
 </div>
 {%- endblock content -%}

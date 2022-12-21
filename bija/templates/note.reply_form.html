@@ -6,7 +6,7 @@
 <p class="note-tools pad-sm">
     <span class="section">
         <a href="#" class="reply-link" data-rel="{{note['id']}}"><img src="/static/reply.svg" class="icon"></a>
-        <span class="reply-n counts rnd">{{note['replies'] if note['replies']}}</span>
+        <a href="{{ url_for('note_page', id=note['id']) }}#focussed" class="reply-n counts rnd">{{note['replies'] if note['replies']}}</a>
     </span>
     <span class="section">
         <a href="#" class="quote-link" data-rel="{{note['id']}}"><img src="/static/reshare.svg" class="icon"></a>

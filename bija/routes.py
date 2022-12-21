@@ -205,7 +205,11 @@ def note_page():
 
     profile = DB.get_profile(get_key())
     return render_template("thread.html",
-                           page_id="note", title="Note", notes=t.notes, members=t.profiles, profile=profile,
+                           page_id="note",
+                           title="Note",
+                           notes=t.result_set,
+                           members=t.profiles,
+                           profile=profile,
                            root=note_id)
 
 

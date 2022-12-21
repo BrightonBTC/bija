@@ -473,10 +473,6 @@ class bijaThread{
         this.root = false;
         this.focussed = false;
         this.replies = [];
-        this.setFolding();
-        window.addEventListener("hashchange", (event)=>{
-            this.setFolding();
-        });
         document.addEventListener("newNote", (event)=>{
             const el = document.querySelector(".note-container[data-id='"+event.detail.id+"']")
 
@@ -492,18 +488,12 @@ class bijaThread{
         const doc = new DOMParser().parseFromString(response, "text/html")
         const new_item = doc.body.firstChild
         if(!data.elem){
-            console.log('new elem')
-            if(new_item.dataset.parent.length > 0){
-                const siblings = document.querySelectorAll(".note-container[data-parent='"+new_item.dataset.parent+"']")
-                if(siblings.length > 0){
-                    const last = Array.from(siblings).pop();
-                    last.insertAdjacentElement("afterend", new_item);
-                }
-                else{
-                    const parent = document.querySelector(".note-container[data-id='"+new_item.dataset.parent+"']")
-                    if(parent){
-                        parent.insertAdjacentElement("afterend", new_item);
-                    }
+            const focussed_elem = document.querySelector(".note-container.main")
+            if(focussed_elem){
+                const focussed_id = focussed_elem.dataset.id
+                if(new_item.dataset.parent == focussed_id){
+                    document.querySelector('#thread-items').append(new_item)
+                    new_item.classList.add('reply')
                 }
             }
             document.dispatchEvent(new Event('newContentLoaded'))
@@ -512,110 +502,6 @@ class bijaThread{
             console.log('replace elem')
             data.elem.replaceWith(new_item)
             document.dispatchEvent(new Event('newContentLoaded'))
-        }
-        data.context.setFolding()
-    }
-
-    setFolding(){
-        this.focussed = window.location.hash.substring(1);
-        const container_el = document.querySelector('#thread-items')
-        this.root = container_el.dataset.root
-        const note_elems = document.querySelectorAll(".note-container")
-        for (const n of note_elems) {
-            n.classList.remove('main', 'ancestor', 'reply')
-            n.style.display = 'none'
-        }
-        this.showRoot()
-        this.showReplies()
-        this.showMain()
-    }
-
-    showMain(){
-        const main = document.querySelector(".note-container[data-id='"+this.focussed+"']")
-        if(main){
-            main.classList.add('main')
-            main.style.display = 'flex'
-            this.setReplyCount(main)
-            if(main.dataset.parent.length > 0){
-                this.showParent(main.dataset.parent, main)
-            }
-            if(this.replies.length > 0){
-                main.classList.add('ancestor')
-            }
-            main.scrollIntoView({
-                behavior: 'auto',
-                block: 'center',
-                inline: 'center'
-            });
-        }
-        else{
-            const elem = this.buildPlaceholder(this.focussed, this.focussed)
-            document.querySelector('#thread-items').prepend(elem)
-        }
-    }
-
-    showReplies(){
-        this.replies = document.querySelectorAll(".note-container[data-parent='"+this.focussed+"']")
-        for (const n of this.replies) {
-            n.classList.add('reply')
-            n.style.display = 'flex'
-            this.setReplyCount(n)
-        }
-    }
-    showRoot(){
-        this.root_el = document.querySelector(".note-container[data-id='"+this.root+"']")
-        if (this.root_el) {
-            this.root_el.classList.add('root')
-            this.root_el.style.display = 'flex'
-        }
-    }
-
-    showParent(id, child){
-        const el = document.querySelector(".note-container[data-id='"+id+"']");
-        if(el){
-            el.classList.add('ancestor');;
-            el.style.display = 'flex';
-            this.setReplyCount(el);
-            const parent = el.dataset.parent;;
-            if(parent && parent.length > 0){
-                this.showParent(parent, el);
-            }
-        }
-        else{
-            const rel = child.dataset.rel
-            const elem = this.buildPlaceholder(id, rel)
-            if(child.dataset.rel == id){
-                document.querySelector('#thread-items').prepend(elem)
-            }
-            else{
-                child.parentElement.insertBefore(elem, child)
-            }
-        }
-    }
-
-    buildPlaceholder(id, rel){
-        const new_container_el = document.createElement('div');
-        new_container_el.dataset.id = id
-        new_container_el.dataset.rel = rel
-        new_container_el.dataset.parent = ''
-        new_container_el.classList.add('note-container', 'placeholder')
-        const new_el = document.createElement('div');
-        new_el.innerHTML = "<p>Event ("+id+") not yet found on network</p>";
-        new_el.classList.add('note-content')
-        new_container_el.append(new_el)
-        new_container_el.addEventListener("click", (event)=>{
-            window.location.href = '/note?id='+rel+'#'+id
-        });
-        return new_container_el
-    }
-
-    setReplyCount(el){
-        const id = el.dataset.id;
-        const n = document.querySelectorAll(".note-container[data-parent='"+id+"']").length;
-        const r_el = el.querySelector('.reply-n')
-        if(r_el){
-            if(n>0) r_el.innerText = n
-            else r_el.innerText = ''
         }
     }
 }
@@ -741,8 +627,8 @@ class bijaNotes{
                 this.setReplyClickedEvents(btn)
             }
 
-            const note_link = note.querySelector(".note-content[data-rel]");
-            this.setContentClickedEvents(note_link)
+//            const note_link = note.querySelector(".note-content[data-rel]");
+//            this.setContentClickedEvents(note_link)
 
             const opt_el = note.querySelector(".note-opts");
             this.setOptsMenuEvents(opt_el)
@@ -838,21 +724,22 @@ class bijaNotes{
         })
     }
 
-    setContentClickedEvents(elem){
-        elem.querySelector('pre').addEventListener("click", (event)=>{
-            let id = elem.dataset.id
-            const container_el = document.querySelector(".note-container[data-id='"+id+"']");
-            if(container_el && container_el.classList.contains("main")){
-
-            }
-            else{
-                event.preventDefault();
-                event.stopPropagation();
-                let rel = elem.dataset.rel
-                window.location.href = '/note?id='+rel+'#'+id
-            }
-        });
-    }
+//    setContentClickedEvents(elem){
+//        elem.querySelector('pre').addEventListener("click", (event)=>{
+//            let id = elem.dataset.id
+//            const container_el = document.querySelector(".note-container[data-id='"+id+"']");
+//            if(container_el && container_el.classList.contains("main")){
+//
+//            }
+//            else{
+//                event.preventDefault();
+//                event.stopPropagation();
+//                let rel = elem.dataset.rel
+//                // window.location.href = '/note?id='+rel+'#'+id
+//                window.location.href = '/note?id='+id
+//            }
+//        });
+//    }
 
     setReplyLinkEvents(elem){
         elem.addEventListener("click", (event)=>{
