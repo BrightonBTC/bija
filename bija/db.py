@@ -5,10 +5,11 @@ from sqlalchemy import create_engine, text, func, or_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.sql import label
+from sqlalchemy.pool import SingletonThreadPool
 
 from bija.args import args
 from bija.models import *
-DB_ENGINE = create_engine("sqlite:///{}.sqlite".format(args.db), echo=False)
+DB_ENGINE = create_engine("sqlite:///{}.sqlite".format(args.db), echo=False, poolclass=SingletonThreadPool, pool_size=10)
 DB_SESSION = sessionmaker(autocommit=False, autoflush=False, bind=DB_ENGINE)
 
 
