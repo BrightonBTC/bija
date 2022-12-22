@@ -57,8 +57,8 @@ class DeferredTasks:
         self.pool = TaskPool()
 
     def next(self) -> None:
-        logger.info('NEXT task')
         if self.pool.has_tasks():
+            logger.info('NEXT task')
             task = self.pool.get()
             if task.kind == TaskKind.FETCH_OG:
                 OGTags(task.data)
