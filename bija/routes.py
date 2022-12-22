@@ -441,7 +441,7 @@ def submit_like():
 
 @app.route('/following', methods=['GET'])
 def following_page():
-    EVENT_HANDLER.set_page('following', request.args['pk'])
+    EVENT_HANDLER.set_page('following', request.args.get('pk'))
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     if 'pk' in request.args and is_hex_key(request.args['pk']):
         EXECUTOR.submit(EVENT_HANDLER.subscribe_profile, request.args['pk'], timestamp_minus(TimePeriod.WEEK), [])
