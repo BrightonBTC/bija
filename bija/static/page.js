@@ -212,6 +212,12 @@ class bijaSearch{
                 this.searchByName(val.substring(1))
             }
         })
+        search.addEventListener("focus", (event)=>{
+            document.querySelector('#search_tips').style.display = 'block'
+        })
+        search.addEventListener("blur", (event)=>{
+            document.querySelector('#search_tips').style.display = 'none'
+        })
     }
 
     searchByName(name){

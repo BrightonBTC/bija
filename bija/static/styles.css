@@ -1155,6 +1155,19 @@ p.note-tools {
 }
 #search_hints{
     position:absolute;
+    z-index: 200;
+}
+#search_tips{
+    position: fixed;
+    width: inherit;
+    z-index: 100;
+    background: var(--bg-clr2);
+    padding: var(--spacing-mid);
+    display: none;
+    filter: drop-shadow(2px 4px 6px black);
+}
+ul#search_tips li {
+    padding: var(--spacing-sm);
 }
 .thread-members{
     border: 1px solid var(--bdr-clr-1);
