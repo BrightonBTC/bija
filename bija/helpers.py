@@ -62,7 +62,6 @@ def get_embeded_tag_indexes(content: str):
 
 
 def get_urls_in_string(content: str):
-    print(content)
     regex = re.compile(r'((https?):((//)|(\\\\))+([\w\d:#@%/;$()~_?\+-=\\\.&](#!)?)*)')
     url = re.findall(regex, content)
     return [x[0] for x in url]
@@ -175,7 +174,6 @@ def request_relay_data(url):
     try:
         with urllib.request.urlopen(get, timeout=2) as response:
             if response.status == 200:
-                print(response.status)
                 return response.read()
             return False
     except HTTPError as error:

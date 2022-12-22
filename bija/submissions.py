@@ -3,6 +3,7 @@ import logging
 import time
 
 from bija.app import app
+from bija.args import LOGGING_LEVEL
 from bija.db import BijaDB
 from bija.helpers import is_hex_key, get_at_tags, get_hash_tags
 from python_nostr.nostr.event import EventKind, Event
@@ -11,7 +12,7 @@ from python_nostr.nostr.message_type import ClientMessageType
 
 DB = BijaDB(app.session)
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(LOGGING_LEVEL)
 
 
 class Submit:

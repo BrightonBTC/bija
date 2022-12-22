@@ -8,7 +8,7 @@ from flask import request, session, redirect, make_response, url_for
 from flask_executor import Executor
 
 from bija.app import app, socketio
-from bija.args import SETUP_PK, SETUP_PW
+from bija.args import SETUP_PK, SETUP_PW, LOGGING_LEVEL
 from bija.config import DEFAULT_RELAYS
 from bija.events import BijaEvents, MetadataEvent
 from bija.helpers import *
@@ -19,7 +19,7 @@ from bija.search import Search
 from bija.settings import Settings
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(LOGGING_LEVEL)
 
 thread = Thread()
 
@@ -326,7 +326,6 @@ def update_settings():
     items = {}
     for item in request.json:
         items[item[0]] = item[1].strip()
-    print(items)
     DB.upd_settings_by_keys(items)
     Settings.set_from_db()
     return render_template("upd.json", data=json.dumps({'success': 1}))
@@ -481,8 +480,6 @@ def search_name():
     matches = DB.search_profile_name(request.args['name'])
     if matches is not None:
         out = [dict(row) for row in matches]
-    print(matches)
-    print(out)
     return render_template("upd.json", data=json.dumps({'result': out}))
 
 

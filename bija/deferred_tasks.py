@@ -34,7 +34,6 @@ class TaskPool:
         self.lock: Lock = Lock()
 
     def add(self, kind: TaskKind, data: object):
-        print('add task')
         self.tasks.put(Task(kind, data))
 
     def get(self):
@@ -52,7 +51,6 @@ class DeferredTasks:
     def next(self) -> None:
         if self.pool.has_tasks():
             task = self.pool.get()
-            print('fetch og for:', task.data['url'])
             if task.kind == TaskKind.FETCH_OG:
                 OGTags(task.data)
 
@@ -74,7 +72,6 @@ class OGTags:
         try:
             with urllib.request.urlopen(req, timeout=2) as response:
                 if response.status == 200:
-                    print(response.status)
                     return response.read()
                 return False
         except HTTPError as error:

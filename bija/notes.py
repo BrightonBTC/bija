@@ -99,10 +99,8 @@ class NoteThread:
         self.profiles = []
         self.determine_root()
         self.notes = self.get_notes()
-        print('notes', [d['id'] for d in self.notes])
         self.process()
         self.get_profile_briefs()
-        print('notes', [d['id'] for d in self.notes])
         self.result_set = self.root+self.ancestors+[self.note]+self.children
 
     def process(self):
@@ -180,7 +178,6 @@ class NoteThread:
             n = dict(note)
             if n['id'] == self.root_id:
                 self.root = [n]
-                print('--------->', self.root)
                 self.add_members(n)
                 self.notes.remove(note)
                 self.note_ids.append(n['id'])

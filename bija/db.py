@@ -592,7 +592,6 @@ class BijaDB:
 
     def upd_settings_by_keys(self, settings: dict):
         for setting in settings.items():
-            print(setting)
             self.session.merge(Settings(
                 key=setting[0],
                 value=setting[1],
