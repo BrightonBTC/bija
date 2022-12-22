@@ -25,14 +25,14 @@ def setup():
         if step == 1:
             print('Enter your private key or type "new" to create a new one')
             pk = input('Private key:')
-            if pk.lower() == 'new':
+            if pk.lower().strip() == 'new':
                 step = 2
-            elif is_hex_key(pk):
+            elif is_hex_key(pk.strip()):
                 step = 2
-                PK = pk
-            elif is_bech32_key('nsec', pk):
+                PK = pk.strip()
+            elif is_bech32_key('nsec', pk.strip()):
                 step = 2
-                PK = bech32_to_hex64('nsec', pk)
+                PK = bech32_to_hex64('nsec', pk.strip())
             else:
                 print(f"{bcolors.FAIL}That doesn\'t seem to be a valid key, use hex or nsec{bcolors.ENDC}")
         if step == 2:
@@ -40,7 +40,7 @@ def setup():
             pw = input('Password:')
             if len(pw) > 0:
                 print('Password created. you can use it directly when starting bija with the flag --pw')
-                PW = pw
+                PW = pw.strip()
                 step = 3
         if step == 3:
             print('done')

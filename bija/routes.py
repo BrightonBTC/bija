@@ -643,13 +643,7 @@ def get_login_state():
     if SETUP_PK is not None and Settings.get("keys") is None:
         logger.info('New setup detected')
         DB.save_pk(encrypt_key(SETUP_PW, SETUP_PK), 1)
-        for r in DEFAULT_RELAYS:
-            DB.insert_relay(r)
-        EVENT_HANDLER.open_connections()
-        EXECUTOR.submit(EVENT_HANDLER.subscribe_primary)
-        EXECUTOR.submit(EVENT_HANDLER.message_pool_handler)
-        set_session_keys(SETUP_PK)
-        return LoginState.LOGGED_IN
+        redirect('/login')
     if Settings.get("keys") is not None:
         logger.info('Has session keys, is logged in {}'.format(get_key()))
         return LoginState.LOGGED_IN
