@@ -7,6 +7,7 @@ import arrow
 from bija.app import app
 from bija.db import BijaDB
 from bija.helpers import get_at_tags, is_hex_key, url_linkify, strip_tags
+from bija.settings import Settings
 from python_nostr.nostr.key import PrivateKey
 
 DB = BijaDB(app.session)
@@ -113,3 +114,13 @@ def _jinja2_filter_thread_root(root, reply, note_id):
 def _jinja2_filter_linkify(content):
     return url_linkify(content)
 
+
+@app.template_filter('settings_json')
+def _jinja2_filter_linkify(content):
+    settings = ['cloudinary_cloud', 'cloudinary_upload_preset']
+    out = {}
+    for k in settings:
+        v = Settings.get(k)
+        if v is not None:
+            out[k] = v
+    return json.dumps(out)

@@ -32,7 +32,7 @@ def setup():
                 PK = pk
             elif is_bech32_key('nsec', pk):
                 step = 2
-                PK = bech32_to_hex64(pk)
+                PK = bech32_to_hex64('nsec', pk)
             else:
                 print(f"{bcolors.FAIL}That doesn\'t seem to be a valid key, use hex or nsec{bcolors.ENDC}")
         if step == 2:

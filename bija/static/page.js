@@ -1231,8 +1231,7 @@ window.addEventListener("load", function () {
             e.preventDefault();
             e.stopPropagation();
             fetchGet('/logout', function(){
-                document.querySelector('.main').innerHTML = "<h1>Shutting down...</h1>"+
-                "<p class='alert'>You'll need to close this tab and clear the session cookie from your browser before starting a new Bija session.</p>"
+                document.querySelector('.main').innerHTML = "<h1>Shutting down...</h1>"
             }, {})
         });
     }

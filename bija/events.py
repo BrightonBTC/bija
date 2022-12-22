@@ -15,6 +15,7 @@ from bija.helpers import get_embeded_tag_indexes, \
 from bija.subscriptions import *
 from bija.submissions import *
 from bija.alerts import *
+from bija.settings import Settings
 from python_nostr.nostr.event import EventKind
 from python_nostr.nostr.relay_manager import RelayManager
 
@@ -28,7 +29,7 @@ DB = BijaDB(app.session)
 
 
 class BijaEvents:
-    subscriptions = []
+    subscriptions = set()
     pool_handler_running = False
     page = {
         'page': None,
@@ -36,9 +37,8 @@ class BijaEvents:
     }
     active_events = {}  # events that are open in the current ui view
 
-    def __init__(self, s):
+    def __init__(self):
         self.should_run = True
-        self.session = s
         self.relay_manager = RelayManager()
         self.open_connections()
 
@@ -89,7 +89,7 @@ class BijaEvents:
         }
 
     def get_key(self, k='public'):
-        keys = self.session.get("keys")
+        keys = Settings.get("keys")
         if keys is not None and k in keys:
             return keys[k]
         else:
@@ -142,7 +142,7 @@ class BijaEvents:
             i += 1
             if i == 60:
                 self.get_connection_status()
-                socketio.emit('subscriptions', self.subscriptions)
+                socketio.emit('subscriptions', list(self.subscriptions))
                 i = 0
 
     def receive_del_event(self, event):
@@ -267,7 +267,7 @@ class BijaEvents:
     def subscribe_thread(self, root_id, ids):
         self.active_events['notes'] = ids
         subscription_id = 'note-thread'
-        self.subscriptions.append(subscription_id)
+        self.subscriptions.add(subscription_id)
         SubscribeThread(subscription_id, self.relay_manager, root_id)
 
     def subscribe_feed(self, ids):
@@ -276,7 +276,7 @@ class BijaEvents:
         else:
             self.active_events['notes'] = ids
         subscription_id = 'main-feed'
-        self.subscriptions.append(subscription_id)
+        self.subscriptions.add(subscription_id)
         SubscribeFeed(subscription_id, self.relay_manager, ids)
 
     def subscribe_profile(self, pubkey, since, ids):
@@ -285,40 +285,40 @@ class BijaEvents:
         else:
             self.active_events['notes'] = ids
         subscription_id = 'profile'
-        self.subscriptions.append(subscription_id)
+        self.subscriptions.add(subscription_id)
         SubscribeProfile(subscription_id, self.relay_manager, pubkey, since)
 
     # create site wide subscription
     def subscribe_primary(self):
-        self.subscriptions.append('primary')
+        self.subscriptions.add('primary')
         SubscribePrimary('primary', self.relay_manager, self.get_key())
 
     def subscribe_search(self, term):
         logger.info('Subscribe search {}'.format(term))
-        self.subscriptions.append('search')
-        SubscribeSearch('search', self.relay_manager, term)
+        self.subscriptions.add('search')
+        SubscribeSearch('add', self.relay_manager, term)
 
     def submit_profile(self, profile):
-        e = SubmitProfile(self.relay_manager, self.session.get("keys"), profile)
+        e = SubmitProfile(self.relay_manager, Settings.get("keys"), profile)
         return e.event_id
 
     def submit_message(self, data):
-        e = SubmitEncryptedMessage(self.relay_manager, self.session.get("keys"), data)
+        e = SubmitEncryptedMessage(self.relay_manager, Settings.get("keys"), data)
         return e.event_id
 
     def submit_like(self, note_id):
-        e = SubmitLike(self.relay_manager, self.session.get("keys"), note_id)
+        e = SubmitLike(self.relay_manager, Settings.get("keys"), note_id)
         return e.event_id
 
     def submit_note(self, data, members=None):
-        e = SubmitNote(self.relay_manager, self.session.get("keys"), data, members)
+        e = SubmitNote(self.relay_manager, Settings.get("keys"), data, members)
         return e.event_id
 
     def submit_follow_list(self):
-        SubmitFollowList(self.relay_manager, self.session.get("keys"))
+        SubmitFollowList(self.relay_manager, Settings.get("keys"))
 
     def submit_delete(self, event_ids: list, reason=""):
-        e = SubmitDelete(self.relay_manager, self.session.get("keys"), event_ids, reason)
+        e = SubmitDelete(self.relay_manager, Settings.get("keys"), event_ids, reason)
         return e.event_id
 
     def close_subscription(self, name):

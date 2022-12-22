@@ -16,6 +16,7 @@ from bija.jinja_filters import *
 from bija.notes import FeedThread, NoteThread
 from bija.password import encrypt_key, decrypt_key
 from bija.search import Search
+from bija.settings import Settings
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -24,7 +25,7 @@ thread = Thread()
 
 DB = BijaDB(app.session)
 EXECUTOR = Executor(app)
-EVENT_HANDLER = BijaEvents(session)
+EVENT_HANDLER = BijaEvents()
 
 foreground = ["rgb(45,79,255)",
               "rgb(254,180,44)",
@@ -49,9 +50,9 @@ class LoginState(IntEnum):
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        session['settings'] = DB.get_settings()
         login_state = get_login_state()
         if login_state is not LoginState.LOGGED_IN:
+            logger.info('Do login')
             return redirect(url_for('login_page', next=request.url))
         return f(*args, **kwargs)
     return decorated_function
@@ -98,8 +99,7 @@ def alerts_page():
 
 @app.route('/logout', methods=['GET'])
 def logout_page():
-    remove_session()
-    session.clear()
+    
     EVENT_HANDLER.close()
     sys.exit()
 
@@ -114,13 +114,13 @@ def login_page():
     if request.method == 'POST':
         if process_login():
             has_relays = DB.get_preferred_relay()
-            if session.get('new_keys') is not None:
+            if Settings.get('new_keys') is not None:
                 login_state = LoginState.NEW_KEYS
                 data = {
                     'npub': hex64_to_bech32("npub", get_key()),
                     'mnem': bip39.encode_bytes(bytes.fromhex(get_key("private")))
                 }
-                session['new_keys'] = None
+                Settings.set('new_keys', None)
             elif has_relays is None:
                 login_state = LoginState.SET_RELAYS
                 data = DEFAULT_RELAYS
@@ -287,7 +287,6 @@ def settings_page():
         print("RESET DB")
         EVENT_HANDLER.close()
         DB.reset()
-        session.clear()
         return redirect('/')
     else:
         EVENT_HANDLER.set_page('settings', None)
@@ -304,7 +303,7 @@ def settings_page():
 
         relays = DB.get_relays()
         EVENT_HANDLER.get_connection_status()
-        k = session.get("keys")
+        k = Settings.get("keys")
         keys = {
             "private": [
                 k['private'],
@@ -329,7 +328,7 @@ def update_settings():
         items[item[0]] = item[1].strip()
     print(items)
     DB.upd_settings_by_keys(items)
-    session['settings'] = DB.get_settings()
+    Settings.set_from_db()
     return render_template("upd.json", data=json.dumps({'success': 1}))
 
 
@@ -337,7 +336,6 @@ def update_settings():
 def destroy_account():
     EVENT_HANDLER.close()
     DB.reset()
-    session.clear()
     if os.path.exists("bija.sqlite"):
         os.remove("bija.sqlite")
     return render_template("restart.html")
@@ -441,7 +439,7 @@ def submit_like():
 
 @app.route('/following', methods=['GET'])
 def following_page():
-    EVENT_HANDLER.set_page('following', request.args['pk'])
+    EVENT_HANDLER.set_page('following', request.args.get('pk'))
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     if 'pk' in request.args and is_hex_key(request.args['pk']):
         EXECUTOR.submit(EVENT_HANDLER.subscribe_profile, request.args['pk'], timestamp_minus(TimePeriod.WEEK), [])
@@ -502,7 +500,7 @@ def get_privkey():
                 if k == get_key('private'):
                     passed = True
     if passed:
-        k = session.get("keys")
+        k = Settings.get("keys")
         keys = {
             "private": [
                 k['private'],
@@ -644,7 +642,9 @@ def shutdown():
 
 
 def get_login_state():
-    if SETUP_PK is not None and session.get("keys") is None:
+    logger.info('Getting login state')
+    if SETUP_PK is not None and Settings.get("keys") is None:
+        logger.info('New setup detected')
         DB.save_pk(encrypt_key(SETUP_PW, SETUP_PK), 1)
         for r in DEFAULT_RELAYS:
             DB.insert_relay(r)
@@ -653,10 +653,12 @@ def get_login_state():
         EXECUTOR.submit(EVENT_HANDLER.message_pool_handler)
         set_session_keys(SETUP_PK)
         return LoginState.LOGGED_IN
-    if session.get("keys") is not None:
+    if Settings.get("keys") is not None:
+        logger.info('Has session keys, is logged in {}'.format(get_key()))
         return LoginState.LOGGED_IN
     saved_pk = DB.get_saved_pk()
     if saved_pk is not None:
+        logger.info('Has saved private key, use it to log in')
         if saved_pk.enc == 0:
             set_session_keys(saved_pk.key)
             EXECUTOR.submit(EVENT_HANDLER.subscribe_primary)
@@ -687,7 +689,7 @@ def process_login():
                 return False
         elif len(request.form['private_key'].strip()) < 1:  # generate a new key
             private_key = None
-            session["new_keys"] = True
+            Settings.set("new_keys", True)
         elif is_hex_key(request.form['private_key'].strip()):
             private_key = request.form['private_key'].strip()
         elif is_bech32_key('nsec', request.form['private_key'].strip()):
@@ -720,7 +722,7 @@ def process_key_save(pk):
 
 
 def get_key(k='public'):
-    keys = session.get("keys")
+    keys = Settings.get('keys')
     if keys is not None and k in keys:
         return keys[k]
     else:
@@ -728,16 +730,18 @@ def get_key(k='public'):
 
 
 def set_session_keys(k):
+    global KEYS
+    logger.info('Set session keys')
     if k is None:
         pk = PrivateKey()
     else:
         pk = PrivateKey(bytes.fromhex(k))
     private_key = pk.hex()
     public_key = pk.public_key.hex()
-    session["keys"] = {
+    Settings.set('keys', {
         'private': private_key,
         'public': public_key
-    }
+    })
     process_key_save(private_key)
     if DB.get_profile(public_key) is None:
         DB.add_profile(public_key)
