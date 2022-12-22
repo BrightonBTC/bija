@@ -82,7 +82,7 @@ def feed():
         notes = DB.get_feed(before, get_key())
         if len(notes) > 0:
             t = FeedThread(notes)
-            EVENT_HANDLER.subscribe_feed(list(t.ids))
+            EXECUTOR.submit(EVENT_HANDLER.subscribe_feed(list(t.ids)))
             profile = DB.get_profile(get_key())
             return render_template("feed.items.html", threads=t.threads, last=t.last_ts, profile=profile)
         else:
@@ -106,7 +106,7 @@ def logout_page():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login_page():
-    EVENT_HANDLER.set_page('login', None)
+    EXECUTOR.submit(EVENT_HANDLER.set_page('login', None))
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     login_state = get_login_state()
     message = None
@@ -141,12 +141,12 @@ def profile_page():
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     page_id = 'profile'
     if 'pk' in request.args and is_hex_key(request.args['pk']) and request.args['pk'] != get_key():
-        EVENT_HANDLER.set_page('profile', request.args['pk'])
+        EXECUTOR.submit(EVENT_HANDLER.set_page('profile', request.args['pk']))
         k = request.args['pk']
         is_me = False
     else:
         k = get_key()
-        EVENT_HANDLER.set_page('profile', k)
+        EXECUTOR.submit(EVENT_HANDLER.set_page('profile', k))
         is_me = True
         page_id = 'profile-me'
     notes = DB.get_notes_by_pubkey(k, int(time.time()), timestamp_minus(TimePeriod.DAY))
@@ -197,7 +197,7 @@ def profile_feed():
 @login_required
 def note_page():
     note_id = request.args['id']
-    EVENT_HANDLER.set_page('note', note_id)
+    EXECUTOR.submit(EVENT_HANDLER.set_page('note', note_id))
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
 
     t = NoteThread(note_id)
@@ -289,7 +289,7 @@ def settings_page():
         DB.reset()
         return redirect('/')
     else:
-        EVENT_HANDLER.set_page('settings', None)
+        EXECUTOR.submit(EVENT_HANDLER.set_page('settings', None))
         EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
         settings = {
             'cloudinary_cloud': '',
@@ -302,7 +302,7 @@ def settings_page():
                 settings[item['key']] = item['value']
 
         relays = DB.get_relays()
-        EVENT_HANDLER.get_connection_status()
+        EXECUTOR.submit(EVENT_HANDLER.get_connection_status())
         k = Settings.get("keys")
         keys = {
             "private": [
@@ -368,7 +368,7 @@ def add_relay():
             if item[0] == 'newrelay' and is_valid_relay(ws):
                 success = True
                 DB.insert_relay(ws)
-                EVENT_HANDLER.add_relay(ws)
+                EXECUTOR.submit(EVENT_HANDLER.add_relay(ws))
     return render_template("upd.json", data=json.dumps({'add_relay': success}))
 
 
@@ -380,7 +380,7 @@ def reset_relays():
 
 @app.route('/messages', methods=['GET'])
 def private_messages_page():
-    EVENT_HANDLER.set_page('messages', None)
+    EXECUTOR.submit(EVENT_HANDLER.set_page('messages', None))
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
 
     messages = DB.get_message_list()
@@ -390,7 +390,7 @@ def private_messages_page():
 
 @app.route('/message', methods=['GET'])
 def private_message_page():
-    EVENT_HANDLER.set_page('message', request.args['pk'])
+    EXECUTOR.submit(EVENT_HANDLER.set_page('message', request.args['pk']))
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     messages = []
     pk = ''
@@ -438,7 +438,7 @@ def submit_like():
 
 @app.route('/following', methods=['GET'])
 def following_page():
-    EVENT_HANDLER.set_page('following', request.args.get('pk'))
+    EXECUTOR.submit(EVENT_HANDLER.set_page('following', request.args.get('pk')))
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     if 'pk' in request.args and is_hex_key(request.args['pk']):
         EXECUTOR.submit(EVENT_HANDLER.subscribe_profile, request.args['pk'], timestamp_minus(TimePeriod.WEEK), [])
@@ -462,7 +462,7 @@ def following_page():
 
 @app.route('/search', methods=['GET'])
 def search_page():
-    EVENT_HANDLER.set_page('search', request.args['search_term'])
+    EXECUTOR.submit(EVENT_HANDLER.set_page('search', request.args['search_term']))
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     search = Search()
     results, goto, message, action = search.get()
@@ -559,14 +559,14 @@ def io_connect(m):
 
 @app.route('/refresh_connections', methods=['GET'])
 def refresh_connections():
-    EXECUTOR.submit(EVENT_HANDLER.reset())
+    EXECUTOR.submit(EXECUTOR.submit(EVENT_HANDLER.reset()))
     return render_template("upd.json", data=json.dumps({'reset': True}))
 
 
 @app.route('/del_relay', methods=['GET'])
 def del_relay():
     DB.remove_relay(request.args['url'])
-    EVENT_HANDLER.remove_relay(request.args['url'])
+    EXECUTOR.submit(EVENT_HANDLER.remove_relay(request.args['url']))
     return render_template("upd.json", data=json.dumps({'del': True}))
 
 

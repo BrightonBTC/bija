@@ -42,6 +42,7 @@ class Submit:
 class SubmitDelete(Submit):
     def __init__(self, relay_manager, keys, ids, reason=""):
         super().__init__(relay_manager, keys)
+        logger.info('SUBMIT delete')
         self.kind = EventKind.DELETE
         self.ids = ids
         self.content = reason
@@ -49,6 +50,7 @@ class SubmitDelete(Submit):
         self.send()
 
     def compose(self):
+        logger.info('compose')
         for eid in self.ids:
             if is_hex_key(eid):
                 self.tags.append(['e', eid])
@@ -57,6 +59,7 @@ class SubmitDelete(Submit):
 class SubmitProfile(Submit):
     def __init__(self, relay_manager, keys, data):
         super().__init__(relay_manager, keys)
+        logger.info('SUBMIT profile')
         self.kind = EventKind.SET_METADATA
         self.content = json.dumps(data)
         self.send()
@@ -73,6 +76,7 @@ class SubmitLike(Submit):
         self.send()
 
     def compose(self):
+        logger.info('compose')
         note = DB.get_note(self.note_id)
         members = json.loads(note.members)
         for m in members:
@@ -85,6 +89,7 @@ class SubmitLike(Submit):
 class SubmitNote(Submit):
     def __init__(self, relay_manager, keys, data, members=[]):
         super().__init__(relay_manager, keys)
+        logger.info('SUBMIT note')
         self.data = data
         self.members = members
         self.response_to = None
@@ -95,8 +100,10 @@ class SubmitNote(Submit):
         self.store()
 
     def compose(self):
+        logger.info('compose')
         data = self.data
         if 'quote_id' in data:
+            logger.info('has quote id')
             self.content = "{} #[0]".format(data['comment'])
             self.reshare = data['quote_id']
             self.tags.append(["e", data['quote_id']])
@@ -105,8 +112,10 @@ class SubmitNote(Submit):
                     if is_hex_key(m):
                         self.tags.append(["p", m, self.preferred_relay])
         elif 'new_post' in data:
+            logger.info('is new post')
             self.content = data['new_post']
         elif 'reply' in data:
+            logger.info('is reply')
             self.content = data['reply']
             if self.members is not None:
                 for m in self.members:
@@ -125,11 +134,13 @@ class SubmitNote(Submit):
         else:
             self.event_id = False
         if 'uploads' in data:
+            logger.info('has uploads')
             self.content += data['uploads']
         self.process_hash_tags()
         self.process_mentions()
 
     def process_mentions(self):
+        logger.info('process mentions')
         matches = get_at_tags(self.content)
         for match in matches:
             name = DB.get_profile_by_name_or_pk(match[1:])
@@ -139,12 +150,14 @@ class SubmitNote(Submit):
                 self.content = self.content.replace(match, "#[{}]".format(index))
 
     def process_hash_tags(self):
+        logger.info('process hashtags')
         matches = get_hash_tags(self.content)
         if len(matches) > 0:
             for match in matches:
                 self.tags.append(["t", match[1:]])
 
     def store(self):
+        logger.info('insert note')
         DB.insert_note(
             self.event_id,
             self.keys['public'],
@@ -160,11 +173,13 @@ class SubmitNote(Submit):
 class SubmitFollowList(Submit):
     def __init__(self, relay_manager, keys):
         super().__init__(relay_manager, keys)
+        logger.info('SUBMIT follow list')
         self.kind = EventKind.CONTACTS
         self.compose()
         self.send()
 
     def compose(self):
+        logger.info('compose')
         pk_list = DB.get_following_pubkeys()
         for pk in pk_list:
             self.tags.append(["p", pk])
@@ -173,11 +188,13 @@ class SubmitFollowList(Submit):
 class SubmitEncryptedMessage(Submit):
     def __init__(self, relay_manager, keys, data):
         super().__init__(relay_manager, keys)
+        logger.info('SUBMIT encrypted message')
         self.kind = EventKind.ENCRYPTED_DIRECT_MESSAGE
         self.data = data
         self.compose()
 
     def compose(self):
+        logger.info('compose')
         pk = None
         txt = None
         for v in self.data:
@@ -193,6 +210,7 @@ class SubmitEncryptedMessage(Submit):
             self.event_id = False
 
     def encrypt(self, message, public_key):
+        logger.info('encrypt message')
         try:
             k = bytes.fromhex(self.keys['private'])
             pk = PrivateKey(k)

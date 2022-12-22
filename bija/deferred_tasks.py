@@ -13,9 +13,12 @@ import validators
 from bs4 import BeautifulSoup
 
 from bija.app import app
+from bija.args import LOGGING_LEVEL
 from bija.db import BijaDB
 
 DB = BijaDB(app.session)
+logger = logging.getLogger(__name__)
+logger.setLevel(LOGGING_LEVEL)
 
 
 class TaskKind(IntEnum):
@@ -24,19 +27,23 @@ class TaskKind(IntEnum):
 
 class Task:
     def __init__(self, kind: TaskKind, data: object) -> None:
+        logger.info('TASK kind: {}'.format(kind))
         self.kind = kind
         self.data = data
 
 
 class TaskPool:
     def __init__(self) -> None:
+        logger.info('START TASK POOL')
         self.tasks: Queue[Task] = Queue()
         self.lock: Lock = Lock()
 
     def add(self, kind: TaskKind, data: object):
+        logger.info('ADD task')
         self.tasks.put(Task(kind, data))
 
     def get(self):
+        logger.info('GET task')
         return self.tasks.get()
 
     def has_tasks(self):
@@ -46,9 +53,11 @@ class TaskPool:
 class DeferredTasks:
 
     def __init__(self) -> None:
+        logger.info('DEFERRED TASKS')
         self.pool = TaskPool()
 
     def next(self) -> None:
+        logger.info('NEXT task')
         if self.pool.has_tasks():
             task = self.pool.get()
             if task.kind == TaskKind.FETCH_OG:
@@ -58,6 +67,7 @@ class DeferredTasks:
 class OGTags:
 
     def __init__(self, data):
+        logger.info('OG TAGS')
         self.note_id = data['note_id']
         self.url = data['url']
         self.og = {}
@@ -68,6 +78,7 @@ class OGTags:
             self.process(response)
 
     def fetch(self):
+        logger.info('fetch for {}'.format(self.url))
         req = Request(self.url, headers={'User-Agent': 'Bija Nostr Client'})
         try:
             with urllib.request.urlopen(req, timeout=2) as response:
@@ -85,6 +96,7 @@ class OGTags:
             return False
 
     def process(self, response):
+        logger.info('process {}'.format(self.url))
         if response is not None:
             soup = BeautifulSoup(response, 'html.parser')
             for prop in ['image', 'title', 'description', 'url']:
@@ -104,6 +116,7 @@ class OGTags:
                 self.store()
 
     def store(self):
+        logger.info('store OG')
         media = json.loads(self.note['media'])
         media.append([self.og, 'og'])
         DB.update_note_media(self.note_id, json.dumps(media))

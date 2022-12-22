@@ -1,26 +1,32 @@
 import json
+import logging
 import textwrap
 
 from flask import render_template
 import arrow
 
 from bija.app import app
+from bija.args import LOGGING_LEVEL
 from bija.db import BijaDB
 from bija.helpers import get_at_tags, is_hex_key, url_linkify, strip_tags
 from bija.settings import Settings
 from python_nostr.nostr.key import PrivateKey
 
 DB = BijaDB(app.session)
+logger = logging.getLogger(__name__)
+logger.setLevel(LOGGING_LEVEL)
 
 
 @app.template_filter('dt')
 def _jinja2_filter_datetime(ts):
+    logger.info('format date')
     t = arrow.get(ts)
     return t.humanize()
 
 
 @app.template_filter('decr')
 def _jinja2_filter_decr(content, pubkey, privkey):
+    logger.info('format decrypt')
     try:
         k = bytes.fromhex(privkey)
         pk = PrivateKey(k)
@@ -31,6 +37,7 @@ def _jinja2_filter_decr(content, pubkey, privkey):
 
 @app.template_filter('ident_string')
 def _jinja2_filter_ident(name, pk, nip5=None, validated=None, long=True):
+    logger.info('format ident')
     html = "<span class='uname' data-pk='{}'><span class='name'>{}</span> "
     if long:
         html = html + "<span class='nip5'>{}</span>"
@@ -51,6 +58,7 @@ def _jinja2_filter_ident(name, pk, nip5=None, validated=None, long=True):
 
 @app.template_filter('responders_string')
 def _jinja2_filter_responders(the_dict, n):
+    logger.info('format responders')
     names = []
     for pk, name in the_dict.items():
         names.append([pk, _jinja2_filter_ident(name, pk, long=False)])
@@ -68,6 +76,7 @@ def _jinja2_filter_responders(the_dict, n):
 
 @app.template_filter('process_media_attachments')
 def _jinja2_filter_media(json_string):
+    logger.info('format media')
     a = json.loads(json_string)
     if len(a) > 0:
         media = a[0]
@@ -82,6 +91,7 @@ def _jinja2_filter_media(json_string):
 
 @app.template_filter('process_note_content')
 def _jinja2_filter_note(content: str, limit=200):
+    logger.info('format note content')
     tags = get_at_tags(content)
 
     if limit is not None and len(strip_tags(content)) > limit:
@@ -102,6 +112,7 @@ def _jinja2_filter_note(content: str, limit=200):
 
 @app.template_filter('get_thread_root')
 def _jinja2_filter_thread_root(root, reply, note_id):
+    logger.info('determine thread root')
     out = {'root': '', 'reply': ''}
     if root is None and reply is None:
         out['root'] = note_id
@@ -112,11 +123,13 @@ def _jinja2_filter_thread_root(root, reply, note_id):
 
 @app.template_filter('linkify')
 def _jinja2_filter_linkify(content):
+    logger.info('linkify')
     return url_linkify(content)
 
 
 @app.template_filter('settings_json')
-def _jinja2_filter_linkify(content):
+def _jinja2_settings_json(content):
+    logger.info('settings_json')
     settings = ['cloudinary_cloud', 'cloudinary_upload_preset']
     out = {}
     for k in settings:

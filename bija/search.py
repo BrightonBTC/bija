@@ -1,15 +1,21 @@
+import logging
+
 from flask import request
 
 from bija.app import app
+from bija.args import LOGGING_LEVEL
 from bija.db import BijaDB
 from bija.helpers import is_hex_key, is_bech32_key, is_nip05, bech32_to_hex64, request_nip05
 
 DB = BijaDB(app.session)
+logger = logging.getLogger(__name__)
+logger.setLevel(LOGGING_LEVEL)
 
 
 class Search:
 
     def __init__(self):
+        logger.info('SEARCH')
         self.term = None
         self.message = None
         self.results = None

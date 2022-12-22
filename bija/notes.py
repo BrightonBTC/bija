@@ -1,13 +1,18 @@
 import json
+import logging
 
 from bija.app import app
+from bija.args import LOGGING_LEVEL
 from bija.db import BijaDB
 
 DB = BijaDB(app.session)
+logger = logging.getLogger(__name__)
+logger.setLevel(LOGGING_LEVEL)
 
 
 class FeedThread:
     def __init__(self, notes):
+        logger.info('FEED THREAD')
         self.notes = notes
         self.threads = []
         self.roots = []
@@ -18,6 +23,7 @@ class FeedThread:
         self.build()
 
     def get_roots(self):
+        logger.info('get roots')
         roots = []
         for note in self.notes:
             note = dict(note)
@@ -35,15 +41,18 @@ class FeedThread:
         self.roots = list(dict.fromkeys(roots))
 
     def add_id(self, note_id):
+        logger.info('add id: {}'.format(note_id))
         if note_id not in self.ids:
             self.ids.add(note_id)
 
     def build(self):
+        logger.info('build')
         for root in self.roots:
             t = self.build_thread(root)
             self.threads.append(t)
 
     def build_thread(self, root):
+        logger.info('build thread')
         t = {'self': None, 'id': root, 'response': None, 'responders': {}}
         responders = []
         for _note in self.notes:
@@ -76,6 +85,7 @@ class FeedThread:
 
     @staticmethod
     def is_in_thread(note, root):
+        logger.info('is in thread?')
         is_root = False
         is_response = False
         if note['id'] == root:
@@ -87,6 +97,7 @@ class FeedThread:
 
 class NoteThread:
     def __init__(self, note_id):
+        logger.info('NOTE THREAD')
         self.id = note_id
         self.is_root = False
         self.root = []
@@ -104,7 +115,7 @@ class NoteThread:
         self.result_set = self.root+self.ancestors+[self.note]+self.children
 
     def process(self):
-
+        logger.info('process')
         self.get_children()
 
         if not self.is_root:
@@ -120,6 +131,7 @@ class NoteThread:
             self.root[0]['class'] = self.root[0]['class'] + ' ancestor'
 
     def get_note(self):
+        logger.info('get note')
         n = DB.get_note(self.id)
         if n is not None:
             n = dict(n)
@@ -134,9 +146,11 @@ class NoteThread:
         return self.id
 
     def get_notes(self):
+        logger.info('get notes')
         return DB.get_note_thread(self.root_id)
 
     def get_children(self):
+        logger.info('get children')
         to_remove = []
         for note in self.notes:
             n = dict(note)
@@ -150,10 +164,12 @@ class NoteThread:
         self.remove_notes_from_list(to_remove)
 
     def remove_notes_from_list(self, notes: list):
+        logger.info('remove used notes')
         for n in notes:
             self.notes.remove(n)
 
     def get_ancestor(self, note_id):
+        logger.info('get ancestor')
         to_remove = []
         found = False
         for note in self.notes:
@@ -174,6 +190,7 @@ class NoteThread:
         self.remove_notes_from_list(to_remove)
 
     def get_root(self):
+        logger.info('get root')
         for note in self.notes:
             n = dict(note)
             if n['id'] == self.root_id:
@@ -186,6 +203,7 @@ class NoteThread:
                 break
 
     def get_reshare(self, note):
+        logger.info('get reshare')
         if note['reshare'] is not None:
             reshare = DB.get_note(note['reshare'])
             if reshare is not None:
@@ -193,19 +211,23 @@ class NoteThread:
         return None
 
     def determine_root(self):
+        logger.info('determine root')
         if self.note is not None and type(self.note) == dict:
             if self.note['thread_root'] is not None:
                 self.root_id = self.note['thread_root']
 
     def add_public_keys(self, public_keys: list):
+        logger.info('add pub keys')
         for k in public_keys:
             if k not in self.public_keys:
                 self.public_keys.append(k)
 
     def get_profile_briefs(self):
+        logger.info('get profile briefs')
         self.profiles = DB.get_profile_briefs(self.public_keys)
 
     def add_members(self, note):
+        logger.info('add members')
         public_keys = [note['public_key']]
         public_keys = json.loads(note['members']) + public_keys
         self.add_public_keys(public_keys)
