@@ -1103,13 +1103,16 @@ function fetchGet(url, cb, cb_data = {}, response_type='text'){
 }
 
 function uploadToCloud(form_el){
+    const main_el = document.querySelector('.main')
+    const settings = JSON.parse(main_el.dataset.settings)
+
     const files = form_el.querySelector("[type=file]").files;
     const cloudFormData = new FormData();
     for (let i = 0; i < files.length; i++) {
         let file = files[i];
         cloudFormData.append("file", file);
-        cloudFormData.append("upload_preset", cloudinary_upload_preset);
-        const cloud_url = 'https://api.cloudinary.com/v1_1/'+cloudinary_cloud+'/auto/upload'
+        cloudFormData.append("upload_preset", settings['cloudinary_upload_preset']);
+        const cloud_url = 'https://api.cloudinary.com/v1_1/'+settings['cloudinary_cloud']+'/auto/upload'
         fetch(cloud_url, {
             method: "POST",
             body: cloudFormData
@@ -1228,9 +1231,13 @@ window.addEventListener("load", function () {
         });
     }
 
-    if(typeof cloudinary_cloud !== "undefined"){
-        const upload_form = document.querySelector('#new_post_form')
-        setCloudUploads(upload_form)
+    const main_el = document.querySelector('.main')
+    if(main_el && main_el.dataset.settings){
+        const settings = JSON.parse(main_el.dataset.settings)
+        if(settings['cloudinary_cloud'] != 'undefined'){
+            const upload_form = document.querySelector('#new_post_form')
+            setCloudUploads(upload_form)
+        }
     }
 
     const logout = document.querySelector('.logout')

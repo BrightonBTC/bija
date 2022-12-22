@@ -8,9 +8,6 @@ class BijaSettings:
 
     items = {}
 
-    def __init_(self):
-        self.set_from_db()
-
     def set_from_db(self):
         r = DB.get_settings()
         for k in r.keys():
@@ -26,3 +23,4 @@ class BijaSettings:
 
 
 Settings = BijaSettings()
+Settings.set_from_db()
