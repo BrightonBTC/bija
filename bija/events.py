@@ -296,7 +296,7 @@ class BijaEvents:
     def subscribe_search(self, term):
         logger.info('Subscribe search {}'.format(term))
         self.subscriptions.add('search')
-        SubscribeSearch('add', self.relay_manager, term)
+        SubscribeSearch('search', self.relay_manager, term)
 
     def submit_profile(self, profile):
         e = SubmitProfile(self.relay_manager, Settings.get("keys"), profile)
