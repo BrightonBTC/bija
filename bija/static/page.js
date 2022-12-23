@@ -616,6 +616,27 @@ class bijaNotes{
         document.addEventListener('newContentLoaded', ()=>{
             this.setEventListeners()
         });
+        setInterval(this.tsUpdater, 120000);
+    }
+
+    tsUpdater(){
+        console.log('update ts')
+        const notes = document.querySelectorAll(".dt[data-ts]");
+        const timestamps = []
+        for (const n of notes) {
+            timestamps.push(n.dataset.ts)
+        }
+        const cb = function(response, data){
+            const stamps = JSON.parse(response)
+            console.log(stamps)
+            for (const [k, v] of Object.entries(stamps['data'])) {
+                const elem = document.querySelector(".dt[data-ts='"+k+"']");
+                if(elem){
+                    elem.innerText = v
+                }
+            }
+        }
+        fetchGet('/timestamp_upd?ts='+timestamps.join(), cb)
     }
 
     setEventListeners(){

@@ -595,6 +595,16 @@ def get_reactions():
     return render_template("upd.json", data=json.dumps({'data': results}))
 
 
+@app.route('/timestamp_upd', methods=['GET'])
+def timestamp_upd():
+    t = request.args['ts'].split(',')
+    results = {}
+    for ts in t:
+        dt = arrow.get(int(ts))
+        results[ts] = dt.humanize()
+    return render_template("upd.json", data=json.dumps({'data': results}))
+
+
 @app.route('/submit_note', methods=['POST', 'GET'])
 def submit_note():
     out = {}
