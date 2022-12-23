@@ -1168,6 +1168,7 @@ p.note-tools {
 }
 ul#search_tips li {
     padding: var(--spacing-sm);
+    cursor: pointer;
 }
 .thread-members{
     border: 1px solid var(--bdr-clr-1);

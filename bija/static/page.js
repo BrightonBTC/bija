@@ -212,6 +212,7 @@ class bijaSearch{
                 this.searchByName(val.substring(1))
             }
         })
+        this.searchTipsFill()
         search.addEventListener("focus", (event)=>{
             document.querySelector('#search_tips').style.display = 'block'
         })
@@ -253,6 +254,31 @@ class bijaSearch{
             }
             hint_elem.append(ul)
         }
+    }
+    
+    searchTipsFill() {
+        const reply_elem = document.querySelector('input[name="search_term"]')
+        const tips_elems = document.querySelectorAll('#search_tips > li')
+        let fill_contents = Array.from(tips_elems).map(li => li.getAttribute('data-fill'))
+        tips_elems.forEach(elem => {
+            elem.addEventListener('mousedown', (event) => {
+                event.preventDefault()
+            }); 
+            elem.addEventListener("click", (event) => {
+                let fill_content = elem.getAttribute('data-fill')
+                if (fill_content.length > 0) {
+                    if (fill_contents.includes(reply_elem.value[0])) {
+                        reply_elem.value = reply_elem.value.replace(reply_elem.value[0], fill_content)
+                    } else {
+                        reply_elem.value = fill_content + reply_elem.value
+                    }
+                } else {
+                    reply_elem.value = ''
+                }
+                reply_elem.blur()
+                reply_elem.focus()
+            })
+        })
     }
 }
 
