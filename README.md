@@ -11,7 +11,7 @@ If you want to give it a test run you can find early releases for Linux (Windows
 Or, to get it up and running yourself: 
 
 ```
-git clone https://github.com/BrightonBTC/bija
+git clone --recurse-submodules https://github.com/BrightonBTC/bija
 cd bija
 pip install -r ./requirements.txt
 python3 cli.py
