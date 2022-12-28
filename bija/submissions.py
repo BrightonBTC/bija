@@ -101,7 +101,7 @@ class SubmitNote(Submit):
         self.response_to = None
         self.thread_root = None
         self.reshare = None
-        self.pow_difficulty = int(pow_difficulty)
+        self.pow_difficulty = int(pow_difficulty) if pow_difficulty else None
         self.compose()
         self.send()
         self.store()
