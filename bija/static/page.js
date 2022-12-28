@@ -212,6 +212,7 @@ class bijaSearch{
                 this.searchByName(val.substring(1))
             }
         })
+        this.searchTipsFill()
         search.addEventListener("focus", (event)=>{
             document.querySelector('#search_tips').style.display = 'block'
         })
@@ -253,6 +254,31 @@ class bijaSearch{
             }
             hint_elem.append(ul)
         }
+    }
+    
+    searchTipsFill() {
+        const reply_elem = document.querySelector('input[name="search_term"]')
+        const tips_elems = document.querySelectorAll('#search_tips > li')
+        let fill_contents = Array.from(tips_elems).map(li => li.getAttribute('data-fill'))
+        tips_elems.forEach(elem => {
+            elem.addEventListener('mousedown', (event) => {
+                event.preventDefault()
+            }); 
+            elem.addEventListener("click", (event) => {
+                let fill_content = elem.getAttribute('data-fill')
+                if (fill_content.length > 0) {
+                    if (fill_contents.includes(reply_elem.value[0])) {
+                        reply_elem.value = reply_elem.value.replace(reply_elem.value[0], fill_content)
+                    } else {
+                        reply_elem.value = fill_content + reply_elem.value
+                    }
+                } else {
+                    reply_elem.value = ''
+                }
+                reply_elem.blur()
+                reply_elem.focus()
+            })
+        })
     }
 }
 
@@ -616,6 +642,27 @@ class bijaNotes{
         document.addEventListener('newContentLoaded', ()=>{
             this.setEventListeners()
         });
+        setInterval(this.tsUpdater, 120000);
+    }
+
+    tsUpdater(){
+        console.log('update ts')
+        const notes = document.querySelectorAll(".dt[data-ts]");
+        const timestamps = []
+        for (const n of notes) {
+            timestamps.push(n.dataset.ts)
+        }
+        const cb = function(response, data){
+            const stamps = JSON.parse(response)
+            console.log(stamps)
+            for (const [k, v] of Object.entries(stamps['data'])) {
+                const elem = document.querySelector(".dt[data-ts='"+k+"']");
+                if(elem){
+                    elem.innerText = v
+                }
+            }
+        }
+        fetchGet('/timestamp_upd?ts='+timestamps.join(), cb)
     }
 
     setEventListeners(){

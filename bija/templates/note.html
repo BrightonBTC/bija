@@ -7,7 +7,7 @@
         {%- endif -%}
         <a href="/profile?pk={{note['public_key']}}" class="profile-name">{{fim| safe}}{{note['name'] | ident_string(note['public_key'], note['nip05'], note['nip05_validated']) | safe }}</a>
         <span class="note-info">
-            <span class="sm dt">
+            <span class="sm dt" data-ts="{{note['created_at']}}">
                 {{note['created_at']|dt}}
             </span>
             <span class="note-opts" data-id="{{note['id']}}">

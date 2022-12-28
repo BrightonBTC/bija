@@ -12,7 +12,8 @@ from bija.app import socketio
 from bija.args import LOGGING_LEVEL
 from bija.deferred_tasks import TaskKind, DeferredTasks
 from bija.helpers import get_embeded_tag_indexes, \
-    list_index_exists, get_urls_in_string, request_nip05, url_linkify, strip_tags, request_relay_data
+    list_index_exists, get_urls_in_string, request_nip05, url_linkify, strip_tags, request_relay_data, is_nip05, \
+    clean_name
 from bija.subscriptions import *
 from bija.submissions import *
 from bija.alerts import *
@@ -485,12 +486,12 @@ class MetadataEvent:
     def process_content(self):
         s = json.loads(self.event.content)
         if 'name' in s:
-            self.name = s['name'].strip()
-        if 'nip05' in s:
+            self.name = clean_name(s['name'].strip())
+        if 'nip05' in s and is_nip05(s['nip05']):
             self.nip05 = s['nip05'].strip()
         if 'about' in s:
             self.about = strip_tags(s['about'])
-        if 'picture' in s:
+        if 'picture' in s and validators.url(s['picture'].strip(), public=True):
             self.picture = s['picture'].strip()
 
         if self.nip05 is not None:

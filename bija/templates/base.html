@@ -32,12 +32,10 @@
           <input type="text" name="search_term" placeholder="Search">
             <div id="search_hints" class="name-hints"></div>
             <ul id="search_tips">
-              <li><span class="sm">Search for a person:</span><br>@name/@pubkey</li>
-              <li><span class="sm">Or by a Nip-05 identity:</span><br>handle@mysite.web</li>
-              <li><span class="sm">Search by topic:</span><br>#hashtag</li>
+              <li data-fill="@"><span class="sm">Search for a person:</span><br>@name/@pubkey</li>
+              <li data-fill=""><span class="sm">Or by a Nip-05 identity:</span><br>handle@mysite.web</li>
+              <li data-fill="#"><span class="sm">Search by topic:</span><br>#hashtag</li>
             </ul>
-
-
         </form>
         <div id="right_content">
         {%- block right_content -%}
