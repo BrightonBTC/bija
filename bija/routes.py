@@ -297,9 +297,14 @@ def settings_page():
         settings = {
             'cloudinary_cloud': '',
             'cloudinary_upload_preset': '',
-            'pow_default': ''
+            'pow_default': '',
+            'pow_default_enc': ''
         }
-        cs = DB.get_settings_by_keys(['cloudinary_cloud', 'cloudinary_upload_preset', 'pow_default'])
+        cs = DB.get_settings_by_keys([
+            'cloudinary_cloud',
+            'cloudinary_upload_preset',
+            'pow_default',
+            'pow_default_enc'])
         if cs is not None:
             for item in cs:
                 item = dict(item)
@@ -415,7 +420,8 @@ def private_message_page():
 def submit_message():
     event_id = False
     if request.method == 'POST':
-        event_id = EVENT_HANDLER.submit_message(request.json)
+        pow_difficulty = Settings.get('pow_default_enc')
+        event_id = EVENT_HANDLER.submit_message(request.json, pow_difficulty=pow_difficulty)
     return render_template("upd.json", title="Home", data=json.dumps({'event_id': event_id}))
 
 

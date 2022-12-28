@@ -32,7 +32,7 @@ class Submit:
 
     def send(self):
         self.tags.append(['client', 'BIJA'])
-        if self.pow_difficulty is None:
+        if self.pow_difficulty is None or self.pow_difficulty < 1:
             event = Event(self.keys['public'], self.content, tags=self.tags, created_at=self.created_at, kind=self.kind)
         else:
             logger.info('mine event')
@@ -193,11 +193,12 @@ class SubmitFollowList(Submit):
 
 
 class SubmitEncryptedMessage(Submit):
-    def __init__(self, relay_manager, keys, data):
+    def __init__(self, relay_manager, keys, data, pow_difficulty=None):
         super().__init__(relay_manager, keys)
         logger.info('SUBMIT encrypted message')
         self.kind = EventKind.ENCRYPTED_DIRECT_MESSAGE
         self.data = data
+        self.pow_difficulty = int(pow_difficulty)
         self.compose()
 
     def compose(self):

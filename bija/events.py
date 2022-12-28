@@ -301,8 +301,8 @@ class BijaEvents:
         e = SubmitProfile(self.relay_manager, Settings.get("keys"), profile)
         return e.event_id
 
-    def submit_message(self, data):
-        e = SubmitEncryptedMessage(self.relay_manager, Settings.get("keys"), data)
+    def submit_message(self, data, pow_difficulty=None):
+        e = SubmitEncryptedMessage(self.relay_manager, Settings.get("keys"), data, pow_difficulty)
         return e.event_id
 
     def submit_like(self, note_id):
