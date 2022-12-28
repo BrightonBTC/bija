@@ -679,6 +679,7 @@ class bijaNotes{
 
     setEventListeners(){
         const notes = document.querySelectorAll(".note[data-processed='0']");
+        const main_el = document.querySelector('.main')
         for (const note of notes) {
             note.dataset.processed = '1'
 
@@ -717,7 +718,8 @@ class bijaNotes{
             if(like_n_el){
                 this.setLikeCountClickEvents(like_n_el, note.dataset.id)
             }
-            if(typeof cloudinary_cloud !== "undefined"){
+            const settings = JSON.parse(main_el.dataset.settings)
+            if(settings['cloudinary_cloud'] != 'undefined'){
                 const upload_form = note.querySelector('.reply-form')
                 setCloudUploads(upload_form)
             }
