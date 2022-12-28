@@ -185,7 +185,7 @@ class NoteThread:
                     self.get_ancestor(n['response_to'])
                 found = True
                 break
-        if not found:
+        if not found and note_id != self.root_id:
             self.ancestors.append(note_id)
         self.remove_notes_from_list(to_remove)
 
