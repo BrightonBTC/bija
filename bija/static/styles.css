@@ -145,6 +145,11 @@ input[type=submit]:hover, input[type=button]:hover, button:hover {
   box-shadow: 0 0 0 1px var(--input-bdr-clr-fcs);
 }
 
+hr{
+    border: 0;
+    border-bottom: 1px solid var(--bdr-clr-2);
+}
+
 /* global header */
 .conn-status{
     font-size: var(--fs-tiny);

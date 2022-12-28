@@ -50,13 +50,14 @@
             <input name="pow_default_enc"  type="number" min="0" step="1" value="{{settings['pow_default_enc']}}">
             Default difficulty for encrypted messages <strong>you create</strong>
         </p>
+        <hr>
         <p class="sm">
             <input name="pow_required"  type="number" min="0" step="1" value="{{settings['pow_required']}}">
-            Required difficulty for <strong>incoming</strong> notes (only applies to accounts you're not following)
+            Required difficulty for <strong>incoming</strong> notes from unknown accounts
         </p>
         <p class="sm">
             <input name="pow_required_enc"  type="number" min="0" step="1" value="{{settings['pow_required_enc']}}">
-            Required difficulty for <strong>incoming</strong> encrypted messages (only applies to accounts you're not following)
+            Required difficulty for <strong>incoming</strong> encrypted messages from unknown accounts
         </p>
         <input type="button" id="upd_pow" class="right" value="Update">
     </form>

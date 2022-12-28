@@ -149,11 +149,14 @@ class SubmitNote(Submit):
     def process_mentions(self):
         logger.info('process mentions')
         matches = get_at_tags(self.content)
+        offset = 1
+        if self.pow_difficulty is not None and self.pow_difficulty > 0:
+            offset = 0
         for match in matches:
             name = DB.get_profile_by_name_or_pk(match[1:])
             if name is not None:
                 self.tags.append(["p", name['public_key']])
-                index = len(self.tags) - 1
+                index = len(self.tags) - offset
                 self.content = self.content.replace(match, "#[{}]".format(index))
 
     def process_hash_tags(self):
