@@ -9,6 +9,7 @@ from bija.helpers import is_hex_key, get_at_tags, get_hash_tags
 from python_nostr.nostr.event import EventKind, Event
 from python_nostr.nostr.key import PrivateKey
 from python_nostr.nostr.message_type import ClientMessageType
+from python_nostr.nostr.pow import mine_event
 
 DB = BijaDB(app.session)
 logger = logging.getLogger(__name__)
@@ -27,10 +28,15 @@ class Submit:
         self.created_at = int(time.time())
         r = DB.get_preferred_relay()
         self.preferred_relay = r.name
+        self.pow_difficulty = None
 
     def send(self):
         self.tags.append(['client', 'BIJA'])
-        event = Event(self.keys['public'], self.content, tags=self.tags, created_at=self.created_at, kind=self.kind)
+        if self.pow_difficulty is None:
+            event = Event(self.keys['public'], self.content, tags=self.tags, created_at=self.created_at, kind=self.kind)
+        else:
+            logger.info('mine event')
+            event = mine_event(self.content, self.pow_difficulty, self.keys['public'], self.kind, self.tags)
         event.sign(self.keys['private'])
         self.event_id = event.id
         message = json.dumps([ClientMessageType.EVENT, event.to_json_object()], ensure_ascii=False)
@@ -87,7 +93,7 @@ class SubmitLike(Submit):
 
 
 class SubmitNote(Submit):
-    def __init__(self, relay_manager, keys, data, members=[]):
+    def __init__(self, relay_manager, keys, data, members=[], pow_difficulty=None):
         super().__init__(relay_manager, keys)
         logger.info('SUBMIT note')
         self.data = data
@@ -95,6 +101,7 @@ class SubmitNote(Submit):
         self.response_to = None
         self.thread_root = None
         self.reshare = None
+        self.pow_difficulty = int(pow_difficulty)
         self.compose()
         self.send()
         self.store()

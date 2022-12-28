@@ -424,6 +424,18 @@ class bijaSettings{
             fetchFromForm('/update_settings', form, cb, {}, 'json')
         });
 
+        const pow_btn = document.querySelector("#upd_pow");
+        pow_btn.addEventListener("click", (event)=>{
+            event.preventDefault();
+            event.stopPropagation();
+            const pow_form = document.querySelector("#pow_cfg")
+
+            const pow_cb = function(response, data){
+                notify('updated')
+            }
+            fetchFromForm('/update_settings', pow_form, pow_cb, {}, 'json')
+        });
+
     }
 
     setDeleteKeysClicked(){

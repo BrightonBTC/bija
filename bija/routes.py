@@ -259,7 +259,8 @@ def quote_submit():
             if 'quote_id' not in data:
                 out['error'] = 'Nothing to quote'
             else:
-                event_id = EVENT_HANDLER.submit_note(data, members)
+                pow_difficulty = Settings.get('pow_default')
+                event_id = EVENT_HANDLER.submit_note(data, members, pow_difficulty=pow_difficulty)
                 out['event_id'] = event_id
         else:
             out['error'] = 'Quoted note not found at DB'
@@ -295,9 +296,10 @@ def settings_page():
         EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
         settings = {
             'cloudinary_cloud': '',
-            'cloudinary_upload_preset': ''
+            'cloudinary_upload_preset': '',
+            'pow_default': ''
         }
-        cs = DB.get_settings_by_keys(['cloudinary_cloud', 'cloudinary_upload_preset'])
+        cs = DB.get_settings_by_keys(['cloudinary_cloud', 'cloudinary_upload_preset', 'pow_default'])
         if cs is not None:
             for item in cs:
                 item = dict(item)
@@ -627,7 +629,8 @@ def submit_note():
                     members = json.loads(note.members)
                     if note.public_key not in members:
                         members.insert(0, note.public_key)
-            event_id = EVENT_HANDLER.submit_note(data, members)
+            pow_difficulty = Settings.get('pow_default')
+            event_id = EVENT_HANDLER.submit_note(data, members, pow_difficulty=pow_difficulty)
             if 'thread_root' in data:
                 out['root'] = data['thread_root']
             else:

@@ -39,6 +39,14 @@
     </form>
 </div>
 
+<div class="card">
+    <h3>Proof of work</h3>
+    <form id="pow_cfg">
+        <p class="sm">Default difficulty for notes you create:</p>
+        <input name="pow_default"  type="number" min="0" step="1" value="{{settings['pow_default']}}">
+        <input type="button" id="upd_pow" class="right" value="Update">
+    </form>
+</div>
 
 <div class="card">
     <h3>Cloudinary</h3>

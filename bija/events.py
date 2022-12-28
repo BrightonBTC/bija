@@ -309,8 +309,8 @@ class BijaEvents:
         e = SubmitLike(self.relay_manager, Settings.get("keys"), note_id)
         return e.event_id
 
-    def submit_note(self, data, members=None):
-        e = SubmitNote(self.relay_manager, Settings.get("keys"), data, members)
+    def submit_note(self, data, members=None, pow_difficulty=None):
+        e = SubmitNote(self.relay_manager, Settings.get("keys"), data, members, pow_difficulty)
         return e.event_id
 
     def submit_follow_list(self):
