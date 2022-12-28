@@ -105,11 +105,6 @@ def is_nip05(name: str):
         return False
 
 
-def clean_name(name_str: str):
-    regex = re.compile(r'[^a-zA-Z0-9_]')
-    return re.sub(regex, '_', name_str)
-
-
 def is_valid_relay(url: str) -> bool:
     regex = re.compile(
         r'^wss?://'
