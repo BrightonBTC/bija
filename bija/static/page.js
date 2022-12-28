@@ -1141,6 +1141,14 @@ function defaultImage(img){
 }
 
 function popup(htm){
+    const existing = document.querySelector('.popup')
+    const existing_ol = document.querySelector('.popup-overlay')
+    if(existing){
+        existing.remove()
+    }
+    if(existing_ol){
+        existing_ol.remove()
+    }
     overlay = document.createElement('div')
     overlay.classList.add('popup-overlay')
     the_popup = document.createElement('div')
