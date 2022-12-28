@@ -103,6 +103,18 @@ input[type=text], input[type=password], textarea {
     box-sizing: border-box;
     font-size: var(--fs-sm);
 }
+input[type=number]{
+    width: 4em;
+    margin: 0 var(--spacing-sm);
+    display: inline-block;
+    border: 1px solid var(--input-bdr-clr);
+    background: var(--input-bg-clr);
+    color: var(--input-clr);
+    border-radius: var(--rnd);
+    box-sizing: border-box;
+    font-size: var(--fs-sm);
+    float:left;
+}
 
 input[type=submit], input[type=button], button {
   background-color: var(--btn-bg);

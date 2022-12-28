@@ -18,6 +18,7 @@ from bija.submissions import *
 from bija.alerts import *
 from bija.settings import Settings
 from python_nostr.nostr.event import EventKind
+from python_nostr.nostr.pow import count_leading_zero_bits
 from python_nostr.nostr.relay_manager import RelayManager
 
 logger = logging.getLogger(__name__)
@@ -431,12 +432,32 @@ class EncryptedMessageEvent:
         self.event = event
         self.is_sender = None
         self.pubkey = None
+        self.passed = False
 
         self.process_data()
 
+    def check_pow(self):
+        if self.is_sender == 1:
+            f = DB.am_following(self.pubkey)
+            if f is not None:
+                self.passed = True
+            else:
+                req_pow = Settings.get('pow_required_enc')
+                actual_pow = count_leading_zero_bits(self.event.id)
+                logger.info('required proof of work: {} {}'.format(type(req_pow), req_pow))
+                logger.info('actual proof of work: {} {}'.format(type(actual_pow), actual_pow))
+                if req_pow is None or actual_pow >= int(req_pow):
+                    logger.info('passed')
+                    self.passed = True
+                else:
+                    logger.info('failed')
+        else:
+            self.passed = True
+
     def process_data(self):
         self.set_receiver_sender()
-        if self.pubkey is not None and self.is_sender is not None:
+        self.check_pow()
+        if self.pubkey is not None and self.is_sender is not None and self.passed:
             self.store()
 
     def set_receiver_sender(self):

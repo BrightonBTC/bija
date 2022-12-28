@@ -298,13 +298,17 @@ def settings_page():
             'cloudinary_cloud': '',
             'cloudinary_upload_preset': '',
             'pow_default': '',
-            'pow_default_enc': ''
+            'pow_default_enc': '',
+            'pow_required': '',
+            'pow_required_enc': ''
         }
         cs = DB.get_settings_by_keys([
             'cloudinary_cloud',
             'cloudinary_upload_preset',
             'pow_default',
-            'pow_default_enc'])
+            'pow_default_enc',
+            'pow_required',
+            'pow_required_enc'])
         if cs is not None:
             for item in cs:
                 item = dict(item)

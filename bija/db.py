@@ -107,6 +107,9 @@ class BijaDB:
             out.append(dict(p))
         return out
 
+    def am_following(self, public_key):
+        return self.session.query(Profile.public_key).filter_by(public_key=public_key).filter_by(following=1).first()
+
     def get_profile_last_upd(self, public_key):
         return self.session.query(Profile.updated_at).filter_by(public_key=public_key).first()
 
