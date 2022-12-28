@@ -1,3 +1,4 @@
+import json
 import sys
 from functools import wraps
 from threading import Thread
@@ -10,6 +11,7 @@ from flask_executor import Executor
 from bija.app import app, socketio
 from bija.args import SETUP_PK, SETUP_PW, LOGGING_LEVEL
 from bija.config import DEFAULT_RELAYS
+from bija.emojis import emojis
 from bija.events import BijaEvents, MetadataEvent
 from bija.helpers import *
 from bija.jinja_filters import *
@@ -523,9 +525,7 @@ def emojis_req():
         'categories': []
     }
     if 's' in request.args and len(request.args['s'].strip()) > 0:
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        f = open(dir_path+'/emoji.json')
-        data = json.load(f)
+        data = emojis
         n = 0
         for cat in data:
             d['categories'].append(cat['name'])
@@ -533,7 +533,6 @@ def emojis_req():
                 if n < 50 and request.args['s'] in item['name']:
                     d['emojis'].append(item['emoji'])
                     n += 1
-        f.close()
     else:
         d = {
             'emojis': ['😄', '🤣', '🙃', '🤩', '🥲', '😝', '👍', '👎']
