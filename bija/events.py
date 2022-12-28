@@ -357,10 +357,10 @@ class ReactionEvent:
 
     def process_tags(self):
         for tag in self.event.tags:
-            if tag[0] == "p":
+            if tag[0] == "p" and is_hex_key(tag[1]):
                 self.event_pk = tag[1]
                 self.event_members.append(tag[1])
-            if tag[0] == "e":
+            if tag[0] == "e" and is_hex_key(tag[1]):
                 self.event_id = tag[1]
 
     def store(self):
@@ -369,7 +369,7 @@ class ReactionEvent:
             self.event.public_key,
             self.event_id,
             self.event_pk,
-            self.event.content,
+            strip_tags(self.event.content),
             json.dumps(self.event_members),
             json.dumps(self.event.to_json_object())
         )
