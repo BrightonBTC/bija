@@ -719,7 +719,7 @@ class bijaNotes{
                 this.setLikeCountClickEvents(like_n_el, note.dataset.id)
             }
             const settings = JSON.parse(main_el.dataset.settings)
-            if(settings['cloudinary_cloud'] != 'undefined'){
+            if(settings['cloudinary_cloud'] !== undefined){
                 const upload_form = note.querySelector('.reply-form')
                 setCloudUploads(upload_form)
             }
@@ -1309,7 +1309,7 @@ window.addEventListener("load", function () {
     const main_el = document.querySelector('.main')
     if(main_el && main_el.dataset.settings){
         const settings = JSON.parse(main_el.dataset.settings)
-        if(settings['cloudinary_cloud'] != 'undefined'){
+        if(settings['cloudinary_cloud'] !== undefined){
             const upload_form = document.querySelector('#new_post_form')
             setCloudUploads(upload_form)
         }
