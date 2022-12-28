@@ -6,12 +6,14 @@ Python [Nostr](https://github.com/nostr-protocol/nostr) client with backend that
 
 This is experimental software in early development and comes without warranty.
 
+### Native Setup :snake:	
+
 If you want to give it a test run you can find early releases for Linux (Windows and OSX versions intended at a later date) on the [releases page](https://github.com/BrightonBTC/bija/releases) 
 
 Or, to get it up and running yourself: 
 
 ```
-git clone https://github.com/BrightonBTC/bija
+git clone --recurse-submodules https://github.com/BrightonBTC/bija
 cd bija
 pip install -r ./requirements.txt
 python3 cli.py
@@ -33,3 +35,23 @@ Or additionally to the above you could compile using pyinstaller:
 pyinstaller cli.py --onefile -w -F --add-data "bija/templates:bija/templates" --add-data "bija/static:bija/static" --name "bija-nostr-client"
 
 ```
+### Docker Setup :whale2:
+
+To setup Bija with docker, first clone the project:
+```
+git clone --recurse-submodules https://github.com/BrightonBTC/bija
+cd bija
+```
+
+> **Warning**
+> If you don't clone with --recurse-submodules, you must run git submodules update
+
+Then just run docker-compose up and access Bija through the browser
+
+```
+docker-compose up
+```
+
+You can now access bija at http://localhost:5000
+
+Enjoy :grinning:
