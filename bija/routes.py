@@ -71,7 +71,7 @@ def index_page():
     EXECUTOR.submit(EVENT_HANDLER.subscribe_feed(list(t.ids)))
     profile = DB.get_profile(get_key())
     return render_template("feed.html", page_id="home", title="Home", threads=t.threads, last=t.last_ts,
-                           profile=profile)
+                           profile=profile, pubkey=get_key())
 
 
 @app.route('/feed', methods=['GET'])
@@ -86,7 +86,7 @@ def feed():
             t = FeedThread(notes)
             EXECUTOR.submit(EVENT_HANDLER.subscribe_feed(list(t.ids)))
             profile = DB.get_profile(get_key())
-            return render_template("feed.items.html", threads=t.threads, last=t.last_ts, profile=profile)
+            return render_template("feed.items.html", threads=t.threads, last=t.last_ts, profile=profile, pubkey=get_key())
         else:
             return 'END'
 
@@ -170,9 +170,8 @@ def profile_page():
         for item in meta.keys():
             if item in ['website', 'lud06', 'lud16']:
                 metadata[item] = meta[item]
-
     return render_template("profile.html", page_id=page_id, title="Profile", threads=t.threads, last=t.last_ts,
-                           latest=latest, profile=profile, is_me=is_me, meta=metadata)
+                           latest=latest, profile=profile, is_me=is_me, meta=metadata, pubkey=get_key())
 
 
 
@@ -190,7 +189,7 @@ def profile_feed():
             EXECUTOR.submit(
                 EVENT_HANDLER.subscribe_profile, request.args['pk'], t.last_ts - TimePeriod.WEEK, list(t.ids)
             )
-            return render_template("feed.items.html", threads=t.threads, last=t.last_ts, profile=profile)
+            return render_template("feed.items.html", threads=t.threads, last=t.last_ts, profile=profile, pubkey=get_key())
         else:
             return 'END'
 
@@ -212,7 +211,7 @@ def note_page():
                            notes=t.result_set,
                            members=t.profiles,
                            profile=profile,
-                           root=note_id)
+                           root=note_id, pubkey=get_key())
 
 
 @app.route('/quote_form', methods=['GET'])
@@ -280,7 +279,6 @@ def read_more():
     note_id = request.args['id']
     note = DB.get_note(note_id)
     return render_template("note.content.html", note=note)
-
 
 
 @app.route('/settings', methods=['GET', 'POST'])
