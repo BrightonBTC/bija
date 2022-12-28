@@ -101,7 +101,8 @@ class SubmitNote(Submit):
         self.response_to = None
         self.thread_root = None
         self.reshare = None
-        self.pow_difficulty = int(pow_difficulty)
+        if pow_difficulty is not None:
+            self.pow_difficulty = int(pow_difficulty)
         self.compose()
         self.send()
         self.store()
@@ -111,7 +112,10 @@ class SubmitNote(Submit):
         data = self.data
         if 'quote_id' in data:
             logger.info('has quote id')
-            self.content = "{} #[0]".format(data['comment'])
+            i = '0'
+            if self.pow_difficulty is not None and self.pow_difficulty > 0:
+                i = '1'
+            self.content = "{} #[{}]".format(data['comment'], i)
             self.reshare = data['quote_id']
             self.tags.append(["e", data['quote_id']])
             if self.members is not None:
@@ -201,7 +205,8 @@ class SubmitEncryptedMessage(Submit):
         logger.info('SUBMIT encrypted message')
         self.kind = EventKind.ENCRYPTED_DIRECT_MESSAGE
         self.data = data
-        self.pow_difficulty = int(pow_difficulty)
+        if pow_difficulty is not None:
+            self.pow_difficulty = int(pow_difficulty)
         self.compose()
 
     def compose(self):
