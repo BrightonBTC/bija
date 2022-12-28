@@ -13,7 +13,7 @@
             <span class="note-opts" data-id="{{note['id']}}">
                 <img src="/static/note-tools.svg" class="icon">
                 <ul class="opts-menu rnd pad-sm">
-                    {%- if note['public_key'] == session['keys']['public'] -%}
+                    {%- if note['public_key'] == pubkey -%}
                     <li data-action="del" class="pad-tiny">delete</li>
                     {%- endif -%}
                     <li data-action="share" class="pad-tiny">share</li>
