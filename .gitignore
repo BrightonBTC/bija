@@ -3,3 +3,4 @@
 /flask_session/
 /.idea/
 /bija/flask_session/
+__pycache__
