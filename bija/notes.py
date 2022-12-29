@@ -142,6 +142,7 @@ class NoteThread:
             else:
                 self.is_root = False
                 n['class'] = 'main'
+            n['reshare'] = self.get_reshare(n)
             return n
         return self.id
 
