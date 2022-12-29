@@ -85,7 +85,7 @@ def url_linkify(content):
             link_text = parts[1]
         content = content.replace(
             url,
-            "<a href='{}'>{}</a>".format(url, link_text))
+            "<a href='{}' target='blank'>{}</a>".format(url, link_text))
     return content
 
 

@@ -70,7 +70,7 @@ class FeedThread:
                     t['responders'][note['public_key']] = note['name']
                 responders.append(note['public_key'])
 
-            if (is_root or is_response) and note['reshare'] is not None:
+            if note['reshare'] is not None:
                 reshare = DB.get_note(note['reshare'])
                 self.add_id(note['reshare'])
                 if reshare is not None:
@@ -81,7 +81,15 @@ class FeedThread:
 
         if t['self'] is None:
             t['self'] = DB.get_note(root)
+            if t['self'] is not None:
+                t['self'] = dict(t['self'])
+                if t['self']['reshare'] is not None:
+                    reshare = DB.get_note(t['self']['reshare'])
+                    self.add_id(t['self']['reshare'])
+                    if reshare is not None:
+                        t['self']['reshare'] = reshare
         return t
+
 
     @staticmethod
     def is_in_thread(note, root):
@@ -209,6 +217,8 @@ class NoteThread:
             reshare = DB.get_note(note['reshare'])
             if reshare is not None:
                 return reshare
+            else:
+                return note['reshare']
         return None
 
     def determine_root(self):

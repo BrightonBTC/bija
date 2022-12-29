@@ -202,6 +202,9 @@ class BijaEvents:
         self.notify_on_note_event(event, subscription)
 
         if 'notes' in self.active_events:
+            if e.event.id in self.active_events['notes']:
+                logger.info('New required note {}'.format(e.event.id))
+                socketio.emit('new_note', e.event.id)
             if e.response_to in self.active_events['notes']:
                 logger.info('Detected response to active note {}'.format(e.response_to))
                 socketio.emit('new_reply', e.response_to)

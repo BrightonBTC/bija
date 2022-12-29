@@ -94,7 +94,7 @@ a{
 input[type=text], input[type=password], textarea {
     width: 100%;
     padding: var(--spacing-mid);
-    margin: 8px 0;
+    margin: var(--spacing-mid) 0;
     display: inline-block;
     border: 1px solid var(--input-bdr-clr);
     background: var(--input-bg-clr);
@@ -120,7 +120,7 @@ input[type=submit], input[type=button], button {
   background-color: var(--btn-bg);
   color: var(--btn-txt);
   padding: var(--spacing-sm);
-  margin: 8px 0;
+  margin: var(--spacing-mid) 0;
   border: none;
   border-radius: var(--rnd);
   cursor: pointer;
@@ -282,7 +282,6 @@ hr{
 .left-column {
     float: left;
     width: 75%;
-    padding-left: var(--spacing-lg);
     padding-right: var(--spacing-lg);
     border-right: 1px solid var(--bdr-clr-1);
 }
@@ -333,7 +332,7 @@ hr{
 
 .dt{
     color: var(--txt-clr2);
-    margin-left: 50px;
+    margin-left: var(--spacing-xl);
 }
 
 .alert{
@@ -385,7 +384,7 @@ hr{
 /* Feed */
 .poster-form{
     border-bottom: 1px solid var(--bdr-clr-2);
-    margin-bottom: 30px;
+    margin-bottom: var(--spacing-xl);
     display: flex;
     background: var(--bg-clr2);
 }
@@ -516,13 +515,13 @@ input.post-submit {
     font-size: var(--fs-sm);
     padding: var(--spacing-sm);
     color: var(--txt-clr2);
-    margin-bottom: 30px;
+    margin-bottom: var(--spacing-xl);
 }
 .profile-menu{
     overflow: hidden;
     background-color: var(--bg-clr2);
     border-top-width: 0;
-    margin: 0 var(--spacing-mid) 25px var(--spacing-mid);
+    margin: 0 var(--spacing-mid) var(--spacing-xl) var(--spacing-mid);
 }
 .profile-menu a{
     float: left;
@@ -665,7 +664,7 @@ input[type=text].pname {
     padding: var(--spacing-mid2) var(--spacing-lg);
     border-radius: var(--rnd-lg);
     max-width: 520px;
-    margin: 0 25px;
+    margin: 0 var(--spacing-xl);
 }
 .them .speech-bubble{
     background: var(--bg-clr2);
@@ -703,6 +702,8 @@ input[type=text].pname {
     padding: 0 var(--spacing-mid);
     color: var(--txt-clr);
     position: relative;
+    margin: var(--spacing-mid) 0;
+    border-bottom: 1px solid var(--bdr-clr-1);
 }
 .msg-link > *{
     padding: var(--spacing-sm);
@@ -713,7 +714,6 @@ input[type=text].pname {
 .msg-profile-pic img{
     width: 60px;
     border-radius:var(--rnd-lg);
-    margin-bottom:25px;
 }
 .msg-profile-name{
     font-size: var(--fs-xl);
@@ -773,11 +773,11 @@ input[type=text].pname {
     display: flex !important;
 }
 .note-image{
-    flex: 0 0 60px;
+    flex: 0 0 40px;
 }
 .note-image img{
-    width: 60px;
-    height: 60px;
+    width: 40px;
+    height: 40px;
     position: relative;
 }
 
@@ -799,8 +799,8 @@ input[type=text].pname {
     border-style: solid;
     border-width: 0 0 2px 2px;
     display: none;
-    top: 80px;
-    left: 40px;
+    top: 60px;
+    left: 30px;
     margin: 0 var(--spacing-mid);
     bottom: var(--spacing-mid);
 }
@@ -812,7 +812,7 @@ input[type=text].pname {
 .note-container.reply .thread-marker{
     display: block;
     border-bottom-left-radius: 20px;
-    width: 50px;
+    width: 40px;
     border-style: dotted;
     top: 20px;
     bottom: 50%;
@@ -828,7 +828,7 @@ input[type=text].pname {
 }
 
 .note-container.connector{
-    height: 20px;
+    height: var(--spacing-lg);
     align-items: center;
 }
 .note-container.connector a{
@@ -866,7 +866,7 @@ input[type=text].pname {
 .thread-divider{
     border: 0;
     border-bottom: 1px solid var(--bdr-clr-1);
-    margin-bottom: 30px;
+    margin-bottom: var(--spacing-xl);
 }
 
 .note-outer{

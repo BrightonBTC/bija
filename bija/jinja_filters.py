@@ -2,6 +2,7 @@ import base64
 import io
 import json
 import logging
+import re
 import textwrap
 import qrcode
 
@@ -98,12 +99,12 @@ def _jinja2_filter_media(json_string):
 def _jinja2_filter_note(content: str, limit=200):
     logger.info('format note content')
 
-    invoice = get_invoice(content)
+    invoice = get_invoice(content.lower())
     if invoice is not None:
         data = construct_invoice(invoice.group())
         if data:
             invoice_html = render_template("ln.invoice.html", data=data)
-            content = content.replace(invoice.group(), invoice_html)
+            content = re.sub(invoice.group(), invoice_html, content, flags=re.IGNORECASE)
             limit = None
 
     if limit is not None and len(strip_tags(content)) > limit:
