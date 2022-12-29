@@ -1,6 +1,11 @@
+import base64
+import io
 import json
 import logging
 import textwrap
+import qrcode
+
+from lightning.lnaddr import lndecode
 
 from flask import render_template
 import arrow
@@ -8,7 +13,7 @@ import arrow
 from bija.app import app
 from bija.args import LOGGING_LEVEL
 from bija.db import BijaDB
-from bija.helpers import get_at_tags, is_hex_key, url_linkify, strip_tags
+from bija.helpers import get_at_tags, is_hex_key, url_linkify, strip_tags, get_invoice
 from bija.settings import Settings
 from python_nostr.nostr.key import PrivateKey
 
@@ -20,7 +25,7 @@ logger.setLevel(LOGGING_LEVEL)
 @app.template_filter('dt')
 def _jinja2_filter_datetime(ts):
     logger.info('format date')
-    t = arrow.get(ts)
+    t = arrow.get(int(ts))
     return t.humanize()
 
 
@@ -92,11 +97,20 @@ def _jinja2_filter_media(json_string):
 @app.template_filter('process_note_content')
 def _jinja2_filter_note(content: str, limit=200):
     logger.info('format note content')
-    tags = get_at_tags(content)
+
+    invoice = get_invoice(content)
+    if invoice is not None:
+        data = construct_invoice(invoice.group())
+        if data:
+            invoice_html = render_template("ln.invoice.html", data=data)
+            content = content.replace(invoice.group(), invoice_html)
+            limit = None
 
     if limit is not None and len(strip_tags(content)) > limit:
-        content = textwrap.shorten(strip_tags(content), width=limit, replace_whitespace=False, break_long_words=True,
+        content = textwrap.shorten(strip_tags(content), width=limit, break_long_words=True,
                                    placeholder="... <a href='#' class='read-more'>more</a>")
+
+    tags = get_at_tags(content)
     for tag in tags:
         pk = tag[1:]
         if is_hex_key(pk):
@@ -108,6 +122,47 @@ def _jinja2_filter_note(content: str, limit=200):
                 "@{}".format(pk),
                 "<a class='uname' href='/profile?pk={}'>@{}</a>".format(pk, name))
     return content
+
+
+def construct_invoice(content: str):
+    try:
+        out = {
+            'sats': 0,
+            'description': '',
+            'date': '',
+            'expires': '',
+            'qr': '',
+            'lnurl': content
+        }
+        content = content.split()
+        invoice = lndecode(content[0])
+        if invoice is not None:
+            out['sats'] = str(int(invoice.amount*100000000))
+            out['date'] = str(invoice.date)
+            for tag in invoice.tags:
+                if tag[0] == 'd':
+                    out['description'] = tag[1]
+                if tag[0] == 'x':
+                    out['expires'] = str(invoice.date + tag[1])
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=4,
+            )
+            qr.add_data(content[0])
+            qr.make(fit=True)
+
+            img = qr.make_image(fill_color="black", back_color="white")
+            img_byte_arr = io.BytesIO()
+            img.save(img_byte_arr, format='PNG')
+            img_byte_arr = img_byte_arr.getvalue()
+            img64 = base64.b64encode(img_byte_arr).decode()
+            out['qr'] = '<img src="data:image/png;base64,{}">'.format(img64)
+            return out
+        return False
+    except:
+        return False
 
 
 @app.template_filter('get_thread_root')

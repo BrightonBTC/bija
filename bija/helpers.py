@@ -67,6 +67,11 @@ def get_urls_in_string(content: str):
     return [x[0] for x in url]
 
 
+def get_invoice(content: str):
+    regex = re.compile(r'(lnbc[a-zA-Z0-9]*)')
+    return re.search(regex, content)
+
+
 def url_linkify(content):
     urls = get_urls_in_string(content)
     for url in urls:

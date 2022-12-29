@@ -4,7 +4,8 @@
 {%- for item in notes: -%}
     {%- if item is string -%}
         <div class="note-container placeholder" data-id="{{item}}">
-            <div class="note-content"><a href="/note?id={{item}}">Event:{{item}} not yet seen on network</a></div>
+            <div class="note-image"><img src="/static/user.svg" class="user-image"></div>
+            <div class="note-outer"><div class="note"><div class="pad-sm">Event: {{item}} not yet seen on network</div></div></div>
         </div>
     {%- else -%}
         {%- include 'thread.item2.html' -%}

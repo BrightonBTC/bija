@@ -811,21 +811,16 @@ input[type=text].pname {
 
 .note-container.reply .thread-marker{
     display: block;
-    height: 90px;
     border-bottom-left-radius: 20px;
-    width: 130px;
+    width: 50px;
     border-style: dotted;
-    top: 0;
+    top: 20px;
+    bottom: 50%;
 }
 .note-container.deleted  .thread-marker{
     display: none;
 }
-.note-container.reply .note-image{
-    flex: 0 0 150px
-}
-.note-container.reply .note-image img{
-    margin-left: 90px;
-}
+
 .note-container.placeholder{
     font-size:80%;
     opacity: 0.7;
@@ -1088,6 +1083,34 @@ p.note-tools {
 }
 .emoji_selector.show input{
     display: block;
+}
+.ln_invoice {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+.ln_invoice > * {
+    flex: 1;
+    padding: var(--spacing-mid);
+    border: 1px solid var(--bdr-clr-2);
+    background: var(--bg-clr1-fade);
+}
+.ln_invoice .dt{
+    margin: 0;
+}
+.ln_invoice p{
+    margin: 0;
+}
+.ln_invoice h3{
+    font-weight:800;
+}
+.ln_invoice .qr{
+    display: none;
+}
+.ln_invoice.qr_show .qr{
+    display: block;
+}
+.ln_invoice.qr_show .invoice{
+    display: none;
 }
 
 /* ---------- */

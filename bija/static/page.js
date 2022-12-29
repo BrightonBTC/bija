@@ -732,7 +732,24 @@ class bijaNotes{
                 this.setReadMoreClicks(read_more_link, note.dataset.id)
             }
 
+            const qr_btn = note.querySelector(".qr_show");
+            if(qr_btn){
+                this.setQrToggle(qr_btn, note.dataset.id)
+            }
         }
+    }
+
+    setQrToggle(elem, id){
+        elem.addEventListener('click', (e) => {
+            const note_el = document.querySelector('.note[data-id="'+id+'"]')
+            const invoice_el = note_el.querySelector('.ln_invoice')
+            if(invoice_el.classList.contains('qr_show')){
+                invoice_el.classList.remove('qr_show')
+            }
+            else{
+                invoice_el.classList.add('qr_show')
+            }
+        })
     }
 
     setReadMoreClicks(elem, id){
