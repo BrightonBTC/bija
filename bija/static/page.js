@@ -888,6 +888,8 @@ class bijaNotes{
             const tool  = tool_el.dataset.action;
             if(tool == 'nfo'){
                 tool_el.addEventListener('click', (e) => {
+                    event.preventDefault();
+                    event.stopPropagation();
                     const on_get_info = function(response, data){
                         if(response['data']){
                             popup("<pre>"+JSON.stringify(JSON.parse(response['data']), null, 2)+"</pre>")
@@ -898,6 +900,8 @@ class bijaNotes{
             }
             else if(tool == 'del'){
                 tool_el.addEventListener('click', (e) => {
+                    event.preventDefault();
+                    event.stopPropagation();
                     const on_req_delete_confirm = function(response, data){
                         if(response){
                             popup(response)
