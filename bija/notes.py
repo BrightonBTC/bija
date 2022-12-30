@@ -184,7 +184,7 @@ class NoteThread:
         for note in self.notes:
             n = dict(note)
             if n['id'] == note_id:
-                self.ancestors.append(n)
+                self.ancestors.insert(0, n)
                 self.add_members(n)
                 to_remove.append(note)
                 self.note_ids.insert(0, n['id'])
@@ -195,7 +195,7 @@ class NoteThread:
                 found = True
                 break
         if not found and note_id != self.root_id:
-            self.ancestors.append(note_id)
+            self.ancestors.insert(0, note_id)
         self.remove_notes_from_list(to_remove)
 
     def get_root(self):
