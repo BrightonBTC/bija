@@ -14,7 +14,7 @@ import arrow
 from bija.app import app
 from bija.args import LOGGING_LEVEL
 from bija.db import BijaDB
-from bija.helpers import get_at_tags, is_hex_key, url_linkify, strip_tags, get_invoice
+from bija.helpers import get_at_tags, is_hex_key, url_linkify, strip_tags, get_invoice, get_hash_tags
 from bija.settings import Settings
 from python_nostr.nostr.key import PrivateKey
 
@@ -110,6 +110,15 @@ def _jinja2_filter_note(content: str, limit=200):
     if limit is not None and len(strip_tags(content)) > limit:
         content = textwrap.shorten(strip_tags(content), width=limit, break_long_words=True,
                                    placeholder="... <a href='#' class='read-more'>more</a>")
+
+    hashtags = get_hash_tags(content)
+    hashtags.sort(key=len)
+    for tag in hashtags:
+        term = tag[1:]
+        content = content.replace(
+            tag,
+            "<a href='/search?search_term=%23{}'>{}</a>".format(term, tag))
+
 
     tags = get_at_tags(content)
     for tag in tags:
