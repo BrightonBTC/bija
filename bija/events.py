@@ -102,48 +102,52 @@ class BijaEvents:
         self.pool_handler_running = True
         i = 0
         while self.should_run:
-            while self.relay_manager.message_pool.has_notices():
-                notice = self.relay_manager.message_pool.get_notice()
+            try:
+                while self.relay_manager.message_pool.has_notices():
+                    notice = self.relay_manager.message_pool.get_notice()
 
-            while self.relay_manager.message_pool.has_ok_notices():
-                notice = self.relay_manager.message_pool.get_ok_notice()
+                while self.relay_manager.message_pool.has_ok_notices():
+                    notice = self.relay_manager.message_pool.get_ok_notice()
 
-            while self.relay_manager.message_pool.has_eose_notices():
-                notice = self.relay_manager.message_pool.get_eose_notice()
+                while self.relay_manager.message_pool.has_eose_notices():
+                    notice = self.relay_manager.message_pool.get_eose_notice()
+                    print('EOSE', notice.url, notice.subscription_id)
 
-            while self.relay_manager.message_pool.has_events():
-                msg = self.relay_manager.message_pool.get_event()
-                if DB.get_event(msg.event.id) is None:
-                    logger.info('New event: {}'.format(msg.event.kind))
-                    if msg.event.kind == EventKind.SET_METADATA:
-                        self.receive_metadata_event(msg.event)
+                while self.relay_manager.message_pool.has_events():
+                    msg = self.relay_manager.message_pool.get_event()
+                    if DB.get_event(msg.event.id) is None:
+                        logger.info('New event: {}'.format(msg.event.kind))
+                        if msg.event.kind == EventKind.SET_METADATA:
+                            self.receive_metadata_event(msg.event)
 
-                    if msg.event.kind == EventKind.CONTACTS:
-                        self.receive_contact_list_event(msg.event, msg.subscription_id)
+                        if msg.event.kind == EventKind.CONTACTS:
+                            self.receive_contact_list_event(msg.event, msg.subscription_id)
 
-                    if msg.event.kind == EventKind.TEXT_NOTE:
-                        self.receive_note_event(msg.event, msg.subscription_id)
+                        if msg.event.kind == EventKind.TEXT_NOTE:
+                            self.receive_note_event(msg.event, msg.subscription_id)
 
-                    if msg.event.kind == EventKind.ENCRYPTED_DIRECT_MESSAGE:
-                        self.receive_private_message_event(msg.event)
+                        if msg.event.kind == EventKind.ENCRYPTED_DIRECT_MESSAGE:
+                            self.receive_private_message_event(msg.event)
 
-                    if msg.event.kind == EventKind.DELETE:
-                        self.receive_del_event(msg.event)
+                        if msg.event.kind == EventKind.DELETE:
+                            self.receive_del_event(msg.event)
 
-                    if msg.event.kind == EventKind.REACTION:
-                        self.receive_reaction_event(msg.event)
+                        if msg.event.kind == EventKind.REACTION:
+                            self.receive_reaction_event(msg.event)
 
-                    if msg.subscription_id != 'search':
-                        DB.add_event(msg.event.id, msg.event.kind)
-            DB.commit()
-            D_TASKS.next()
-            time.sleep(1)
-            logger.info('Event loop {}'.format(int(time.time())))
-            i += 1
-            if i == 60:
-                self.get_connection_status()
-                socketio.emit('subscriptions', list(self.subscriptions))
-                i = 0
+                        if msg.subscription_id != 'search':
+                            DB.add_event(msg.event.id, msg.event.kind)
+                DB.commit()
+                D_TASKS.next()
+                time.sleep(1)
+                logger.info('Event loop {}'.format(int(time.time())))
+                i += 1
+                if i == 60:
+                    self.get_connection_status()
+                    socketio.emit('subscriptions', list(self.subscriptions))
+                    i = 0
+            except:
+                pass
 
     def receive_del_event(self, event):
         DeleteEvent(event)
