@@ -89,6 +89,7 @@ td, tr{
 
 a{
     text-decoration:none;
+    color: var(--lnk-clr2);
 }
 
 input[type=text], input[type=password], textarea {

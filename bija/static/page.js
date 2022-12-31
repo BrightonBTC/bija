@@ -760,6 +760,7 @@ class bijaNotes{
 
     setQrToggle(elem, id){
         elem.addEventListener('click', (e) => {
+            event.stopPropagation();
             const note_el = document.querySelector('.note[data-id="'+id+'"]')
             const invoice_el = note_el.querySelector('.ln_invoice')
             if(invoice_el.classList.contains('qr_show')){
@@ -928,6 +929,7 @@ class bijaNotes{
 
     displayReactionDetails(response){
         const container = document.createElement('ul')
+        container.classList.add('liked_by')
         for (var i = 0; i < response.length; i++){
             let li = document.createElement('li')
             if(response[i].content == null || response[i].content.length < 1 || response[i].content == "+"){
@@ -937,7 +939,7 @@ class bijaNotes{
                 response[i].name = response[i].public_key.substring(0, 21)+"..."
             }
 
-            li.innerHTML = '<span>'+response[i].content+'</span><span>'+response[i].name+'</span>';
+            li.innerHTML = '<span>'+response[i].content+'</span><a href="/profile?pk='+response[i].public_key+'">'+response[i].name+'</a>';
             container.append(li)
         }
         const p = document.querySelector('.popup')
