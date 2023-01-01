@@ -33,6 +33,11 @@ window.addEventListener("load", function () {
             });
         }
     }
+    const inp = document.querySelector('input')
+    if(inp){
+        inp.focus()
+    }
+
 });
 const n_checked = function(){
     let n = 0;
