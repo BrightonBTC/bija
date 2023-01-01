@@ -108,17 +108,18 @@ def _jinja2_filter_note(content: str, limit=200):
             limit = None
 
     if limit is not None and len(strip_tags(content)) > limit:
+
         content = textwrap.shorten(strip_tags(content), width=limit, break_long_words=True,
                                    placeholder="... <a href='#' class='read-more'>more</a>")
 
     hashtags = get_hash_tags(content)
-    hashtags.sort(key=len)
+    hashtags.sort(key=len, reverse=True)
+    print('HASHTAGS', hashtags)
     for tag in hashtags:
         term = tag[1:]
-        content = content.replace(
-            tag,
-            "<a href='/search?search_term=%23{}'>{}</a>".format(term, tag))
-
+        content = " {} ".format(content).replace(
+            " {} ".format(tag),
+            " <a href='/search?search_term=%23{}'>{}</a> ".format(term, tag)).strip()
 
     tags = get_at_tags(content)
     for tag in tags:
@@ -147,7 +148,7 @@ def construct_invoice(content: str):
         content = content.split()
         invoice = lndecode(content[0])
         if invoice is not None:
-            out['sats'] = str(int(invoice.amount*100000000))
+            out['sats'] = str(int(invoice.amount * 100000000))
             out['date'] = str(invoice.date)
             for tag in invoice.tags:
                 if tag[0] == 'd':

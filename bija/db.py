@@ -311,6 +311,36 @@ class BijaDB:
             .filter(text("note.deleted is not 1")) \
             .order_by(Note.seen.desc()).order_by(Note.created_at.desc()).limit(50).all()
 
+    def get_search_feed(self, before, search):
+
+        return self.session.query(
+            Note.id,
+            Note.public_key,
+            Note.content,
+            Note.response_to,
+            Note.thread_root,
+            Note.reshare,
+            Note.created_at,
+            Note.members,
+            Note.media,
+            Note.liked,
+            Note.shared,
+            Note.deleted,
+            ReactionTally.likes,
+            ReactionTally.replies,
+            ReactionTally.shares,
+            Profile.name,
+            Profile.pic,
+            Profile.nip05,
+            Profile.nip05_validated,
+            Profile.following) \
+            .outerjoin(ReactionTally, ReactionTally.event_id == Note.id) \
+            .join(Note.profile) \
+            .filter(text("note.created_at<{}".format(before))) \
+            .filter(text("note.deleted is not 1")) \
+            .filter(Note.content.like(f"%{search}%")) \
+            .order_by(Note.seen.desc()).order_by(Note.created_at.desc()).limit(50).all()
+
     def get_note_by_id_list(self, note_ids):
         return self.session.query(
             Note.id,

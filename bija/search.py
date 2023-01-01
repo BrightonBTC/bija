@@ -1,4 +1,5 @@
 import logging
+import time
 
 from flask import request
 
@@ -44,6 +45,7 @@ class Search:
 
     def by_hash(self):
         self.message = 'Searching network for {}'.format(self.term)
+        self.results = DB.get_search_feed(int(time.time()), self.term)
         self.action = 'hash'
 
     def by_at(self):
