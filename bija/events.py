@@ -249,7 +249,8 @@ class BijaEvents:
         e = ContactListEvent(event, self.get_key())
         DB.add_profile_if_not_exists(event.public_key)
         DB.add_contact_list(event.public_key, e.keys)
-        if e.changed:
+        if event.public_key == self.get_key():
+            logger.info('Contact list updated, restart primary subscription')
             self.subscribe_primary()
         if event.public_key != self.get_key() and subscription == 'profile':
             self.subscribe_profile(event.public_key, timestamp_minus(TimePeriod.WEEK), [])
@@ -334,7 +335,7 @@ class BijaEvents:
 
     def close_secondary_subscriptions(self):
         for s in self.subscriptions:
-            if s not in ['primary', 'following']:
+            if s not in ['primary']:
                 self.close_subscription(s)
 
     def close(self):
@@ -425,6 +426,8 @@ class ContactListEvent:
         following = DB.get_following_pubkeys()
         new = set(self.keys) - set(following)
         removed = set(following) - set(self.keys)
+        logger.info('New follows: {}'.format(len(new)))
+        logger.info('Removed follows: {}'.format(len(removed)))
         if len(new) > 0:
             self.changed = True
             DB.set_following(new, True)

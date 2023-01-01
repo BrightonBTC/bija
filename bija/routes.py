@@ -174,7 +174,6 @@ def profile_page():
                            latest=latest, profile=profile, is_me=is_me, meta=metadata, pubkey=get_key())
 
 
-
 @app.route('/profile_feed', methods=['GET'])
 def profile_feed():
     if request.method == 'GET':
@@ -449,6 +448,7 @@ def submit_like():
 
 
 @app.route('/following', methods=['GET'])
+@login_required
 def following_page():
     EXECUTOR.submit(EVENT_HANDLER.set_page('following', request.args.get('pk')))
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
@@ -585,7 +585,11 @@ def follow():
     EXECUTOR.submit(EVENT_HANDLER.submit_follow_list)
     profile = DB.get_profile(request.args['id'])
     is_me = request.args['id'] == get_key()
-    return render_template("profile.tools.html", profile=profile, is_me=is_me)
+    upd = request.args['upd']
+    if upd == "1":
+        return render_template("profile.tools.html", profile=profile, is_me=is_me)
+    else:
+        return render_template("upd.json", data=json.dumps({'followed': True}))
 
 
 @app.route('/fetch_raw', methods=['GET'])

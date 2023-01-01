@@ -616,7 +616,8 @@ class bijaProfile{
                 event.stopPropagation();
                 let id = btn.dataset.rel;
                 let state = btn.dataset.state;
-                this.setFollowState(id, state);
+                let upd = btn.dataset.upd;
+                this.setFollowState(id, state, upd);
                 return false;
             });
         }
@@ -642,6 +643,25 @@ class bijaProfile{
                 fetchFromForm('/upd_profile', form, this.updateProfile, {}, 'json')
             });
         }
+
+        const main_el = document.querySelector('.main')
+        if(main_el && main_el.dataset.settings){
+            const settings = JSON.parse(main_el.dataset.settings)
+            if(settings['cloudinary_cloud'] !== undefined){
+                const form = document.querySelector("#profile_updater");
+                const im_up = document.querySelector(".profile-img-up");
+                im_up.addEventListener('change', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    uploadToCloud(form, function(data, elem){
+                        const d = JSON.parse(data)
+                        elem.querySelector('#pim').value = d.secure_url
+                        elem.querySelector('.user-image').src = d.secure_url
+                    })
+                });
+            }
+        }
+
     }
 
     updateProfile(response, data){
@@ -658,11 +678,20 @@ class bijaProfile{
         }
     }
 
-    setFollowState(id, state){
+    setFollowState(id, state, upd){
         const cb = function(response, data){
-            document.querySelector(".profile-tools").innerHTML = response
+            if(data.upd == '1'){
+                document.querySelector(".profile-tools").innerHTML = response
+            }
+            else{
+                const f_btn = document.createElement('img')
+                f_btn.classList.add('icon')
+                f_btn.src = '/static/following.svg'
+                const c_btn = document.querySelector(".follow-btn[data-rel='"+data.id+"']")
+                c_btn.replaceWith(f_btn)
+            }
         }
-        fetchGet('/follow?id='+id+"&state="+state, cb)
+        fetchGet('/follow?id='+id+"&state="+state+"&upd="+upd, cb, {'upd':upd,'id':id})
     }
 
 }
@@ -1011,7 +1040,11 @@ class bijaFeed{
     loader(o){
         if ((window.innerHeight + window.innerHeight + window.scrollY) >= document.body.offsetHeight && o.loading == 0){
             let nodes = document.querySelectorAll('.ts[data-ts]')
-            o.requestNextPage(nodes[nodes.length-1].dataset.ts);
+            let ts = Math.floor(Date.now() / 1000)
+            if(nodes.length > 0){
+                ts = nodes[nodes.length-1].dataset.ts
+            }
+            o.requestNextPage(ts);
         }
     }
 
@@ -1224,7 +1257,7 @@ function fetchGet(url, cb, cb_data = {}, response_type='text'){
     });
 }
 
-function uploadToCloud(form_el){
+function uploadToCloud(form_el, cb){
     const main_el = document.querySelector('.main')
     const settings = JSON.parse(main_el.dataset.settings)
 
@@ -1241,12 +1274,7 @@ function uploadToCloud(form_el){
         }).then((response) => {
             return response.text();
         }).then((data) => {
-            d = JSON.parse(data)
-            const im = document.createElement('img')
-            im.src = d.secure_url
-            form_el.querySelector('.media_uploads').append(im)
-            const uploads_input = form_el.querySelector('[name="uploads"]')
-            uploads_input.value += ' '+d.secure_url
+            cb(data, form_el)
         });
     }
 }
@@ -1306,7 +1334,14 @@ function setCloudUploads(form){
         input.addEventListener('change', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            uploadToCloud(form)
+            uploadToCloud(form, function(data, elem){
+                const d = JSON.parse(data)
+                const im = document.createElement('img')
+                im.src = d.secure_url
+                elem.querySelector('.media_uploads').append(im)
+                const uploads_input = elem.querySelector('[name="uploads"]')
+                uploads_input.value += ' '+d.secure_url
+            })
         });
     }
 }
@@ -1372,4 +1407,5 @@ window.addEventListener("load", function () {
             }, {})
         });
     }
+
 });

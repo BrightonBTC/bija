@@ -9,6 +9,11 @@
             {%- include 'profile.image.html' -%}
         </div>
         <div class="name"><a href="/profile?pk={{p['public_key']}}">{{p['name'] | ident_string(p['public_key'], p['nip05'], p['nip05_validated']) | safe }}</a></div>
+        {%- if p['following'] == False: -%}
+        <button class="follow-btn" data-rel="{{p['public_key']}}" data-state="1" data-upd="0">+</button>
+        {%- else: -%}
+        <img src="/static/following.svg" title="following" class="icon">
+        {%- endif -%}
     </div>
 {%- endfor -%}
 </div>

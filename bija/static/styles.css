@@ -600,6 +600,11 @@ input[type=text].pname {
     color: var(--lnk-clr);
 }
 
+.pim-up{
+    display: flex;
+    align-items: center;
+}
+
 /* ---------- */
 
 

@@ -1,5 +1,6 @@
 import json
 import logging
+import time
 
 from bija.app import app
 from bija.args import LOGGING_LEVEL
@@ -17,7 +18,7 @@ class FeedThread:
         self.threads = []
         self.roots = []
         self.ids = set()
-        self.last_ts = None
+        self.last_ts = int(time.time())
 
         self.get_roots()
         self.build()

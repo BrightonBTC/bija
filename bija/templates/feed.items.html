@@ -1,5 +1,5 @@
 <div class="feed-block">
-<div class="ts" data-ts="{{last}}"></div>
+<div class="ts" data-ts="{{last if last is not none else '0'}}"></div>
 {%- for thread in threads: -%}
 
     {%- if thread['responder_count'] > 0 -%}
