@@ -114,7 +114,6 @@ def _jinja2_filter_note(content: str, limit=200):
 
     hashtags = get_hash_tags(content)
     hashtags.sort(key=len, reverse=True)
-    print('HASHTAGS', hashtags)
     for tag in hashtags:
         term = tag[1:]
         content = " {} ".format(content).replace(
