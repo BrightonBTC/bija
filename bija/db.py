@@ -310,7 +310,7 @@ class BijaDB:
             .filter(text("note.created_at<{}".format(before))) \
             .filter(text("(profile.following=1 OR profile.public_key='{}')".format(public_key))) \
             .filter(text("note.deleted is not 1")) \
-            .order_by(Note.seen.desc()).order_by(Note.created_at.desc()).limit(50).all()
+            .order_by(Note.seen.asc(), Note.created_at.desc()).limit(50).all()
 
     def get_search_feed(self, before, search):
 
