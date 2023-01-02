@@ -46,18 +46,22 @@ def _jinja2_filter_ident(name, pk, nip5=None, validated=None, long=True):
     logger.info('format ident')
     html = "<span class='uname' data-pk='{}'><span class='name'>{}</span> "
     if long:
-        html = html + "<span class='nip5'>{}</span>"
-    if validated and nip5 is not None and long:
+        html = "<span class='nip5'>{}</span><span class='uname' data-pk='{}'><span class='name'>{}</span>"
+    if nip5 is not None and long:
         if nip5[0:2] == "_@":
             nip5 = nip5[2:]
-        nip5 = nip5 + " <img src='/static/verified.svg' class='icon-sm'>"
+        if validated:
+            status = 'verified'
+        else:
+            status = 'warn'
+        nip5 = " <img src='/static/{}.svg' class='icon-sm nip5-{}' title='{}'> ".format(status, status, nip5)
     elif name is None or len(name.strip()) < 1:
         name = "{}&#8230;".format(pk[0:21])
 
     if long:
         if nip5 is None:
             nip5 = ""
-        return html.format(pk, name, nip5)
+        return html.format(nip5, pk, name)
 
     return html.format(pk, name)
 

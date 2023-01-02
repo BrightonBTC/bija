@@ -388,6 +388,15 @@ def reset_relays():
     return render_template("upd.json", data=json.dumps({'reset_relays': True}))
 
 
+@app.route('/validate_nip5', methods=['GET'])
+def validate_nip5():
+    profile = DB.get_profile(request.args['pk'])
+    valid_nip5 = MetadataEvent.validate_nip05(profile.nip05, profile.public_key)
+    if valid_nip5:
+        DB.set_valid_nip05(profile.public_key)
+    return render_template("upd.json", data=json.dumps({'valid': valid_nip5}))
+
+
 @app.route('/messages', methods=['GET'])
 def private_messages_page():
     EXECUTOR.submit(EVENT_HANDLER.set_page('messages', None))

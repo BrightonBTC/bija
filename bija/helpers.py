@@ -16,6 +16,10 @@ from bs4 import BeautifulSoup
 from python_nostr.nostr import bech32
 from python_nostr.nostr.bech32 import bech32_encode, bech32_decode, convertbits
 
+logger = logging.getLogger(__name__)
+FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
+logging.basicConfig(format=FORMAT)
+logger.setLevel(logging.INFO)
 
 def hex64_to_bech32(prefix: str, hex_key: str):
     if is_hex_key(hex_key):
@@ -146,17 +150,27 @@ def list_index_exists(lst, i):
 def request_nip05(nip05):
     valid_parts = is_nip05(nip05)
     if valid_parts:
+        logger.info('valid nip05 format')
         name = valid_parts[0]
         address = valid_parts[1]
         try:
+            url = 'https://{}/.well-known/nostr.json'.format(address)
+            logger.info('request: {}'.format(url))
             response = requests.get(
-                'https://{}/.well-known/nostr.json'.format(address), params={'name': name}, timeout=2
+                url, params={'name': name}, timeout=2
             )
+            logger.info('response staus: {}'.format(response.status_code))
             if response.status_code == 200:
                 try:
                     d = response.json()
+                    logger.info('response.json: {}'.format(d))
+                    logger.info('search name: [{}]'.format(name))
                     if name in d['names']:
+                        logger.info('name found: {}'.format(name))
                         return d['names'][name]
+                    if name.lower() in d['names']:
+                        logger.info('name found: {}'.format(name.lower()))
+                        return d['names'][name.lower()]
                 except ValueError:
                     return None
                 except Exception as e:

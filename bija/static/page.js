@@ -661,6 +661,29 @@ class bijaProfile{
                 }
             }
         }
+        const invalid_nip5 = document.querySelector('#profile .nip5-warn')
+        if(invalid_nip5){
+            this.setNip5Validator()
+        }
+    }
+
+    setNip5Validator(){
+        const pel = document.querySelector('#profile')
+        const btn = document.createElement('button')
+        btn.innerText = 'Revalidate Nip-05'
+        const cb = function(response, data){
+            if(response.valid==true){
+                location.reload();
+            }
+            else{
+                notify('Nip05 identifier could not be validated')
+            }
+        }
+        btn.addEventListener('click', (e) => {
+            fetchGet('/validate_nip5?pk='+pel.dataset.pk, cb, {}, 'json')
+        });
+        const name_el = pel.querySelector('.profile-name')
+        name_el.append(btn)
     }
 
     updateProfile(response, data){
