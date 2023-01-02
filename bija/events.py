@@ -12,7 +12,8 @@ from bija.app import socketio
 from bija.args import LOGGING_LEVEL
 from bija.deferred_tasks import TaskKind, DeferredTasks
 from bija.helpers import get_embeded_tag_indexes, \
-    list_index_exists, get_urls_in_string, request_nip05, url_linkify, strip_tags, request_relay_data, is_nip05
+    list_index_exists, get_urls_in_string, request_nip05, url_linkify, strip_tags, request_relay_data, is_nip05, \
+    is_bech32_key, bech32_to_hex64
 from bija.subscriptions import *
 from bija.submissions import *
 from bija.alerts import *
@@ -538,6 +539,8 @@ class MetadataEvent:
     @staticmethod
     def validate_nip05(nip05, pk):
         validated_name = request_nip05(nip05)
+        if validated_name is not None and is_bech32_key('npub', validated_name):
+            validated_name = bech32_to_hex64('npub', validated_name)
         if validated_name is not None and validated_name == pk:
             return True
         return False
