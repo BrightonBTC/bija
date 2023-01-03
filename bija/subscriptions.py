@@ -6,6 +6,7 @@ from bija.app import app
 from bija.args import LOGGING_LEVEL
 from bija.db import BijaDB
 from bija.helpers import timestamp_minus, TimePeriod
+from bija.settings import Settings
 from python_nostr.nostr.event import EventKind
 from python_nostr.nostr.filter import Filter, Filters
 from python_nostr.nostr.message_type import ClientMessageType
@@ -28,7 +29,7 @@ class Subscribe:
         logger.info('add subscription to relay manager')
         self.relay_manager.add_subscription(self.name, self.filters)
         message = json.dumps(request)
-        logger.info('publish subscriptiom')
+        logger.info('publish subscriptiom: {}'.format(message))
         self.relay_manager.publish_message(message)
 
 
@@ -57,7 +58,7 @@ class SubscribePrimary(Subscribe):
         if len(following_pubkeys) > 0:
             following_filter = Filter(
                 authors=following_pubkeys,
-                kinds=[EventKind.TEXT_NOTE, EventKind.REACTION, EventKind.DELETE],
+                kinds=[EventKind.TEXT_NOTE, EventKind.REACTION, EventKind.DELETE, EventKind.CONTACTS],
                 since=timestamp_minus(TimePeriod.WEEK)  # TODO: should be configurable in user settings
             )
             following_profiles_filter = Filter(
@@ -79,8 +80,15 @@ class SubscribeSearch(Subscribe):
 
     def build_filters(self):
         logger.info('build subscription filters')
+        required_pow = Settings.get('pow_required')
+        subid = None
+        if required_pow:
+            logger.info('required pow {}'.format(required_pow))
+            difficulty = int(int(required_pow)/4) * "0"
+            logger.info('calculated difficulty {}'.format(difficulty))
+            subid = {"ids": [difficulty]}
         f = [
-            Filter(kinds=[EventKind.TEXT_NOTE], tags={'#t': [self.term]}, limit=10)
+            Filter(kinds=[EventKind.TEXT_NOTE], tags={'#t': [self.term]}, limit=10, subid=subid)
         ]
         self.filters = Filters(f)
 
