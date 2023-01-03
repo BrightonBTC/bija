@@ -73,6 +73,15 @@ h1, h2, h3, h4, h5, h6, p, ol, ul {
   padding: 0;
   font-weight: normal;
 }
+h1{
+    font-size: 1.4rem;
+}
+h2{
+    font-size: 1.3rem;
+}
+h3{
+    font-size: 1.2rem;
+}
 
 ol, ul {
   list-style: none;
@@ -849,6 +858,9 @@ input[type=text].pname {
     bottom: var(--spacing-sm);
     display: block;
 }
+.note-container .note-container .thread-marker {
+    display: none;
+}
 
 .note-content{
     border-radius:var(--rnd-mid);
@@ -902,7 +914,6 @@ input[type=text].pname {
     align-items: center;
 }
 .note h3 > *{
-    line-height: 24px;
     flex: 1;
 }
 .note h3 .note-info{
