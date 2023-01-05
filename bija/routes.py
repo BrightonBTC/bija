@@ -57,6 +57,7 @@ def login_required(f):
             logger.info('Do login')
             return redirect(url_for('login_page', next=request.url))
         return f(*args, **kwargs)
+
     return decorated_function
 
 
@@ -65,13 +66,14 @@ def login_required(f):
 def index_page():
     EXECUTOR.submit(EVENT_HANDLER.set_page('home', None))
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
-    DB.set_all_seen_in_feed(get_key())
-    notes = DB.get_feed(time.time(), get_key())
+    pk = Settings.get('pubkey')
+    DB.set_all_seen_in_feed(pk)
+    notes = DB.get_feed(time.time(), pk)
     t = FeedThread(notes)
     EXECUTOR.submit(EVENT_HANDLER.subscribe_feed(list(t.ids)))
-    profile = DB.get_profile(get_key())
+    profile = DB.get_profile(pk)
     return render_template("feed.html", page_id="home", title="Home", threads=t.threads, last=t.last_ts,
-                           profile=profile, pubkey=get_key())
+                           profile=profile, pubkey=pk)
 
 
 @app.route('/feed', methods=['GET'])
@@ -81,12 +83,13 @@ def feed():
             before = int(request.args['before'])
         else:
             before = time.time()
-        notes = DB.get_feed(before, get_key())
+        pk = Settings.get('pubkey')
+        notes = DB.get_feed(before, pk)
         if len(notes) > 0:
             t = FeedThread(notes)
             EXECUTOR.submit(EVENT_HANDLER.subscribe_feed(list(t.ids)))
-            profile = DB.get_profile(get_key())
-            return render_template("feed.items.html", threads=t.threads, last=t.last_ts, profile=profile, pubkey=get_key())
+            profile = DB.get_profile(pk)
+            return render_template("feed.items.html", threads=t.threads, last=t.last_ts, profile=profile, pubkey=pk)
         else:
             return 'END'
 
@@ -101,7 +104,6 @@ def alerts_page():
 
 @app.route('/logout', methods=['GET'])
 def logout_page():
-    
     EVENT_HANDLER.close()
     sys.exit()
 
@@ -119,8 +121,8 @@ def login_page():
             if Settings.get('new_keys') is not None:
                 login_state = LoginState.NEW_KEYS
                 data = {
-                    'npub': hex64_to_bech32("npub", get_key()),
-                    'mnem': bip39.encode_bytes(bytes.fromhex(get_key("private")))
+                    'npub': hex64_to_bech32("npub", Settings.get('pubkey')),
+                    'mnem': bip39.encode_bytes(bytes.fromhex(Settings.get('privkey')))
                 }
                 Settings.set('new_keys', None)
             elif has_relays is None:
@@ -142,12 +144,12 @@ def login_page():
 def profile_page():
     EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
     page_id = 'profile'
-    if 'pk' in request.args and is_hex_key(request.args['pk']) and request.args['pk'] != get_key():
+    if 'pk' in request.args and is_hex_key(request.args['pk']) and request.args['pk'] != Settings.get('pubkey'):
         EXECUTOR.submit(EVENT_HANDLER.set_page('profile', request.args['pk']))
         k = request.args['pk']
         is_me = False
     else:
-        k = get_key()
+        k = Settings.get('pubkey')
         EXECUTOR.submit(EVENT_HANDLER.set_page('profile', k))
         is_me = True
         page_id = 'profile-me'
@@ -171,7 +173,7 @@ def profile_page():
             if item in ['website', 'lud06', 'lud16']:
                 metadata[item] = meta[item]
     return render_template("profile.html", page_id=page_id, title="Profile", threads=t.threads, last=t.last_ts,
-                           latest=latest, profile=profile, is_me=is_me, meta=metadata, pubkey=get_key())
+                           latest=latest, profile=profile, is_me=is_me, meta=metadata, pubkey=Settings.get('pubkey'))
 
 
 @app.route('/profile_feed', methods=['GET'])
@@ -184,11 +186,12 @@ def profile_feed():
         notes = DB.get_notes_by_pubkey(request.args['pk'], before, None)
         if len(notes) > 0:
             t = FeedThread(notes)
-            profile = DB.get_profile(get_key())
+            profile = DB.get_profile(Settings.get('pubkey'))
             EXECUTOR.submit(
                 EVENT_HANDLER.subscribe_profile, request.args['pk'], t.last_ts - TimePeriod.WEEK, list(t.ids)
             )
-            return render_template("feed.items.html", threads=t.threads, last=t.last_ts, profile=profile, pubkey=get_key())
+            return render_template("feed.items.html", threads=t.threads, last=t.last_ts, profile=profile,
+                                   pubkey=Settings.get('pubkey'))
         else:
             return 'END'
 
@@ -203,21 +206,21 @@ def note_page():
     t = NoteThread(note_id)
     EXECUTOR.submit(EVENT_HANDLER.subscribe_thread, note_id, t.note_ids)
 
-    profile = DB.get_profile(get_key())
+    profile = DB.get_profile(Settings.get('pubkey'))
     return render_template("thread.html",
                            page_id="note",
                            title="Note",
                            notes=t.result_set,
                            members=t.profiles,
                            profile=profile,
-                           root=note_id, pubkey=get_key())
+                           root=note_id, pubkey=Settings.get('pubkey'))
 
 
 @app.route('/quote_form', methods=['GET'])
 def quote_form():
     note_id = request.args['id']
     note = DB.get_note(note_id)
-    profile = DB.get_profile(get_key())
+    profile = DB.get_profile(Settings.get('pubkey'))
     return render_template("quote.form.html", item=note, id=note_id, profile=profile)
 
 
@@ -269,7 +272,7 @@ def quote_submit():
 def thread_item():
     note_id = request.args['id']
     note = DB.get_note(note_id)
-    profile = DB.get_profile(get_key())
+    profile = DB.get_profile(Settings.get('pubkey'))
     return render_template("thread.item.html", item=note, profile=profile)
 
 
@@ -313,16 +316,17 @@ def settings_page():
 
         relays = DB.get_relays()
         EXECUTOR.submit(EVENT_HANDLER.get_connection_status())
-        k = Settings.get("keys")
+        pubkey = Settings.get("pubkey")
+        privkey = Settings.get("privkey")
         keys = {
             "private": [
-                k['private'],
-                hex64_to_bech32("nsec", k['private']),
-                bip39.encode_bytes(bytes.fromhex(k['private']))
+                privkey,
+                hex64_to_bech32("nsec", privkey),
+                bip39.encode_bytes(bytes.fromhex(privkey))
             ],
             "public": [
-                k['public'],
-                hex64_to_bech32("npub", k['public'])
+                pubkey,
+                hex64_to_bech32("npub", pubkey)
             ]
         }
         return render_template(
@@ -360,7 +364,7 @@ def update_profile():
             if item[0] in valid_vals and len(item[1].strip()) > 0:
                 profile[item[0]] = item[1].strip()
         if 'nip05' in profile and len(profile['nip05']) > 0:
-            valid_nip5 = MetadataEvent.validate_nip05(profile['nip05'], get_key())
+            valid_nip5 = MetadataEvent.validate_nip05(profile['nip05'], Settings.get('pubkey'))
             out['nip05'] = valid_nip5
             if valid_nip5:
                 out['success'] = EVENT_HANDLER.submit_profile(profile)
@@ -417,13 +421,13 @@ def private_message_page():
         messages = DB.get_message_thread(request.args['pk'])
         pk = request.args['pk']
 
-    profile = DB.get_profile(get_key())
+    profile = DB.get_profile(Settings.get('pubkey'))
     them = DB.get_profile(pk)
 
     messages.reverse()
 
     return render_template("message_thread.html", page_id="messages_from", title="Messages From", messages=messages,
-                           me=profile, them=them, privkey=get_key('private'))
+                           me=profile, them=them, privkey=Settings.get('privkey'))
 
 
 @app.route('/submit_message', methods=['POST', 'GET'])
@@ -446,7 +450,7 @@ def submit_like():
             event_id = EVENT_HANDLER.submit_like(note_id)
         else:
             DB.set_note_liked(note_id, False)
-            like_events = DB.get_like_events_for(note_id, get_key())
+            like_events = DB.get_like_events_for(note_id, Settings.get('pubkey'))
             if like_events is not None:
                 ids = []
                 for event in like_events:
@@ -473,7 +477,7 @@ def following_page():
                 if profile is not None:
                     profiles.append(profile)
     else:
-        k = get_key()
+        k = Settings.get('pubkey')
         is_me = True
         profiles = DB.get_following()
     profile = DB.get_profile(k)
@@ -515,15 +519,15 @@ def get_privkey():
         for item in request.json:
             if item[0] == 'pw':
                 k = decrypt_key(item[1], pk.key)
-                if k == get_key('private'):
+                if k == Settings.get('privkey'):
                     passed = True
     if passed:
-        k = Settings.get("keys")
+        k = Settings.get("privkey")
         keys = {
             "private": [
-                k['private'],
-                hex64_to_bech32("nsec", k['private']),
-                bip39.encode_bytes(bytes.fromhex(k['private']))
+                k,
+                hex64_to_bech32("nsec", k),
+                bip39.encode_bytes(bytes.fromhex(k))
             ]
         }
     return render_template("privkey.html", passed=passed, k=keys)
@@ -593,7 +597,7 @@ def follow():
     DB.set_following([request.args['id']], int(request.args['state']))
     EXECUTOR.submit(EVENT_HANDLER.submit_follow_list)
     profile = DB.get_profile(request.args['id'])
-    is_me = request.args['id'] == get_key()
+    is_me = request.args['id'] == Settings.get('pubkey')
     upd = request.args['upd']
     if upd == "1":
         return render_template("profile.tools.html", profile=profile, is_me=is_me)
@@ -673,12 +677,12 @@ def shutdown():
 
 def get_login_state():
     logger.info('Getting login state')
-    if SETUP_PK is not None and Settings.get("keys") is None:
+    if SETUP_PK is not None and Settings.get("privkey") is None:
         logger.info('New setup detected')
         DB.save_pk(encrypt_key(SETUP_PW, SETUP_PK), 1)
         redirect('/login')
-    if Settings.get("keys") is not None:
-        logger.info('Has session keys, is logged in {}'.format(get_key()))
+    if Settings.get("privkey") is not None:
+        logger.info('Has session keys, is logged in {}'.format(Settings.get('pubkey')))
         return LoginState.LOGGED_IN
     saved_pk = DB.get_saved_pk()
     if saved_pk is not None:
@@ -745,14 +749,6 @@ def process_key_save(pk):
         DB.save_pk(pk, enc)
 
 
-def get_key(k='public'):
-    keys = Settings.get('keys')
-    if keys is not None and k in keys:
-        return keys[k]
-    else:
-        return False
-
-
 def set_session_keys(k):
     global KEYS
     logger.info('Set session keys')
@@ -762,10 +758,8 @@ def set_session_keys(k):
         pk = PrivateKey(bytes.fromhex(k))
     private_key = pk.hex()
     public_key = pk.public_key.hex()
-    Settings.set('keys', {
-        'private': private_key,
-        'public': public_key
-    })
+    Settings.set('pubkey', public_key)
+    Settings.set('privkey', private_key)
     process_key_save(private_key)
     if DB.get_profile(public_key) is None:
         DB.add_profile(public_key)

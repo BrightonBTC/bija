@@ -14,13 +14,13 @@ from bija.deferred_tasks import TaskKind, DeferredTasks
 from bija.helpers import get_embeded_tag_indexes, \
     list_index_exists, get_urls_in_string, request_nip05, url_linkify, strip_tags, request_relay_data, is_nip05, \
     is_bech32_key, bech32_to_hex64
+from bija.app import RELAY_MANAGER
 from bija.subscriptions import *
 from bija.submissions import *
 from bija.alerts import *
 from bija.settings import Settings
 from python_nostr.nostr.event import EventKind
 from python_nostr.nostr.pow import count_leading_zero_bits
-from python_nostr.nostr.relay_manager import RelayManager
 
 logger = logging.getLogger(__name__)
 FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
@@ -42,7 +42,6 @@ class BijaEvents:
 
     def __init__(self):
         self.should_run = True
-        self.relay_manager = RelayManager()
         self.open_connections()
 
     def open_connections(self):
@@ -50,16 +49,16 @@ class BijaEvents:
         n_relays = 0
         for r in relays:
             n_relays += 1
-            self.relay_manager.add_relay(r.name)
+            RELAY_MANAGER.add_relay(r.name)
         if n_relays > 0:
-            self.relay_manager.open_connections({"cert_reqs": ssl.CERT_NONE})
+            RELAY_MANAGER.open_connections({"cert_reqs": ssl.CERT_NONE})
 
     # close existing connections, reopen, and start primary subscription
     # used after adding or removing relays
     def reset(self):
-        self.relay_manager.close_connections()
+        RELAY_MANAGER.close_connections()
         time.sleep(1)
-        self.relay_manager.relays = {}
+        RELAY_MANAGER.relays = {}
         time.sleep(1)
         self.open_connections()
         time.sleep(1)
@@ -68,13 +67,13 @@ class BijaEvents:
         self.get_connection_status()
 
     def remove_relay(self, url):
-        self.relay_manager.remove_relay(url)
+        RELAY_MANAGER.remove_relay(url)
 
     def add_relay(self, url):
-        self.relay_manager.add_relay(url)
+        RELAY_MANAGER.add_relay(url)
 
     def get_connection_status(self):
-        status = self.relay_manager.get_connection_status()
+        status = RELAY_MANAGER.get_connection_status()
         out = []
         for s in status:
             if s[1] is not None:
@@ -90,12 +89,6 @@ class BijaEvents:
             'identifier': identifier
         }
 
-    def get_key(self, k='public'):
-        keys = Settings.get("keys")
-        if keys is not None and k in keys:
-            return keys[k]
-        else:
-            return False
 
     def message_pool_handler(self):
         if self.pool_handler_running:
@@ -104,18 +97,18 @@ class BijaEvents:
         i = 0
         while self.should_run:
             try:
-                while self.relay_manager.message_pool.has_notices():
-                    notice = self.relay_manager.message_pool.get_notice()
+                while RELAY_MANAGER.message_pool.has_notices():
+                    notice = RELAY_MANAGER.message_pool.get_notice()
 
-                while self.relay_manager.message_pool.has_ok_notices():
-                    notice = self.relay_manager.message_pool.get_ok_notice()
+                while RELAY_MANAGER.message_pool.has_ok_notices():
+                    notice = RELAY_MANAGER.message_pool.get_ok_notice()
 
-                while self.relay_manager.message_pool.has_eose_notices():
-                    notice = self.relay_manager.message_pool.get_eose_notice()
+                while RELAY_MANAGER.message_pool.has_eose_notices():
+                    notice = RELAY_MANAGER.message_pool.get_eose_notice()
                     print('EOSE', notice.url, notice.subscription_id)
 
-                while self.relay_manager.message_pool.has_events():
-                    msg = self.relay_manager.message_pool.get_event()
+                while RELAY_MANAGER.message_pool.has_events():
+                    msg = RELAY_MANAGER.message_pool.get_event()
                     if DB.get_event(msg.event.id) is None:
                         logger.info('New event: {}'.format(msg.event.kind))
                         if msg.event.kind == EventKind.SET_METADATA:
@@ -154,15 +147,15 @@ class BijaEvents:
         DeleteEvent(event)
 
     def receive_reaction_event(self, event):
-        e = ReactionEvent(event, self.get_key())
+        e = ReactionEvent(event, Settings.get('pubkey'))
         if e.valid:
             note = DB.get_note(e.event_id)
             if e.event.content != '-' and 'notes' in self.active_events and e.event_id in self.active_events['notes']:
                 socketio.emit('new_reaction', e.event_id)
                 logger.info('Reaction on active note detected, signal to UI')
-            if e.event.public_key != self.get_key():
+            if e.event.public_key != Settings.get('pubkey'):
                 logger.info('Reaction is not from me')
-                if note is not None and note.public_key == self.get_key():
+                if note is not None and note.public_key == Settings.get('pubkey'):
                     logger.info('Get reaction from DB')
                     reaction = DB.get_reaction_by_id(e.event.id)
                     logger.info('Compose reaction alert')
@@ -201,7 +194,7 @@ class BijaEvents:
                     placeholder="...")
             })
             return
-        e = NoteEvent(event, self.get_key())
+        e = NoteEvent(event, Settings.get('pubkey'))
         if e.mentions_me:
             self.alert_on_note_event(e)
         self.notify_on_note_event(event, subscription)
@@ -223,13 +216,13 @@ class BijaEvents:
     def alert_on_note_event(self, event):
         if event.response_to is not None:
             reply = DB.get_note(event.response_to)
-            if reply is not None and reply.public_key == self.get_key():
+            if reply is not None and reply.public_key == Settings.get('pubkey'):
                 Alert(
                     event.event.id,
                     event.event.created_at, AlertKind.REPLY, event.event.public_key, event.response_to, event.content)
         elif event.thread_root is not None:
             root = DB.get_note(event.thread_root)
-            if root is not None and root.public_key == self.get_key():
+            if root is not None and root.public_key == Settings.get('pubkey'):
                 Alert(
                     event.event.id,
                     event.event.created_at, AlertKind.COMMENT_ON_THREAD, event.event.public_key, event.thread_root,
@@ -247,27 +240,27 @@ class BijaEvents:
             socketio.emit('new_in_thread', event.id)
 
     def receive_contact_list_event(self, event, subscription):
-        e = ContactListEvent(event, self.get_key())
+        e = ContactListEvent(event, Settings.get('pubkey'))
         DB.add_profile_if_not_exists(event.public_key)
         DB.add_contact_list(event.public_key, e.keys)
-        if event.public_key == self.get_key():
+        if event.public_key == Settings.get('pubkey'):
             logger.info('Contact list updated, restart primary subscription')
             self.subscribe_primary()
-        if event.public_key != self.get_key() and subscription == 'profile':
+        if event.public_key != Settings.get('pubkey') and subscription == 'profile':
             self.subscribe_profile(event.public_key, timestamp_minus(TimePeriod.WEEK), [])
-        if self.get_key() in e.keys:
+        if Settings.get('pubkey') in e.keys:
             DB.set_follower(event.public_key)
 
     def receive_private_message_event(self, event):
 
-        e = EncryptedMessageEvent(event, self.get_key())
+        e = EncryptedMessageEvent(event, Settings.get('pubkey'))
         if self.page['page'] == 'message' and self.page['identifier'] == e.pubkey:
             messages = DB.get_unseen_messages(e.pubkey)
             if len(messages) > 0:
-                profile = DB.get_profile(self.get_key())
+                profile = DB.get_profile(Settings.get('pubkey'))
                 DB.set_message_thread_read(e.pubkey)
                 out = render_template("message_thread.items.html",
-                                      me=profile, messages=messages, privkey=self.get_key('private'))
+                                      me=profile, messages=messages, privkey=Settings.get('privkey'))
                 socketio.emit('message', out)
         else:
             unseen_n = DB.get_unseen_message_count()
@@ -277,7 +270,7 @@ class BijaEvents:
         self.active_events['notes'] = ids
         subscription_id = 'note-thread'
         self.subscriptions.add(subscription_id)
-        SubscribeThread(subscription_id, self.relay_manager, root_id)
+        SubscribeThread(subscription_id, RELAY_MANAGER, root_id)
 
     def subscribe_feed(self, ids):
         if 'notes' in self.active_events:
@@ -286,7 +279,7 @@ class BijaEvents:
             self.active_events['notes'] = ids
         subscription_id = 'main-feed'
         self.subscriptions.add(subscription_id)
-        SubscribeFeed(subscription_id, self.relay_manager, ids)
+        SubscribeFeed(subscription_id, RELAY_MANAGER, ids)
 
     def subscribe_profile(self, pubkey, since, ids):
         if 'notes' in self.active_events:
@@ -295,44 +288,44 @@ class BijaEvents:
             self.active_events['notes'] = ids
         subscription_id = 'profile'
         self.subscriptions.add(subscription_id)
-        SubscribeProfile(subscription_id, self.relay_manager, pubkey, since)
+        SubscribeProfile(subscription_id, RELAY_MANAGER, pubkey, since)
 
     # create site wide subscription
     def subscribe_primary(self):
         self.subscriptions.add('primary')
-        SubscribePrimary('primary', self.relay_manager, self.get_key())
+        SubscribePrimary('primary', RELAY_MANAGER, Settings.get('pubkey'))
 
     def subscribe_search(self, term):
         logger.info('Subscribe search {}'.format(term))
         self.subscriptions.add('search')
-        SubscribeSearch('search', self.relay_manager, term)
+        SubscribeSearch('search', RELAY_MANAGER, term)
 
     def submit_profile(self, profile):
-        e = SubmitProfile(self.relay_manager, Settings.get("keys"), profile)
+        e = SubmitProfile(RELAY_MANAGER, Settings.get("keys"), profile)
         return e.event_id
 
     def submit_message(self, data, pow_difficulty=None):
-        e = SubmitEncryptedMessage(self.relay_manager, Settings.get("keys"), data, pow_difficulty)
+        e = SubmitEncryptedMessage(RELAY_MANAGER, Settings.get("keys"), data, pow_difficulty)
         return e.event_id
 
     def submit_like(self, note_id):
-        e = SubmitLike(self.relay_manager, Settings.get("keys"), note_id)
+        e = SubmitLike(RELAY_MANAGER, Settings.get("keys"), note_id)
         return e.event_id
 
     def submit_note(self, data, members=None, pow_difficulty=None):
-        e = SubmitNote(self.relay_manager, Settings.get("keys"), data, members, pow_difficulty)
+        e = SubmitNote(RELAY_MANAGER, Settings.get("keys"), data, members, pow_difficulty)
         return e.event_id
 
     def submit_follow_list(self):
-        SubmitFollowList(self.relay_manager, Settings.get("keys"))
+        SubmitFollowList(RELAY_MANAGER, Settings.get("keys"))
 
     def submit_delete(self, event_ids: list, reason=""):
-        e = SubmitDelete(self.relay_manager, Settings.get("keys"), event_ids, reason)
+        e = SubmitDelete(RELAY_MANAGER, Settings.get("keys"), event_ids, reason)
         return e.event_id
 
     def close_subscription(self, name):
         self.subscriptions.remove(name)
-        self.relay_manager.close_subscription(name)
+        RELAY_MANAGER.close_subscription(name)
 
     def close_secondary_subscriptions(self):
         for s in self.subscriptions:
@@ -341,7 +334,7 @@ class BijaEvents:
 
     def close(self):
         self.should_run = False
-        self.relay_manager.close_connections()
+        RELAY_MANAGER.close_connections()
 
 
 class ReactionEvent:

@@ -4,13 +4,14 @@ from flask import Flask
 from sqlalchemy.orm import scoped_session
 import bija.db as db
 from bija.args import args
-
+from python_nostr.nostr.relay_manager import RelayManager
 
 app = Flask(__name__, template_folder='../bija/templates')
 socketio = SocketIO(app)
 app.session = scoped_session(db.DB_SESSION)
 app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
+RELAY_MANAGER = RelayManager()
 
 from bija.routes import *
 
