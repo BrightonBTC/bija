@@ -94,7 +94,6 @@ class FeedThread:
 
     @staticmethod
     def is_in_thread(note, root):
-        logger.info('is in thread?')
         is_root = False
         is_response = False
         if note['id'] == root:
