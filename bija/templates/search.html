@@ -3,5 +3,23 @@
 {%- block content -%}
 {%- if message -%}
 <p>{{message}}</p>
+<div class="search-results">
+    {%- if results is not none -%}
+        {%- for item in results: -%}
+        {%- set reply_chain = item['thread_root'] | get_thread_root(item['response_to'], item['id']) -%}
+        <div class="note-container" data-id="{{item['id']}}">
+            <div class="thread-marker"></div>
+            <div class="note-image">
+                {%- set p=item -%}
+                {%- include 'profile.image.html' -%}
+            </div>
+            <div class="note-outer">
+            {%- set note=item -%}
+            {%- include 'note.html' -%}
+            </div>
+        </div>
+        {%- endfor -%}
+    {%- endif -%}
+</div>
 {%- endif -%}
 {%- endblock content -%}

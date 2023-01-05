@@ -6,7 +6,7 @@
 <p class="note-tools pad-sm">
     <span class="section">
         <a href="#" class="reply-link" data-rel="{{note['id']}}"><img src="/static/reply.svg" class="icon"></a>
-        <span class="reply-n counts rnd">{{note['replies'] if note['replies']}}</span>
+        <a href="{{ url_for('note_page', id=note['id']) }}#focussed" class="reply-n counts rnd">{{note['replies'] if note['replies']}}</a>
     </span>
     <span class="section">
         <a href="#" class="quote-link" data-rel="{{note['id']}}"><img src="/static/reshare.svg" class="icon"></a>
@@ -21,7 +21,12 @@
     <input type="hidden" name="pubkey" value="{{note['public_key']}}">
     <input type="hidden" name="thread_root" value="{{reply_chain.root}}">
     <input type="hidden" name="parent_id" value="{{reply_chain.reply}}">
-    <textarea name="reply" class="note-textarea"></textarea>
-    <input type="submit" value="Reply" data-reply-submit="1" data-rel="{{note['id']}}" class="post-submit right pad-sm">
+    <textarea name="reply" class="note-textarea" placeholder="your response here..."></textarea>
+    <div class="toolbar">
+        <div class="emoji_selector"><input type="text"><div></div></div>
+        <input type="submit" value="Reply" data-reply-submit="1" data-rel="{{note['id']}}" class="post-submit right pad-sm">
+        <span><img class="icon-lg emojis" src="/static/emoji.svg"></span>
+    </div>
+    <div class="media_uploads"></div>
     <div class="name-hints"></div>
 </form>

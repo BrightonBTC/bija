@@ -16,6 +16,10 @@ from bs4 import BeautifulSoup
 from python_nostr.nostr import bech32
 from python_nostr.nostr.bech32 import bech32_encode, bech32_decode, convertbits
 
+logger = logging.getLogger(__name__)
+FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
+logging.basicConfig(format=FORMAT)
+logger.setLevel(logging.INFO)
 
 def hex64_to_bech32(prefix: str, hex_key: str):
     if is_hex_key(hex_key):
@@ -51,16 +55,25 @@ def get_at_tags(content: str) -> list[Any]:
     return re.findall(regex, content)
 
 
+def get_hash_tags(content: str) -> list[Any]:
+    regex = re.compile(r'\B#\w*[a-zA-Z]+\w*')
+    return re.findall(regex, content)
+
+
 def get_embeded_tag_indexes(content: str):
     regex = re.compile(r'#\[([0-9]+)]')
     return re.findall(regex, content)
 
 
 def get_urls_in_string(content: str):
-    regex = re.compile(r'(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\('
-                       r'[^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:\'".,<>?«»“”‘’]))')
+    regex = re.compile(r'((https?):((//)|(\\\\))+([\w\d:#@%/;$()~_?\+-=\\\.&](#!)?)*)')
     url = re.findall(regex, content)
     return [x[0] for x in url]
+
+
+def get_invoice(content: str):
+    regex = re.compile(r'(lnbc[a-zA-Z0-9]*)')
+    return re.search(regex, content)
 
 
 def url_linkify(content):
@@ -76,7 +89,7 @@ def url_linkify(content):
             link_text = parts[1]
         content = content.replace(
             url,
-            "<a href='{}'>{}</a>".format(url, link_text))
+            "<a href='{}' target='blank'>{}</a>".format(url, link_text))
     return content
 
 
@@ -137,17 +150,27 @@ def list_index_exists(lst, i):
 def request_nip05(nip05):
     valid_parts = is_nip05(nip05)
     if valid_parts:
+        logger.info('valid nip05 format')
         name = valid_parts[0]
         address = valid_parts[1]
         try:
+            url = 'https://{}/.well-known/nostr.json'.format(address)
+            logger.info('request: {}'.format(url))
             response = requests.get(
-                'https://{}/.well-known/nostr.json'.format(address), params={'name': name}, timeout=2
+                url, params={'name': name}, timeout=2
             )
+            logger.info('response staus: {}'.format(response.status_code))
             if response.status_code == 200:
                 try:
                     d = response.json()
+                    logger.info('response.json: {}'.format(d))
+                    logger.info('search name: [{}]'.format(name))
                     if name in d['names']:
+                        logger.info('name found: {}'.format(name))
                         return d['names'][name]
+                    if name.lower() in d['names']:
+                        logger.info('name found: {}'.format(name.lower()))
+                        return d['names'][name.lower()]
                 except ValueError:
                     return None
                 except Exception as e:
@@ -170,7 +193,6 @@ def request_relay_data(url):
     try:
         with urllib.request.urlopen(get, timeout=2) as response:
             if response.status == 200:
-                print(response.status)
                 return response.read()
             return False
     except HTTPError as error:

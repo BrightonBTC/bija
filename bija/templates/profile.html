@@ -6,3 +6,9 @@
     {%- include 'feed.items.html' -%}
 </div>
 {%- endblock content -%}
+
+{%- block right_content -%}
+{%- if is_me: -%}
+{%- include 'note.form.html' -%}
+{%- endif -%}
+{%- endblock right_content -%}

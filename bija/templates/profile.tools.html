@@ -1,7 +1,7 @@
-{%- if is_me -%}
+{%- if is_me  and page_id == 'profile-me' -%}
     <a href="#" class="profile-edit-btn">edit</a>
 {%- elif profile['following'] !=  1 -%}
-    <a href="#" class="follow-btn" data-rel="{{profile['public_key']}}" data-state="1">&#43; follow</a>
+    <a href="#" class="follow-btn" data-rel="{{profile['public_key']}}" data-state="1" data-upd="1">&#43; follow</a>
 {%- else -%}
-    <a href="#" class="follow-btn" data-rel="{{profile['public_key']}}" data-state="0">&#8722; unfollow</a> <a href="/message?pk={{profile['public_key']}}" class="private-message-btn">&#9993; message</a>
+    <a href="#" class="follow-btn" data-rel="{{profile['public_key']}}" data-state="0" data-upd="1">&#8722; unfollow</a> <a href="/message?pk={{profile['public_key']}}" class="private-message-btn">&#9993; message</a>
 {%- endif -%}

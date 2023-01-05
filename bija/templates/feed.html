@@ -1,20 +1,7 @@
 {%- extends "base.html" -%}
 
 {%- block content -%}
-<div id="note-poster" class="poster-form rnd pad-mid">
-    <div class="pic pad-sm">
-        {%- if profile['pic'] is not none -%}
-            <img src="{{profile['pic']}}" class="user-image" onerror="defaultImage(this);"  />
-        {%- else -%}
-            <img src="/identicon?id={{profile['public_key']}}" class="user-image" />
-        {%- endif -%}
-    </div>
-    <form method="post" action="/" id="new_post_form">
-        <textarea name="new_post" id="new_post" class="note-textarea" placeholder="Say something..."></textarea>
-        <div class="name-hints"></div>
-        <input type="submit" name="new_post_submit" id="new_post_submit" class="right post-submit pad-sm" value="Share">
-    </form>
-</div>
+{%- include 'note.form.html' -%}
 <h2 class="posts-title">Recent activity in your network</h2>
 {%- include 'feed.items.html' -%}
 

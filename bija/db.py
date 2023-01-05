@@ -5,16 +5,18 @@ from sqlalchemy import create_engine, text, func, or_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.sql import label
+from sqlalchemy.pool import SingletonThreadPool
 
+from bija.args import args
 from bija.models import *
-
-DB_ENGINE = create_engine("sqlite:///bija.sqlite", echo=False)
+DB_ENGINE = create_engine("sqlite:///{}.sqlite".format(args.db), echo=False, poolclass=SingletonThreadPool, pool_size=10)
 DB_SESSION = sessionmaker(autocommit=False, autoflush=False, bind=DB_ENGINE)
 
 
 class BijaDB:
 
     def __init__(self, session):
+
         self.session = session
         Base.metadata.create_all(DB_ENGINE)
 
@@ -58,22 +60,9 @@ class BijaDB:
         ))
         self.session.commit()
 
-    def add_profile(self,
-                    public_key,
-                    name=None,
-                    nip05=None,
-                    pic=None,
-                    about=None,
-                    updated_at=None):
-        if updated_at is None:
-            updated_at = int(time.time())
+    def add_profile(self, public_key):
         self.session.add(Profile(
-            public_key=public_key,
-            name=name,
-            nip05=nip05,
-            pic=pic,
-            about=about,
-            updated_at=updated_at
+            public_key=public_key
         ))
         self.session.commit()
 
@@ -118,6 +107,12 @@ class BijaDB:
             out.append(dict(p))
         return out
 
+    def am_following(self, public_key):
+        return self.session.query(Profile.public_key).filter_by(public_key=public_key).filter_by(following=1).first()
+
+    def get_profile_last_upd(self, public_key):
+        return self.session.query(Profile.updated_at).filter_by(public_key=public_key).first()
+
     # get basic info for a list of pubkeys
     def get_profile_briefs(self, public_keys: list):
         profiles = self.session.query(
@@ -149,10 +144,10 @@ class BijaDB:
             raw=raw
         ))
         self.session.commit()
-        # return self.get_profile(public_key)
 
     def set_valid_nip05(self, public_key):
         self.session.query(Profile).filter(Profile.public_key == public_key).update({'nip05_validated': True})
+        self.session.commit()
 
     def update_note_media(self, note_id, media):
         self.session.query(Note).filter(Note.id == note_id).update({'media': media})
@@ -224,12 +219,6 @@ class BijaDB:
         return self.session.query(Note.raw).filter_by(id=note_id).first()
 
     def get_note_thread(self, note_id):
-
-        like_counts = self.session.query(
-            NoteReaction.id,
-            NoteReaction.event_id,
-            func.count(NoteReaction.id).label('likes')
-        ).group_by(NoteReaction.event_id).subquery()
 
         items = self.session.query(Note.id, Note.response_to) \
             .filter(
@@ -321,7 +310,37 @@ class BijaDB:
             .filter(text("note.created_at<{}".format(before))) \
             .filter(text("(profile.following=1 OR profile.public_key='{}')".format(public_key))) \
             .filter(text("note.deleted is not 1")) \
-            .order_by(Note.created_at.desc()).limit(100).all()
+            .order_by(Note.seen.asc(), Note.created_at.desc()).limit(50).all()
+
+    def get_search_feed(self, before, search):
+
+        return self.session.query(
+            Note.id,
+            Note.public_key,
+            Note.content,
+            Note.response_to,
+            Note.thread_root,
+            Note.reshare,
+            Note.created_at,
+            Note.members,
+            Note.media,
+            Note.liked,
+            Note.shared,
+            Note.deleted,
+            ReactionTally.likes,
+            ReactionTally.replies,
+            ReactionTally.shares,
+            Profile.name,
+            Profile.pic,
+            Profile.nip05,
+            Profile.nip05_validated,
+            Profile.following) \
+            .outerjoin(ReactionTally, ReactionTally.event_id == Note.id) \
+            .join(Note.profile) \
+            .filter(text("note.created_at<{}".format(before))) \
+            .filter(text("note.deleted is not 1")) \
+            .filter(Note.content.like(f"%{search}%")) \
+            .order_by(Note.seen.desc()).order_by(Note.created_at.desc()).limit(50).all()
 
     def get_note_by_id_list(self, note_ids):
         return self.session.query(
@@ -336,12 +355,6 @@ class BijaDB:
             Profile.nip05).join(Note.profile).filter(Note.id.in_(note_ids)).all()
 
     def get_notes_by_pubkey(self, public_key, before, after):
-
-        like_counts = self.session.query(
-            NoteReaction.id,
-            NoteReaction.event_id,
-            func.count(NoteReaction.id).label('likes')
-        ).group_by(NoteReaction.event_id).subquery()
 
         return self.session.query(
             Note.id,
@@ -415,9 +428,9 @@ class BijaDB:
         self.session.query(Note).filter(Note.id == note_id).update({'seen': True})
         self.session.commit()
 
-    def get_profile_updates(self, public_key, last_update):
-        return self.session.query(Profile).filter_by(public_key=public_key).filter(
-            text("profile.updated_at>{}".format(last_update))).first()
+    # def get_profile_updates(self, public_key, last_update):
+    #     return self.session.query(Profile).filter_by(public_key=public_key).filter(
+    #         text("profile.updated_at>{}".format(last_update))).first()
 
     def search_profile_name(self, name_str):
         return self.session.query(Profile.name, Profile.nip05, Profile.public_key).filter(
@@ -486,6 +499,21 @@ class BijaDB:
             liked=liked
         ))
         self.session.commit()
+
+    def get_note_reactions(self, note_id):
+        stmt = (
+            self.session.query(
+                Profile.name,
+                Profile.public_key.label('pk')
+            )
+            .subquery()
+        )
+        return self.session.query(
+            NoteReaction.content,
+            NoteReaction.public_key,
+            stmt.c.name
+        ).outerjoin(stmt, NoteReaction.public_key == stmt.c.pk)\
+            .filter(NoteReaction.event_id == note_id).all()
 
     def get_reaction_by_id(self, event_id):
         return self.session.query(NoteReaction.content).filter_by(id=event_id).first()
@@ -585,6 +613,24 @@ class BijaDB:
             event_id=event_id,
             likes=likes
         ))
+        self.session.commit()
+
+    def get_settings_by_keys(self, keys: list):
+        return self.session.query(Settings.key, Settings.value).filter(Settings.key.in_(keys)).all()
+
+    def get_settings(self):
+        out = {}
+        settings = self.session.query(Settings.key, Settings.value).all()
+        for item in settings:
+            out[item.key] = item.value
+        return out
+
+    def upd_settings_by_keys(self, settings: dict):
+        for setting in settings.items():
+            self.session.merge(Settings(
+                key=setting[0],
+                value=setting[1],
+            ))
         self.session.commit()
 
     def commit(self):

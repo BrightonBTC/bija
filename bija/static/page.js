@@ -97,7 +97,9 @@ function SOCK() {
             }
         }
     });
-
+    socket.on('new_note', function(note_id) {
+        replaceNotePlaceholder(note_id);
+    });
     socket.on('new_reaction', function(note_id) {
         updateInteractionCount(note_id, '.likes');
     });
@@ -107,7 +109,40 @@ function SOCK() {
     socket.on('new_reshare', function(note_id) {
         updateInteractionCount(note_id, '.quote-n');
     });
+    socket.on('search_result', function(event) {
+        addSearchResult(event);
+    });
 }
+
+let replaceNotePlaceholder = function(id){
+    const ph_els = document.querySelectorAll('.note-container.placeholder[data-id="'+id+'"]')
+    const cb = function(response, data){
+        if(response){
+            const doc = new DOMParser().parseFromString(response, "text/html")
+            const new_item = doc.body.firstChild
+            for (const el of data.els) {
+                el.replaceWith(new_item)
+            }
+            document.dispatchEvent(new Event('newContentLoaded'))
+        }
+    }
+    if(ph_els.length > 0){
+        fetchGet('/thread_item?id='+id, cb, {'els': ph_els})
+    }
+}
+
+let addSearchResult = function(event){
+    const results_el = document.querySelector('.search-results');
+    if(results_el){
+        const card = document.createElement('a')
+        card.classList.add('card')
+        card.href = "/note?id="+event.id
+        card.innerText = event.content
+        results_el.append(card)
+    }
+}
+
+
 let updateInteractionCount = function(note_id, cls){
     const note_el = document.querySelector('.note[data-id="'+note_id+'"]');
     if(note_el){
@@ -145,13 +180,14 @@ let updateProfile = function(profile){
     document.querySelector("#profile").dataset.updated_ts = profile.updated_at
     const name_els = document.querySelectorAll(".uname[data-pk='"+profile.public_key+"']");
     for (const name_el of name_els) {
-        if(profile.name.length > 0){
+
+        if(profile.name != null && profile.name.length > 0){
             const nm = name_el.querySelector('.name')
             if(nm){
                 nm.innerText = profile.name
             }
         }
-        if(profile.nip05 !== null && profile.nip05.length > 0 && profile.nip05_validated){
+        if(profile.nip05 != null && profile.nip05.length > 0 && profile.nip05_validated){
             const nip5 = name_el.querySelector('.nip5')
             if(nip5){
                 nip5.innerText = profile.nip05
@@ -195,6 +231,13 @@ class bijaSearch{
                 this.searchByName(val.substring(1))
             }
         })
+        this.searchTipsFill()
+        search.addEventListener("focus", (event)=>{
+            document.querySelector('#search_tips').style.display = 'block'
+        })
+        search.addEventListener("blur", (event)=>{
+            document.querySelector('#search_tips').style.display = 'none'
+        })
     }
 
     searchByName(name){
@@ -230,6 +273,31 @@ class bijaSearch{
             }
             hint_elem.append(ul)
         }
+    }
+    
+    searchTipsFill() {
+        const reply_elem = document.querySelector('input[name="search_term"]')
+        const tips_elems = document.querySelectorAll('#search_tips > li')
+        let fill_contents = Array.from(tips_elems).map(li => li.getAttribute('data-fill'))
+        tips_elems.forEach(elem => {
+            elem.addEventListener('mousedown', (event) => {
+                event.preventDefault()
+            }); 
+            elem.addEventListener("click", (event) => {
+                let fill_content = elem.getAttribute('data-fill')
+                if (fill_content.length > 0) {
+                    if (fill_contents.includes(reply_elem.value[0])) {
+                        reply_elem.value = reply_elem.value.replace(reply_elem.value[0], fill_content)
+                    } else {
+                        reply_elem.value = fill_content + reply_elem.value
+                    }
+                } else {
+                    reply_elem.value = ''
+                }
+                reply_elem.blur()
+                reply_elem.focus()
+            })
+        })
     }
 }
 
@@ -324,8 +392,7 @@ class bijaNotePoster{
             e.preventDefault();
             const cb = function(response, data){
                 if(response['event_id']){
-                    window.location.href = '/note?id='+response['root']+'#'+response['event_id']
-//                   notify('Note created. View now?', '/note?id='+response['root']+'#'+response['event_id'])
+                    window.location.href = '/note?id='+response['event_id']
                 }
             }
             fetchFromForm('/submit_note', form, cb, {}, 'json');
@@ -363,6 +430,31 @@ class bijaSettings{
             }
             fetchFromForm('/add_relay', form, cb, {}, 'json')
         });
+
+        const cld_btn = document.querySelector("#upd_cloudinary");
+        cld_btn.addEventListener("click", (event)=>{
+            event.preventDefault();
+            event.stopPropagation();
+            const form = document.querySelector("#cloudinary_cfg")
+
+            const cb = function(response, data){
+                notify('updated')
+            }
+            fetchFromForm('/update_settings', form, cb, {}, 'json')
+        });
+
+        const pow_btn = document.querySelector("#upd_pow");
+        pow_btn.addEventListener("click", (event)=>{
+            event.preventDefault();
+            event.stopPropagation();
+            const pow_form = document.querySelector("#pow_cfg")
+
+            const pow_cb = function(response, data){
+                notify('updated')
+            }
+            fetchFromForm('/update_settings', pow_form, pow_cb, {}, 'json')
+        });
+
     }
 
     setDeleteKeysClicked(){
@@ -398,6 +490,22 @@ class bijaSettings{
             else{
                 key_el.classList.add('show')
                 im.src = '/static/eye-off.svg'
+                const cb = function(response, data){
+                    data.elem.innerHTML = response
+                    const reveal_btn = document.querySelector('button.reveal_pk')
+                    const reveal_form = document.querySelector('#reveal_pk')
+                    reveal_btn.addEventListener("click", (event)=>{
+                        event.preventDefault();
+                        event.stopPropagation();
+                        const cb = function(response, data){
+                            data.elem.innerHTML = response
+                        }
+                        const form = document.querySelector("#new_message_form")
+                        fetchFromForm('/get_privkey', reveal_form, cb, {'elem':data.elem})
+                    })
+                }
+                fetchGet('/get_privkey', cb, {'elem': key_el})
+
             }
         });
     }
@@ -428,10 +536,6 @@ class bijaThread{
         this.root = false;
         this.focussed = false;
         this.replies = [];
-        this.setFolding();
-        window.addEventListener("hashchange", (event)=>{
-            this.setFolding();
-        });
         document.addEventListener("newNote", (event)=>{
             const el = document.querySelector(".note-container[data-id='"+event.detail.id+"']")
 
@@ -447,18 +551,12 @@ class bijaThread{
         const doc = new DOMParser().parseFromString(response, "text/html")
         const new_item = doc.body.firstChild
         if(!data.elem){
-            console.log('new elem')
-            if(new_item.dataset.parent.length > 0){
-                const siblings = document.querySelectorAll(".note-container[data-parent='"+new_item.dataset.parent+"']")
-                if(siblings.length > 0){
-                    const last = Array.from(siblings).pop();
-                    last.insertAdjacentElement("afterend", new_item);
-                }
-                else{
-                    const parent = document.querySelector(".note-container[data-id='"+new_item.dataset.parent+"']")
-                    if(parent){
-                        parent.insertAdjacentElement("afterend", new_item);
-                    }
+            const focussed_elem = document.querySelector(".note-container.main")
+            if(focussed_elem){
+                const focussed_id = focussed_elem.dataset.id
+                if(new_item.dataset.parent == focussed_id){
+                    document.querySelector('#thread-items').append(new_item)
+                    new_item.classList.add('reply')
                 }
             }
             document.dispatchEvent(new Event('newContentLoaded'))
@@ -467,110 +565,6 @@ class bijaThread{
             console.log('replace elem')
             data.elem.replaceWith(new_item)
             document.dispatchEvent(new Event('newContentLoaded'))
-        }
-        data.context.setFolding()
-    }
-
-    setFolding(){
-        this.focussed = window.location.hash.substring(1);
-        const container_el = document.querySelector('#thread-items')
-        this.root = container_el.dataset.root
-        const note_elems = document.querySelectorAll(".note-container")
-        for (const n of note_elems) {
-            n.classList.remove('main', 'ancestor', 'reply')
-            n.style.display = 'none'
-        }
-        this.showRoot()
-        this.showReplies()
-        this.showMain()
-    }
-
-    showMain(){
-        const main = document.querySelector(".note-container[data-id='"+this.focussed+"']")
-        if(main){
-            main.classList.add('main')
-            main.style.display = 'flex'
-            this.setReplyCount(main)
-            if(main.dataset.parent.length > 0){
-                this.showParent(main.dataset.parent, main)
-            }
-            if(this.replies.length > 0){
-                main.classList.add('ancestor')
-            }
-            main.scrollIntoView({
-                behavior: 'auto',
-                block: 'center',
-                inline: 'center'
-            });
-        }
-        else{
-            const elem = this.buildPlaceholder(this.focussed, this.focussed)
-            document.querySelector('#thread-items').prepend(elem)
-        }
-    }
-
-    showReplies(){
-        this.replies = document.querySelectorAll(".note-container[data-parent='"+this.focussed+"']")
-        for (const n of this.replies) {
-            n.classList.add('reply')
-            n.style.display = 'flex'
-            this.setReplyCount(n)
-        }
-    }
-    showRoot(){
-        this.root_el = document.querySelector(".note-container[data-id='"+this.root+"']")
-        if (this.root_el) {
-            this.root_el.classList.add('root')
-            this.root_el.style.display = 'flex'
-        }
-    }
-
-    showParent(id, child){
-        const el = document.querySelector(".note-container[data-id='"+id+"']");
-        if(el){
-            el.classList.add('ancestor');;
-            el.style.display = 'flex';
-            this.setReplyCount(el);
-            const parent = el.dataset.parent;;
-            if(parent && parent.length > 0){
-                this.showParent(parent, el);
-            }
-        }
-        else{
-            const rel = child.dataset.rel
-            const elem = this.buildPlaceholder(id, rel)
-            if(child.dataset.rel == id){
-                document.querySelector('#thread-items').prepend(elem)
-            }
-            else{
-                child.parentElement.insertBefore(elem, child)
-            }
-        }
-    }
-
-    buildPlaceholder(id, rel){
-        const new_container_el = document.createElement('div');
-        new_container_el.dataset.id = id
-        new_container_el.dataset.rel = rel
-        new_container_el.dataset.parent = ''
-        new_container_el.classList.add('note-container', 'placeholder')
-        const new_el = document.createElement('div');
-        new_el.innerHTML = "<p>Event ("+id+") not yet found on network</p>";
-        new_el.classList.add('note-content')
-        new_container_el.append(new_el)
-        new_container_el.addEventListener("click", (event)=>{
-            window.location.href = '/note?id='+rel+'#'+id
-        });
-        return new_container_el
-    }
-
-    setReplyCount(el){
-        const id = el.dataset.id;
-        const n = document.querySelectorAll(".note-container[data-parent='"+id+"']").length;
-        const r_el = el.querySelector('.reply-n')
-        if(r_el){
-            if(n>0) r_el.innerText = n
-            else r_el.innerText = ''
         }
     }
 }
@@ -622,7 +616,8 @@ class bijaProfile{
                 event.stopPropagation();
                 let id = btn.dataset.rel;
                 let state = btn.dataset.state;
-                this.setFollowState(id, state);
+                let upd = btn.dataset.upd;
+                this.setFollowState(id, state, upd);
                 return false;
             });
         }
@@ -647,7 +642,48 @@ class bijaProfile{
                 const form = document.querySelector("#profile_updater")
                 fetchFromForm('/upd_profile', form, this.updateProfile, {}, 'json')
             });
+
+            const main_el = document.querySelector('.main')
+            if(main_el && main_el.dataset.settings){
+                const settings = JSON.parse(main_el.dataset.settings)
+                if(settings['cloudinary_cloud'] !== undefined){
+                    const form = document.querySelector("#profile_updater");
+                    const im_up = document.querySelector(".profile-img-up");
+                    im_up.addEventListener('change', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        uploadToCloud(form, function(data, elem){
+                            const d = JSON.parse(data)
+                            elem.querySelector('#pim').value = d.secure_url
+                            elem.querySelector('.user-image').src = d.secure_url
+                        })
+                    });
+                }
+            }
         }
+        const invalid_nip5 = document.querySelector('#profile .nip5-warn')
+        if(invalid_nip5){
+            this.setNip5Validator()
+        }
+    }
+
+    setNip5Validator(){
+        const pel = document.querySelector('#profile')
+        const btn = document.createElement('button')
+        btn.innerText = 'Revalidate Nip-05'
+        const cb = function(response, data){
+            if(response.valid==true){
+                location.reload();
+            }
+            else{
+                notify('Nip05 identifier could not be validated')
+            }
+        }
+        btn.addEventListener('click', (e) => {
+            fetchGet('/validate_nip5?pk='+pel.dataset.pk, cb, {}, 'json')
+        });
+        const name_el = pel.querySelector('.profile-name')
+        name_el.append(btn)
     }
 
     updateProfile(response, data){
@@ -664,11 +700,20 @@ class bijaProfile{
         }
     }
 
-    setFollowState(id, state){
+    setFollowState(id, state, upd){
         const cb = function(response, data){
-            document.querySelector(".profile-tools").innerHTML = response
+            if(data.upd == '1'){
+                document.querySelector(".profile-tools").innerHTML = response
+            }
+            else{
+                const f_btn = document.createElement('img')
+                f_btn.classList.add('icon')
+                f_btn.src = '/static/following.svg'
+                const c_btn = document.querySelector(".follow-btn[data-rel='"+data.id+"']")
+                c_btn.replaceWith(f_btn)
+            }
         }
-        fetchGet('/follow?id='+id+"&state="+state, cb)
+        fetchGet('/follow?id='+id+"&state="+state+"&upd="+upd, cb, {'upd':upd,'id':id})
     }
 
 }
@@ -679,10 +724,32 @@ class bijaNotes{
         document.addEventListener('newContentLoaded', ()=>{
             this.setEventListeners()
         });
+        setInterval(this.tsUpdater, 120000);
+    }
+
+    tsUpdater(){
+        console.log('update ts')
+        const notes = document.querySelectorAll(".dt[data-ts]");
+        const timestamps = []
+        for (const n of notes) {
+            timestamps.push(n.dataset.ts)
+        }
+        const cb = function(response, data){
+            const stamps = JSON.parse(response)
+            console.log(stamps)
+            for (const [k, v] of Object.entries(stamps['data'])) {
+                const elem = document.querySelector(".dt[data-ts='"+k+"']");
+                if(elem){
+                    elem.innerText = v
+                }
+            }
+        }
+        fetchGet('/timestamp_upd?ts='+timestamps.join(), cb)
     }
 
     setEventListeners(){
         const notes = document.querySelectorAll(".note[data-processed='0']");
+        const main_el = document.querySelector('.main')
         for (const note of notes) {
             note.dataset.processed = '1'
 
@@ -712,14 +779,64 @@ class bijaNotes{
                 this.setLikeClickedEvents(like_el)
             }
 
-            const content_el = note.querySelector(".note-content pre");
-            this.setExpandableHeight(content_el)
-
             const im_el = note.querySelector(".image-attachment img");
             if(im_el){
                 this.setImageClickEvents(im_el)
             }
+
+            const like_n_el = note.querySelector(".likes.counts");
+            if(like_n_el){
+                this.setLikeCountClickEvents(like_n_el, note.dataset.id)
+            }
+            const settings = JSON.parse(main_el.dataset.settings)
+            if(settings['cloudinary_cloud'] !== undefined){
+                const upload_form = note.querySelector('.reply-form')
+                setCloudUploads(upload_form)
+            }
+            const emoji_link = note.querySelector(".emojis");
+            if(emoji_link){
+                new Emojis(note)
+            }
+            const read_more_link = note.querySelector(".read-more");
+            if(read_more_link){
+                this.setReadMoreClicks(read_more_link, note.dataset.id)
+            }
+
+            const qr_btn = note.querySelector(".qr_show");
+            if(qr_btn){
+                this.setQrToggle(qr_btn, note.dataset.id)
+            }
         }
+    }
+
+    setQrToggle(elem, id){
+        elem.addEventListener('click', (e) => {
+            event.stopPropagation();
+            const note_el = document.querySelector('.note[data-id="'+id+'"]')
+            const invoice_el = note_el.querySelector('.ln_invoice')
+            if(invoice_el.classList.contains('qr_show')){
+                invoice_el.classList.remove('qr_show')
+            }
+            else{
+                invoice_el.classList.add('qr_show')
+            }
+        })
+    }
+
+    setReadMoreClicks(elem, id){
+        elem.addEventListener('click', (e) => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const cb = function(response, data){
+                if(response != '0'){
+                    const note_el = document.querySelector('.note[data-id="'+data.id+'"]')
+                    const content_el = note_el.querySelector('.note-content pre')
+                    content_el.innerHTML = response
+                }
+            }
+            fetchGet('/read_more?id='+id, cb, {'id': id})
+        })
     }
 
     setImageClickEvents(elem){
@@ -729,32 +846,6 @@ class bijaNotes{
         });
     }
 
-    setExpandableHeight(elem){
-        if(elem.offsetHeight > 150){
-            elem.style.height = '150px'
-            elem.style.overflow = 'hidden'
-            elem.style.paddingBottom = '60px'
-            elem.dataset.state = 0
-            const reveal_btn = document.createElement('div')
-            reveal_btn.classList.add('reveal')
-            reveal_btn.innerHTML = '<span>show more</span>'
-            elem.append(reveal_btn)
-            reveal_btn.addEventListener("click", (event)=>{
-                event.stopPropagation();
-                const btn = elem.querySelector('span')
-                if(elem.dataset.state == 0){
-                    elem.style.height = 'auto'
-                    elem.dataset.state = 1
-                    btn.innerText = 'show less'
-                }
-                else{
-                    elem.style.height = '150px'
-                    elem.dataset.state = 0
-                    btn.innerText = 'show more'
-                }
-            });
-        }
-    }
     
     setReplyClickedEvents(elem){
         elem.addEventListener("click", (event)=>{
@@ -799,9 +890,15 @@ class bijaNotes{
                 event.preventDefault();
                 event.stopPropagation();
                 let rel = elem.dataset.rel
-                window.location.href = '/note?id='+rel+'#'+id
+                window.location.href = '/note?id='+id+'#focussed'
             }
         });
+        const links = elem.querySelectorAll('pre a')
+        for(const link of links){
+            link.addEventListener("click", (event)=>{
+                event.stopPropagation();
+            });
+        }
     }
 
     setReplyLinkEvents(elem){
@@ -843,6 +940,8 @@ class bijaNotes{
             const tool  = tool_el.dataset.action;
             if(tool == 'nfo'){
                 tool_el.addEventListener('click', (e) => {
+                    event.preventDefault();
+                    event.stopPropagation();
                     const on_get_info = function(response, data){
                         if(response['data']){
                             popup("<pre>"+JSON.stringify(JSON.parse(response['data']), null, 2)+"</pre>")
@@ -853,6 +952,8 @@ class bijaNotes{
             }
             else if(tool == 'del'){
                 tool_el.addEventListener('click', (e) => {
+                    event.preventDefault();
+                    event.stopPropagation();
                     const on_req_delete_confirm = function(response, data){
                         if(response){
                             popup(response)
@@ -863,6 +964,37 @@ class bijaNotes{
                 })
             }
         }
+    }
+
+    setLikeCountClickEvents(elem, id){
+        elem.addEventListener('click', (e) => {
+            const cb = function(response, data){
+                console.log(response)
+                popup('')
+                data.context.displayReactionDetails(response.data)
+
+            }
+            fetchGet('/get_reactions?id='+id, cb, {'context': this}, 'json')
+        });
+    }
+
+    displayReactionDetails(response){
+        const container = document.createElement('ul')
+        container.classList.add('liked_by')
+        for (var i = 0; i < response.length; i++){
+            let li = document.createElement('li')
+            if(response[i].content == null || response[i].content.length < 1 || response[i].content == "+"){
+                response[i].content = "🤍"
+            }
+            if(response[i].name == null || response[i].name.length < 1){
+                response[i].name = response[i].public_key.substring(0, 21)+"..."
+            }
+
+            li.innerHTML = '<span>'+response[i].content+'</span><a href="/profile?pk='+response[i].public_key+'">'+response[i].name+'</a>';
+            container.append(li)
+        }
+        const p = document.querySelector('.popup')
+        p.append(container)
     }
 
     setDeleteForm(){
@@ -901,7 +1033,7 @@ class bijaNotes{
         const form = document.querySelector(".reply-form[data-noteid='"+id+"']")
         const cb = function(response, data){
             if(response['event_id']){
-                window.location.href = '/note?u='+Date.now()+'&id='+response['root']+'#'+response['event_id']
+                window.location.href = '/note?u='+Date.now()+'&id='+response['event_id']
 //                notify('Note created. View now?', '/note?id='+response['root']+'#'+response['event_id'])
                 data.form.dataset.vis = '0'
                 data.form.style.display = "none"
@@ -915,6 +1047,10 @@ class bijaFeed{
 
     constructor(){
         const main_el = document.querySelector(".main[data-page]")
+        if(main_el.dataset.page=='home'){
+            new Emojis(main_el.querySelector('#note-poster'))
+        }
+
         this.page = main_el.dataset.page
         this.data = {};
         this.loading = 0;
@@ -926,7 +1062,11 @@ class bijaFeed{
     loader(o){
         if ((window.innerHeight + window.innerHeight + window.scrollY) >= document.body.offsetHeight && o.loading == 0){
             let nodes = document.querySelectorAll('.ts[data-ts]')
-            o.requestNextPage(nodes[nodes.length-1].dataset.ts);
+            let ts = Math.floor(Date.now() / 1000)
+            if(nodes.length > 0){
+                ts = nodes[nodes.length-1].dataset.ts
+            }
+            o.requestNextPage(ts);
         }
     }
 
@@ -963,6 +1103,60 @@ class bijaFeed{
             o.loading = 0;
         }, 200)
 
+    }
+}
+
+class Emojis{
+    constructor(target_el){
+        this.target_el = target_el
+        this.search_el = target_el.querySelector('.emoji_selector input')
+        this.trigger_btn = target_el.querySelector('.emojis')
+        this.emoji_container = target_el.querySelector('.emoji_selector')
+        this.emoji_div = target_el.querySelector('.emoji_selector div')
+        this.textarea = target_el.querySelector('.poster-form textarea')
+
+        this.setEventsListeners()
+    }
+    setEventsListeners(){
+        this.textarea.addEventListener("keydown", (event)=>{
+            this.closeEmojisContainer()
+        });
+        this.trigger_btn.addEventListener("click", (event)=>{
+            let is_showed = this.emoji_container.classList.contains('show')
+            if (is_showed) {
+                this.closeEmojisContainer()
+            } else {
+                fetchGet('/emojis', this.loadEmojis, {'context': this}, 'json')
+            }
+        });
+        this.search_el.addEventListener("keyup", (event)=>{
+            fetchGet('/emojis?s='+this.search_el.value, this.loadEmojis, {'context': this}, 'json')
+        });
+    }
+    loadEmojis(response, data){
+        if(response){
+            data.context.emoji_div.innerHTML = ""
+            data.context.emoji_container.classList.add('show')
+
+            for(const item of response.emojis){
+                const a = document.createElement('a')
+                a.href = '#'
+                a.innerText = item
+                a.addEventListener("click", (event)=>{
+                    event.stopPropagation();
+                    event.preventDefault();
+                    data.context.textarea.value += a.innerText
+                    data.context.search_el.value = ''
+                    fetchGet('/emojis', data.context.loadEmojis, {'context': data.context}, 'json')
+                });
+                data.context.emoji_div.append(a)
+            }
+        }
+    }
+    closeEmojisContainer() {
+        this.emoji_container.classList.remove('show')
+        this.search_el.value = ''
+        this.emoji_div.innerHTML = ""
     }
 }
 
@@ -1049,6 +1243,14 @@ function defaultImage(img){
 }
 
 function popup(htm){
+    const existing = document.querySelector('.popup')
+    const existing_ol = document.querySelector('.popup-overlay')
+    if(existing){
+        existing.remove()
+    }
+    if(existing_ol){
+        existing_ol.remove()
+    }
     overlay = document.createElement('div')
     overlay.classList.add('popup-overlay')
     the_popup = document.createElement('div')
@@ -1075,6 +1277,28 @@ function fetchGet(url, cb, cb_data = {}, response_type='text'){
     }).catch(function(err) {
         console.log(err);
     });
+}
+
+function uploadToCloud(form_el, cb){
+    const main_el = document.querySelector('.main')
+    const settings = JSON.parse(main_el.dataset.settings)
+
+    const files = form_el.querySelector("[type=file]").files;
+    const cloudFormData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+        let file = files[i];
+        cloudFormData.append("file", file);
+        cloudFormData.append("upload_preset", settings['cloudinary_upload_preset']);
+        const cloud_url = 'https://api.cloudinary.com/v1_1/'+settings['cloudinary_cloud']+'/auto/upload'
+        fetch(cloud_url, {
+            method: "POST",
+            body: cloudFormData
+        }).then((response) => {
+            return response.text();
+        }).then((data) => {
+            cb(data, form_el)
+        });
+    }
 }
 
 function fetchFromForm(url, form_el, cb, cb_data = {}, response_type='text'){
@@ -1106,6 +1330,42 @@ function clipboard(str){
 function match_mentions(str){
     var pattern = /\B@[a-z0-9_-]+/gi;
     return str.match(pattern);
+}
+
+function setCloudUploads(form){
+
+    if(form){
+        const toolbar = form.querySelector('.toolbar')
+        const label = document.createElement('label')
+        toolbar.append(label)
+        const input = document.createElement('input')
+        input.setAttribute('type', 'file')
+        input.setAttribute('name', 'img')
+        input.setAttribute('multiple', true)
+        label.append(input)
+        const icon = document.createElement('img')
+        icon.src = '/static/img.svg'
+        icon.classList.add('icon-lg')
+        label.append(icon)
+
+        const hidden_input = document.createElement('input')
+        hidden_input.setAttribute('type', 'hidden')
+        hidden_input.setAttribute('name', 'uploads')
+        form.append(hidden_input)
+        input.style.display = 'none';
+        input.addEventListener('change', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            uploadToCloud(form, function(data, elem){
+                const d = JSON.parse(data)
+                const im = document.createElement('img')
+                im.src = d.secure_url
+                elem.querySelector('.media_uploads').append(im)
+                const uploads_input = elem.querySelector('[name="uploads"]')
+                uploads_input.value += ' '+d.secure_url
+            })
+        });
+    }
 }
 
 window.addEventListener("load", function () {
@@ -1149,4 +1409,25 @@ window.addEventListener("load", function () {
             clipboard(btn.dataset.str);
         });
     }
+
+    const main_el = document.querySelector('.main')
+    if(main_el && main_el.dataset.settings){
+        const settings = JSON.parse(main_el.dataset.settings)
+        if(settings['cloudinary_cloud'] !== undefined){
+            const upload_form = document.querySelector('#new_post_form')
+            setCloudUploads(upload_form)
+        }
+    }
+
+    const logout = document.querySelector('.logout')
+    if(logout){
+        logout.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            fetchGet('/logout', function(){
+                document.querySelector('.main').innerHTML = "<h1>Shutting down...</h1>"
+            }, {})
+        });
+    }
+
 });

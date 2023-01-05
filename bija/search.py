@@ -1,26 +1,36 @@
+import logging
+import time
+
 from flask import request
 
 from bija.app import app
+from bija.args import LOGGING_LEVEL
 from bija.db import BijaDB
 from bija.helpers import is_hex_key, is_bech32_key, is_nip05, bech32_to_hex64, request_nip05
 
 DB = BijaDB(app.session)
+logger = logging.getLogger(__name__)
+logger.setLevel(LOGGING_LEVEL)
 
 
 class Search:
 
     def __init__(self):
+        logger.info('SEARCH')
         self.term = None
         self.message = None
         self.results = None
         self.redirect = None
+        self.action = None
 
         self.process()
 
     def process(self):
         if 'search_term' in request.args or len(request.args['search_term'].strip()) < 1:
             self.term = request.args['search_term']
-            if self.term[:1] == '@':
+            if self.term[:1] == '#':
+                self.by_hash()
+            elif self.term[:1] == '@':
                 self.by_at()
             elif is_hex_key(self.term):
                 self.by_hex()
@@ -32,6 +42,11 @@ class Search:
                 self.message = "Nothing found. Please try again with a valid public key or nip-05 identifier."
         else:
             self.message = "no search term found!"
+
+    def by_hash(self):
+        self.message = 'Searching network for {}'.format(self.term)
+        self.results = DB.get_search_feed(int(time.time()), self.term)
+        self.action = 'hash'
 
     def by_at(self):
         pk = DB.get_profile_by_name_or_pk(self.term[1:])
@@ -60,5 +75,5 @@ class Search:
                 self.message = "Nip-05 identifier could not be located"
 
     def get(self):
-        return self.results, self.redirect, self.message
+        return self.results, self.redirect, self.message, self.action
 

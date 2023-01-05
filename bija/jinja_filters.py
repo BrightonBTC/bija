@@ -1,23 +1,38 @@
+import base64
+import io
 import json
-from datetime import datetime
+import logging
+import re
+import textwrap
+import qrcode
+
+from lightning.lnaddr import lndecode
 
 from flask import render_template
+import arrow
 
 from bija.app import app
+from bija.args import LOGGING_LEVEL
 from bija.db import BijaDB
-from bija.helpers import get_at_tags, is_hex_key, url_linkify
+from bija.helpers import get_at_tags, is_hex_key, url_linkify, strip_tags, get_invoice, get_hash_tags
+from bija.settings import Settings
 from python_nostr.nostr.key import PrivateKey
 
 DB = BijaDB(app.session)
+logger = logging.getLogger(__name__)
+logger.setLevel(LOGGING_LEVEL)
 
 
 @app.template_filter('dt')
 def _jinja2_filter_datetime(ts):
-    return datetime.fromtimestamp(ts).strftime('%Y-%m-%d @ %H:%M')
+    logger.info('format date')
+    t = arrow.get(int(ts))
+    return t.humanize()
 
 
 @app.template_filter('decr')
 def _jinja2_filter_decr(content, pubkey, privkey):
+    logger.info('format decrypt')
     try:
         k = bytes.fromhex(privkey)
         pk = PrivateKey(k)
@@ -28,26 +43,32 @@ def _jinja2_filter_decr(content, pubkey, privkey):
 
 @app.template_filter('ident_string')
 def _jinja2_filter_ident(name, pk, nip5=None, validated=None, long=True):
+    logger.info('format ident')
     html = "<span class='uname' data-pk='{}'><span class='name'>{}</span> "
     if long:
-        html = html + "<span class='nip5'>{}</span>"
-    if validated and nip5 is not None and long:
+        html = "<span class='nip5'>{}</span><span class='uname' data-pk='{}'><span class='name'>{}</span>"
+    if nip5 is not None and long:
         if nip5[0:2] == "_@":
             nip5 = nip5[2:]
-        nip5 = nip5 + " <img src='/static/verified.svg' class='icon-sm'>"
+        if validated:
+            status = 'verified'
+        else:
+            status = 'warn'
+        nip5 = " <img src='/static/{}.svg' class='icon-sm nip5-{}' title='{}'> ".format(status, status, nip5)
     elif name is None or len(name.strip()) < 1:
         name = "{}&#8230;".format(pk[0:21])
 
     if long:
         if nip5 is None:
             nip5 = ""
-        return html.format(pk, name, nip5)
+        return html.format(nip5, pk, name)
 
     return html.format(pk, name)
 
 
 @app.template_filter('responders_string')
 def _jinja2_filter_responders(the_dict, n):
+    logger.info('format responders')
     names = []
     for pk, name in the_dict.items():
         names.append([pk, _jinja2_filter_ident(name, pk, long=False)])
@@ -65,6 +86,7 @@ def _jinja2_filter_responders(the_dict, n):
 
 @app.template_filter('process_media_attachments')
 def _jinja2_filter_media(json_string):
+    logger.info('format media')
     a = json.loads(json_string)
     if len(a) > 0:
         media = a[0]
@@ -78,7 +100,30 @@ def _jinja2_filter_media(json_string):
 
 
 @app.template_filter('process_note_content')
-def _jinja2_filter_note(content: str):
+def _jinja2_filter_note(content: str, limit=200):
+    logger.info('format note content')
+
+    invoice = get_invoice(content.lower())
+    if invoice is not None:
+        data = construct_invoice(invoice.group())
+        if data:
+            invoice_html = render_template("ln.invoice.html", data=data)
+            content = re.sub(invoice.group(), invoice_html, content, flags=re.IGNORECASE)
+            limit = None
+
+    if limit is not None and len(strip_tags(content)) > limit:
+
+        content = textwrap.shorten(strip_tags(content), width=limit, break_long_words=True,
+                                   placeholder="... <a href='#' class='read-more'>more</a>")
+
+    hashtags = get_hash_tags(content)
+    hashtags.sort(key=len, reverse=True)
+    for tag in hashtags:
+        term = tag[1:]
+        content = " {} ".format(content).replace(
+            " {} ".format(tag),
+            " <a href='/search?search_term=%23{}'>{}</a> ".format(term, tag)).strip()
+
     tags = get_at_tags(content)
     for tag in tags:
         pk = tag[1:]
@@ -93,19 +138,71 @@ def _jinja2_filter_note(content: str):
     return content
 
 
+def construct_invoice(content: str):
+    try:
+        out = {
+            'sats': 0,
+            'description': '',
+            'date': '',
+            'expires': '',
+            'qr': '',
+            'lnurl': content
+        }
+        content = content.split()
+        invoice = lndecode(content[0])
+        if invoice is not None:
+            out['sats'] = str(int(invoice.amount * 100000000))
+            out['date'] = str(invoice.date)
+            for tag in invoice.tags:
+                if tag[0] == 'd':
+                    out['description'] = tag[1]
+                if tag[0] == 'x':
+                    out['expires'] = str(invoice.date + tag[1])
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=4,
+            )
+            qr.add_data(content[0])
+            qr.make(fit=True)
+
+            img = qr.make_image(fill_color="black", back_color="white")
+            img_byte_arr = io.BytesIO()
+            img.save(img_byte_arr, format='PNG')
+            img_byte_arr = img_byte_arr.getvalue()
+            img64 = base64.b64encode(img_byte_arr).decode()
+            out['qr'] = '<img src="data:image/png;base64,{}">'.format(img64)
+            return out
+        return False
+    except:
+        return False
+
+
 @app.template_filter('get_thread_root')
 def _jinja2_filter_thread_root(root, reply, note_id):
+    logger.info('determine thread root')
     out = {'root': '', 'reply': ''}
     if root is None and reply is None:
         out['root'] = note_id
-    elif root is not None and reply is not None:
-        out = {'root': root, 'reply': reply}
-    elif root is not None and reply is None:
+    else:
         out = {'root': root, 'reply': note_id}
     return out
 
 
 @app.template_filter('linkify')
 def _jinja2_filter_linkify(content):
+    logger.info('linkify')
     return url_linkify(content)
 
+
+@app.template_filter('settings_json')
+def _jinja2_settings_json(content):
+    logger.info('settings_json')
+    settings = ['cloudinary_cloud', 'cloudinary_upload_preset']
+    out = {}
+    for k in settings:
+        v = Settings.get(k)
+        if v is not None:
+            out[k] = v
+    return json.dumps(out)

@@ -1,0 +1,19 @@
+<div class="ln_invoice">
+    <div class="sm"><h3>⚡️ Lightning invoice</h3>
+        <p><strong>Amount</strong>: {{ data['sats'] }} sats</p>
+        {%- if data['description']| length > 0 -%}
+        <p><strong>Description</strong>:<br> {{- data['description'] -}}</p>
+        {%- endif -%}
+        {%- if data['date']| length > 0 -%}
+        <p><strong>Created</strong>: <span class="dt" data-ts="{{- data['date'] -}}">{{- data['date']|dt -}}</span></p>
+        {%- endif -%}
+        {%- if data['expires']| length > 0 -%}
+        <p><strong>Expires</strong>: <span class="dt" data-ts="{{- data['expires'] -}}">{{- data['expires']|dt -}}</span></p>
+        {%- endif -%}
+    </div>
+    <div class="sm"><div class="qr">
+        {{- data['qr']|safe -}}
+    </div><div class="invoice">{{ data['lnurl'] }} <img src="/static/copy.svg" class="clipboard icon-sm" data-str="{{- data['lnurl'] -}}"></div>
+        <button class="qr_show">Show QR <img src="/static/qr.svg" class="clipboard icon-sm"></button>
+    </div>
+</div>
