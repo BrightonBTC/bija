@@ -1,11 +1,10 @@
-import json
 import sys
 from functools import wraps
 from threading import Thread
 
 import bip39
 import pydenticon
-from flask import request, session, redirect, make_response, url_for
+from flask import request, redirect, make_response, url_for
 from flask_executor import Executor
 
 from bija.app import app, socketio, ACTIVE_EVENTS
@@ -134,7 +133,7 @@ def login_page():
                 data = DEFAULT_RELAYS
             else:
                 EXECUTOR.submit(RELAY_HANDLER.subscribe_primary)
-                EXECUTOR.submit(RELAY_HANDLER.message_pool_handler)
+                EXECUTOR.submit(RELAY_HANDLER.run_loop)
                 return redirect("/")
         else:
             message = "Incorrect key or password"
@@ -619,6 +618,7 @@ def del_relay():
 @app.route('/follow', methods=['GET'])
 def follow():
     DB.set_following([request.args['id']], int(request.args['state']))
+    DB.commit()
     # EXECUTOR.submit(EVENT_HANDLER.submit_follow_list)
     EXECUTOR.submit(SubmitFollowList())
     profile = DB.get_profile(request.args['id'])
@@ -717,7 +717,7 @@ def get_login_state():
         if saved_pk.enc == 0:
             set_session_keys(saved_pk.key)
             EXECUTOR.submit(RELAY_HANDLER.subscribe_primary)
-            EXECUTOR.submit(RELAY_HANDLER.message_pool_handler)
+            EXECUTOR.submit(RELAY_HANDLER.run_loop)
             return LoginState.LOGGED_IN
         else:
             return LoginState.WITH_PASSWORD
