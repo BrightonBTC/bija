@@ -389,6 +389,23 @@ hr{
     cursor: pointer;
 }
 
+.queued_count{
+    position: fixed;
+    background: yellow;
+    color: black;
+    bottom: 0;
+    right:0;
+    z-index: 10000;
+    opacity: 0;
+    padding: var(--spacing-sm);
+}
+.queued_count.fadeIn{
+    animation: fadeIn 1s linear;
+}
+.queued_count.fadeOut{
+    animation: fadeOut 3s linear;
+}
+
 /* ---------- */
 
 /* Feed */
@@ -1277,6 +1294,14 @@ ul#search_tips li {
 @keyframes fadeInOut {
   0%,100% { opacity: 0 }
   10%, 80% { opacity: 1 }
+}
+@keyframes fadeIn {
+  0% { opacity: 0 }
+  100% { opacity: 1 }
+}
+@keyframes fadeOut {
+  0% { opacity: 1 }
+  100% { opacity: 0 }
 }
 
 @media screen and (max-width: 800px) {

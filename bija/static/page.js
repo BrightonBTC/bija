@@ -112,6 +112,16 @@ function SOCK() {
     socket.on('search_result', function(event) {
         addSearchResult(event);
     });
+    socket.on('events_processing', function(event) {
+        const elem = document.querySelector('.queued_count')
+        if(event > 0){
+            elem.innerText = 'Processing '+event+' queued events'
+            elem.classList.add('fadeIn')
+        }
+        else{
+            elem.classList.add('fadeOut')
+        }
+    });
 }
 
 let replaceNotePlaceholder = function(id){
@@ -744,7 +754,9 @@ class bijaNotes{
                 }
             }
         }
-        fetchGet('/timestamp_upd?ts='+timestamps.join(), cb)
+        if(timestamps.length > 0){
+            fetchGet('/timestamp_upd?ts='+timestamps.join(), cb)
+        }
     }
 
     setEventListeners(){
