@@ -31,7 +31,7 @@ D_TASKS = DeferredTasks()
 DB = BijaDB(app.session)
 
 
-class BijaEvents:
+class RelayHandler:
     subscriptions = set()
     pool_handler_running = False
     page = {
@@ -270,7 +270,7 @@ class BijaEvents:
         self.active_events['notes'] = ids
         subscription_id = 'note-thread'
         self.subscriptions.add(subscription_id)
-        SubscribeThread(subscription_id, RELAY_MANAGER, root_id)
+        SubscribeThread(subscription_id, root_id)
 
     def subscribe_feed(self, ids):
         if 'notes' in self.active_events:
@@ -279,7 +279,7 @@ class BijaEvents:
             self.active_events['notes'] = ids
         subscription_id = 'main-feed'
         self.subscriptions.add(subscription_id)
-        SubscribeFeed(subscription_id, RELAY_MANAGER, ids)
+        SubscribeFeed(subscription_id, ids)
 
     def subscribe_profile(self, pubkey, since, ids):
         if 'notes' in self.active_events:
@@ -288,40 +288,17 @@ class BijaEvents:
             self.active_events['notes'] = ids
         subscription_id = 'profile'
         self.subscriptions.add(subscription_id)
-        SubscribeProfile(subscription_id, RELAY_MANAGER, pubkey, since)
+        SubscribeProfile(subscription_id, pubkey, since)
 
     # create site wide subscription
     def subscribe_primary(self):
         self.subscriptions.add('primary')
-        SubscribePrimary('primary', RELAY_MANAGER, Settings.get('pubkey'))
+        SubscribePrimary('primary', Settings.get('pubkey'))
 
     def subscribe_search(self, term):
         logger.info('Subscribe search {}'.format(term))
         self.subscriptions.add('search')
-        SubscribeSearch('search', RELAY_MANAGER, term)
-
-    def submit_profile(self, profile):
-        e = SubmitProfile(RELAY_MANAGER, Settings.get("keys"), profile)
-        return e.event_id
-
-    def submit_message(self, data, pow_difficulty=None):
-        e = SubmitEncryptedMessage(RELAY_MANAGER, Settings.get("keys"), data, pow_difficulty)
-        return e.event_id
-
-    def submit_like(self, note_id):
-        e = SubmitLike(RELAY_MANAGER, Settings.get("keys"), note_id)
-        return e.event_id
-
-    def submit_note(self, data, members=None, pow_difficulty=None):
-        e = SubmitNote(RELAY_MANAGER, Settings.get("keys"), data, members, pow_difficulty)
-        return e.event_id
-
-    def submit_follow_list(self):
-        SubmitFollowList(RELAY_MANAGER, Settings.get("keys"))
-
-    def submit_delete(self, event_ids: list, reason=""):
-        e = SubmitDelete(RELAY_MANAGER, Settings.get("keys"), event_ids, reason)
-        return e.event_id
+        SubscribeSearch('search', term)
 
     def close_subscription(self, name):
         self.subscriptions.remove(name)

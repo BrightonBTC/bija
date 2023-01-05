@@ -12,13 +12,15 @@ from bija.app import app, socketio
 from bija.args import SETUP_PK, SETUP_PW, LOGGING_LEVEL
 from bija.config import DEFAULT_RELAYS
 from bija.emojis import emojis
-from bija.events import BijaEvents, MetadataEvent
+from bija.relay_handler import RelayHandler, MetadataEvent
 from bija.helpers import *
 from bija.jinja_filters import *
 from bija.notes import FeedThread, NoteThread
 from bija.password import encrypt_key, decrypt_key
 from bija.search import Search
 from bija.settings import Settings
+from bija.submissions import SubmitDelete, SubmitNote, SubmitProfile, SubmitEncryptedMessage, SubmitLike, \
+    SubmitFollowList
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOGGING_LEVEL)
@@ -27,7 +29,7 @@ thread = Thread()
 
 DB = BijaDB(app.session)
 EXECUTOR = Executor(app)
-EVENT_HANDLER = BijaEvents()
+RELAY_HANDLER = RelayHandler()
 
 foreground = ["rgb(45,79,255)",
               "rgb(254,180,44)",
@@ -64,13 +66,13 @@ def login_required(f):
 @app.route('/')
 @login_required
 def index_page():
-    EXECUTOR.submit(EVENT_HANDLER.set_page('home', None))
-    EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
+    EXECUTOR.submit(RELAY_HANDLER.set_page('home', None))
+    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
     pk = Settings.get('pubkey')
     DB.set_all_seen_in_feed(pk)
     notes = DB.get_feed(time.time(), pk)
     t = FeedThread(notes)
-    EXECUTOR.submit(EVENT_HANDLER.subscribe_feed(list(t.ids)))
+    EXECUTOR.submit(RELAY_HANDLER.subscribe_feed(list(t.ids)))
     profile = DB.get_profile(pk)
     return render_template("feed.html", page_id="home", title="Home", threads=t.threads, last=t.last_ts,
                            profile=profile, pubkey=pk)
@@ -87,7 +89,7 @@ def feed():
         notes = DB.get_feed(before, pk)
         if len(notes) > 0:
             t = FeedThread(notes)
-            EXECUTOR.submit(EVENT_HANDLER.subscribe_feed(list(t.ids)))
+            EXECUTOR.submit(RELAY_HANDLER.subscribe_feed(list(t.ids)))
             profile = DB.get_profile(pk)
             return render_template("feed.items.html", threads=t.threads, last=t.last_ts, profile=profile, pubkey=pk)
         else:
@@ -104,14 +106,14 @@ def alerts_page():
 
 @app.route('/logout', methods=['GET'])
 def logout_page():
-    EVENT_HANDLER.close()
+    RELAY_HANDLER.close()
     sys.exit()
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login_page():
-    EXECUTOR.submit(EVENT_HANDLER.set_page('login', None))
-    EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
+    EXECUTOR.submit(RELAY_HANDLER.set_page('login', None))
+    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
     login_state = get_login_state()
     message = None
     data = None
@@ -129,8 +131,8 @@ def login_page():
                 login_state = LoginState.SET_RELAYS
                 data = DEFAULT_RELAYS
             else:
-                EXECUTOR.submit(EVENT_HANDLER.subscribe_primary)
-                EXECUTOR.submit(EVENT_HANDLER.message_pool_handler)
+                EXECUTOR.submit(RELAY_HANDLER.subscribe_primary)
+                EXECUTOR.submit(RELAY_HANDLER.message_pool_handler)
                 return redirect("/")
         else:
             message = "Incorrect key or password"
@@ -142,15 +144,15 @@ def login_page():
 @app.route('/profile', methods=['GET'])
 @login_required
 def profile_page():
-    EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
+    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
     page_id = 'profile'
     if 'pk' in request.args and is_hex_key(request.args['pk']) and request.args['pk'] != Settings.get('pubkey'):
-        EXECUTOR.submit(EVENT_HANDLER.set_page('profile', request.args['pk']))
+        EXECUTOR.submit(RELAY_HANDLER.set_page('profile', request.args['pk']))
         k = request.args['pk']
         is_me = False
     else:
         k = Settings.get('pubkey')
-        EXECUTOR.submit(EVENT_HANDLER.set_page('profile', k))
+        EXECUTOR.submit(RELAY_HANDLER.set_page('profile', k))
         is_me = True
         page_id = 'profile-me'
     notes = DB.get_notes_by_pubkey(k, int(time.time()), timestamp_minus(TimePeriod.DAY))
@@ -163,7 +165,7 @@ def profile_page():
         DB.add_profile(k)
         profile = DB.get_profile(k)
 
-    EXECUTOR.submit(EVENT_HANDLER.subscribe_profile, k, timestamp_minus(TimePeriod.WEEK), list(t.ids))
+    EXECUTOR.submit(RELAY_HANDLER.subscribe_profile, k, timestamp_minus(TimePeriod.WEEK), list(t.ids))
 
     metadata = {}
     if profile.raw is not None and len(profile.raw) > 0:
@@ -188,7 +190,7 @@ def profile_feed():
             t = FeedThread(notes)
             profile = DB.get_profile(Settings.get('pubkey'))
             EXECUTOR.submit(
-                EVENT_HANDLER.subscribe_profile, request.args['pk'], t.last_ts - TimePeriod.WEEK, list(t.ids)
+                RELAY_HANDLER.subscribe_profile, request.args['pk'], t.last_ts - TimePeriod.WEEK, list(t.ids)
             )
             return render_template("feed.items.html", threads=t.threads, last=t.last_ts, profile=profile,
                                    pubkey=Settings.get('pubkey'))
@@ -200,11 +202,11 @@ def profile_feed():
 @login_required
 def note_page():
     note_id = request.args['id']
-    EXECUTOR.submit(EVENT_HANDLER.set_page('note', note_id))
-    EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
+    EXECUTOR.submit(RELAY_HANDLER.set_page('note', note_id))
+    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
 
     t = NoteThread(note_id)
-    EXECUTOR.submit(EVENT_HANDLER.subscribe_thread, note_id, t.note_ids)
+    EXECUTOR.submit(RELAY_HANDLER.subscribe_thread, note_id, t.note_ids)
 
     profile = DB.get_profile(Settings.get('pubkey'))
     return render_template("thread.html",
@@ -241,7 +243,9 @@ def delete_note():
         elif r[0] == 'reason':
             reason = r[1]
     if note_id is not None:
-        event_id = EVENT_HANDLER.submit_delete([note_id], reason)
+        e = SubmitDelete([note_id], reason)
+        event_id = e.event_id
+        #event_id = EVENT_HANDLER.submit_delete([note_id], reason)
     return render_template("upd.json", data=json.dumps({'event_id': event_id}))
 
 
@@ -261,8 +265,9 @@ def quote_submit():
                 out['error'] = 'Nothing to quote'
             else:
                 pow_difficulty = Settings.get('pow_default')
-                event_id = EVENT_HANDLER.submit_note(data, members, pow_difficulty=pow_difficulty)
-                out['event_id'] = event_id
+                e = SubmitNote(data, members, pow_difficulty)
+                #event_id = EVENT_HANDLER.submit_note(data, members, pow_difficulty=pow_difficulty)
+                out['event_id'] = e.event_id
         else:
             out['error'] = 'Quoted note not found at DB'
     return render_template("upd.json", title="Home", data=json.dumps(out))
@@ -288,12 +293,12 @@ def read_more():
 def settings_page():
     if request.method == 'POST' and 'del_keys' in request.form.keys():
         print("RESET DB")
-        EVENT_HANDLER.close()
+        RELAY_HANDLER.close()
         DB.reset()
         return redirect('/')
     else:
-        EXECUTOR.submit(EVENT_HANDLER.set_page('settings', None))
-        EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
+        EXECUTOR.submit(RELAY_HANDLER.set_page('settings', None))
+        EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
         settings = {
             'cloudinary_cloud': '',
             'cloudinary_upload_preset': '',
@@ -315,7 +320,7 @@ def settings_page():
                 settings[item['key']] = item['value']
 
         relays = DB.get_relays()
-        EXECUTOR.submit(EVENT_HANDLER.get_connection_status())
+        EXECUTOR.submit(RELAY_HANDLER.get_connection_status())
         pubkey = Settings.get("pubkey")
         privkey = Settings.get("privkey")
         keys = {
@@ -347,7 +352,7 @@ def update_settings():
 
 @app.route('/destroy_account')
 def destroy_account():
-    EVENT_HANDLER.close()
+    RELAY_HANDLER.close()
     DB.reset()
     if os.path.exists("bija.sqlite"):
         os.remove("bija.sqlite")
@@ -367,9 +372,13 @@ def update_profile():
             valid_nip5 = MetadataEvent.validate_nip05(profile['nip05'], Settings.get('pubkey'))
             out['nip05'] = valid_nip5
             if valid_nip5:
-                out['success'] = EVENT_HANDLER.submit_profile(profile)
+                e = SubmitProfile(profile)
+                out['success'] = e.event_id
+                #out['success'] = EVENT_HANDLER.submit_profile(profile)
         else:
-            out['success'] = EVENT_HANDLER.submit_profile(profile)
+            e = SubmitProfile(profile)
+            out['success'] = e.event_id
+            #out['success'] = EVENT_HANDLER.submit_profile(profile)
     return render_template("upd.json", data=json.dumps(out))
 
 
@@ -382,13 +391,13 @@ def add_relay():
             if item[0] == 'newrelay' and is_valid_relay(ws):
                 success = True
                 DB.insert_relay(ws)
-                EXECUTOR.submit(EVENT_HANDLER.add_relay(ws))
+                EXECUTOR.submit(RELAY_HANDLER.add_relay(ws))
     return render_template("upd.json", data=json.dumps({'add_relay': success}))
 
 
 @app.route('/reset_relays', methods=['POST', 'GET'])
 def reset_relays():
-    EXECUTOR.submit(EVENT_HANDLER.reset)
+    EXECUTOR.submit(RELAY_HANDLER.reset)
     return render_template("upd.json", data=json.dumps({'reset_relays': True}))
 
 
@@ -403,8 +412,8 @@ def validate_nip5():
 
 @app.route('/messages', methods=['GET'])
 def private_messages_page():
-    EXECUTOR.submit(EVENT_HANDLER.set_page('messages', None))
-    EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
+    EXECUTOR.submit(RELAY_HANDLER.set_page('messages', None))
+    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
 
     messages = DB.get_message_list()
 
@@ -413,8 +422,8 @@ def private_messages_page():
 
 @app.route('/message', methods=['GET'])
 def private_message_page():
-    EXECUTOR.submit(EVENT_HANDLER.set_page('message', request.args['pk']))
-    EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
+    EXECUTOR.submit(RELAY_HANDLER.set_page('message', request.args['pk']))
+    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
     messages = []
     pk = ''
     if 'pk' in request.args and is_hex_key(request.args['pk']):
@@ -435,7 +444,9 @@ def submit_message():
     event_id = False
     if request.method == 'POST':
         pow_difficulty = Settings.get('pow_default_enc')
-        event_id = EVENT_HANDLER.submit_message(request.json, pow_difficulty=pow_difficulty)
+        e = SubmitEncryptedMessage(request.json, pow_difficulty)
+        event_id = e.event_id
+        #event_id = EVENT_HANDLER.submit_message(request.json, pow_difficulty=pow_difficulty)
     return render_template("upd.json", title="Home", data=json.dumps({'event_id': event_id}))
 
 
@@ -447,7 +458,9 @@ def submit_like():
         note = DB.get_note(note_id)
         if note.liked is False:
             DB.set_note_liked(note_id)
-            event_id = EVENT_HANDLER.submit_like(note_id)
+            e = SubmitLike(note_id)
+            event_id = e.event_id
+            #event_id = EVENT_HANDLER.submit_like(note_id)
         else:
             DB.set_note_liked(note_id, False)
             like_events = DB.get_like_events_for(note_id, Settings.get('pubkey'))
@@ -455,7 +468,9 @@ def submit_like():
                 ids = []
                 for event in like_events:
                     ids.append(event.id)
-                event_id = EVENT_HANDLER.submit_delete(ids)
+                e = SubmitDelete(ids, 'removing like')
+                event_id = e.event_id
+                #event_id = EVENT_HANDLER.submit_delete(ids)
 
     return render_template("upd.json", data=json.dumps({'event_id': event_id}))
 
@@ -463,10 +478,10 @@ def submit_like():
 @app.route('/following', methods=['GET'])
 @login_required
 def following_page():
-    EXECUTOR.submit(EVENT_HANDLER.set_page('following', request.args.get('pk')))
-    EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
+    EXECUTOR.submit(RELAY_HANDLER.set_page('following', request.args.get('pk')))
+    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
     if 'pk' in request.args and is_hex_key(request.args['pk']):
-        EXECUTOR.submit(EVENT_HANDLER.subscribe_profile, request.args['pk'], timestamp_minus(TimePeriod.WEEK), [])
+        EXECUTOR.submit(RELAY_HANDLER.subscribe_profile, request.args['pk'], timestamp_minus(TimePeriod.WEEK), [])
         k = request.args['pk']
         is_me = False
         p = DB.get_profile(k)
@@ -487,15 +502,15 @@ def following_page():
 
 @app.route('/search', methods=['GET'])
 def search_page():
-    EXECUTOR.submit(EVENT_HANDLER.set_page('search', request.args['search_term']))
-    EXECUTOR.submit(EVENT_HANDLER.close_secondary_subscriptions)
+    EXECUTOR.submit(RELAY_HANDLER.set_page('search', request.args['search_term']))
+    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
     search = Search()
     results, goto, message, action = search.get()
     if goto is not None:
         return redirect(goto)
     if action is not None:
         if action == 'hash':
-            EXECUTOR.submit(EVENT_HANDLER.subscribe_search, request.args['search_term'][1:])
+            EXECUTOR.submit(RELAY_HANDLER.subscribe_search, request.args['search_term'][1:])
     return render_template("search.html", page_id="search", title="Search", message=message, results=results)
 
 
@@ -576,26 +591,27 @@ def io_connect(m):
     unseen_alerts = DB.get_unread_alert_count()
     socketio.emit('alert_n', unseen_alerts)
 
-    EXECUTOR.submit(EVENT_HANDLER.get_connection_status)
+    EXECUTOR.submit(RELAY_HANDLER.get_connection_status)
 
 
 @app.route('/refresh_connections', methods=['GET'])
 def refresh_connections():
-    EXECUTOR.submit(EXECUTOR.submit(EVENT_HANDLER.reset()))
+    EXECUTOR.submit(EXECUTOR.submit(RELAY_HANDLER.reset()))
     return render_template("upd.json", data=json.dumps({'reset': True}))
 
 
 @app.route('/del_relay', methods=['GET'])
 def del_relay():
     DB.remove_relay(request.args['url'])
-    EXECUTOR.submit(EVENT_HANDLER.remove_relay(request.args['url']))
+    EXECUTOR.submit(RELAY_HANDLER.remove_relay(request.args['url']))
     return render_template("upd.json", data=json.dumps({'del': True}))
 
 
 @app.route('/follow', methods=['GET'])
 def follow():
     DB.set_following([request.args['id']], int(request.args['state']))
-    EXECUTOR.submit(EVENT_HANDLER.submit_follow_list)
+    # EXECUTOR.submit(EVENT_HANDLER.submit_follow_list)
+    EXECUTOR.submit(SubmitFollowList())
     profile = DB.get_profile(request.args['id'])
     is_me = request.args['id'] == Settings.get('pubkey')
     upd = request.args['upd']
@@ -655,7 +671,9 @@ def submit_note():
                     if note.public_key not in members:
                         members.insert(0, note.public_key)
             pow_difficulty = Settings.get('pow_default')
-            event_id = EVENT_HANDLER.submit_note(data, members, pow_difficulty=pow_difficulty)
+            e = SubmitNote(data, members, pow_difficulty)
+            event_id = e.event_id
+            # event_id = EVENT_HANDLER.submit_note(data, members, pow_difficulty=pow_difficulty)
             if 'thread_root' in data:
                 out['root'] = data['thread_root']
             else:
@@ -671,7 +689,7 @@ def remove_session(*args, **kwargs):
 
 @app.get('/shutdown')
 def shutdown():
-    EVENT_HANDLER.close()
+    RELAY_HANDLER.close()
     quit()
 
 
@@ -689,8 +707,8 @@ def get_login_state():
         logger.info('Has saved private key, use it to log in')
         if saved_pk.enc == 0:
             set_session_keys(saved_pk.key)
-            EXECUTOR.submit(EVENT_HANDLER.subscribe_primary)
-            EXECUTOR.submit(EVENT_HANDLER.message_pool_handler)
+            EXECUTOR.submit(RELAY_HANDLER.subscribe_primary)
+            EXECUTOR.submit(RELAY_HANDLER.message_pool_handler)
             return LoginState.LOGGED_IN
         else:
             return LoginState.WITH_PASSWORD
@@ -734,7 +752,7 @@ def process_login():
         for item in request.form.getlist('relay'):
             DB.insert_relay(item)
             added = True
-        EVENT_HANDLER.open_connections()
+        RELAY_HANDLER.open_connections()
         time.sleep(1)
         return added
 

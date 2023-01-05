@@ -10,6 +10,7 @@ from bija.settings import Settings
 from python_nostr.nostr.event import EventKind
 from python_nostr.nostr.filter import Filter, Filters
 from python_nostr.nostr.message_type import ClientMessageType
+from bija.app import RELAY_MANAGER
 
 DB = BijaDB(app.session)
 logger = logging.getLogger(__name__)
@@ -17,8 +18,7 @@ logger.setLevel(LOGGING_LEVEL)
 
 
 class Subscribe:
-    def __init__(self, name, relay_manager):
-        self.relay_manager = relay_manager
+    def __init__(self, name):
         self.name = name
         logger.info('SUBSCRIBE: {}'.format(name))
         self.filters = None
@@ -27,15 +27,15 @@ class Subscribe:
         request = [ClientMessageType.REQUEST, self.name]
         request.extend(self.filters.to_json_array())
         logger.info('add subscription to relay manager')
-        self.relay_manager.add_subscription(self.name, self.filters)
+        RELAY_MANAGER.add_subscription(self.name, self.filters)
         message = json.dumps(request)
         logger.info('publish subscriptiom: {}'.format(message))
-        self.relay_manager.publish_message(message)
+        RELAY_MANAGER.publish_message(message)
 
 
 class SubscribePrimary(Subscribe):
-    def __init__(self, name, relay_manager, pubkey):
-        super().__init__(name, relay_manager)
+    def __init__(self, name, pubkey):
+        super().__init__(name)
         self.pubkey = pubkey
         self.build_filters()
         self.send()
@@ -72,8 +72,8 @@ class SubscribePrimary(Subscribe):
 
 
 class SubscribeSearch(Subscribe):
-    def __init__(self, name, relay_manager, term):
-        super().__init__(name, relay_manager)
+    def __init__(self, name, term):
+        super().__init__(name)
         self.term = term
         self.build_filters()
         self.send()
@@ -94,8 +94,8 @@ class SubscribeSearch(Subscribe):
 
 
 class SubscribeProfile(Subscribe):
-    def __init__(self, name, relay_manager, pubkey, since):
-        super().__init__(name, relay_manager)
+    def __init__(self, name, pubkey, since):
+        super().__init__(name)
         self.pubkey = pubkey
         self.since = since
         self.build_filters()
@@ -118,8 +118,8 @@ class SubscribeProfile(Subscribe):
 
 
 class SubscribeThread(Subscribe):
-    def __init__(self, name, relay_manager, root):
-        super().__init__(name, relay_manager)
+    def __init__(self, name, root):
+        super().__init__(name)
         self.root = root
         self.build_filters()
         self.send()
@@ -137,8 +137,8 @@ class SubscribeThread(Subscribe):
 
 
 class SubscribeFeed(Subscribe):
-    def __init__(self, name, relay_manager, ids):
-        super().__init__(name, relay_manager)
+    def __init__(self, name, ids):
+        super().__init__(name)
         self.ids = ids
         self.build_filters()
         self.send()
