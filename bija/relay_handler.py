@@ -2,6 +2,7 @@ import logging
 import os
 import ssl
 import textwrap
+import threading
 import time
 from urllib.parse import urlparse
 
@@ -38,6 +39,9 @@ class RelayHandler:
         'page': None,
         'identifier': None
     }
+    processing = False
+    new_on_primary = False
+    notify_empty_queue = False
 
     def __init__(self):
         self.should_run = True
@@ -87,59 +91,80 @@ class RelayHandler:
             'identifier': identifier
         }
 
-
-    def message_pool_handler(self):
-        if self.pool_handler_running:
+    def check_messages(self):
+        if self.processing:
+            logger.log('Already processing messages. Wait')
             return
-        self.pool_handler_running = True
+        self.processing = True
+        while RELAY_MANAGER.message_pool.has_notices():
+            notice = RELAY_MANAGER.message_pool.get_notice()
+
+        while RELAY_MANAGER.message_pool.has_ok_notices():
+            notice = RELAY_MANAGER.message_pool.get_ok_notice()
+
+        while RELAY_MANAGER.message_pool.has_eose_notices():
+            notice = RELAY_MANAGER.message_pool.get_eose_notice()
+            print('EOSE', notice.url, notice.subscription_id)
+
+        n_queued = RELAY_MANAGER.message_pool.events.qsize()
+        if n_queued > 0 or self.notify_empty_queue:
+            self.notify_empty_queue = True
+            socketio.emit('events_processing', n_queued)
+            if n_queued == 0:
+                self.notify_empty_queue = False
+
         i = 0
+        while RELAY_MANAGER.message_pool.has_events() and i < 100:
+            i += 1
+            msg = RELAY_MANAGER.message_pool.get_event()
+            if DB.get_event(msg.event.id) is None:
+                logger.info('New event: {}'.format(msg.event.kind))
+                if msg.event.kind == EventKind.SET_METADATA:
+                    self.receive_metadata_event(msg.event)
+
+                if msg.event.kind == EventKind.CONTACTS:
+                    self.receive_contact_list_event(msg.event, msg.subscription_id)
+
+                if msg.event.kind == EventKind.TEXT_NOTE:
+                    self.receive_note_event(msg.event, msg.subscription_id)
+
+                if msg.event.kind == EventKind.ENCRYPTED_DIRECT_MESSAGE:
+                    self.receive_private_message_event(msg.event)
+
+                if msg.event.kind == EventKind.DELETE:
+                    self.receive_del_event(msg.event)
+
+                if msg.event.kind == EventKind.REACTION:
+                    self.receive_reaction_event(msg.event)
+
+                DB.add_event(
+                    msg.event.id,
+                    msg.event.public_key,
+                    int(msg.event.kind),
+                    int(msg.event.created_at),
+                    json.dumps(msg.event.to_json_object())
+                )
+        DB.commit()
+
+        if self.new_on_primary:
+            self.new_on_primary = False
+            unseen_posts = DB.get_unseen_in_feed()
+            if unseen_posts > 0:
+                socketio.emit('unseen_posts_n', unseen_posts)
+
+        if RELAY_MANAGER.message_pool.events.qsize() == 0:
+            D_TASKS.next()
+        t = int(time.time())
+        logger.info('Event loop {}'.format(t))
+        if t % 60 == 0:
+            self.get_connection_status()
+            i = 0
+        self.processing = False
+
+    def run_loop(self):
         while self.should_run:
-            try:
-                while RELAY_MANAGER.message_pool.has_notices():
-                    notice = RELAY_MANAGER.message_pool.get_notice()
-
-                while RELAY_MANAGER.message_pool.has_ok_notices():
-                    notice = RELAY_MANAGER.message_pool.get_ok_notice()
-
-                while RELAY_MANAGER.message_pool.has_eose_notices():
-                    notice = RELAY_MANAGER.message_pool.get_eose_notice()
-                    print('EOSE', notice.url, notice.subscription_id)
-
-                while RELAY_MANAGER.message_pool.has_events():
-                    msg = RELAY_MANAGER.message_pool.get_event()
-                    if DB.get_event(msg.event.id) is None:
-                        logger.info('New event: {}'.format(msg.event.kind))
-                        if msg.event.kind == EventKind.SET_METADATA:
-                            self.receive_metadata_event(msg.event)
-
-                        if msg.event.kind == EventKind.CONTACTS:
-                            self.receive_contact_list_event(msg.event, msg.subscription_id)
-
-                        if msg.event.kind == EventKind.TEXT_NOTE:
-                            self.receive_note_event(msg.event, msg.subscription_id)
-
-                        if msg.event.kind == EventKind.ENCRYPTED_DIRECT_MESSAGE:
-                            self.receive_private_message_event(msg.event)
-
-                        if msg.event.kind == EventKind.DELETE:
-                            self.receive_del_event(msg.event)
-
-                        if msg.event.kind == EventKind.REACTION:
-                            self.receive_reaction_event(msg.event)
-
-                        if msg.subscription_id != 'search':
-                            DB.add_event(msg.event.id, msg.event.kind)
-                DB.commit()
-                D_TASKS.next()
-                time.sleep(1)
-                logger.info('Event loop {}'.format(int(time.time())))
-                i += 1
-                if i == 60:
-                    self.get_connection_status()
-                    socketio.emit('subscriptions', list(self.subscriptions))
-                    i = 0
-            except:
-                pass
+            self.check_messages()
+            time.sleep(1)
 
     def receive_del_event(self, event):
         DeleteEvent(event)
@@ -228,10 +253,8 @@ class RelayHandler:
 
     def notify_on_note_event(self, event, subscription):
         if subscription == 'primary':
-            unseen_posts = DB.get_unseen_in_feed()
-            if unseen_posts > 0:
-                socketio.emit('unseen_posts_n', unseen_posts)
-        elif subscription == 'profile':
+            self.new_on_primary = True
+        if subscription == 'profile':
             DB.set_note_seen(event.id)
             socketio.emit('new_profile_posts', DB.get_most_recent_for_pk(event.public_key))
         elif subscription == 'note-thread':
@@ -308,16 +331,18 @@ class RelayHandler:
 
 class ReactionEvent:
     def __init__(self, event, my_pubkey):
+        logger.info('REACTION EVENT')
         self.event = event
         self.pubkey = my_pubkey
         self.event_id = None
         self.event_pk = None
         self.event_members = []
         self.valid = False
-
         self.process()
+        logger.info('REACTION processed')
 
     def process(self):
+        logger.info('process reaction')
         self.process_tags()
         if self.event_id is not None and self.event_pk is not None:
             self.valid = True
@@ -327,6 +352,7 @@ class ReactionEvent:
             logger.debug('Invalid reaction event could not be stored.')
 
     def process_tags(self):
+        logger.info('process reaction tags')
         for tag in self.event.tags:
             if tag[0] == "p" and is_hex_key(tag[1]):
                 self.event_pk = tag[1]
@@ -335,6 +361,7 @@ class ReactionEvent:
                 self.event_id = tag[1]
 
     def store(self):
+        logger.info('store reaction')
         DB.add_note_reaction(
             self.event.id,
             self.event.public_key,
@@ -350,6 +377,7 @@ class ReactionEvent:
             DB.set_note_liked(self.event_id)
 
     def update_referenced(self):
+        logger.info('update referenced in reaction')
         if self.event.content != "-":
             DB.increment_note_like_count(self.event_id)
 
@@ -623,11 +651,11 @@ class NoteEvent:
         if len(self.tags) > 0:
             parents = []
             for item in self.tags:
-                if item[0] == "p":
+                if item[0] == "p" and len(item) > 1:
                     self.members.append(item[1])
                     if item[1] == self.my_pk and self.event.public_key != self.my_pk:
                         self.mentions_me = True
-                elif item[0] == "e":
+                elif item[0] == "e" and len(item) > 1:
                     if len(item) < 4 > 1:  # deprecate format
                         parents.append(item[1])
                     elif len(item) > 3 and item[3] in ["root", "reply"]:
