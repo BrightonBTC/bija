@@ -8,7 +8,7 @@ import pydenticon
 from flask import request, session, redirect, make_response, url_for
 from flask_executor import Executor
 
-from bija.app import app, socketio
+from bija.app import app, socketio, ACTIVE_EVENTS
 from bija.args import SETUP_PK, SETUP_PW, LOGGING_LEVEL
 from bija.config import DEFAULT_RELAYS
 from bija.emojis import emojis
@@ -66,6 +66,7 @@ def login_required(f):
 @app.route('/')
 @login_required
 def index_page():
+    ACTIVE_EVENTS.clear()
     EXECUTOR.submit(RELAY_HANDLER.set_page('home', None))
     EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
     pk = Settings.get('pubkey')
@@ -99,6 +100,7 @@ def feed():
 @app.route('/alerts', methods=['GET'])
 @login_required
 def alerts_page():
+    ACTIVE_EVENTS.clear()
     alerts = DB.get_alerts()
     DB.set_alerts_read()
     return render_template("alerts.html", page_id="alerts", title="alerts", alerts=alerts)
@@ -144,6 +146,7 @@ def login_page():
 @app.route('/profile', methods=['GET'])
 @login_required
 def profile_page():
+    ACTIVE_EVENTS.clear()
     EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
     page_id = 'profile'
     if 'pk' in request.args and is_hex_key(request.args['pk']) and request.args['pk'] != Settings.get('pubkey'):
@@ -201,6 +204,7 @@ def profile_feed():
 @app.route('/note', methods=['GET'])
 @login_required
 def note_page():
+    ACTIVE_EVENTS.clear()
     note_id = request.args['id']
     EXECUTOR.submit(RELAY_HANDLER.set_page('note', note_id))
     EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
@@ -291,6 +295,7 @@ def read_more():
 @app.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings_page():
+    ACTIVE_EVENTS.clear()
     if request.method == 'POST' and 'del_keys' in request.form.keys():
         print("RESET DB")
         RELAY_HANDLER.close()
@@ -412,6 +417,7 @@ def validate_nip5():
 
 @app.route('/messages', methods=['GET'])
 def private_messages_page():
+    ACTIVE_EVENTS.clear()
     EXECUTOR.submit(RELAY_HANDLER.set_page('messages', None))
     EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
 
@@ -422,6 +428,7 @@ def private_messages_page():
 
 @app.route('/message', methods=['GET'])
 def private_message_page():
+    ACTIVE_EVENTS.clear()
     EXECUTOR.submit(RELAY_HANDLER.set_page('message', request.args['pk']))
     EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
     messages = []
@@ -478,6 +485,7 @@ def submit_like():
 @app.route('/following', methods=['GET'])
 @login_required
 def following_page():
+    ACTIVE_EVENTS.clear()
     EXECUTOR.submit(RELAY_HANDLER.set_page('following', request.args.get('pk')))
     EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
     if 'pk' in request.args and is_hex_key(request.args['pk']):
@@ -502,6 +510,7 @@ def following_page():
 
 @app.route('/search', methods=['GET'])
 def search_page():
+    ACTIVE_EVENTS.clear()
     EXECUTOR.submit(RELAY_HANDLER.set_page('search', request.args['search_term']))
     EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
     search = Search()

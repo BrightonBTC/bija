@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 import validators as validators
 from flask import render_template
 
-from bija.app import socketio
+from bija.app import socketio, ACTIVE_EVENTS
 from bija.args import LOGGING_LEVEL
 from bija.deferred_tasks import TaskKind, DeferredTasks
 from bija.helpers import get_embeded_tag_indexes, \
@@ -38,7 +38,6 @@ class RelayHandler:
         'page': None,
         'identifier': None
     }
-    active_events = {}  # events that are open in the current ui view
 
     def __init__(self):
         self.should_run = True
@@ -83,7 +82,6 @@ class RelayHandler:
         socketio.emit('conn_status', out)
 
     def set_page(self, page, identifier):
-        self.active_events = {}
         self.page = {
             'page': page,
             'identifier': identifier
@@ -150,7 +148,7 @@ class RelayHandler:
         e = ReactionEvent(event, Settings.get('pubkey'))
         if e.valid:
             note = DB.get_note(e.event_id)
-            if e.event.content != '-' and 'notes' in self.active_events and e.event_id in self.active_events['notes']:
+            if e.event.content != '-' and len(ACTIVE_EVENTS.notes) > 0 and e.event_id in ACTIVE_EVENTS.notes:
                 socketio.emit('new_reaction', e.event_id)
                 logger.info('Reaction on active note detected, signal to UI')
             if e.event.public_key != Settings.get('pubkey'):
@@ -199,17 +197,17 @@ class RelayHandler:
             self.alert_on_note_event(e)
         self.notify_on_note_event(event, subscription)
 
-        if 'notes' in self.active_events:
-            if e.event.id in self.active_events['notes']:
+        if len(ACTIVE_EVENTS.notes) > 0:
+            if e.event.id in ACTIVE_EVENTS.notes:
                 logger.info('New required note {}'.format(e.event.id))
                 socketio.emit('new_note', e.event.id)
-            if e.response_to in self.active_events['notes']:
+            if e.response_to in ACTIVE_EVENTS.notes:
                 logger.info('Detected response to active note {}'.format(e.response_to))
                 socketio.emit('new_reply', e.response_to)
-            elif e.response_to is None and e.thread_root in self.active_events['notes']:
+            elif e.response_to is None and e.thread_root in ACTIVE_EVENTS.notes:
                 logger.info('Detected response to active note {}'.format(e.thread_root))
                 socketio.emit('new_reply', e.thread_root)
-            if e.reshare in self.active_events['notes']:
+            if e.reshare in ACTIVE_EVENTS.notes:
                 logger.info('Detected reshare on active note {}'.format(e.reshare))
                 socketio.emit('new_reshare', e.reshare)
 
@@ -267,25 +265,19 @@ class RelayHandler:
             socketio.emit('unseen_messages_n', unseen_n)
 
     def subscribe_thread(self, root_id, ids):
-        self.active_events['notes'] = ids
+        ACTIVE_EVENTS.add_notes(ids)
         subscription_id = 'note-thread'
         self.subscriptions.add(subscription_id)
         SubscribeThread(subscription_id, root_id)
 
     def subscribe_feed(self, ids):
-        if 'notes' in self.active_events:
-            self.active_events['notes'] += ids
-        else:
-            self.active_events['notes'] = ids
+        ACTIVE_EVENTS.add_notes(ids)
         subscription_id = 'main-feed'
         self.subscriptions.add(subscription_id)
         SubscribeFeed(subscription_id, ids)
 
     def subscribe_profile(self, pubkey, since, ids):
-        if 'notes' in self.active_events:
-            self.active_events['notes'] += ids
-        else:
-            self.active_events['notes'] = ids
+        ACTIVE_EVENTS.add_notes(ids)
         subscription_id = 'profile'
         self.subscriptions.add(subscription_id)
         SubscribeProfile(subscription_id, pubkey, since)
