@@ -157,7 +157,7 @@ def request_nip05(nip05):
             url = 'https://{}/.well-known/nostr.json'.format(address)
             logger.info('request: {}'.format(url))
             response = requests.get(
-                url, params={'name': name}, timeout=2
+                url, params={'name': name}, timeout=2, headers={'User-Agent': 'Bija Nostr Client'}
             )
             logger.info('response staus: {}'.format(response.status_code))
             if response.status_code == 200:
