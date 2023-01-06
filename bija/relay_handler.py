@@ -208,17 +208,6 @@ class RelayHandler:
             })
 
     def receive_note_event(self, event, subscription):
-        if subscription == 'search':
-            socketio.emit('search_result', {
-                'id': event.id,
-                'content': textwrap.shorten(
-                    strip_tags(event.content),
-                    width=200,
-                    replace_whitespace=False,
-                    break_long_words=True,
-                    placeholder="...")
-            })
-            return
         e = NoteEvent(event, Settings.get('pubkey'))
         if e.mentions_me:
             self.alert_on_note_event(e)

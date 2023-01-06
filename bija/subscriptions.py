@@ -117,9 +117,10 @@ class SubscribeProfile(Subscribe):
 
 
 class SubscribeThread(Subscribe):
-    def __init__(self, name, root):
+    def __init__(self, name, root, proof_of_work=None):
         super().__init__(name)
         self.root = root
+        self.proof_of_work = proof_of_work
         self.build_filters()
         self.send()
 
@@ -130,10 +131,15 @@ class SubscribeThread(Subscribe):
         if ids is None:
             ids = [self.root]
         filters.append(Filter(ids=ids, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION]))
-        required_pow = Settings.get('pow_required')
-        if required_pow is not None and required_pow > 0:
+        if self.proof_of_work is None:
+            required_pow = Settings.get('pow_required')
+        else:
+            required_pow = self.proof_of_work
+        if required_pow is not None and int(required_pow) > 0:
+            print('POW', required_pow)
             pks = DB.get_following_pubkeys()
             difficulty = int(int(required_pow) / 4) * "0"
+            print('difficulty', difficulty)
             subid = {"ids": [difficulty]}
             filters.append(Filter(tags={'#e': ids, '#p': pks}, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION]))
             filters.append(Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION], subid=subid))

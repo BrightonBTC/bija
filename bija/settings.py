@@ -1,14 +1,8 @@
 from bija.app import app
+from bija.config import default_settings
 from bija.db import BijaDB
 
 DB = BijaDB(app.session)
-
-default_settings = {
-    'pow_default': '12',
-    'pow_default_enc': '12',
-    'pow_required': '8',
-    'pow_required_enc': '16'
-}
 
 class BijaSettings:
 

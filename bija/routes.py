@@ -716,7 +716,7 @@ def get_login_state():
     if saved_pk is not None:
         logger.info('Has saved private key, use it to log in')
         if saved_pk.enc == 0:
-            set_session_keys(saved_pk.key)
+            set_keypair(saved_pk.key)
             EXECUTOR.submit(RELAY_HANDLER.subscribe_primary)
             EXECUTOR.submit(RELAY_HANDLER.run_loop)
             return LoginState.LOGGED_IN
@@ -732,7 +732,7 @@ def process_login():
         saved_pk = DB.get_saved_pk()
         k = decrypt_key(request.form['pw'].strip(), saved_pk.key)
         if k and is_hex_key(k):
-            set_session_keys(k)
+            set_keypair(k)
             return True
         else:
             return False
@@ -754,7 +754,7 @@ def process_login():
                 return False
         else:
             return False
-        set_session_keys(private_key)
+        set_keypair(private_key)
         return True
 
     elif 'add_relays' in request.form.keys():
@@ -777,7 +777,7 @@ def process_key_save(pk):
         DB.save_pk(pk, enc)
 
 
-def set_session_keys(k):
+def set_keypair(k):
     global KEYS
     logger.info('Set session keys')
     if k is None:

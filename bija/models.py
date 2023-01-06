@@ -105,6 +105,10 @@ class PrivateMessage(Base):
             self.raw
         }
 
+class Topic(Base):
+    __tablename__ = "topic"
+    id = Column(Integer, primary_key=True)
+    tag = Column(String)
 
 class Settings(Base):
     __tablename__ = "settings"
