@@ -170,8 +170,18 @@ def profile_page():
         for item in meta.keys():
             if item in ['website', 'lud06', 'lud16']:
                 metadata[item] = meta[item]
-    return render_template("profile.html", page_id=page_id, title="Profile", threads=t.threads, last=t.last_ts,
-                           latest=latest, profile=profile, is_me=is_me, meta=metadata, pubkey=get_key())
+    return render_template(
+        "profile.html",
+        page_id=page_id,
+        title="Profile",
+        threads=t.threads,
+        last=t.last_ts,
+        latest=latest,
+        profile=profile,
+        is_me=is_me,
+        meta=metadata,
+        pubkey=get_key(),
+    )
 
 
 @app.route('/profile_feed', methods=['GET'])
@@ -619,12 +629,15 @@ def get_reactions():
 
 @app.route('/timestamp_upd', methods=['GET'])
 def timestamp_upd():
-    t = request.args['ts'].split(',')
-    results = {}
-    for ts in t:
-        dt = arrow.get(int(ts))
-        results[ts] = dt.humanize()
-    return render_template("upd.json", data=json.dumps({'data': results}))
+    results, status = {}, 200
+    for ts in request.args['ts'].split(','):
+        try:
+            dt = arrow.get(int(ts))
+            results[ts] = dt.humanize()
+        except Exception as e:
+            logger.warn('Could not read timestamp provided')
+            status = 400
+    return render_template("upd.json", data=json.dumps({'data': results})), status
 
 
 @app.route('/submit_note', methods=['POST', 'GET'])
