@@ -1,6 +1,5 @@
 import sys
 from functools import wraps
-from threading import Thread
 
 import bip39
 import pydenticon
@@ -24,9 +23,8 @@ from bija.submissions import SubmitDelete, SubmitNote, SubmitProfile, SubmitEncr
 logger = logging.getLogger(__name__)
 logger.setLevel(LOGGING_LEVEL)
 
-thread = Thread()
-
 DB = BijaDB(app.session)
+# app.config['EXECUTOR_TYPE'] = 'process'
 EXECUTOR = Executor(app)
 RELAY_HANDLER = RelayHandler()
 
@@ -415,6 +413,7 @@ def validate_nip5():
 
 
 @app.route('/messages', methods=['GET'])
+@login_required
 def private_messages_page():
     ACTIVE_EVENTS.clear()
     EXECUTOR.submit(RELAY_HANDLER.set_page('messages', None))
@@ -426,6 +425,7 @@ def private_messages_page():
 
 
 @app.route('/message', methods=['GET'])
+@login_required
 def private_message_page():
     ACTIVE_EVENTS.clear()
     EXECUTOR.submit(RELAY_HANDLER.set_page('message', request.args['pk']))
@@ -508,6 +508,7 @@ def following_page():
 
 
 @app.route('/search', methods=['GET'])
+@login_required
 def search_page():
     ACTIVE_EVENTS.clear()
     EXECUTOR.submit(RELAY_HANDLER.set_page('search', request.args['search_term']))

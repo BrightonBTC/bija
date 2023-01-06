@@ -59,7 +59,7 @@ class SubscribePrimary(Subscribe):
             following_filter = Filter(
                 authors=following_pubkeys,
                 kinds=[EventKind.TEXT_NOTE, EventKind.REACTION, EventKind.DELETE, EventKind.CONTACTS],
-                since=timestamp_minus(TimePeriod.WEEK)  # TODO: should be configurable in user settings
+                since=timestamp_minus(TimePeriod.DAY)  # TODO: should be configurable in user settings
             )
             following_profiles_filter = Filter(
                 authors=following_pubkeys,
@@ -104,7 +104,6 @@ class SubscribeProfile(Subscribe):
     def build_filters(self):
         logger.info('build subscription filters')
         profile = DB.get_profile(self.pubkey)
-
         f = [
             Filter(authors=[self.pubkey], kinds=[EventKind.SET_METADATA, EventKind.CONTACTS]),
             Filter(authors=[self.pubkey], kinds=[EventKind.TEXT_NOTE, EventKind.DELETE, EventKind.REACTION],
@@ -126,14 +125,23 @@ class SubscribeThread(Subscribe):
 
     def build_filters(self):
         logger.info('build subscription filters')
+        filters = []
         ids = DB.get_note_thread_ids(self.root)
         if ids is None:
             ids = [self.root]
+        filters.append(Filter(ids=ids, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION]))
+        required_pow = Settings.get('pow_required')
+        if required_pow is not None or required_pow > 0:
+            pks = DB.get_following_pubkeys()
+            difficulty = int(int(required_pow) / 4) * "0"
+            subid = {"ids": [difficulty]}
+            filters.append(Filter(tags={'#e': ids, '#p': pks}, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION]))
+            filters.append(Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION], subid=subid))
+        else:
+            filters.append(Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION]))  # event responses
 
-        self.filters = Filters([
-            Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION]),  # event responses
-            Filter(ids=ids, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION])
-        ])
+
+        self.filters = Filters(filters)
 
 
 class SubscribeFeed(Subscribe):

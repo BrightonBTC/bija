@@ -47,6 +47,8 @@
     --icon-sm: 12px;
     --icon: 14px;
     --icon-lg: 16px;
+
+    --alert-bg: #19dfff;
 }
 
 /* global styles */
@@ -391,12 +393,13 @@ hr{
 
 .queued_count{
     position: fixed;
-    background: yellow;
+    background: var(--alert-bg);
     color: black;
     bottom: 0;
     right:0;
     z-index: 10000;
     opacity: 0;
+    font-size: var(--fs-tiny);
     padding: var(--spacing-sm);
 }
 .queued_count.fadeIn{

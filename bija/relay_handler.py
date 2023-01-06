@@ -83,6 +83,7 @@ class RelayHandler:
                 out.append([s[0], int(time.time() - s[1])])
             else:
                 out.append([s[0], None])
+
         socketio.emit('conn_status', out)
 
     def set_page(self, page, identifier):
@@ -104,7 +105,8 @@ class RelayHandler:
 
         while RELAY_MANAGER.message_pool.has_eose_notices():
             notice = RELAY_MANAGER.message_pool.get_eose_notice()
-            print('EOSE', notice.url, notice.subscription_id)
+            if hasattr(notice, 'url') and hasattr(notice, 'subscription_id'):
+                print('EOSE', notice.url, notice.subscription_id)
 
         n_queued = RELAY_MANAGER.message_pool.events.qsize()
         if n_queued > 0 or self.notify_empty_queue:
@@ -261,16 +263,20 @@ class RelayHandler:
             socketio.emit('new_in_thread', event.id)
 
     def receive_contact_list_event(self, event, subscription):
-        e = ContactListEvent(event, Settings.get('pubkey'))
-        DB.add_profile_if_not_exists(event.public_key)
-        DB.add_contact_list(event.public_key, e.keys)
-        if event.public_key == Settings.get('pubkey'):
-            logger.info('Contact list updated, restart primary subscription')
-            self.subscribe_primary()
-        if event.public_key != Settings.get('pubkey') and subscription == 'profile':
-            self.subscribe_profile(event.public_key, timestamp_minus(TimePeriod.WEEK), [])
-        if Settings.get('pubkey') in e.keys:
-            DB.set_follower(event.public_key)
+        logger.info('Contact list received for: {}'.format(event.public_key))
+        last_upd = DB.get_last_contacts_upd(event.public_key)
+        logger.info('Contact list last update: {}'.format(last_upd))
+        if last_upd is None or last_upd < event.created_at:
+            pk = Settings.get('pubkey')
+            logger.info('Contact list is newer than last upd: {}'.format(event.created_at))
+            e = ContactListEvent(event, pk)
+            DB.add_profile_if_not_exists(event.public_key)
+            DB.add_contact_list(event.public_key, e.keys)
+            if event.public_key == pk:
+                logger.info('Contact list updated, restart primary subscription')
+                self.subscribe_primary()
+            if event.public_key != pk and subscription == 'profile':
+                self.subscribe_profile(event.public_key, timestamp_minus(TimePeriod.WEEK), [])
 
     def receive_private_message_event(self, event):
 

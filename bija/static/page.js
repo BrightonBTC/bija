@@ -117,9 +117,11 @@ function SOCK() {
         if(event > 0){
             elem.innerText = 'Processing '+event+' queued events'
             elem.classList.add('fadeIn')
+            elem.classList.remove('fadeOut')
         }
         else{
             elem.classList.add('fadeOut')
+            elem.classList.remove('fadeIn')
         }
     });
 }
