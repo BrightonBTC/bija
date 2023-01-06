@@ -131,7 +131,7 @@ class SubscribeThread(Subscribe):
             ids = [self.root]
         filters.append(Filter(ids=ids, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION]))
         required_pow = Settings.get('pow_required')
-        if required_pow is not None or required_pow > 0:
+        if required_pow is not None and required_pow > 0:
             pks = DB.get_following_pubkeys()
             difficulty = int(int(required_pow) / 4) * "0"
             subid = {"ids": [difficulty]}
