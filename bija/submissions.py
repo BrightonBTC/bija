@@ -6,10 +6,12 @@ from bija.app import app
 from bija.args import LOGGING_LEVEL
 from bija.db import BijaDB
 from bija.helpers import is_hex_key, get_at_tags, get_hash_tags
+from bija.settings import Settings
 from python_nostr.nostr.event import EventKind, Event
 from python_nostr.nostr.key import PrivateKey
 from python_nostr.nostr.message_type import ClientMessageType
 from python_nostr.nostr.pow import mine_event
+from bija.app import RELAY_MANAGER
 
 DB = BijaDB(app.session)
 logger = logging.getLogger(__name__)
@@ -17,10 +19,8 @@ logger.setLevel(LOGGING_LEVEL)
 
 
 class Submit:
-    def __init__(self, relay_manager, keys):
+    def __init__(self):
         logger.info('SUBMISSION initiated')
-        self.relay_manager = relay_manager
-        self.keys = keys
         self.tags = []
         self.content = ""
         self.event_id = None
@@ -33,21 +33,21 @@ class Submit:
     def send(self):
         self.tags.append(['client', 'BIJA'])
         if self.pow_difficulty is None or self.pow_difficulty < 1:
-            event = Event(self.keys['public'], self.content, tags=self.tags, created_at=self.created_at, kind=self.kind)
+            event = Event(Settings.get('pubkey'), self.content, tags=self.tags, created_at=self.created_at, kind=self.kind)
         else:
             logger.info('mine event')
-            event = mine_event(self.content, self.pow_difficulty, self.keys['public'], self.kind, self.tags)
-        event.sign(self.keys['private'])
+            event = mine_event(self.content, self.pow_difficulty, Settings.get('pubkey'), self.kind, self.tags)
+        event.sign(Settings.get('privkey'))
         self.event_id = event.id
         message = json.dumps([ClientMessageType.EVENT, event.to_json_object()], ensure_ascii=False)
         logger.info('SUBMIT: {}'.format(message))
-        self.relay_manager.publish_message(message)
+        RELAY_MANAGER.publish_message(message)
         logger.info('PUBLISHED')
 
 
 class SubmitDelete(Submit):
-    def __init__(self, relay_manager, keys, ids, reason=""):
-        super().__init__(relay_manager, keys)
+    def __init__(self, ids, reason=""):
+        super().__init__()
         logger.info('SUBMIT delete')
         self.kind = EventKind.DELETE
         self.ids = ids
@@ -63,8 +63,8 @@ class SubmitDelete(Submit):
 
 
 class SubmitProfile(Submit):
-    def __init__(self, relay_manager, keys, data):
-        super().__init__(relay_manager, keys)
+    def __init__(self, data):
+        super().__init__()
         logger.info('SUBMIT profile')
         self.kind = EventKind.SET_METADATA
         self.content = json.dumps(data)
@@ -72,8 +72,8 @@ class SubmitProfile(Submit):
 
 
 class SubmitLike(Submit):
-    def __init__(self, relay_manager, keys, note_id, content="+"):
-        super().__init__(relay_manager, keys)
+    def __init__(self, note_id, content="+"):
+        super().__init__()
         logger.info('SUBMIT like')
         self.content = content
         self.note_id = note_id
@@ -93,8 +93,8 @@ class SubmitLike(Submit):
 
 
 class SubmitNote(Submit):
-    def __init__(self, relay_manager, keys, data, members=[], pow_difficulty=None):
-        super().__init__(relay_manager, keys)
+    def __init__(self, data, members=[], pow_difficulty=None):
+        super().__init__()
         logger.info('SUBMIT note')
         self.data = data
         self.members = members
@@ -174,7 +174,7 @@ class SubmitNote(Submit):
         logger.info('insert note')
         DB.insert_note(
             self.event_id,
-            self.keys['public'],
+            Settings.get('pubkey'),
             self.content,
             self.response_to,
             self.thread_root,
@@ -185,8 +185,8 @@ class SubmitNote(Submit):
 
 
 class SubmitFollowList(Submit):
-    def __init__(self, relay_manager, keys):
-        super().__init__(relay_manager, keys)
+    def __init__(self):
+        super().__init__()
         logger.info('SUBMIT follow list')
         self.kind = EventKind.CONTACTS
         self.compose()
@@ -200,8 +200,8 @@ class SubmitFollowList(Submit):
 
 
 class SubmitEncryptedMessage(Submit):
-    def __init__(self, relay_manager, keys, data, pow_difficulty=None):
-        super().__init__(relay_manager, keys)
+    def __init__(self, data, pow_difficulty=None):
+        super().__init__()
         logger.info('SUBMIT encrypted message')
         self.kind = EventKind.ENCRYPTED_DIRECT_MESSAGE
         self.data = data
@@ -228,7 +228,7 @@ class SubmitEncryptedMessage(Submit):
     def encrypt(self, message, public_key):
         logger.info('encrypt message')
         try:
-            k = bytes.fromhex(self.keys['private'])
+            k = bytes.fromhex(Settings.get('privkey'))
             pk = PrivateKey(k)
             return pk.encrypt_message(message, public_key)
         except ValueError:

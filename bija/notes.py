@@ -94,7 +94,6 @@ class FeedThread:
 
     @staticmethod
     def is_in_thread(note, root):
-        logger.info('is in thread?')
         is_root = False
         is_response = False
         if note['id'] == root:
@@ -111,11 +110,11 @@ class NoteThread:
         self.is_root = False
         self.root = []
         self.root_id = note_id
+        self.public_keys = []
         self.note = self.get_note()
         self.ancestors = []
         self.children = []
         self.note_ids = [self.id]
-        self.public_keys = []
         self.profiles = []
         self.determine_root()
         self.notes = self.get_notes()
@@ -152,6 +151,7 @@ class NoteThread:
                 self.is_root = False
                 n['class'] = 'main'
             n['reshare'] = self.get_reshare(n)
+            self.add_members(n)
             return n
         return self.id
 

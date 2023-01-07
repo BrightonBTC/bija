@@ -1,0 +1,11 @@
+<h2 class="posts-title">Topics</h2>
+<ul class="topic-list">
+    {%- for item in topics -%}
+    {%- if item.tag == topic -%}
+        {%- set class = 'actv' -%}
+    {%- else -%}
+        {%- set class = '' -%}
+    {%- endif -%}
+    <li class="{{class}}" data-tag="{{item.tag}}"><a href="/topic?tag={{item.tag}}">#{{item.tag}} <span class="unseen_n"></span></a></li>
+    {%- endfor -%}
+</ul>

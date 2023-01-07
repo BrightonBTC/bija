@@ -17,6 +17,11 @@ function SOCK() {
             el_unseen.innerText = data;
         }
     });
+    socket.on('unseen_in_topics', function(data) {
+        for(const [k, v] of Object.entries(data)){
+            updateUnseenTopicCount(k, v)
+        }
+    });
 
     socket.on('unseen_posts_n', function(data) {
         let el_unseen = document.getElementById("n_unseen_posts");
@@ -109,9 +114,31 @@ function SOCK() {
     socket.on('new_reshare', function(note_id) {
         updateInteractionCount(note_id, '.quote-n');
     });
-    socket.on('search_result', function(event) {
-        addSearchResult(event);
+    socket.on('events_processing', function(event) {
+        const elem = document.querySelector('.queued_count')
+        if(event > 0){
+            elem.innerText = 'Processing '+event+' queued events'
+            elem.classList.add('fadeIn')
+            elem.classList.remove('fadeOut')
+        }
+        else{
+            elem.classList.add('fadeOut')
+            elem.classList.remove('fadeIn')
+        }
     });
+}
+
+let updateUnseenTopicCount = function(tag, n){
+    const container_el = document.querySelector('ul.topic-list li[data-tag="'+tag+'"]')
+    if(container_el){
+        n_el = container_el.querySelector('.unseen_n')
+        if(n > 0){
+            n_el.innerHTML = '<span>'+n+'</span>'
+        }
+        else{
+            n_el.innerHTML= ''
+        }
+    }
 }
 
 let replaceNotePlaceholder = function(id){
@@ -130,18 +157,6 @@ let replaceNotePlaceholder = function(id){
         fetchGet('/thread_item?id='+id, cb, {'els': ph_els})
     }
 }
-
-let addSearchResult = function(event){
-    const results_el = document.querySelector('.search-results');
-    if(results_el){
-        const card = document.createElement('a')
-        card.classList.add('card')
-        card.href = "/note?id="+event.id
-        card.innerText = event.content
-        results_el.append(card)
-    }
-}
-
 
 let updateInteractionCount = function(note_id, cls){
     const note_el = document.querySelector('.note[data-id="'+note_id+'"]');
@@ -744,7 +759,9 @@ class bijaNotes{
                 }
             }
         }
-        fetchGet('/timestamp_upd?ts='+timestamps.join(), cb)
+        if(timestamps.length > 0){
+            fetchGet('/timestamp_upd?ts='+timestamps.join(), cb)
+        }
     }
 
     setEventListeners(){
@@ -1106,6 +1123,21 @@ class bijaFeed{
     }
 }
 
+class bijaTopic{
+
+    constructor(){
+        const subscribe_el = document.querySelector(".topic-sub")
+        subscribe_el.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const cb = function(response, data){
+
+            }
+            fetchGet('/subscribe_topic?state='+subscribe_el.dataset.state+'&topic='+subscribe_el.dataset.topic, cb, {}, 'json')
+        });
+    }
+}
+
 class Emojis{
     constructor(target_el){
         this.target_el = target_el
@@ -1379,6 +1411,12 @@ window.addEventListener("load", function () {
         new bijaNotes();
         new bijaThread();
     }
+    if (document.querySelector(".main[data-page='topic']") != null){
+        new bijaNotes();
+        new bijaThread();
+        new bijaTopic();
+    }
+
     if (document.querySelector(".main[data-page='profile']") != null){
         new bijaFeed();
         new bijaNotes();
@@ -1398,6 +1436,11 @@ window.addEventListener("load", function () {
     if (document.querySelector(".main[data-page='settings']") != null){
         new bijaSettings();
     }
+
+    if (document.querySelector(".main[data-page='search']") != null){
+        new bijaNotes();
+    }
+
     SOCK();
 
     new bijaNoteTools();

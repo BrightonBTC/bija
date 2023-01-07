@@ -6,8 +6,12 @@ Base = declarative_base()
 
 class Event(Base):
     __tablename__ = "event"
-    id = Column(String(64), primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    event_id = Column(String(64), unique=True)
+    public_key = Column(String(64))
     kind = Column(Integer)
+    ts = Column(Integer)
+    raw = Column(String)
 
 
 class Profile(Base):
@@ -101,6 +105,10 @@ class PrivateMessage(Base):
             self.raw
         }
 
+class Topic(Base):
+    __tablename__ = "topic"
+    id = Column(Integer, primary_key=True)
+    tag = Column(String)
 
 class Settings(Base):
     __tablename__ = "settings"

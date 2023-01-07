@@ -73,20 +73,28 @@ class BijaDB:
         ))
         self.session.commit()
 
+    def get_last_contacts_upd(self, public_key):
+        result = self.session.query(Event.ts) \
+            .filter(Event.public_key == public_key) \
+            .filter(Event.kind == 3).order_by(Event.ts.desc()).first()
+        if result is not None:
+            return result.ts
+        return None
+
     def set_following(self, keys_list, following=True):
         for public_key in keys_list:
             self.session.merge(Profile(
                 public_key=public_key,
                 following=following
             ))
-        self.session.commit()
+        # self.session.commit()
 
     def set_follower(self, public_key, follower=True):
         self.session.merge(Profile(
             public_key=public_key,
             follower=follower
         ))
-        self.session.commit()
+        # self.session.commit()
 
     def get_following_pubkeys(self):
         keys = self.session.query(Profile).filter_by(following=1).all()
@@ -489,7 +497,7 @@ class BijaDB:
         self.session.commit()
 
     def delete_reaction(self, reaction_id):
-        self.session.query(Event).filter_by(id=reaction_id).delete()
+        self.session.query(Event).filter_by(event_id=reaction_id).delete()
         self.session.query(NoteReaction).filter_by(id=reaction_id).delete()
         self.session.commit()
 
@@ -534,15 +542,18 @@ class BijaDB:
         return self.session.query(NoteReaction).filter(NoteReaction.event_id == note_id). \
             filter(NoteReaction.public_key == public_key).all()
 
-    def add_event(self, event_id, kind):
+    def add_event(self, event_id, public_key, kind, ts, raw):
         self.session.merge(Event(
-            id=event_id,
-            kind=kind
+            event_id=event_id,
+            public_key=public_key,
+            kind=kind,
+            ts=ts,
+            raw=raw
         ))
         self.session.commit()
 
     def get_event(self, event_id):
-        return self.session.query(Event.id, Event.kind).filter(Event.id == event_id).first()
+        return self.session.query(Event.event_id, Event.kind).filter(Event.event_id == event_id).first()
 
     def add_alert(self, event_id, kind, profile, event, ts, content):
         self.session.merge(Alert(
