@@ -95,7 +95,7 @@ def _jinja2_filter_media(json_string):
 
 
 @app.template_filter('process_note_content')
-def _jinja2_filter_note(content: str, limit=200):
+def _jinja2_filter_note(content: str, limit=500):
 
     invoice = get_invoice(content.lower())
     if invoice is not None:
@@ -111,12 +111,13 @@ def _jinja2_filter_note(content: str, limit=200):
                                    placeholder="... <a href='#' class='read-more'>more</a>")
 
     hashtags = get_hash_tags(content)
+
     hashtags.sort(key=len, reverse=True)
     for tag in hashtags:
-        term = tag[1:]
-        content = " {} ".format(content).replace(
-            " {} ".format(tag),
-            " <a href='/search?search_term=%23{}'>{}</a> ".format(term, tag)).strip()
+        term = tag[1:].strip()
+        content = "{} ".format(content).replace(
+            tag,
+            "<a href='/topic?tag={}'>{}</a> ".format(term, tag.strip())).strip()
 
     tags = get_at_tags(content)
     for tag in tags:

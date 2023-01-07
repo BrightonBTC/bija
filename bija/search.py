@@ -44,9 +44,10 @@ class Search:
             self.message = "no search term found!"
 
     def by_hash(self):
-        self.message = 'Searching network for {}'.format(self.term)
-        self.results = DB.get_search_feed(int(time.time()), self.term)
-        self.action = 'hash'
+        # self.message = 'Searching network for {}'.format(self.term)
+        # self.results = DB.get_search_feed(int(time.time()), self.term)
+        # self.action = 'hash'
+        self.redirect = '/topic?tag={}'.format(self.term[1:])
 
     def by_at(self):
         pk = DB.get_profile_by_name_or_pk(self.term[1:])

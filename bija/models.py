@@ -57,10 +57,10 @@ class Note(Base):
     created_at = Column(Integer)
     members = Column(String)
     media = Column(String)
+    hashtags = Column(String)
     seen = Column(Boolean, default=False)
     liked = Column(Boolean, default=False)
     shared = Column(Boolean, default=False)
-    raw = Column(String)
     deleted = Column(Integer)
 
     profile = relationship("Profile", back_populates="notes")
@@ -108,7 +108,7 @@ class PrivateMessage(Base):
 class Topic(Base):
     __tablename__ = "topic"
     id = Column(Integer, primary_key=True)
-    tag = Column(String)
+    tag = Column(String, unique=True)
 
 class Settings(Base):
     __tablename__ = "settings"

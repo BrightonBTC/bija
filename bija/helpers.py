@@ -56,8 +56,8 @@ def get_at_tags(content: str) -> list[Any]:
 
 
 def get_hash_tags(content: str) -> list[Any]:
-    regex = re.compile(r'\B#\w*[a-zA-Z]+\w*')
-    return re.findall(regex, content)
+    regex = re.compile(r'\B#\w*[a-zA-Z]+\w*\s')
+    return re.findall(regex, content+' ')
 
 
 def get_embeded_tag_indexes(content: str):

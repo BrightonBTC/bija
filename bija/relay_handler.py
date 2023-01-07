@@ -153,6 +153,11 @@ class RelayHandler:
             unseen_posts = DB.get_unseen_in_feed()
             if unseen_posts > 0:
                 socketio.emit('unseen_posts_n', unseen_posts)
+            topics = DB.get_topics()
+            if topics is not None:
+                t = [x.tag for x in topics]
+                unseen_in_topics = DB.get_unseen_in_topics(t)
+                socketio.emit('unseen_in_topics', unseen_in_topics)
 
         if RELAY_MANAGER.message_pool.events.qsize() == 0:
             D_TASKS.next()
@@ -305,10 +310,10 @@ class RelayHandler:
         self.subscriptions.add('primary')
         SubscribePrimary('primary', Settings.get('pubkey'))
 
-    def subscribe_search(self, term):
-        logger.info('Subscribe search {}'.format(term))
-        self.subscriptions.add('search')
-        SubscribeSearch('search', term)
+    def subscribe_topic(self, term):
+        logger.info('Subscribe topic {}'.format(term))
+        self.subscriptions.add('topic')
+        SubscribeTopic('topic', term)
 
     def close_subscription(self, name):
         self.subscriptions.remove(name)
@@ -551,6 +556,7 @@ class NoteEvent:
             self.tags = event.tags
             self.media = []
             self.members = []
+            self.hashtags = []
             self.thread_root = None
             self.response_to = None
             self.reshare = None
@@ -646,6 +652,8 @@ class NoteEvent:
         if len(self.tags) > 0:
             parents = []
             for item in self.tags:
+                if item[0] == "t" and len(item) > 1:
+                    self.hashtags.append(item[1])
                 if item[0] == "p" and len(item) > 1:
                     self.members.append(item[1])
                     if item[1] == self.my_pk and self.event.public_key != self.my_pk:
@@ -685,7 +693,7 @@ class NoteEvent:
             self.event.created_at,
             json.dumps(self.members),
             json.dumps(self.media),
-            json.dumps(self.event.to_json_object())
+            json.dumps(self.hashtags)
         )
 
     def update_referenced(self):

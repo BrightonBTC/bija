@@ -171,7 +171,7 @@ class BijaDB:
                     created_at=None,
                     members=None,
                     media='[]',
-                    raw=None):
+                    hashtags='[]'):
         note = self.session.query(Note.deleted).filter_by(id=note_id).first()
         if note is None or note.deleted is None:
             self.session.merge(Note(
@@ -184,7 +184,7 @@ class BijaDB:
                 created_at=created_at,
                 members=members,
                 media=media,
-                raw=raw
+                hashtags=hashtags
             ))
             self.session.commit()
 
@@ -224,7 +224,7 @@ class BijaDB:
             .join(Note.profile).first()
 
     def get_raw_note_data(self, note_id):
-        return self.session.query(Note.raw).filter_by(id=note_id).first()
+        return self.session.query(Event.raw).filter_by(event_id=note_id).first()
 
     def get_note_thread(self, note_id):
 
@@ -320,7 +320,7 @@ class BijaDB:
             .filter(text("note.deleted is not 1")) \
             .order_by(Note.seen.asc(), Note.created_at.desc()).limit(50).all()
 
-    def get_search_feed(self, before, search):
+    def get_topic_feed(self, before, search):
 
         return self.session.query(
             Note.id,
@@ -347,8 +347,34 @@ class BijaDB:
             .join(Note.profile) \
             .filter(text("note.created_at<{}".format(before))) \
             .filter(text("note.deleted is not 1")) \
-            .filter(Note.content.like(f"%{search}%")) \
+            .filter(Note.hashtags.like(f"%\"{search}\"%")) \
             .order_by(Note.seen.desc()).order_by(Note.created_at.desc()).limit(50).all()
+
+    def subscribed_to_topic(self, topic):
+        r = self.session.query(Topic).filter_by(tag=topic).first()
+        return r is not None
+
+    def subscribe_to_topic(self, topic):
+        self.session.merge(Topic(
+            tag=topic
+        ))
+        self.session.commit()
+
+    def unsubscribe_from_topic(self, topic):
+        self.session.query(Topic).filter_by(tag=topic).delete()
+        self.session.commit()
+
+    def get_topics(self):
+        return self.session.query(Topic.tag).all()
+
+    def get_unseen_in_topics(self, topics):
+        out = {}
+        for topic in topics:
+            n = self.session.query(Note).filter(text("seen=0")).filter(Note.hashtags.like(f"%\"{topic}\"%")).count()
+            out[topic] = n
+        if len(out) > 0:
+            return out
+        return None
 
     def get_note_by_id_list(self, note_ids):
         return self.session.query(
@@ -428,6 +454,12 @@ class BijaDB:
     def set_all_seen_in_feed(self, public_key):
         notes = self.session.query(Note).join(Note.profile) \
             .filter(text("profile.following=1 OR profile.public_key='{}'".format(public_key)))
+        for note in notes:
+            note.seen = True
+        self.session.commit()
+
+    def set_all_seen_in_topic(self, topic):
+        notes = self.session.query(Note).filter(Note.hashtags.like(f"%\"{topic}\"%"))
         for note in notes:
             note.seen = True
         self.session.commit()

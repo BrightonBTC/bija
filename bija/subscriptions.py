@@ -32,6 +32,13 @@ class Subscribe:
         logger.info('publish subscriptiom: {}'.format(message))
         RELAY_MANAGER.publish_message(message)
 
+    @staticmethod
+    def required_pow(setting: str = 'pow_required'):
+        required_pow = Settings.get(setting)
+        if required_pow is not None and int(required_pow) > 0:
+            return int(int(required_pow)/4) * "0"
+        return None
+
 
 class SubscribePrimary(Subscribe):
     def __init__(self, name, pubkey):
@@ -68,10 +75,23 @@ class SubscribePrimary(Subscribe):
             f.append(following_filter)
             f.append(following_profiles_filter)
 
+        topics = DB.get_topics()
+        if len(topics) > 0:
+            difficulty = self.required_pow()
+            t = []
+            for topic in topics:
+                t.append(topic.tag)
+            topics_filter = Filter(
+                kinds=[EventKind.TEXT_NOTE],
+                subid={"ids": [difficulty]},
+                tags={"t": t}
+            )
+            f.append(topics_filter)
+
         self.filters = Filters(f)
 
 
-class SubscribeSearch(Subscribe):
+class SubscribeTopic(Subscribe):
     def __init__(self, name, term):
         super().__init__(name)
         self.term = term
@@ -80,15 +100,13 @@ class SubscribeSearch(Subscribe):
 
     def build_filters(self):
         logger.info('build subscription filters')
-        required_pow = Settings.get('pow_required')
+        difficulty = self.required_pow()
         subid = None
-        if required_pow:
-            logger.info('required pow {}'.format(required_pow))
-            difficulty = int(int(required_pow)/4) * "0"
+        if difficulty is not None:
             logger.info('calculated difficulty {}'.format(difficulty))
             subid = {"ids": [difficulty]}
         f = [
-            Filter(kinds=[EventKind.TEXT_NOTE], tags={'#t': [self.term]}, limit=10, subid=subid)
+            Filter(kinds=[EventKind.TEXT_NOTE], tags={'#t': [self.term]}, since=timestamp_minus(TimePeriod.WEEK*4), subid=subid)
         ]
         self.filters = Filters(f)
 
@@ -117,10 +135,9 @@ class SubscribeProfile(Subscribe):
 
 
 class SubscribeThread(Subscribe):
-    def __init__(self, name, root, proof_of_work=None):
+    def __init__(self, name, root):
         super().__init__(name)
         self.root = root
-        self.proof_of_work = proof_of_work
         self.build_filters()
         self.send()
 
@@ -131,14 +148,9 @@ class SubscribeThread(Subscribe):
         if ids is None:
             ids = [self.root]
         filters.append(Filter(ids=ids, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION]))
-        if self.proof_of_work is None:
-            required_pow = Settings.get('pow_required')
-        else:
-            required_pow = self.proof_of_work
-        if required_pow is not None and int(required_pow) > 0:
-            print('POW', required_pow)
+        difficulty = self.required_pow()
+        if difficulty is not None:
             pks = DB.get_following_pubkeys()
-            difficulty = int(int(required_pow) / 4) * "0"
             print('difficulty', difficulty)
             subid = {"ids": [difficulty]}
             filters.append(Filter(tags={'#e': ids, '#p': pks}, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION]))
