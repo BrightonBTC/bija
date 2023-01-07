@@ -348,7 +348,7 @@ class BijaDB:
             .filter(text("note.created_at<{}".format(before))) \
             .filter(text("note.deleted is not 1")) \
             .filter(Note.hashtags.like(f"%\"{search}\"%")) \
-            .order_by(Note.seen.desc()).order_by(Note.created_at.desc()).limit(50).all()
+            .order_by(Note.seen.asc()).order_by(Note.created_at.desc()).limit(50).all()
 
     def subscribed_to_topic(self, topic):
         r = self.session.query(Topic).filter_by(tag=topic).first()
