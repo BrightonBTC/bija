@@ -157,7 +157,8 @@ class RelayHandler:
             if topics is not None:
                 t = [x.tag for x in topics]
                 unseen_in_topics = DB.get_unseen_in_topics(t)
-                socketio.emit('unseen_in_topics', unseen_in_topics)
+                if unseen_in_topics is not None:
+                    socketio.emit('unseen_in_topics', unseen_in_topics)
 
         if RELAY_MANAGER.message_pool.events.qsize() == 0:
             D_TASKS.next()

@@ -154,6 +154,12 @@ class Alert(Base):
     content = Column(String)
     seen = Column(Boolean, default=False)
 
+class Theme(Base):
+    __tablename__ = "theme"
+    id = Column(Integer, primary_key=True)  # the id of the new event
+    var = Column(String)
+    val = Column(String)
+    theme = Column(String)
 
 # Private keys
 class PK(Base):

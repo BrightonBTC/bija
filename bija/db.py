@@ -676,5 +676,28 @@ class BijaDB:
             ))
         self.session.commit()
 
+    def upd_setting(self, k, v):
+        self.session.merge(Settings(
+            key=k,
+            value=v,
+        ))
+        self.session.commit()
+
+    def add_default_themes(self, data):
+        for theme, setting in data.items():
+            for k, v in setting.items():
+                self.session.add(Theme(
+                    var=k,
+                    val=v,
+                    theme=theme
+                ))
+        self.session.commit()
+
+    def get_themes(self):
+        return self.session.query(Theme.theme).distinct()
+
+    def get_theme_vars(self,  theme):
+        return self.session.query(Theme.val, Theme.var).filter(Theme.theme==theme).all()
+
     def commit(self):
         self.session.commit()

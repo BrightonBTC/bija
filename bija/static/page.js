@@ -470,6 +470,16 @@ class bijaSettings{
             fetchFromForm('/update_settings', pow_form, pow_cb, {}, 'json')
         });
 
+        const theme_form = document.querySelector("#theme_form");
+        const theme_select = theme_form.querySelector("select");
+        theme_select.addEventListener("change", (event)=>{
+
+            const theme_cb = function(response, data){
+                location.reload();
+            }
+            fetchFromForm('/update_settings', theme_form, theme_cb, {}, 'json')
+        });
+
     }
 
     setDeleteKeysClicked(){

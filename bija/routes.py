@@ -337,10 +337,12 @@ def settings_page():
                 hex64_to_bech32("npub", pubkey)
             ]
         }
+        themes = DB.get_themes()
+        theme = Settings.get('theme')
         return render_template(
             "settings.html",
             page_id="settings",
-            title="Settings", relays=relays, settings=settings, k=keys)
+            title="Settings", relays=relays, settings=settings, k=keys, theme=theme, themes=themes)
 
 
 @app.route('/update_settings', methods=['POST'])
@@ -350,6 +352,8 @@ def update_settings():
         items[item[0]] = item[1].strip()
     DB.upd_settings_by_keys(items)
     Settings.set_from_db()
+    print(DB.get_settings())
+    print(Settings.get('theme'))
     return render_template("upd.json", data=json.dumps({'success': 1}))
 
 
@@ -377,11 +381,9 @@ def update_profile():
             if valid_nip5:
                 e = SubmitProfile(profile)
                 out['success'] = e.event_id
-                #out['success'] = EVENT_HANDLER.submit_profile(profile)
         else:
             e = SubmitProfile(profile)
             out['success'] = e.event_id
-            #out['success'] = EVENT_HANDLER.submit_profile(profile)
     return render_template("upd.json", data=json.dumps(out))
 
 
@@ -636,7 +638,8 @@ def io_connect(m):
     if topics is not None:
         t = [x.tag for x in topics]
         unseen_in_topics = DB.get_unseen_in_topics(t)
-        socketio.emit('unseen_in_topics', unseen_in_topics)
+        if unseen_in_topics is not None:
+            socketio.emit('unseen_in_topics', unseen_in_topics)
 
     EXECUTOR.submit(RELAY_HANDLER.get_connection_status)
 

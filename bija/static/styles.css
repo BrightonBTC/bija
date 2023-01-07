@@ -1129,7 +1129,7 @@ p.note-tools {
     flex: 1;
     padding: var(--spacing-mid);
     border: 1px solid var(--bdr-clr-2);
-    background: var(--bg-clr1-fade);
+    background: var(--bg-clr1);
 }
 .ln_invoice .dt{
     margin: 0;
