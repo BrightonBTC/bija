@@ -1,5 +1,5 @@
 from bija.app import app
-from bija.config import default_settings
+from bija.config import default_settings, themes
 from bija.db import BijaDB
 
 DB = BijaDB(app.session)
@@ -23,8 +23,16 @@ class BijaSettings:
             return self.items[k]
         return None
 
+    def get_list(self, l:list[str]):
+        out = {}
+        for item in l:
+            out[item] = self.get(item)
+        return out
+
+
     def set_defaults(self):
         DB.upd_settings_by_keys(default_settings)
+        DB.add_default_themes(themes)
 
 
 Settings = BijaSettings()

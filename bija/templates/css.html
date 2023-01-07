@@ -1,0 +1,8 @@
+<style>
+:root {
+{%- set vars = 1|theme -%}
+{%- for setting in vars -%}
+--{{setting.var}}: {{setting.val}};
+{%- endfor -%}
+}
+</style>

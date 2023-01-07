@@ -1,4 +1,7 @@
 {%- extends "base.html" -%}
+{%- block css -%}
+{%- include 'css.html' -%}
+{%- endblock css -%}
 
 {%- block content -%}
 
@@ -9,13 +12,6 @@
     {%- else -%}
         {%- set pic="/identicon?id="+alert.public_key -%}
     {%- endif -%}
-    {%- if alert['thread_root'] is not none -%}
-        {%- set root = alert['thread_root'] -%}
-    {%- elif alert['response_to'] is not none -%}
-        {%- set root = alert['response_to'] -%}
-    {%- else -%}
-        {%- set root = alert['event'] -%}
-    {%- endif -%}
     <li class="seen{{alert['seen']}}">
     {%- if alert['kind'] == 3 -%}
 
@@ -24,7 +20,7 @@
         {%- else -%}
             {%- set content = alert['content'] -%}
         {%- endif -%}
-        <a href="/note?id={{root}}#{{alert['event']}}">
+        <a href="/note?id={{alert['event']}}#focussed">
             <div class="alert-image">
                 <img class="user-image" src="{{pic}}"> <span class="reaction">{{content}}</span>
             </div>
@@ -38,7 +34,7 @@
             </div>
         </a>
         {%- elif alert['kind'] == 0 -%}
-        <a href="/note?id={{root}}#{{alert['event']}}">
+        <a href="/note?id={{alert['event']}}#focussed">
             <div class="alert-image">
                 <img class="user-image" src="{{pic}}">
             </div>
@@ -52,7 +48,7 @@
             </div>
         </a>
         {%- elif alert['kind'] == 4 -%}
-        <a href="/note?id={{root}}#{{alert['event']}}">
+        <a href="/note?id={{alert['event']}}#focussed">
             <div class="alert-image">
                 <img class="user-image" src="{{pic}}">
             </div>

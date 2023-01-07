@@ -23,6 +23,14 @@ logger = logging.getLogger(__name__)
 logger.setLevel(LOGGING_LEVEL)
 
 
+@app.template_filter('theme')
+def _jinja2_filter_theme(b):
+    theme = Settings.get('theme')
+    if theme is None:
+        theme = 'default'
+    return DB.get_theme_vars(theme)
+
+
 @app.template_filter('dt')
 def _jinja2_filter_datetime(ts):
     t = arrow.get(int(ts))
