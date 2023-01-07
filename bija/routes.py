@@ -145,46 +145,41 @@ def login_page():
 def profile_page():
     ACTIVE_EVENTS.clear()
     EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
-    page_id = 'profile'
-    if 'pk' in request.args and is_hex_key(request.args['pk']) and request.args['pk'] != Settings.get('pubkey'):
-        EXECUTOR.submit(RELAY_HANDLER.set_page('profile', request.args['pk']))
-        k = request.args['pk']
-        is_me = False
-    else:
-        k = Settings.get('pubkey')
-        EXECUTOR.submit(RELAY_HANDLER.set_page('profile', k))
-        is_me = True
-        page_id = 'profile-me'
-    notes = DB.get_notes_by_pubkey(k, int(time.time()), timestamp_minus(TimePeriod.DAY))
-    t = FeedThread(notes)
-    profile = DB.get_profile(k)
-    latest = DB.get_most_recent_for_pk(k)
-    if latest is None:
-        latest = 0
-    if profile is None:
-        DB.add_profile(k)
-        profile = DB.get_profile(k)
 
-    EXECUTOR.submit(RELAY_HANDLER.subscribe_profile, k, timestamp_minus(TimePeriod.WEEK), list(t.ids))
+    req_pk = request.args.get('pk', '')
+    pub_k = Settings.get('pubkey')
+    is_me = True
+    page_id = 'profile-me'
+    if is_hex_key(req_pk) and req_pk != pub_k:
+        pub_k, is_me, page_id = req_pk, False, 'profile'
+    EXECUTOR.submit(RELAY_HANDLER.set_page('profile', pub_k))
+
+    t = FeedThread(DB.get_notes_by_pubkey(pub_k, int(time.time()), timestamp_minus(TimePeriod.DAY)))
+    profile = DB.get_profile(pub_k)
+    if profile is None:
+        DB.add_profile(pub_k)
+        profile = DB.get_profile(pub_k)
+    EXECUTOR.submit(RELAY_HANDLER.subscribe_profile, pub_k, timestamp_minus(TimePeriod.WEEK), list(t.ids))
 
     metadata = {}
     if profile.raw is not None and len(profile.raw) > 0:
         raw = json.loads(profile.raw)
         meta = json.loads(raw['content'])
-        for item in meta.keys():
+        for item in meta:
             if item in ['website', 'lud06', 'lud16']:
                 metadata[item] = meta[item]
+
     return render_template(
         "profile.html",
         page_id=page_id,
         title="Profile",
         threads=t.threads,
         last=t.last_ts,
-        latest=latest,
+        latest=DB.get_most_recent_for_pk(pub_k) or 0,
         profile=profile,
         is_me=is_me,
         meta=metadata,
-        pubkey=get_key(),
+        pubkey=pub_k,
     )
 
 
