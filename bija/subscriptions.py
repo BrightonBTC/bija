@@ -84,7 +84,7 @@ class SubscribePrimary(Subscribe):
             topics_filter = Filter(
                 kinds=[EventKind.TEXT_NOTE],
                 subid={"ids": [difficulty]},
-                tags={"t": t}
+                tags={"#t": t}
             )
             f.append(topics_filter)
 
