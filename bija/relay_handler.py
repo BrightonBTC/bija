@@ -2,25 +2,26 @@ import logging
 import os
 import ssl
 import textwrap
+import threading
 import time
 from urllib.parse import urlparse
 
 import validators as validators
 from flask import render_template
 
-from bija.app import socketio
+from bija.app import socketio, ACTIVE_EVENTS
 from bija.args import LOGGING_LEVEL
 from bija.deferred_tasks import TaskKind, DeferredTasks
 from bija.helpers import get_embeded_tag_indexes, \
     list_index_exists, get_urls_in_string, request_nip05, url_linkify, strip_tags, request_relay_data, is_nip05, \
     is_bech32_key, bech32_to_hex64
+from bija.app import RELAY_MANAGER
 from bija.subscriptions import *
 from bija.submissions import *
 from bija.alerts import *
 from bija.settings import Settings
 from python_nostr.nostr.event import EventKind
 from python_nostr.nostr.pow import count_leading_zero_bits
-from python_nostr.nostr.relay_manager import RelayManager
 
 logger = logging.getLogger(__name__)
 FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
@@ -31,18 +32,19 @@ D_TASKS = DeferredTasks()
 DB = BijaDB(app.session)
 
 
-class BijaEvents:
+class RelayHandler:
     subscriptions = set()
     pool_handler_running = False
     page = {
         'page': None,
         'identifier': None
     }
-    active_events = {}  # events that are open in the current ui view
+    processing = False
+    new_on_primary = False
+    notify_empty_queue = False
 
     def __init__(self):
         self.should_run = True
-        self.relay_manager = RelayManager()
         self.open_connections()
 
     def open_connections(self):
@@ -50,16 +52,16 @@ class BijaEvents:
         n_relays = 0
         for r in relays:
             n_relays += 1
-            self.relay_manager.add_relay(r.name)
+            RELAY_MANAGER.add_relay(r.name)
         if n_relays > 0:
-            self.relay_manager.open_connections({"cert_reqs": ssl.CERT_NONE})
+            RELAY_MANAGER.open_connections({"cert_reqs": ssl.CERT_NONE})
 
     # close existing connections, reopen, and start primary subscription
     # used after adding or removing relays
     def reset(self):
-        self.relay_manager.close_connections()
+        RELAY_MANAGER.close_connections()
         time.sleep(1)
-        self.relay_manager.relays = {}
+        RELAY_MANAGER.relays = {}
         time.sleep(1)
         self.open_connections()
         time.sleep(1)
@@ -68,101 +70,117 @@ class BijaEvents:
         self.get_connection_status()
 
     def remove_relay(self, url):
-        self.relay_manager.remove_relay(url)
+        RELAY_MANAGER.remove_relay(url)
 
     def add_relay(self, url):
-        self.relay_manager.add_relay(url)
+        RELAY_MANAGER.add_relay(url)
 
     def get_connection_status(self):
-        status = self.relay_manager.get_connection_status()
+        status = RELAY_MANAGER.get_connection_status()
         out = []
         for s in status:
             if s[1] is not None:
                 out.append([s[0], int(time.time() - s[1])])
             else:
                 out.append([s[0], None])
+
         socketio.emit('conn_status', out)
 
     def set_page(self, page, identifier):
-        self.active_events = {}
         self.page = {
             'page': page,
             'identifier': identifier
         }
 
-    def get_key(self, k='public'):
-        keys = Settings.get("keys")
-        if keys is not None and k in keys:
-            return keys[k]
-        else:
-            return False
-
-    def message_pool_handler(self):
-        if self.pool_handler_running:
+    def check_messages(self):
+        if self.processing:
+            logger.log('Already processing messages. Wait')
             return
-        self.pool_handler_running = True
+        self.processing = True
+        while RELAY_MANAGER.message_pool.has_notices():
+            notice = RELAY_MANAGER.message_pool.get_notice()
+
+        while RELAY_MANAGER.message_pool.has_ok_notices():
+            notice = RELAY_MANAGER.message_pool.get_ok_notice()
+
+        while RELAY_MANAGER.message_pool.has_eose_notices():
+            notice = RELAY_MANAGER.message_pool.get_eose_notice()
+            if hasattr(notice, 'url') and hasattr(notice, 'subscription_id'):
+                print('EOSE', notice.url, notice.subscription_id)
+
+        n_queued = RELAY_MANAGER.message_pool.events.qsize()
+        if n_queued > 0 or self.notify_empty_queue:
+            self.notify_empty_queue = True
+            socketio.emit('events_processing', n_queued)
+            if n_queued == 0:
+                self.notify_empty_queue = False
+
         i = 0
+        while RELAY_MANAGER.message_pool.has_events() and i < 100:
+            i += 1
+            msg = RELAY_MANAGER.message_pool.get_event()
+            if DB.get_event(msg.event.id) is None:
+                logger.info('New event: {}'.format(msg.event.kind))
+                if msg.event.kind == EventKind.SET_METADATA:
+                    self.receive_metadata_event(msg.event)
+
+                if msg.event.kind == EventKind.CONTACTS:
+                    self.receive_contact_list_event(msg.event, msg.subscription_id)
+
+                if msg.event.kind == EventKind.TEXT_NOTE:
+                    self.receive_note_event(msg.event, msg.subscription_id)
+
+                if msg.event.kind == EventKind.ENCRYPTED_DIRECT_MESSAGE:
+                    self.receive_private_message_event(msg.event)
+
+                if msg.event.kind == EventKind.DELETE:
+                    self.receive_del_event(msg.event)
+
+                if msg.event.kind == EventKind.REACTION:
+                    self.receive_reaction_event(msg.event)
+
+                DB.add_event(
+                    msg.event.id,
+                    msg.event.public_key,
+                    int(msg.event.kind),
+                    int(msg.event.created_at),
+                    json.dumps(msg.event.to_json_object())
+                )
+        DB.commit()
+
+        if self.new_on_primary:
+            self.new_on_primary = False
+            unseen_posts = DB.get_unseen_in_feed()
+            if unseen_posts > 0:
+                socketio.emit('unseen_posts_n', unseen_posts)
+
+        if RELAY_MANAGER.message_pool.events.qsize() == 0:
+            D_TASKS.next()
+        t = int(time.time())
+        logger.info('Event loop {}'.format(t))
+        if t % 60 == 0:
+            self.get_connection_status()
+            i = 0
+        self.processing = False
+
+    def run_loop(self):
         while self.should_run:
-            try:
-                while self.relay_manager.message_pool.has_notices():
-                    notice = self.relay_manager.message_pool.get_notice()
-
-                while self.relay_manager.message_pool.has_ok_notices():
-                    notice = self.relay_manager.message_pool.get_ok_notice()
-
-                while self.relay_manager.message_pool.has_eose_notices():
-                    notice = self.relay_manager.message_pool.get_eose_notice()
-                    print('EOSE', notice.url, notice.subscription_id)
-
-                while self.relay_manager.message_pool.has_events():
-                    msg = self.relay_manager.message_pool.get_event()
-                    if DB.get_event(msg.event.id) is None:
-                        logger.info('New event: {}'.format(msg.event.kind))
-                        if msg.event.kind == EventKind.SET_METADATA:
-                            self.receive_metadata_event(msg.event)
-
-                        if msg.event.kind == EventKind.CONTACTS:
-                            self.receive_contact_list_event(msg.event, msg.subscription_id)
-
-                        if msg.event.kind == EventKind.TEXT_NOTE:
-                            self.receive_note_event(msg.event, msg.subscription_id)
-
-                        if msg.event.kind == EventKind.ENCRYPTED_DIRECT_MESSAGE:
-                            self.receive_private_message_event(msg.event)
-
-                        if msg.event.kind == EventKind.DELETE:
-                            self.receive_del_event(msg.event)
-
-                        if msg.event.kind == EventKind.REACTION:
-                            self.receive_reaction_event(msg.event)
-
-                        if msg.subscription_id != 'search':
-                            DB.add_event(msg.event.id, msg.event.kind)
-                DB.commit()
-                D_TASKS.next()
-                time.sleep(1)
-                logger.info('Event loop {}'.format(int(time.time())))
-                i += 1
-                if i == 60:
-                    self.get_connection_status()
-                    socketio.emit('subscriptions', list(self.subscriptions))
-                    i = 0
-            except:
-                pass
+            self.check_messages()
+            time.sleep(1)
 
     def receive_del_event(self, event):
         DeleteEvent(event)
 
     def receive_reaction_event(self, event):
-        e = ReactionEvent(event, self.get_key())
+        e = ReactionEvent(event, Settings.get('pubkey'))
         if e.valid:
             note = DB.get_note(e.event_id)
-            if e.event.content != '-' and 'notes' in self.active_events and e.event_id in self.active_events['notes']:
+            if e.event.content != '-' and len(ACTIVE_EVENTS.notes) > 0 and e.event_id in ACTIVE_EVENTS.notes:
                 socketio.emit('new_reaction', e.event_id)
                 logger.info('Reaction on active note detected, signal to UI')
-            if e.event.public_key != self.get_key():
+            if e.event.public_key != Settings.get('pubkey'):
                 logger.info('Reaction is not from me')
-                if note is not None and note.public_key == self.get_key():
+                if note is not None and note.public_key == Settings.get('pubkey'):
                     logger.info('Get reaction from DB')
                     reaction = DB.get_reaction_by_id(e.event.id)
                     logger.info('Compose reaction alert')
@@ -190,46 +208,35 @@ class BijaEvents:
             })
 
     def receive_note_event(self, event, subscription):
-        if subscription == 'search':
-            socketio.emit('search_result', {
-                'id': event.id,
-                'content': textwrap.shorten(
-                    strip_tags(event.content),
-                    width=200,
-                    replace_whitespace=False,
-                    break_long_words=True,
-                    placeholder="...")
-            })
-            return
-        e = NoteEvent(event, self.get_key())
+        e = NoteEvent(event, Settings.get('pubkey'))
         if e.mentions_me:
             self.alert_on_note_event(e)
         self.notify_on_note_event(event, subscription)
 
-        if 'notes' in self.active_events:
-            if e.event.id in self.active_events['notes']:
+        if len(ACTIVE_EVENTS.notes) > 0:
+            if e.event.id in ACTIVE_EVENTS.notes:
                 logger.info('New required note {}'.format(e.event.id))
                 socketio.emit('new_note', e.event.id)
-            if e.response_to in self.active_events['notes']:
+            if e.response_to in ACTIVE_EVENTS.notes:
                 logger.info('Detected response to active note {}'.format(e.response_to))
                 socketio.emit('new_reply', e.response_to)
-            elif e.response_to is None and e.thread_root in self.active_events['notes']:
+            elif e.response_to is None and e.thread_root in ACTIVE_EVENTS.notes:
                 logger.info('Detected response to active note {}'.format(e.thread_root))
                 socketio.emit('new_reply', e.thread_root)
-            if e.reshare in self.active_events['notes']:
+            if e.reshare in ACTIVE_EVENTS.notes:
                 logger.info('Detected reshare on active note {}'.format(e.reshare))
                 socketio.emit('new_reshare', e.reshare)
 
     def alert_on_note_event(self, event):
         if event.response_to is not None:
             reply = DB.get_note(event.response_to)
-            if reply is not None and reply.public_key == self.get_key():
+            if reply is not None and reply.public_key == Settings.get('pubkey'):
                 Alert(
                     event.event.id,
                     event.event.created_at, AlertKind.REPLY, event.event.public_key, event.response_to, event.content)
         elif event.thread_root is not None:
             root = DB.get_note(event.thread_root)
-            if root is not None and root.public_key == self.get_key():
+            if root is not None and root.public_key == Settings.get('pubkey'):
                 Alert(
                     event.event.id,
                     event.event.created_at, AlertKind.COMMENT_ON_THREAD, event.event.public_key, event.thread_root,
@@ -237,102 +244,75 @@ class BijaEvents:
 
     def notify_on_note_event(self, event, subscription):
         if subscription == 'primary':
-            unseen_posts = DB.get_unseen_in_feed()
-            if unseen_posts > 0:
-                socketio.emit('unseen_posts_n', unseen_posts)
-        elif subscription == 'profile':
+            self.new_on_primary = True
+        if subscription == 'profile':
             DB.set_note_seen(event.id)
             socketio.emit('new_profile_posts', DB.get_most_recent_for_pk(event.public_key))
         elif subscription == 'note-thread':
             socketio.emit('new_in_thread', event.id)
 
     def receive_contact_list_event(self, event, subscription):
-        e = ContactListEvent(event, self.get_key())
-        DB.add_profile_if_not_exists(event.public_key)
-        DB.add_contact_list(event.public_key, e.keys)
-        if event.public_key == self.get_key():
-            logger.info('Contact list updated, restart primary subscription')
-            self.subscribe_primary()
-        if event.public_key != self.get_key() and subscription == 'profile':
-            self.subscribe_profile(event.public_key, timestamp_minus(TimePeriod.WEEK), [])
-        if self.get_key() in e.keys:
-            DB.set_follower(event.public_key)
+        logger.info('Contact list received for: {}'.format(event.public_key))
+        last_upd = DB.get_last_contacts_upd(event.public_key)
+        logger.info('Contact list last update: {}'.format(last_upd))
+        if last_upd is None or last_upd < event.created_at:
+            pk = Settings.get('pubkey')
+            logger.info('Contact list is newer than last upd: {}'.format(event.created_at))
+            e = ContactListEvent(event, pk)
+            DB.add_profile_if_not_exists(event.public_key)
+            DB.add_contact_list(event.public_key, e.keys)
+            if event.public_key == pk:
+                logger.info('Contact list updated, restart primary subscription')
+                self.subscribe_primary()
+            if event.public_key != pk and subscription == 'profile':
+                self.subscribe_profile(event.public_key, timestamp_minus(TimePeriod.WEEK), [])
 
     def receive_private_message_event(self, event):
 
-        e = EncryptedMessageEvent(event, self.get_key())
+        e = EncryptedMessageEvent(event, Settings.get('pubkey'))
         if self.page['page'] == 'message' and self.page['identifier'] == e.pubkey:
             messages = DB.get_unseen_messages(e.pubkey)
             if len(messages) > 0:
-                profile = DB.get_profile(self.get_key())
+                profile = DB.get_profile(Settings.get('pubkey'))
                 DB.set_message_thread_read(e.pubkey)
                 out = render_template("message_thread.items.html",
-                                      me=profile, messages=messages, privkey=self.get_key('private'))
+                                      me=profile, messages=messages, privkey=Settings.get('privkey'))
                 socketio.emit('message', out)
         else:
             unseen_n = DB.get_unseen_message_count()
             socketio.emit('unseen_messages_n', unseen_n)
 
     def subscribe_thread(self, root_id, ids):
-        self.active_events['notes'] = ids
+        ACTIVE_EVENTS.add_notes(ids)
         subscription_id = 'note-thread'
         self.subscriptions.add(subscription_id)
-        SubscribeThread(subscription_id, self.relay_manager, root_id)
+        SubscribeThread(subscription_id, root_id)
 
     def subscribe_feed(self, ids):
-        if 'notes' in self.active_events:
-            self.active_events['notes'] += ids
-        else:
-            self.active_events['notes'] = ids
+        ACTIVE_EVENTS.add_notes(ids)
         subscription_id = 'main-feed'
         self.subscriptions.add(subscription_id)
-        SubscribeFeed(subscription_id, self.relay_manager, ids)
+        SubscribeFeed(subscription_id, ids)
 
     def subscribe_profile(self, pubkey, since, ids):
-        if 'notes' in self.active_events:
-            self.active_events['notes'] += ids
-        else:
-            self.active_events['notes'] = ids
+        ACTIVE_EVENTS.add_notes(ids)
         subscription_id = 'profile'
         self.subscriptions.add(subscription_id)
-        SubscribeProfile(subscription_id, self.relay_manager, pubkey, since)
+        SubscribeProfile(subscription_id, pubkey, since)
 
     # create site wide subscription
     def subscribe_primary(self):
         self.subscriptions.add('primary')
-        SubscribePrimary('primary', self.relay_manager, self.get_key())
+        SubscribePrimary('primary', Settings.get('pubkey'))
 
     def subscribe_search(self, term):
         logger.info('Subscribe search {}'.format(term))
         self.subscriptions.add('search')
-        SubscribeSearch('search', self.relay_manager, term)
-
-    def submit_profile(self, profile):
-        e = SubmitProfile(self.relay_manager, Settings.get("keys"), profile)
-        return e.event_id
-
-    def submit_message(self, data, pow_difficulty=None):
-        e = SubmitEncryptedMessage(self.relay_manager, Settings.get("keys"), data, pow_difficulty)
-        return e.event_id
-
-    def submit_like(self, note_id):
-        e = SubmitLike(self.relay_manager, Settings.get("keys"), note_id)
-        return e.event_id
-
-    def submit_note(self, data, members=None, pow_difficulty=None):
-        e = SubmitNote(self.relay_manager, Settings.get("keys"), data, members, pow_difficulty)
-        return e.event_id
-
-    def submit_follow_list(self):
-        SubmitFollowList(self.relay_manager, Settings.get("keys"))
-
-    def submit_delete(self, event_ids: list, reason=""):
-        e = SubmitDelete(self.relay_manager, Settings.get("keys"), event_ids, reason)
-        return e.event_id
+        SubscribeSearch('search', term)
 
     def close_subscription(self, name):
         self.subscriptions.remove(name)
-        self.relay_manager.close_subscription(name)
+        RELAY_MANAGER.close_subscription(name)
 
     def close_secondary_subscriptions(self):
         for s in self.subscriptions:
@@ -341,21 +321,23 @@ class BijaEvents:
 
     def close(self):
         self.should_run = False
-        self.relay_manager.close_connections()
+        RELAY_MANAGER.close_connections()
 
 
 class ReactionEvent:
     def __init__(self, event, my_pubkey):
+        logger.info('REACTION EVENT')
         self.event = event
         self.pubkey = my_pubkey
         self.event_id = None
         self.event_pk = None
         self.event_members = []
         self.valid = False
-
         self.process()
+        logger.info('REACTION processed')
 
     def process(self):
+        logger.info('process reaction')
         self.process_tags()
         if self.event_id is not None and self.event_pk is not None:
             self.valid = True
@@ -365,6 +347,7 @@ class ReactionEvent:
             logger.debug('Invalid reaction event could not be stored.')
 
     def process_tags(self):
+        logger.info('process reaction tags')
         for tag in self.event.tags:
             if tag[0] == "p" and is_hex_key(tag[1]):
                 self.event_pk = tag[1]
@@ -373,6 +356,7 @@ class ReactionEvent:
                 self.event_id = tag[1]
 
     def store(self):
+        logger.info('store reaction')
         DB.add_note_reaction(
             self.event.id,
             self.event.public_key,
@@ -388,6 +372,7 @@ class ReactionEvent:
             DB.set_note_liked(self.event_id)
 
     def update_referenced(self):
+        logger.info('update referenced in reaction')
         if self.event.content != "-":
             DB.increment_note_like_count(self.event_id)
 
@@ -661,11 +646,11 @@ class NoteEvent:
         if len(self.tags) > 0:
             parents = []
             for item in self.tags:
-                if item[0] == "p":
+                if item[0] == "p" and len(item) > 1:
                     self.members.append(item[1])
                     if item[1] == self.my_pk and self.event.public_key != self.my_pk:
                         self.mentions_me = True
-                elif item[0] == "e":
+                elif item[0] == "e" and len(item) > 1:
                     if len(item) < 4 > 1:  # deprecate format
                         parents.append(item[1])
                     elif len(item) > 3 and item[3] in ["root", "reply"]:

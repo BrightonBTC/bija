@@ -10,6 +10,7 @@ from bija.settings import Settings
 from python_nostr.nostr.event import EventKind
 from python_nostr.nostr.filter import Filter, Filters
 from python_nostr.nostr.message_type import ClientMessageType
+from bija.app import RELAY_MANAGER
 
 DB = BijaDB(app.session)
 logger = logging.getLogger(__name__)
@@ -17,8 +18,7 @@ logger.setLevel(LOGGING_LEVEL)
 
 
 class Subscribe:
-    def __init__(self, name, relay_manager):
-        self.relay_manager = relay_manager
+    def __init__(self, name):
         self.name = name
         logger.info('SUBSCRIBE: {}'.format(name))
         self.filters = None
@@ -27,15 +27,15 @@ class Subscribe:
         request = [ClientMessageType.REQUEST, self.name]
         request.extend(self.filters.to_json_array())
         logger.info('add subscription to relay manager')
-        self.relay_manager.add_subscription(self.name, self.filters)
+        RELAY_MANAGER.add_subscription(self.name, self.filters)
         message = json.dumps(request)
         logger.info('publish subscriptiom: {}'.format(message))
-        self.relay_manager.publish_message(message)
+        RELAY_MANAGER.publish_message(message)
 
 
 class SubscribePrimary(Subscribe):
-    def __init__(self, name, relay_manager, pubkey):
-        super().__init__(name, relay_manager)
+    def __init__(self, name, pubkey):
+        super().__init__(name)
         self.pubkey = pubkey
         self.build_filters()
         self.send()
@@ -59,7 +59,7 @@ class SubscribePrimary(Subscribe):
             following_filter = Filter(
                 authors=following_pubkeys,
                 kinds=[EventKind.TEXT_NOTE, EventKind.REACTION, EventKind.DELETE, EventKind.CONTACTS],
-                since=timestamp_minus(TimePeriod.WEEK)  # TODO: should be configurable in user settings
+                since=timestamp_minus(TimePeriod.DAY)  # TODO: should be configurable in user settings
             )
             following_profiles_filter = Filter(
                 authors=following_pubkeys,
@@ -72,8 +72,8 @@ class SubscribePrimary(Subscribe):
 
 
 class SubscribeSearch(Subscribe):
-    def __init__(self, name, relay_manager, term):
-        super().__init__(name, relay_manager)
+    def __init__(self, name, term):
+        super().__init__(name)
         self.term = term
         self.build_filters()
         self.send()
@@ -94,8 +94,8 @@ class SubscribeSearch(Subscribe):
 
 
 class SubscribeProfile(Subscribe):
-    def __init__(self, name, relay_manager, pubkey, since):
-        super().__init__(name, relay_manager)
+    def __init__(self, name, pubkey, since):
+        super().__init__(name)
         self.pubkey = pubkey
         self.since = since
         self.build_filters()
@@ -104,7 +104,6 @@ class SubscribeProfile(Subscribe):
     def build_filters(self):
         logger.info('build subscription filters')
         profile = DB.get_profile(self.pubkey)
-
         f = [
             Filter(authors=[self.pubkey], kinds=[EventKind.SET_METADATA, EventKind.CONTACTS]),
             Filter(authors=[self.pubkey], kinds=[EventKind.TEXT_NOTE, EventKind.DELETE, EventKind.REACTION],
@@ -118,27 +117,42 @@ class SubscribeProfile(Subscribe):
 
 
 class SubscribeThread(Subscribe):
-    def __init__(self, name, relay_manager, root):
-        super().__init__(name, relay_manager)
+    def __init__(self, name, root, proof_of_work=None):
+        super().__init__(name)
         self.root = root
+        self.proof_of_work = proof_of_work
         self.build_filters()
         self.send()
 
     def build_filters(self):
         logger.info('build subscription filters')
+        filters = []
         ids = DB.get_note_thread_ids(self.root)
         if ids is None:
             ids = [self.root]
+        filters.append(Filter(ids=ids, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION]))
+        if self.proof_of_work is None:
+            required_pow = Settings.get('pow_required')
+        else:
+            required_pow = self.proof_of_work
+        if required_pow is not None and int(required_pow) > 0:
+            print('POW', required_pow)
+            pks = DB.get_following_pubkeys()
+            difficulty = int(int(required_pow) / 4) * "0"
+            print('difficulty', difficulty)
+            subid = {"ids": [difficulty]}
+            filters.append(Filter(tags={'#e': ids, '#p': pks}, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION]))
+            filters.append(Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION], subid=subid))
+        else:
+            filters.append(Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION]))  # event responses
 
-        self.filters = Filters([
-            Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION]),  # event responses
-            Filter(ids=ids, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION])
-        ])
+
+        self.filters = Filters(filters)
 
 
 class SubscribeFeed(Subscribe):
-    def __init__(self, name, relay_manager, ids):
-        super().__init__(name, relay_manager)
+    def __init__(self, name, ids):
+        super().__init__(name)
         self.ids = ids
         self.build_filters()
         self.send()

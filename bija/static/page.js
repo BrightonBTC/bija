@@ -109,8 +109,17 @@ function SOCK() {
     socket.on('new_reshare', function(note_id) {
         updateInteractionCount(note_id, '.quote-n');
     });
-    socket.on('search_result', function(event) {
-        addSearchResult(event);
+    socket.on('events_processing', function(event) {
+        const elem = document.querySelector('.queued_count')
+        if(event > 0){
+            elem.innerText = 'Processing '+event+' queued events'
+            elem.classList.add('fadeIn')
+            elem.classList.remove('fadeOut')
+        }
+        else{
+            elem.classList.add('fadeOut')
+            elem.classList.remove('fadeIn')
+        }
     });
 }
 
@@ -130,18 +139,6 @@ let replaceNotePlaceholder = function(id){
         fetchGet('/thread_item?id='+id, cb, {'els': ph_els})
     }
 }
-
-let addSearchResult = function(event){
-    const results_el = document.querySelector('.search-results');
-    if(results_el){
-        const card = document.createElement('a')
-        card.classList.add('card')
-        card.href = "/note?id="+event.id
-        card.innerText = event.content
-        results_el.append(card)
-    }
-}
-
 
 let updateInteractionCount = function(note_id, cls){
     const note_el = document.querySelector('.note[data-id="'+note_id+'"]');
@@ -744,7 +741,9 @@ class bijaNotes{
                 }
             }
         }
-        fetchGet('/timestamp_upd?ts='+timestamps.join(), cb)
+        if(timestamps.length > 0){
+            fetchGet('/timestamp_upd?ts='+timestamps.join(), cb)
+        }
     }
 
     setEventListeners(){
@@ -1398,6 +1397,11 @@ window.addEventListener("load", function () {
     if (document.querySelector(".main[data-page='settings']") != null){
         new bijaSettings();
     }
+
+    if (document.querySelector(".main[data-page='search']") != null){
+        new bijaNotes();
+    }
+
     SOCK();
 
     new bijaNoteTools();
