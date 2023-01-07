@@ -1293,6 +1293,47 @@ ul#search_tips li {
     color: var(--txt-clr);
 }
 
+/* Topic page */
+.topic-title span{
+    color: var(--txt-clr);
+}
+.topic-sub{
+    background: var(--bg-clr3);
+    padding: var(--spacing-tiny);
+    float: right;
+    color: var(--lnk-clr);
+    border-radius: var(--rnd);
+}
+.topic-list li{
+    border-radius: var(--rnd-mid);
+    margin: var(--spacing-sm);
+}
+.topic-list li:hover{
+    background: var(--bg-clr2);
+}
+.topic-list li a{
+    color: var(--txt-clr);
+    display: block;
+    padding: var(--spacing-sm);
+}
+.topic-list li a .unseen_n{
+    background: var(--bg-clr2);
+    font-size: var(--fs-tiny);
+    padding: var(--spacing-tiny);
+    border-radius: var(--rnd-mid);
+    color: var(--lnk-clr);
+    font-weight: 800;
+}
+.topic-list li a .unseen_n span{
+    margin: var(--spacing-tiny);
+}
+
+.topic-list li.actv{
+    background: var(--bg-clr2);
+}
+.topic-list li.actv a{
+    color: var(--lnk-clr);
+}
 /* ---------- */
 @keyframes fadeInOut {
   0%,100% { opacity: 0 }

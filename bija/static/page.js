@@ -17,6 +17,11 @@ function SOCK() {
             el_unseen.innerText = data;
         }
     });
+    socket.on('unseen_in_topics', function(data) {
+        for(const [k, v] of Object.entries(data)){
+            updateUnseenTopicCount(k, v)
+        }
+    });
 
     socket.on('unseen_posts_n', function(data) {
         let el_unseen = document.getElementById("n_unseen_posts");
@@ -121,6 +126,19 @@ function SOCK() {
             elem.classList.remove('fadeIn')
         }
     });
+}
+
+let updateUnseenTopicCount = function(tag, n){
+    const container_el = document.querySelector('ul.topic-list li[data-tag="'+tag+'"]')
+    if(container_el){
+        n_el = container_el.querySelector('.unseen_n')
+        if(n > 0){
+            n_el.innerHTML = '<span>'+n+'</span>'
+        }
+        else{
+            n_el.innerHTML= ''
+        }
+    }
 }
 
 let replaceNotePlaceholder = function(id){
@@ -1105,6 +1123,21 @@ class bijaFeed{
     }
 }
 
+class bijaTopic{
+
+    constructor(){
+        const subscribe_el = document.querySelector(".topic-sub")
+        subscribe_el.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const cb = function(response, data){
+
+            }
+            fetchGet('/subscribe_topic?state='+subscribe_el.dataset.state+'&topic='+subscribe_el.dataset.topic, cb, {}, 'json')
+        });
+    }
+}
+
 class Emojis{
     constructor(target_el){
         this.target_el = target_el
@@ -1378,6 +1411,12 @@ window.addEventListener("load", function () {
         new bijaNotes();
         new bijaThread();
     }
+    if (document.querySelector(".main[data-page='topic']") != null){
+        new bijaNotes();
+        new bijaThread();
+        new bijaTopic();
+    }
+
     if (document.querySelector(".main[data-page='profile']") != null){
         new bijaFeed();
         new bijaNotes();

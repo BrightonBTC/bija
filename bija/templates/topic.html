@@ -1,0 +1,19 @@
+{%- extends "base.html" -%}
+
+{%- block content -%}
+{%- if subscribed -%}
+    {%- set btn_text = 'unsubscribe' -%}
+{%- else -%}
+    {%- set btn_text = 'subscribe' -%}
+{%- endif-%}
+<h2 class="posts-title topic-title">Recent activity in topic
+    <span>#{{topic}}</span>
+    <a href="#" class="topic-sub rnd-sm" data-state="{{subscribed}}" data-topic="{{topic}}">{{btn_text}}</a>
+</h2>
+{%- include 'feed.items.html' -%}
+
+{%- endblock content -%}
+
+{%- block right_content -%}
+{%- include 'topic.list.html' -%}
+{%- endblock right_content -%}
