@@ -67,13 +67,14 @@ def index_page():
     EXECUTOR.submit(RELAY_HANDLER.set_page('home', None))
     EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
     pk = Settings.get('pubkey')
-    DB.set_all_seen_in_feed(pk)
     notes = DB.get_feed(time.time(), pk)
+    DB.set_all_seen_in_feed(pk)
     t = FeedThread(notes)
     EXECUTOR.submit(RELAY_HANDLER.subscribe_feed(list(t.ids)))
     profile = DB.get_profile(pk)
+    topics = DB.get_topics()
     return render_template("feed.html", page_id="home", title="Home", threads=t.threads, last=t.last_ts,
-                           profile=profile, pubkey=pk)
+                           profile=profile, pubkey=pk, topics=topics)
 
 
 @app.route('/feed', methods=['GET'])
@@ -519,8 +520,39 @@ def search_page():
         return redirect(goto)
     if action is not None:
         if action == 'hash':
-            EXECUTOR.submit(RELAY_HANDLER.subscribe_search, request.args['search_term'][1:])
-    return render_template("search.html", page_id="search", title="Search", message=message, results=results)
+            EXECUTOR.submit(RELAY_HANDLER.subscribe_topic, request.args['search_term'][1:])
+    return re
+
+
+@app.route('/topic', methods=['GET'])
+@login_required
+def topic_page():
+    ACTIVE_EVENTS.clear()
+    topic = request.args['tag']
+    EXECUTOR.submit(RELAY_HANDLER.set_page('topic', topic))
+    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
+    EXECUTOR.submit(RELAY_HANDLER.subscribe_topic, topic)
+    pk = Settings.get('pubkey')
+
+    notes = DB.get_topic_feed(int(time.time()), topic)
+    DB.set_all_seen_in_topic(topic)
+
+    t = FeedThread(notes)
+    profile = DB.get_profile(pk)
+
+    subscribed = DB.subscribed_to_topic(topic)
+    topics = DB.get_topics()
+
+    return render_template("topic.html", page_id="topic", title="Topic", threads=t.threads, last=t.last_ts,
+                           profile=profile, pubkey=pk, topic=topic, subscribed=subscribed, topics=topics)
+
+@app.route('/subscribe_topic', methods=['GET'])
+def subscribe_topic():
+    if request.args['state'] == 'False':
+        DB.subscribe_to_topic(str(request.args['topic']).lower())
+    else:
+        DB.unsubscribe_from_topic(str(request.args['topic']))
+    return render_template("upd.json", data=json.dumps({'result': 1}))
 
 
 @app.route('/search_name', methods=['GET'])
@@ -599,6 +631,12 @@ def io_connect(m):
 
     unseen_alerts = DB.get_unread_alert_count()
     socketio.emit('alert_n', unseen_alerts)
+
+    topics = DB.get_topics()
+    if topics is not None:
+        t = [x.tag for x in topics]
+        unseen_in_topics = DB.get_unseen_in_topics(t)
+        socketio.emit('unseen_in_topics', unseen_in_topics)
 
     EXECUTOR.submit(RELAY_HANDLER.get_connection_status)
 
