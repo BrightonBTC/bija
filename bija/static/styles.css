@@ -47,6 +47,11 @@
     --icon-sm: 12px;
     --icon: 14px;
     --icon-lg: 16px;
+    --icon-clr: #ffffff;
+    --nav-icon-clr: #7581a7;
+
+    --warning: red;
+    --verified: gold;
 
     --alert-bg: #19dfff;
 }
@@ -231,6 +236,19 @@ hr{
     width: var(--icon-lg);
     height: var(--icon-lg);
 }
+.icon *,.icon-sm *,.icon-lg * {
+    stroke: var(--icon-clr);
+}
+.icon-sm.verified *{
+    stroke: var(--verified);
+}
+.icon-sm.warn *{
+    stroke: var(--warning);
+}
+
+.profile-name svg {
+    margin: 0 var(--spacing-tiny);
+}
 
 .rnd{
     border-radius: var(--rnd);
@@ -270,16 +288,26 @@ hr{
 .topnav a.logout{
     float: right;
 }
+.topnav a.logout svg{
+    margin-right: var(--spacing-sm);
+}
+.topnav a.logout svg *{
+    stroke: var(--nav-icon-clr);
+}
+
 .topnav a:hover, .topnav a:active{
     background-color: var(--bg-clr3);
     color: var(--mnu-clr-hvr);
 }
-.topnav a img{
+.topnav a svg.main_nav{
     width: var(--icon-lg);
     height: var(--icon-lg);
     margin-right: var(--spacing-mid);
-    opacity: 0.4;
 }
+.topnav a svg.main_nav *{
+    fill: var(--nav-icon-clr);
+}
+
 .topnav .title {
     font-size: var(--fs-sm);
 }

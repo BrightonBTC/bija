@@ -23,6 +23,11 @@ logger = logging.getLogger(__name__)
 logger.setLevel(LOGGING_LEVEL)
 
 
+@app.template_filter('svg_icon')
+def _jinja2_filter_svg(icon, class_name):
+    return render_template('svg/{}.svg'.format(icon), class_name=class_name)
+
+
 @app.template_filter('theme')
 def _jinja2_filter_theme(b):
     theme = Settings.get('theme')
@@ -59,7 +64,8 @@ def _jinja2_filter_ident(name, pk, nip5=None, validated=None, long=True):
             status = 'verified'
         else:
             status = 'warn'
-        nip5 = " <img src='/static/{}.svg' class='icon-sm nip5-{}' title='{}'> ".format(status, status, nip5)
+        #nip5 = " <img src='/static/{}.svg' class='icon-sm nip5-{}' title='{}'> ".format(status, status, nip5)
+        nip5 = render_template('svg/{}.svg'.format(status), title=nip5, class_name='icon-sm {}'.format(status))
     elif name is None or len(name.strip()) < 1:
         name = "{}&#8230;".format(pk[0:21])
 

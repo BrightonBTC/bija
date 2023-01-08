@@ -1,19 +1,19 @@
 {%- if note['liked'] -%}
-{%- set liked_im = 'liked.svg' -%}
+{%- set liked_im = 'liked' -%}
 {%- else -%}
-{%- set liked_im = 'like.svg' -%}
+{%- set liked_im = 'like' -%}
 {%- endif -%}
 <p class="note-tools pad-sm">
     <span class="section">
-        <a href="#" class="reply-link" data-rel="{{note['id']}}"><img src="/static/reply.svg" class="icon"></a>
+        <a href="#" class="reply-link" data-rel="{{note['id']}}">{{'reply'| svg_icon('icon')|safe}}</a>
         <a href="{{ url_for('note_page', id=note['id']) }}#focussed" class="reply-n counts rnd">{{note['replies'] if note['replies']}}</a>
     </span>
     <span class="section">
-        <a href="#" class="quote-link" data-rel="{{note['id']}}"><img src="/static/reshare.svg" class="icon"></a>
+        <a href="#" class="quote-link" data-rel="{{note['id']}}">{{'reshare'| svg_icon('icon')|safe}}</a>
         <span class="quote-n counts rnd">{{note['shares'] if note['shares']}}</span>
     </span>
     <span class="section">
-        <a href="#" class="like" data-rel="{{note['id']}}" data-liked="{{note['liked']}}"><img src="/static/{{liked_im}}" class="icon"></a>
+        <a href="#" class="like" data-rel="{{note['id']}}" data-liked="{{note['liked']}}">{{liked_im| svg_icon('icon')|safe}}</a>
         <span class="likes counts rnd">{{note['likes'] if note['likes']}}</span>
     </span>
 </p>
@@ -25,7 +25,7 @@
     <div class="toolbar">
         <div class="emoji_selector"><input type="text"><div></div></div>
         <input type="submit" value="Reply" data-reply-submit="1" data-rel="{{note['id']}}" class="post-submit right pad-sm">
-        <span><img class="icon-lg emojis" src="/static/emoji.svg"></span>
+        <span>{{'emoji'| svg_icon('icon-lg emojis')|safe}}</span>
     </div>
     <div class="media_uploads"></div>
     <div class="name-hints"></div>
