@@ -352,9 +352,13 @@ def update_settings():
         items[item[0]] = item[1].strip()
     DB.upd_settings_by_keys(items)
     Settings.set_from_db()
-    print(DB.get_settings())
-    print(Settings.get('theme'))
     return render_template("upd.json", data=json.dumps({'success': 1}))
+
+
+@app.route('/reload_relay_list', methods=['GET'])
+def reload_relay_list():
+    relays = DB.get_relays()
+    return render_template("relays.list.html", relays=relays)
 
 
 @app.route('/destroy_account')
@@ -397,6 +401,7 @@ def add_relay():
                 success = True
                 DB.insert_relay(ws)
                 EXECUTOR.submit(RELAY_HANDLER.add_relay(ws))
+                EXECUTOR.submit(RELAY_HANDLER.reset)
     return render_template("upd.json", data=json.dumps({'add_relay': success}))
 
 
@@ -461,15 +466,13 @@ def submit_message():
 
 @app.route('/like', methods=['GET'])
 def submit_like():
-    event_id = False
     if 'id' in request.args:
         note_id = request.args['id']
         note = DB.get_note(note_id)
         if note.liked is False:
             DB.set_note_liked(note_id)
             e = SubmitLike(note_id)
-            event_id = e.event_id
-            #event_id = EVENT_HANDLER.submit_like(note_id)
+            return render_template('svg/liked.svg', class_name='icon liked')
         else:
             DB.set_note_liked(note_id, False)
             like_events = DB.get_like_events_for(note_id, Settings.get('pubkey'))
@@ -478,10 +481,8 @@ def submit_like():
                 for event in like_events:
                     ids.append(event.id)
                 e = SubmitDelete(ids, 'removing like')
-                event_id = e.event_id
-                #event_id = EVENT_HANDLER.submit_delete(ids)
+                return render_template('svg/like.svg', class_name='icon')
 
-    return render_template("upd.json", data=json.dumps({'event_id': event_id}))
 
 
 @app.route('/following', methods=['GET'])
@@ -546,15 +547,17 @@ def topic_page():
     topics = DB.get_topics()
 
     return render_template("topic.html", page_id="topic", title="Topic", threads=t.threads, last=t.last_ts,
-                           profile=profile, pubkey=pk, topic=topic, subscribed=subscribed, topics=topics)
+                           profile=profile, pubkey=pk, topic=topic, subscribed=int(subscribed), topics=topics)
 
 @app.route('/subscribe_topic', methods=['GET'])
 def subscribe_topic():
-    if request.args['state'] == 'False':
+    if request.args['state'] == '0':
         DB.subscribe_to_topic(str(request.args['topic']).lower())
+        out = {'state': '1', 'label': 'unsubscribe'}
     else:
         DB.unsubscribe_from_topic(str(request.args['topic']))
-    return render_template("upd.json", data=json.dumps({'result': 1}))
+        out = {'state': '0', 'label': 'subscribe'}
+    return render_template("upd.json", data=json.dumps(out))
 
 
 @app.route('/search_name', methods=['GET'])
@@ -654,6 +657,7 @@ def refresh_connections():
 def del_relay():
     DB.remove_relay(request.args['url'])
     EXECUTOR.submit(RELAY_HANDLER.remove_relay(request.args['url']))
+    EXECUTOR.submit(RELAY_HANDLER.reset)
     return render_template("upd.json", data=json.dumps({'del': True}))
 
 

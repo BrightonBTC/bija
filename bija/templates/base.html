@@ -16,12 +16,12 @@
 
 <div class="main" data-page="{{page_id}}" data-settings="{{1|settings_json}}">
   <div class="topnav nav-{{page_id}} rnd">
-    <a href="/" class="home-link"><img src="static/home.svg"><span class="title desktop-only">feed</span><span id="n_unseen_posts" class="unseen"></span></a>
-    <a href="/profile" class="profile-link"><img src="static/profile.svg"><span class="title desktop-only">profile</span></a>
-    <a href="/messages" class="messages-link"><img src="static/messages.svg"><span class="title desktop-only">messages</span><span id="n_unseen_messages" class="unseen"></span></a>
-    <a href="/alerts" class="alerts-link"><img src="static/notif.svg"><span class="title desktop-only">alerts</span><span id="n_alerts" class="unseen"></span></a>
-    <a href="/settings" class="settings-link"><img src="static/settings.svg"><span class="title desktop-only">settings</span></a>
-    <a href="#" class="logout"><img src="static/logout.svg"><span class="title">log out</span></a>
+    <a href="/" class="home-link">{{'home'| svg_icon('main_nav')|safe}}<span class="title desktop-only">feed</span><span id="n_unseen_posts" class="unseen"></span></a>
+    <a href="/profile" class="profile-link">{{'profile'| svg_icon('main_nav')|safe}}<span class="title desktop-only">profile</span></a>
+    <a href="/messages" class="messages-link">{{'messages'| svg_icon('main_nav')|safe}}<span class="title desktop-only">messages</span><span id="n_unseen_messages" class="unseen"></span></a>
+    <a href="/alerts" class="alerts-link">{{'notif'| svg_icon('main_nav')|safe}}<span class="title desktop-only">alerts</span><span id="n_alerts" class="unseen"></span></a>
+    <a href="/settings" class="settings-link">{{'settings'| svg_icon('main_nav')|safe}}<span class="title desktop-only">settings</span></a>
+    <a href="#" class="logout">{{'logout'| svg_icon('icon-lg')|safe}}<span class="title">log out</span></a>
     <span class="conn-status right rnd pad-sm desktop-only"></span>
   </div>
 

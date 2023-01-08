@@ -4,7 +4,7 @@
 {%- endblock css -%}
 
 {%- block content -%}
-{%- if subscribed -%}
+{%- if subscribed == 1 -%}
     {%- set btn_text = 'unsubscribe' -%}
 {%- else -%}
     {%- set btn_text = 'subscribe' -%}

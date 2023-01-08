@@ -46,6 +46,7 @@ themes = {
         'bdr-clr-1': '#4c3434',
         'bdr-clr-2': '#503231',
         'mnu-clr': '#ffffff',
-        'mnu-clr-hvr': '#ff7b66'
+        'mnu-clr-hvr': '#ff7b66',
+        'nav-icon-clr': '#5d5e62'
     }
 }

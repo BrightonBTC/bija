@@ -425,10 +425,7 @@ class bijaSettings{
         this.setPrivateKeyReveal()
         this.setUpdateConnsClickedEvent()
 
-        const relays = document.querySelectorAll(".relay[data-url]");
-        for (const relay of relays) {
-            this.setRelayRemoveClickedEvent(relay)
-        }
+        this.setRelayRemoveClickedEvents()
 
         this.setDeleteKeysClicked()
 
@@ -439,11 +436,9 @@ class bijaSettings{
             const form = document.querySelector("#relay_adder")
 
             const cb = function(response, data){
-                if(response['success']){
-                   notify('relay added')
-                }
+                data.context.reloadRelayList()
             }
-            fetchFromForm('/add_relay', form, cb, {}, 'json')
+            fetchFromForm('/add_relay', form, cb, {'context': this})
         });
 
         const cld_btn = document.querySelector("#upd_cloudinary");
@@ -535,12 +530,19 @@ class bijaSettings{
         });
     }
 
+    setRelayRemoveClickedEvents(){
+        const relays = document.querySelectorAll(".relay[data-url]");
+        for (const relay of relays) {
+            this.setRelayRemoveClickedEvent(relay)
+        }
+    }
+
     setRelayRemoveClickedEvent(elem){
         elem.querySelector(".del-relay").addEventListener("click", (event)=>{
             const cb = function(response, data){
-                data.elem.remove()
+                data.context.reloadRelayList()
             }
-            fetchGet('/del_relay?url='+elem.dataset.url, cb, {'elem': elem})
+            fetchGet('/del_relay?url='+elem.dataset.url, cb, {'context': this})
         });
     }
 
@@ -548,10 +550,20 @@ class bijaSettings{
         const elem = document.querySelector(".refresh_connections");
         elem.addEventListener("click", (event)=>{
             const cb = function(response, data){
-                // TODO: update page
+                data.context.reloadRelayList()
             }
-            fetchGet('/refresh_connections', cb, {})
+            fetchGet('/refresh_connections', cb, {'context': this})
         });
+    }
+
+    reloadRelayList(){
+        const cb = function(response, data){
+            const doc = new DOMParser().parseFromString(response, "text/html")
+            document.querySelector('#relays_list').innerHTML = ''
+            document.querySelector('#relays_list').append(doc.body.firstChild)
+            data.context.setRelayRemoveClickedEvents()
+        }
+        fetchGet('/reload_relay_list', cb, {'context': this})
     }
 }
 
@@ -891,16 +903,16 @@ class bijaNotes{
             d.disabled = true
             if(d.liked == 'True'){
                 d.liked = 'False'
-                elem.querySelector('img').setAttribute('src', '/static/like.svg')
             }
             else{
                 d.liked = 'True'
-                elem.querySelector('img').setAttribute('src', '/static/liked.svg')
             }
             const cb = function(response, data){
-                if(response['event_id']){
-                    data.elem.dataset.disabled = false
-                }
+                data.elem.dataset.disabled = false
+                const doc = new DOMParser().parseFromString(response, "text/html")
+                const svg = doc.body.firstChild
+                elem.replaceWith(svg)
+                document.dispatchEvent(new Event('newContentLoaded'))
             }
             fetchGet('/like?id='+d.rel, cb, {'elem': elem})
         })
@@ -1141,7 +1153,8 @@ class bijaTopic{
             e.preventDefault();
             e.stopPropagation();
             const cb = function(response, data){
-
+                subscribe_el.dataset.state = response.state
+                subscribe_el.innerText = response.label
             }
             fetchGet('/subscribe_topic?state='+subscribe_el.dataset.state+'&topic='+subscribe_el.dataset.topic, cb, {}, 'json')
         });

@@ -44,11 +44,9 @@
 </div>
 <div class="card">
     <h3>Relays</h3>
-    <ul>
-    {%- for relay in relays: -%}
-        <li class="relay" data-url="{{relay.name}}"><span class="led"></span>{{relay.name}} &nbsp; <img src="/static/close.svg" class="del-relay icon"></li>
-    {%- endfor -%}
-    </ul>
+    <div id="relays_list">
+    {%- include 'relays.list.html' -%}
+    </div>
     <button class="refresh_connections">reset connections</button>
     <form id="relay_adder">
         <input type="text" id="newrelay" name="newrelay" class="newrelay" placeholder="wss://">

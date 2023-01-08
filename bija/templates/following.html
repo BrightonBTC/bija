@@ -15,7 +15,7 @@
         {%- if p['following'] == False: -%}
         <button class="follow-btn" data-rel="{{p['public_key']}}" data-state="1" data-upd="0">+</button>
         {%- else: -%}
-        <img src="/static/following.svg" title="following" class="icon">
+        {{'following'| svg_icon('icon')|safe}}
         {%- endif -%}
     </div>
 {%- endfor -%}
