@@ -55,8 +55,9 @@ def _jinja2_filter_decr(content, pubkey, privkey):
 @app.template_filter('ident_string')
 def _jinja2_filter_ident(name, pk, nip5=None, validated=None, long=True):
     html = "<span class='uname' data-pk='{}'><span class='name'>{}</span> "
+    nip5_htm = ""
     if long:
-        html = "<span class='nip5'>{}</span><span class='uname' data-pk='{}'><span class='name'>{}</span>"
+        html = "<span class='nip5' title='{}'>{}</span><span class='uname' data-pk='{}'><span class='name'>{}</span>"
     if nip5 is not None and long:
         if nip5[0:2] == "_@":
             nip5 = nip5[2:]
@@ -65,14 +66,15 @@ def _jinja2_filter_ident(name, pk, nip5=None, validated=None, long=True):
         else:
             status = 'warn'
         #nip5 = " <img src='/static/{}.svg' class='icon-sm nip5-{}' title='{}'> ".format(status, status, nip5)
-        nip5 = render_template('svg/{}.svg'.format(status), title=nip5, class_name='icon-sm {}'.format(status))
+        nip5_htm = render_template('svg/{}.svg'.format(status), title=nip5, class_name='icon-sm {}'.format(status))
     elif name is None or len(name.strip()) < 1:
         name = "{}&#8230;".format(pk[0:21])
 
     if long:
         if nip5 is None:
             nip5 = ""
-        return html.format(nip5, pk, name)
+            nip5_htm = ""
+        return html.format(nip5, nip5_htm, pk, name)
 
     return html.format(pk, name)
 
