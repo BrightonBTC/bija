@@ -147,26 +147,23 @@ def profile_page():
     ACTIVE_EVENTS.clear()
     EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
     page_id = 'profile'
-    if 'pk' in request.args and is_hex_key(request.args['pk']) and request.args['pk'] != Settings.get('pubkey'):
+    pubkey = Settings.get('pubkey')
+    if 'pk' in request.args and is_hex_key(request.args['pk']) and request.args['pk'] != pubkey:
         EXECUTOR.submit(RELAY_HANDLER.set_page('profile', request.args['pk']))
-        k = request.args['pk']
+        pubkey = request.args['pk']
         is_me = False
     else:
-        k = Settings.get('pubkey')
-        EXECUTOR.submit(RELAY_HANDLER.set_page('profile', k))
+        EXECUTOR.submit(RELAY_HANDLER.set_page('profile', pubkey))
         is_me = True
         page_id = 'profile-me'
-    notes = DB.get_notes_by_pubkey(k, int(time.time()), timestamp_minus(TimePeriod.DAY))
+    notes = DB.get_notes_by_pubkey(pubkey, int(time.time()), timestamp_minus(TimePeriod.DAY))
     t = FeedThread(notes)
-    profile = DB.get_profile(k)
-    latest = DB.get_most_recent_for_pk(k)
-    if latest is None:
-        latest = 0
+    profile = DB.get_profile(pubkey)
     if profile is None:
-        DB.add_profile(k)
-        profile = DB.get_profile(k)
+        DB.add_profile(pubkey)
+        profile = DB.get_profile(pubkey)
 
-    EXECUTOR.submit(RELAY_HANDLER.subscribe_profile, k, timestamp_minus(TimePeriod.WEEK), list(t.ids))
+    EXECUTOR.submit(RELAY_HANDLER.subscribe_profile, pubkey, timestamp_minus(TimePeriod.WEEK), list(t.ids))
 
     metadata = {}
     if profile.raw is not None and len(profile.raw) > 0:
@@ -175,8 +172,18 @@ def profile_page():
         for item in meta.keys():
             if item in ['website', 'lud06', 'lud16']:
                 metadata[item] = meta[item]
-    return render_template("profile.html", page_id=page_id, title="Profile", threads=t.threads, last=t.last_ts,
-                           latest=latest, profile=profile, is_me=is_me, meta=metadata, pubkey=Settings.get('pubkey'))
+    return render_template(
+        "profile.html",
+        page_id=page_id,
+        title="Profile",
+        threads=t.threads,
+        last=t.last_ts,
+        latest=DB.get_most_recent_for_pk(pubkey) or 0,
+        profile=profile,
+        is_me=is_me,
+        meta=metadata,
+        pubkey=pubkey
+    )
 
 
 @app.route('/profile_feed', methods=['GET'])

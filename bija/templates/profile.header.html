@@ -40,7 +40,7 @@
             {%- set pic=profile['pic'] -%}
         {%- else -%}
             {%- set pic_url='' -%}
-            {%- set pic="/identicon?id="+me.public_key -%}
+            {%- set pic="/identicon?id="+pubkey -%}
         {%- endif -%}
     <form id="profile_updater" data-vis="0">
         <label for="pname" class="sm">Handle</label>
