@@ -1141,7 +1141,8 @@ class bijaTopic{
             e.preventDefault();
             e.stopPropagation();
             const cb = function(response, data){
-
+                subscribe_el.dataset.state = response.state
+                subscribe_el.innerText = response.label
             }
             fetchGet('/subscribe_topic?state='+subscribe_el.dataset.state+'&topic='+subscribe_el.dataset.topic, cb, {}, 'json')
         });

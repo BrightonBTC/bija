@@ -546,15 +546,17 @@ def topic_page():
     topics = DB.get_topics()
 
     return render_template("topic.html", page_id="topic", title="Topic", threads=t.threads, last=t.last_ts,
-                           profile=profile, pubkey=pk, topic=topic, subscribed=subscribed, topics=topics)
+                           profile=profile, pubkey=pk, topic=topic, subscribed=int(subscribed), topics=topics)
 
 @app.route('/subscribe_topic', methods=['GET'])
 def subscribe_topic():
-    if request.args['state'] == 'False':
+    if request.args['state'] == '0':
         DB.subscribe_to_topic(str(request.args['topic']).lower())
+        out = {'state': '1', 'label': 'unsubscribe'}
     else:
         DB.unsubscribe_from_topic(str(request.args['topic']))
-    return render_template("upd.json", data=json.dumps({'result': 1}))
+        out = {'state': '0', 'label': 'subscribe'}
+    return render_template("upd.json", data=json.dumps(out))
 
 
 @app.route('/search_name', methods=['GET'])
