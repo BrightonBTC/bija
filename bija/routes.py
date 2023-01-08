@@ -352,9 +352,13 @@ def update_settings():
         items[item[0]] = item[1].strip()
     DB.upd_settings_by_keys(items)
     Settings.set_from_db()
-    print(DB.get_settings())
-    print(Settings.get('theme'))
     return render_template("upd.json", data=json.dumps({'success': 1}))
+
+
+@app.route('/reload_relay_list', methods=['GET'])
+def reload_relay_list():
+    relays = DB.get_relays()
+    return render_template("relays.list.html", relays=relays)
 
 
 @app.route('/destroy_account')
@@ -397,6 +401,7 @@ def add_relay():
                 success = True
                 DB.insert_relay(ws)
                 EXECUTOR.submit(RELAY_HANDLER.add_relay(ws))
+                EXECUTOR.submit(RELAY_HANDLER.reset)
     return render_template("upd.json", data=json.dumps({'add_relay': success}))
 
 
@@ -656,6 +661,7 @@ def refresh_connections():
 def del_relay():
     DB.remove_relay(request.args['url'])
     EXECUTOR.submit(RELAY_HANDLER.remove_relay(request.args['url']))
+    EXECUTOR.submit(RELAY_HANDLER.reset)
     return render_template("upd.json", data=json.dumps({'del': True}))
 
 
