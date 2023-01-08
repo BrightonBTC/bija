@@ -52,6 +52,7 @@
 
     --warning: red;
     --verified: gold;
+    --liked: #4ec74c;
 
     --alert-bg: #19dfff;
 }
@@ -244,6 +245,9 @@ hr{
 }
 .icon-sm.warn *{
     stroke: var(--warning);
+}
+.icon.liked *{
+    stroke: var(--liked);
 }
 
 .profile-name svg {

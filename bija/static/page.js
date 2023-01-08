@@ -903,16 +903,16 @@ class bijaNotes{
             d.disabled = true
             if(d.liked == 'True'){
                 d.liked = 'False'
-                elem.querySelector('img').setAttribute('src', '/static/like.svg')
             }
             else{
                 d.liked = 'True'
-                elem.querySelector('img').setAttribute('src', '/static/liked.svg')
             }
             const cb = function(response, data){
-                if(response['event_id']){
-                    data.elem.dataset.disabled = false
-                }
+                data.elem.dataset.disabled = false
+                const doc = new DOMParser().parseFromString(response, "text/html")
+                const svg = doc.body.firstChild
+                elem.replaceWith(svg)
+                document.dispatchEvent(new Event('newContentLoaded'))
             }
             fetchGet('/like?id='+d.rel, cb, {'elem': elem})
         })

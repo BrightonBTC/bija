@@ -466,15 +466,13 @@ def submit_message():
 
 @app.route('/like', methods=['GET'])
 def submit_like():
-    event_id = False
     if 'id' in request.args:
         note_id = request.args['id']
         note = DB.get_note(note_id)
         if note.liked is False:
             DB.set_note_liked(note_id)
             e = SubmitLike(note_id)
-            event_id = e.event_id
-            #event_id = EVENT_HANDLER.submit_like(note_id)
+            return render_template('svg/liked.svg', class_name='icon liked')
         else:
             DB.set_note_liked(note_id, False)
             like_events = DB.get_like_events_for(note_id, Settings.get('pubkey'))
@@ -483,10 +481,8 @@ def submit_like():
                 for event in like_events:
                     ids.append(event.id)
                 e = SubmitDelete(ids, 'removing like')
-                event_id = e.event_id
-                #event_id = EVENT_HANDLER.submit_delete(ids)
+                return render_template('svg/like.svg', class_name='icon')
 
-    return render_template("upd.json", data=json.dumps({'event_id': event_id}))
 
 
 @app.route('/following', methods=['GET'])
