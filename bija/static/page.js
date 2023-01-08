@@ -698,7 +698,7 @@ class bijaProfile{
                 }
             }
         }
-        const invalid_nip5 = document.querySelector('#profile .nip5-warn')
+        const invalid_nip5 = document.querySelector('#profile .warn')
         if(invalid_nip5){
             this.setNip5Validator()
         }
