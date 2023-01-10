@@ -309,25 +309,13 @@ def settings_page():
     else:
         EXECUTOR.submit(RELAY_HANDLER.set_page('settings', None))
         EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
-        settings = {
-            'cloudinary_cloud': '',
-            'cloudinary_upload_preset': '',
-            'pow_default': '',
-            'pow_default_enc': '',
-            'pow_required': '',
-            'pow_required_enc': ''
-        }
-        cs = DB.get_settings_by_keys([
+        settings = Settings.get_list([
             'cloudinary_cloud',
             'cloudinary_upload_preset',
             'pow_default',
             'pow_default_enc',
             'pow_required',
             'pow_required_enc'])
-        if cs is not None:
-            for item in cs:
-                item = dict(item)
-                settings[item['key']] = item['value']
 
         relays = DB.get_relays()
         EXECUTOR.submit(RELAY_HANDLER.get_connection_status())
@@ -354,11 +342,8 @@ def settings_page():
 
 @app.route('/update_settings', methods=['POST'])
 def update_settings():
-    items = {}
     for item in request.json:
-        items[item[0]] = item[1].strip()
-    DB.upd_settings_by_keys(items)
-    Settings.set_from_db()
+        Settings.set(item[0], item[1].strip())
     return render_template("upd.json", data=json.dumps({'success': 1}))
 
 
@@ -838,8 +823,8 @@ def set_keypair(k):
         pk = PrivateKey(bytes.fromhex(k))
     private_key = pk.hex()
     public_key = pk.public_key.hex()
-    Settings.set('pubkey', public_key)
-    Settings.set('privkey', private_key)
+    Settings.set('pubkey', public_key, False)
+    Settings.set('privkey', private_key, False)
     process_key_save(private_key)
     if DB.get_profile(public_key) is None:
         DB.add_profile(public_key)
