@@ -799,6 +799,9 @@ def process_login():
         for item in request.form.getlist('relay'):
             DB.insert_relay(item)
             added = True
+        if 'custom_relay' in request.form.keys() and len(request.form['custom_relay'].strip()) > 0:
+            DB.insert_relay(request.form['custom_relay'])
+            added = True
         RELAY_HANDLER.open_connections()
         time.sleep(1)
         return added
@@ -816,7 +819,6 @@ def process_key_save(pk):
 
 def set_keypair(k):
     global KEYS
-    logger.info('Set session keys')
     if k is None:
         pk = PrivateKey()
     else:
