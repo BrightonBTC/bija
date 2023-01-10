@@ -544,20 +544,14 @@ def topic_page():
 @app.route('/topic_feed', methods=['GET'])
 def topic_feed():
     if request.method == 'GET':
-        print('============ 1')
         if 'before' in request.args:
-            print('============ 2')
             before = int(request.args['before'])
         else:
             before = time.time()
         pk = Settings.get('pubkey')
-        print('============ 3')
         notes = DB.get_topic_feed(before, request.args['topic'])
-        print('============ 4')
         if len(notes) > 0:
-            print('============ 5')
             t = FeedThread(notes)
-            print('============ 6')
             profile = DB.get_profile(pk)
             return render_template("feed.items.html", threads=t.threads, last=t.last_ts, profile=profile, pubkey=pk)
         else:
