@@ -541,6 +541,22 @@ def topic_page():
     return render_template("topic.html", page_id="topic", title="Topic", threads=t.threads, last=t.last_ts,
                            profile=profile, pubkey=pk, topic=topic, subscribed=int(subscribed), topics=topics)
 
+@app.route('/topic_feed', methods=['GET'])
+def topic_feed():
+    if request.method == 'GET':
+        if 'before' in request.args:
+            before = int(request.args['before'])
+        else:
+            before = time.time()
+        pk = Settings.get('pubkey')
+        notes = DB.get_topic_feed(before, request.args['topic'])
+        if len(notes) > 0:
+            t = FeedThread(notes)
+            profile = DB.get_profile(pk)
+            return render_template("feed.items.html", threads=t.threads, last=t.last_ts, profile=profile, pubkey=pk)
+        else:
+            return 'END'
+
 @app.route('/subscribe_topic', methods=['GET'])
 def subscribe_topic():
     if request.args['state'] == '0':

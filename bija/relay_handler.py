@@ -256,6 +256,8 @@ class RelayHandler:
             socketio.emit('new_profile_posts', DB.get_most_recent_for_pk(event.public_key))
         elif subscription == 'note-thread':
             socketio.emit('new_in_thread', event.id)
+        elif subscription == 'topic':
+            socketio.emit('new_in_topic', True)
 
     def receive_contact_list_event(self, event, subscription):
         logger.info('Contact list received for: {}'.format(event.public_key))

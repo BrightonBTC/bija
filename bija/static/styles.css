@@ -1388,6 +1388,14 @@ ul#search_tips li {
 .topic-list li.actv a{
     color: var(--lnk-clr);
 }
+#new_topic_posts_btn{
+    display: none;
+    width: 100%;
+    text-align: center;
+    background: var(--bg-clr3);
+    padding: var(--spacing-tiny);
+    border-radius: var(--rnd-mid);
+}
 /* ---------- */
 @keyframes fadeInOut {
   0%,100% { opacity: 0 }

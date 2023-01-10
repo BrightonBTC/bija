@@ -55,6 +55,9 @@ function SOCK() {
             detail: { id: id }
         }));
     });
+    socket.on('new_in_topic', function(id) {
+        document.dispatchEvent(new CustomEvent("newTopicNote"));
+    });
 
     socket.on('conn_status', function(data) {
         const connections = {'connected': 0, 'recent': 0, 'disconnected': 0, 'none':0};
@@ -1156,9 +1159,13 @@ class bijaFeed{
         if(this.page == 'home'){
             fetchGet('/feed?before='+ts, cb, {'context': this})
         }
-        else{
+        else if(['profile', 'profile-me'].includes(this.page)){
             const profile_elem = document.querySelector("#profile")
             fetchGet('/profile_feed?before='+ts+'&pk='+profile_elem.dataset.pk, cb, {'context': this})
+        }
+        else if(this.page == 'topic'){
+            const topic_elem = document.querySelector(".topic-sub")
+            fetchGet('/topic_feed?before='+ts+'&topic='+topic_elem.dataset.topic, cb, {'context': this})
         }
     }
 
@@ -1186,6 +1193,14 @@ class bijaTopic{
                 subscribe_el.innerText = response.label
             }
             fetchGet('/subscribe_topic?state='+subscribe_el.dataset.state+'&topic='+subscribe_el.dataset.topic, cb, {}, 'json')
+        });
+
+        const t_btn = document.querySelector('#new_topic_posts_btn')
+        t_btn.addEventListener("click", (event)=>{
+            location.reload()
+        });
+        document.addEventListener("newTopicNote", (event)=>{
+            t_btn.style.display = 'block'
         });
     }
 }
@@ -1518,8 +1533,8 @@ window.addEventListener("load", function () {
         new bijaThread();
     }
     if (document.querySelector(".main[data-page='topic']") != null){
+        new bijaFeed();
         new bijaNotes();
-        new bijaThread();
         new bijaTopic();
     }
 
