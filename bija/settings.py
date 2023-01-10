@@ -15,7 +15,9 @@ class BijaSettings:
         for k in r.keys():
             self.set(k, r[k])
 
-    def set(self, k, v):
+    def set(self, k, v, store_to_db=True):
+        if store_to_db:
+            DB.upd_setting(k, v)
         self.items[k] = v
 
     def get(self, k):

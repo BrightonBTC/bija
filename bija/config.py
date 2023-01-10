@@ -48,5 +48,27 @@ themes = {
         'mnu-clr': '#ffffff',
         'mnu-clr-hvr': '#ff7b66',
         'nav-icon-clr': '#5d5e62'
+    },
+    "light1":{
+        "txt-clr": "#1a3f8c",
+        "txt-clr2": "#56bc6c",
+        "lnk-clr": "#1df26e",
+        "lnk-clr-hvr": "#00e055",
+        "lnk-clr2": "#b25eb8",
+        "bg-clr1": "#f6f7f8",
+        "bg-clr1-fade": "#ececf2",
+        "bg-clr2": "#f0f4fa",
+        "bg-clr3": "#e7e8f8",
+        "bdr-clr-1": "#e0e6df",
+        "bdr-clr-2": "#e1ddec",
+        "mnu-clr": "#93e088",
+        "mnu-clr-hvr": "#2d2db8",
+        "input-bg-clr": "#f9fef8",
+        "input-clr": "#3b8dd2",
+        "input-bdr-clr": "#4334f0",
+        "btn-bg": "#55a07d",
+        "btn-bg-hvr": "green",
+        "nav-icon-clr": "#a6a5d4",
+        "icon-clr": "#3b8dd2"
     }
 }

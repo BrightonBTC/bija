@@ -698,7 +698,7 @@ class bijaProfile{
                 }
             }
         }
-        const invalid_nip5 = document.querySelector('#profile .nip5-warn')
+        const invalid_nip5 = document.querySelector('#profile .warn')
         if(invalid_nip5){
             this.setNip5Validator()
         }
@@ -845,6 +845,21 @@ class bijaNotes{
             if(qr_btn){
                 this.setQrToggle(qr_btn, note.dataset.id)
             }
+
+            const ct = note.querySelector('.poster-form textarea');
+            if(ct){
+                ct.addEventListener('focus', (e) => {
+                ct.classList.add('focus')
+                ct.classList.remove('blur')
+                });
+                ct.addEventListener('blur', (e) => {
+                    setTimeout(function(){
+                        ct.classList.remove('focus')
+                        ct.classList.add('blur')
+                    }, 1000)
+                });
+            }
+
         }
     }
 
@@ -1088,6 +1103,20 @@ class bijaFeed{
         const main_el = document.querySelector(".main[data-page]")
         if(main_el.dataset.page=='home'){
             new Emojis(main_el.querySelector('#note-poster'))
+        }
+
+        const ct = document.querySelector('#new_post');
+        if(ct){
+            ct.addEventListener('focus', (e) => {
+            ct.classList.add('focus')
+            ct.classList.remove('blur')
+            });
+            ct.addEventListener('blur', (e) => {
+                setTimeout(function(){
+                    ct.classList.remove('focus')
+                    ct.classList.add('blur')
+                }, 1000)
+            });
         }
 
         this.page = main_el.dataset.page

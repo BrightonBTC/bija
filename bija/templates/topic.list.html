@@ -1,5 +1,5 @@
-<h2 class="posts-title">Topics</h2>
-<ul class="topic-list">
+<h2 class="posts-title">Topics {{'edit'| svg_icon('icon-sm right edit-tags')|safe}}</h2>
+<ul class="topic-list mid">
     {%- for item in topics -%}
     {%- if item.tag == topic -%}
         {%- set class = 'actv' -%}
