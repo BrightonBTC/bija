@@ -135,14 +135,15 @@ input[type=number]{
 }
 
 input[type=submit], input[type=button], button {
-  background-color: var(--btn-bg);
-  color: var(--btn-txt);
-  padding: var(--spacing-sm);
-  margin: var(--spacing-mid) 0;
-  border: none;
-  border-radius: var(--rnd);
-  cursor: pointer;
+    background-color: var(--btn-bg);
+    color: var(--btn-txt);
+    padding: var(--spacing-sm);
+    margin: var(--spacing-mid) 0;
+    border: none;
+    border-radius: var(--rnd);
+    cursor: pointer;
     font-size: var(--fs-sm);
+    min-width: 3em;
 }
 button.img-btn{
     display: flex;

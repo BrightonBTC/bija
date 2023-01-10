@@ -5,7 +5,8 @@ DEFAULT_RELAYS = [
     'wss://nostr.bitcoiner.social',
     'wss://nostr-pub.semisol.dev',
     'wss://relay.damus.io',
-    'wss://sg.qemura.xyz'
+    'wss://sg.qemura.xyz',
+    'wss://brb.io'
 ]
 
 default_settings = {

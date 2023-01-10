@@ -48,16 +48,17 @@
 
         {%- elif stage == LoginState.SET_RELAYS -%}
             <div class="card profileloader">
-            <p>In order to connect to the network you'll need to add at least 1 relay. You can add to and update your relay list at any time on the settings tab.
-                For your convenience we've added afew to get you started.</p>
+            <p>In order to connect to the network you'll need to add at least 1 relay. You can add to and update your relay list at any time on the settings tab.</p>
+            <p>For your convenience below you will find handful of relays that the author has found to be reliable. Bija is not however associated with any of these.</p>
             {%- for relay in data -%}
                 <div>
-                  <label><input type="checkbox" name="relay" class="relay_cb" value="{{relay}}" checked>{{relay}}</label>
+                  <label><input type="checkbox" name="relay" class="relay_cb" value="{{relay}}">{{relay}}</label>
                 </div>
             {%- endfor -%}
+                <input type="text" name="custom_relay" placeholder="wss://">
 
             </div>
-            <div><input type="submit" id="add_relays" name="add_relays" class="right" value="Add relays now"></div>
+            <div><input type="submit" id="add_relays" name="add_relays" class="right" value="Add relays and continue"></div>
 
         {%- elif stage == LoginState.NEW_KEYS -%}
             <div class="card profileloader">
