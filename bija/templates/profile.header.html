@@ -23,7 +23,13 @@
     </div>
     <div class="profile-details profile-item">
         <h1 class="profile-name">{{profile['name'] | ident_string(profile['public_key'], profile['nip05'], profile['nip05_validated']) | safe }}</h1>
-        <p class="sm pk">@{{profile['public_key'] | truncate(21, False, '...')}} <img src="/static/copy.svg" class="clipboard icon-sm" data-str="{{profile['public_key']}}"></p>
+        <p class="sm pk">@{{profile['public_key'] | truncate(21, False, '...')}}
+			<img src="/static/copy.svg"
+				 data-src="/static/copy.svg"
+				 data-srcset="/static/copy.svg"
+				 class="clipboard icon-sm lazy-load"
+				 data-str="{{profile['public_key']}}">
+		</p>
         <pre class="profile-about">{{about| linkify| safe}}</pre>
         {%- for item in meta: -%}
         <p><span class="sm rnd pad-sm bg1"> {{ item }}</span><span class="sm pad-sm">{{ meta[item] }}</span></p>
