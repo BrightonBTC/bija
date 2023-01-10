@@ -83,8 +83,8 @@
     <p>Add media uploads to your posts by adding a cloudinary account.</p>
     <p>You'll need the name of your cloud and the name of an upload preset (create one in the Uploads section of your Cloudinary settings)</p>
 <form id="cloudinary_cfg">
-    <input type="text" name="cloudinary_cloud" placeholder="cloud name" value="{{settings['cloudinary_cloud']}}">
-    <input type="text" name="cloudinary_upload_preset" placeholder="upload preset" value="{{settings['cloudinary_upload_preset']}}">
+    <input type="text" name="cloudinary_cloud" placeholder="cloud name" value="{{settings['cloudinary_cloud'] or ''}}">
+    <input type="text" name="cloudinary_upload_preset" placeholder="upload preset" value="{{settings['cloudinary_upload_preset'] or ''}}">
     <input type="button" id="upd_cloudinary" class="right" value="Update/add">
 </form>
 </div>
