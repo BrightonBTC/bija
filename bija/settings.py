@@ -35,6 +35,7 @@ class BijaSettings:
     def set_defaults(self):
         DB.upd_settings_by_keys(default_settings)
         DB.add_default_themes(themes)
+        self.set_from_db()
 
 
 Settings = BijaSettings()
