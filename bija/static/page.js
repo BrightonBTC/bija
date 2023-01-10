@@ -1156,9 +1156,13 @@ class bijaFeed{
         if(this.page == 'home'){
             fetchGet('/feed?before='+ts, cb, {'context': this})
         }
-        else{
+        else if(['profile', 'profile-me'].includes(this.page)){
             const profile_elem = document.querySelector("#profile")
             fetchGet('/profile_feed?before='+ts+'&pk='+profile_elem.dataset.pk, cb, {'context': this})
+        }
+        else if(this.page == 'topic'){
+            const topic_elem = document.querySelector(".topic-sub")
+            fetchGet('/topic_feed?before='+ts+'&topic='+topic_elem.dataset.topic, cb, {'context': this})
         }
     }
 
@@ -1518,8 +1522,8 @@ window.addEventListener("load", function () {
         new bijaThread();
     }
     if (document.querySelector(".main[data-page='topic']") != null){
+        new bijaFeed();
         new bijaNotes();
-        new bijaThread();
         new bijaTopic();
     }
 
