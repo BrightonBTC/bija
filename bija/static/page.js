@@ -1140,8 +1140,8 @@ class bijaFeed{
         const o = this
         setTimeout(function(){
             o.loading = 0;
+			lazyLoad();
         }, 200)
-
     }
 }
 
@@ -1424,11 +1424,13 @@ function setCloudUploads(form){
 }
 
 function lazyloadIntersectionObserver(lazyloadImages) {
+	console.log("lazyloadIntersectionObserver")
 	let imageObserver = new IntersectionObserver(function(entries, observer) {
 		entries.forEach(function(entry) {
 			if(entry.isIntersecting) {
 				let image = entry.target;
 				image.src = image.dataset.src;
+				image.srcset = image.dataset.srcset;
 				image.classList.remove("lazy-load");
 				imageObserver.unobserve(image);
 			}
@@ -1449,6 +1451,7 @@ function lazyloadNoIntersectionObserve(lazyloadImages) {
 			lazyloadImages.forEach(function(img) {
 			if(img.offsetTop < (window.innerHeight + scrollTop)) {
 				img.src = img.dataset.src;
+				img.srcset = img.dataset.srcset;
 				img.classList.remove('lazy-load');
 			}
 		});
@@ -1461,6 +1464,16 @@ function lazyloadNoIntersectionObserve(lazyloadImages) {
 	document.addEventListener("scroll", lazyload);
 	window.addEventListener("resize", lazyload);
 	window.addEventListener("orientationChange", lazyload);
+}
+
+function lazyLoad() {
+	console.log("lazyLoad()")
+	let lazyloadImages = document.querySelectorAll("img.lazy-load");
+	if("IntersectionObserver" in window) {
+		lazyloadIntersectionObserver(lazyloadImages);
+	} else {
+		lazyloadNoIntersectionObserve(lazyloadImages);
+	}
 }
 
 window.addEventListener("load", function () {
@@ -1538,10 +1551,4 @@ window.addEventListener("load", function () {
 
 });
 
-document.addEventListener("DOMContentLoaded", function() {
-	if("IntersectionObserver" in window) {
-		lazyloadIntersectionObserver(document.querySelectorAll(".lazy-load"));
-	} else {
-		lazyloadNoIntersectionObserve(document.querySelectorAll(".lazy-load"));
-	}
-});
+document.addEventListener("DOMContentLoaded", function() { lazyLoad(); });

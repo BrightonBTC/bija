@@ -1,17 +1,17 @@
 <a href="/profile?pk={{p['public_key']}}">
 {%- if p['pic'] is not none and p['pic']|length > 0 -%}
-<img src="/static/copy.svg"
+<img src="/static/user.svg"
 	 data-src="{{p['pic']}}"
 	 data-srcset="{{p['pic']}}"
 	 data-rel="{{p['public_key']}}"
 	 data-dflt="/identicon?id={{p['public_key']}}"
-	 class="user-image lazy-load"
+	 class="lazy-load user-image"
 	 onerror="defaultImage(this);"/>
 {%- else -%}
-<img src="/static/copy.svg"
+<img src="/static/user.svg"
 	 data-src="/identicon?id={{p['public_key']}}"
 	 data-srcset="/identicon?id={{p['public_key']}}"
 	 data-rel="{{p['public_key']}}"
-	 class="user-image lazy-load"/>
+	 class="lazy-load user-image"/>
 {%- endif -%}
 </a>

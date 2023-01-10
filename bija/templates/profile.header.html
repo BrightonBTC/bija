@@ -24,11 +24,11 @@
     <div class="profile-details profile-item">
         <h1 class="profile-name">{{profile['name'] | ident_string(profile['public_key'], profile['nip05'], profile['nip05_validated']) | safe }}</h1>
         <p class="sm pk">@{{profile['public_key'] | truncate(21, False, '...')}}
-			<img src="/static/copy.svg"
-				 data-src="/static/copy.svg"
-				 data-srcset="/static/copy.svg"
-				 class="clipboard icon-sm lazy-load"
-				 data-str="{{profile['public_key']}}">
+			<img src="/static/user.svg"
+				 data-src="{{profile['public_key']}}"
+				 data-srcset="{{profile['public_key']}}"
+				 class="lazy-load clipboard icon-sm"
+				 data-str="{{profile['public_key']}}"/>
 		</p>
         <pre class="profile-about">{{about| linkify| safe}}</pre>
         {%- for item in meta: -%}
