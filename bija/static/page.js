@@ -1324,6 +1324,7 @@ function notify(text, link=false){
 function defaultImage(img){
     img.onerror = "";
     img.src = img.dataset.dflt;
+    img.srcset = img.dataset.dflt;
 }
 
 function popup(htm){
