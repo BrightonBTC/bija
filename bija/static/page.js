@@ -1547,6 +1547,7 @@ window.addEventListener("load", function () {
         new bijaFeed();
         new bijaNotes();
         new bijaProfile();
+        new bijaNotePoster();
     }
     if (document.querySelector(".main[data-page='following']") != null){
         new bijaProfile();
