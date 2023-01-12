@@ -687,6 +687,7 @@ class bijaProfile{
             if(main_el && main_el.dataset.settings){
                 const settings = JSON.parse(main_el.dataset.settings)
                 if(settings['cloudinary_cloud'] !== undefined){
+                    console.log(settings['cloudinary_cloud'])
                     const form = document.querySelector("#profile_updater");
                     const im_up = document.querySelector(".profile-img-up");
                     im_up.addEventListener('change', (e) => {
@@ -698,6 +699,9 @@ class bijaProfile{
                             elem.querySelector('.user-image').src = d.secure_url
                         })
                     });
+                }
+                else{
+                    document.querySelector(".profile-img-up").disabled = true;
                 }
             }
         }
