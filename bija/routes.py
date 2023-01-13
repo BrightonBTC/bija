@@ -348,8 +348,20 @@ def settings_page():
 def update_settings():
     for item in request.json:
         SETTINGS.set(item[0], item[1].strip())
+    config_backup()
     return render_template("upd.json", data=json.dumps({'success': 1}))
 
+def config_backup():
+    topics = DB.get_topics()
+
+    data = {
+        'settings': DB.get_settings(),
+        'topics': [x.tag for x in topics]
+    }
+    SubmitEncryptedMessage([
+        ('new_message', json.dumps(data)),
+        ('new_message_pk', SETTINGS.get('pubkey'))
+    ])
 
 @app.route('/reload_relay_list', methods=['GET'])
 def reload_relay_list():
@@ -498,6 +510,13 @@ def following_page():
     profiles = DB.get_following(SETTINGS.get('pubkey'), k)
     profile = DB.get_profile(k)
     am_following = DB.a_follows_b(SETTINGS.get('pubkey'), k)
+    metadata = {}
+    if profile.raw is not None and len(profile.raw) > 0:
+        raw = json.loads(profile.raw)
+        meta = json.loads(raw['content'])
+        for item in meta.keys():
+            if item in ['website', 'lud06', 'lud16']:
+                metadata[item] = meta[item]
     return render_template(
         "following.html",
         page_id="following",
@@ -505,6 +524,7 @@ def following_page():
         profile=profile,
         profiles=profiles,
         is_me=is_me,
+        meta=metadata,
         am_following=am_following
     )
 
@@ -526,6 +546,13 @@ def followers_page():
     profiles = DB.get_followers(SETTINGS.get('pubkey'), k)
     profile = DB.get_profile(k)
     am_following = DB.a_follows_b(SETTINGS.get('pubkey'), k)
+    metadata = {}
+    if profile.raw is not None and len(profile.raw) > 0:
+        raw = json.loads(profile.raw)
+        meta = json.loads(raw['content'])
+        for item in meta.keys():
+            if item in ['website', 'lud06', 'lud16']:
+                metadata[item] = meta[item]
     return render_template(
         "following.html",
         page_id="followers",
@@ -533,6 +560,7 @@ def followers_page():
         profile=profile,
         profiles=profiles,
         is_me=is_me,
+        meta=metadata,
         am_following=am_following
     )
 
@@ -599,6 +627,7 @@ def subscribe_topic():
     else:
         DB.unsubscribe_from_topic(str(request.args['topic']))
         out = {'state': '0', 'label': 'subscribe'}
+    config_backup()
     return render_template("upd.json", data=json.dumps(out))
 
 
