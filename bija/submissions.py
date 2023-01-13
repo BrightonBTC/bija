@@ -6,7 +6,7 @@ from bija.app import app
 from bija.args import LOGGING_LEVEL
 from bija.db import BijaDB
 from bija.helpers import is_hex_key, get_at_tags, get_hash_tags
-from bija.settings import Settings
+from bija.settings import SETTINGS
 from python_nostr.nostr.event import EventKind, Event
 from python_nostr.nostr.key import PrivateKey
 from python_nostr.nostr.message_type import ClientMessageType
@@ -33,11 +33,11 @@ class Submit:
     def send(self):
         self.tags.append(['client', 'BIJA'])
         if self.pow_difficulty is None or self.pow_difficulty < 1:
-            event = Event(Settings.get('pubkey'), self.content, tags=self.tags, created_at=self.created_at, kind=self.kind)
+            event = Event(SETTINGS.get('pubkey'), self.content, tags=self.tags, created_at=self.created_at, kind=self.kind)
         else:
             logger.info('mine event')
-            event = mine_event(self.content, self.pow_difficulty, Settings.get('pubkey'), self.kind, self.tags)
-        event.sign(Settings.get('privkey'))
+            event = mine_event(self.content, self.pow_difficulty, SETTINGS.get('pubkey'), self.kind, self.tags)
+        event.sign(SETTINGS.get('privkey'))
         self.event_id = event.id
         message = json.dumps([ClientMessageType.EVENT, event.to_json_object()], ensure_ascii=False)
         logger.info('SUBMIT: {}'.format(message))
@@ -83,7 +83,7 @@ class SubmitLike(Submit):
 
     def compose(self):
         logger.info('compose')
-        note = DB.get_note(self.note_id)
+        note = DB.get_note(SETTINGS.get('pubkey'), self.note_id)
         members = json.loads(note.members)
         for m in members:
             if is_hex_key(m) and m != note.public_key:
@@ -174,7 +174,7 @@ class SubmitNote(Submit):
         logger.info('insert note')
         DB.insert_note(
             self.event_id,
-            Settings.get('pubkey'),
+            SETTINGS.get('pubkey'),
             self.content,
             self.response_to,
             self.thread_root,
@@ -194,7 +194,7 @@ class SubmitFollowList(Submit):
 
     def compose(self):
         logger.info('compose')
-        pk_list = DB.get_following_pubkeys()
+        pk_list = DB.get_following_pubkeys(SETTINGS.get('pubkey'))
         for pk in pk_list:
             self.tags.append(["p", pk])
 
@@ -228,7 +228,7 @@ class SubmitEncryptedMessage(Submit):
     def encrypt(self, message, public_key):
         logger.info('encrypt message')
         try:
-            k = bytes.fromhex(Settings.get('privkey'))
+            k = bytes.fromhex(SETTINGS.get('privkey'))
             pk = PrivateKey(k)
             return pk.encrypt_message(message, public_key)
         except ValueError:

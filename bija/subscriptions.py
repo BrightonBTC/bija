@@ -6,7 +6,7 @@ from bija.app import app
 from bija.args import LOGGING_LEVEL
 from bija.db import BijaDB
 from bija.helpers import timestamp_minus, TimePeriod
-from bija.settings import Settings
+from bija.settings import SETTINGS
 from python_nostr.nostr.event import EventKind
 from python_nostr.nostr.filter import Filter, Filters
 from python_nostr.nostr.message_type import ClientMessageType
@@ -34,7 +34,7 @@ class Subscribe:
 
     @staticmethod
     def required_pow(setting: str = 'pow_required'):
-        required_pow = Settings.get(setting)
+        required_pow = SETTINGS.get(setting)
         if required_pow is not None and int(required_pow) > 0:
             return int(int(required_pow)/4) * "0"
         return None
@@ -60,7 +60,7 @@ class SubscribePrimary(Subscribe):
         kinds = [EventKind.TEXT_NOTE, EventKind.ENCRYPTED_DIRECT_MESSAGE, EventKind.REACTION, EventKind.CONTACTS]
         mentions_filter = Filter(tags={'#p': [self.pubkey]}, kinds=kinds)
         f = [profile_filter, mentions_filter]
-        following_pubkeys = DB.get_following_pubkeys()
+        following_pubkeys = DB.get_following_pubkeys(SETTINGS.get('pubkey'))
 
         if len(following_pubkeys) > 0:
             following_filter = Filter(
@@ -125,10 +125,12 @@ class SubscribeProfile(Subscribe):
         f = [
             Filter(authors=[self.pubkey], kinds=[EventKind.SET_METADATA, EventKind.CONTACTS]),
             Filter(authors=[self.pubkey], kinds=[EventKind.TEXT_NOTE, EventKind.DELETE, EventKind.REACTION],
-                   since=self.since)
+                   since=self.since),
+            Filter(tags={'#p': [self.pubkey]}, kinds=[EventKind.CONTACTS])
         ]
-        if profile is not None and profile.contacts is not None:
-            contacts_filter = Filter(authors=json.loads(profile.contacts), kinds=[EventKind.SET_METADATA])
+        followers = DB.get_following_pubkeys(profile.public_key)
+        if followers is not None and len(followers) > 0:
+            contacts_filter = Filter(authors=followers, kinds=[EventKind.SET_METADATA])
             f.append(contacts_filter)
 
         self. filters = Filters(f)

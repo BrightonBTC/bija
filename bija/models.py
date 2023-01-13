@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship, declarative_base
 
 Base = declarative_base()
@@ -16,39 +16,40 @@ class Event(Base):
 
 class Profile(Base):
     __tablename__ = "profile"
-    public_key = Column(String(64), unique=True, primary_key=True)
+    public_key = Column(String(64), primary_key=True)
     name = Column(String, nullable=True)
     nip05 = Column(String, nullable=True)
     pic = Column(String, nullable=True)
     about = Column(String, nullable=True)
     updated_at = Column(Integer, default=0)
-    following = Column(Boolean, default=False)
-    follower = Column(Boolean, default=False)
-    contacts = Column(String, nullable=True)
     nip05_validated = Column(Boolean, default=False)
     raw = Column(String)
 
+    # followers = relationship(
+    #     "Follower",
+    #     back_populates="followers"
+    # )
+    # following = relationship(
+    #     "Follower",
+    #     primaryjoin="Follower.pk_2 == Profile.public_key",
+    #     back_populates="following"
+    # )
     notes = relationship("Note", back_populates="profile")
 
-    def __repr__(self):
-        return {
-            self.public_key,
-            self.name,
-            self.nip05,
-            self.pic,
-            self.about,
-            self.updated_at,
-            self.following,
-            self.follower,
-            self.contacts,
-            self.nip05_validated,
-            self.raw
-        }
+class Follower(Base):
+    __tablename__ = "follower"
+    id = Column(Integer, primary_key=True)
+    pk_1 = Column(Integer, ForeignKey("profile.public_key"))
+    pk_2 = Column(Integer, ForeignKey("profile.public_key"))
+
+    # followers = relationship("Profile", back_populates="followers", foreign_keys=[pk_1])
+    # following = relationship("Profile", back_populates="following", foreign_keys=[pk_2])
+    UniqueConstraint(pk_1, pk_2, name='uix_1', sqlite_on_conflict='IGNORE')
 
 
 class Note(Base):
     __tablename__ = "note"
-    id = Column(String(64), unique=True, primary_key=True)
+    id = Column(String(64), primary_key=True)
     public_key = Column(String(64), ForeignKey("profile.public_key"))
     content = Column(String)
     response_to = Column(String(64))
@@ -65,45 +66,15 @@ class Note(Base):
 
     profile = relationship("Profile", back_populates="notes")
 
-    def __repr__(self):
-        return {
-            self.id,
-            self.public_key,
-            self.content,
-            self.response_to,
-            self.thread_root,
-            self.reshare,
-            self.created_at,
-            self.members,
-            self.media,
-            self.seen,
-            self.liked,
-            self.shared,
-            self.raw,
-            self.deleted
-        }
-
-
 class PrivateMessage(Base):
     __tablename__ = "private_message"
-    id = Column(String(64), unique=True, primary_key=True)
+    id = Column(String(64), primary_key=True)
     public_key = Column(String(64), ForeignKey("profile.public_key"))
     content = Column(String)
     is_sender = Column(Boolean)  # true = public_key is sender, false I'm sender
     created_at = Column(Integer)
     seen = Column(Boolean, default=False)
     raw = Column(String)
-
-    def __repr__(self):
-        return {
-            self.id,
-            self.public_key,
-            self.content,
-            self.is_sender,
-            self.created_at,
-            self.seen,
-            self.raw
-        }
 
 class Topic(Base):
     __tablename__ = "topic"

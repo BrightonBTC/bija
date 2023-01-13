@@ -606,6 +606,10 @@ input.post-submit {
     text-align: center;
     padding: var(--spacing-mid) var(--spacing-mid2);
 }
+.profile-menu a.actv{
+    background: var(--bg-clr3);
+    color: var(--lnk-clr);
+}
 .profile-menu a:hover{
     background-color: var(--bg-clr3);
     color: var(--mnu-clr-hvr);

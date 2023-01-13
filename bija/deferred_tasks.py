@@ -15,6 +15,7 @@ from bs4 import BeautifulSoup
 from bija.app import app
 from bija.args import LOGGING_LEVEL
 from bija.db import BijaDB
+from bija.settings import SETTINGS
 
 DB = BijaDB(app.session)
 logger = logging.getLogger(__name__)
@@ -71,7 +72,7 @@ class OGTags:
         self.note_id = data['note_id']
         self.url = data['url']
         self.og = {}
-        self.note = DB.get_note(self.note_id)
+        self.note = DB.get_note(SETTINGS.get('pubkey'), self.note_id)
 
         response = self.fetch()
         if response:

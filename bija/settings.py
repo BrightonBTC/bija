@@ -38,5 +38,5 @@ class BijaSettings:
         self.set_from_db()
 
 
-Settings = BijaSettings()
-Settings.set_from_db()
+SETTINGS = BijaSettings()
+SETTINGS.set_from_db()

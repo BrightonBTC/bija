@@ -646,6 +646,17 @@ class bijaProfile{
 
     constructor(){
         this.setEventListeners()
+        const main_el = document.querySelector('.main')
+        let page = main_el.dataset.page
+        if(['profile', 'profile-me'].includes(page)){
+            page = 'posts'
+        }
+        const nav_el = main_el.querySelector('.profile-menu a[data-page="'+page+'"]')
+        if(nav_el){
+            nav_el.classList.add('actv')
+        }
+        else{
+        }
     }
 
     setEventListeners(){
@@ -1554,6 +1565,9 @@ window.addEventListener("load", function () {
         new bijaNotePoster();
     }
     if (document.querySelector(".main[data-page='following']") != null){
+        new bijaProfile();
+    }
+    if (document.querySelector(".main[data-page='followers']") != null){
         new bijaProfile();
     }
     if (document.querySelector(".main[data-page='messages_from']") != null){

@@ -19,7 +19,7 @@ from bija.app import RELAY_MANAGER
 from bija.subscriptions import *
 from bija.submissions import *
 from bija.alerts import *
-from bija.settings import Settings
+from bija.settings import SETTINGS
 from python_nostr.nostr.event import EventKind
 from python_nostr.nostr.pow import count_leading_zero_bits
 
@@ -150,7 +150,7 @@ class RelayHandler:
 
         if self.new_on_primary:
             self.new_on_primary = False
-            unseen_posts = DB.get_unseen_in_feed()
+            unseen_posts = DB.get_unseen_in_feed(SETTINGS.get('pubkey'))
             if unseen_posts > 0:
                 socketio.emit('unseen_posts_n', unseen_posts)
             topics = DB.get_topics()
@@ -178,15 +178,15 @@ class RelayHandler:
         DeleteEvent(event)
 
     def receive_reaction_event(self, event):
-        e = ReactionEvent(event, Settings.get('pubkey'))
+        e = ReactionEvent(event, SETTINGS.get('pubkey'))
         if e.valid:
-            note = DB.get_note(e.event_id)
+            note = DB.get_note(SETTINGS.get('pubkey'), e.event_id)
             if e.event.content != '-' and len(ACTIVE_EVENTS.notes) > 0 and e.event_id in ACTIVE_EVENTS.notes:
                 socketio.emit('new_reaction', e.event_id)
                 logger.info('Reaction on active note detected, signal to UI')
-            if e.event.public_key != Settings.get('pubkey'):
+            if e.event.public_key != SETTINGS.get('pubkey'):
                 logger.info('Reaction is not from me')
-                if note is not None and note.public_key == Settings.get('pubkey'):
+                if note is not None and note.public_key == SETTINGS.get('pubkey'):
                     logger.info('Get reaction from DB')
                     reaction = DB.get_reaction_by_id(e.event.id)
                     logger.info('Compose reaction alert')
@@ -214,7 +214,7 @@ class RelayHandler:
             })
 
     def receive_note_event(self, event, subscription):
-        e = NoteEvent(event, Settings.get('pubkey'))
+        e = NoteEvent(event, SETTINGS.get('pubkey'))
         if e.mentions_me:
             self.alert_on_note_event(e)
         self.notify_on_note_event(event, subscription)
@@ -235,14 +235,14 @@ class RelayHandler:
 
     def alert_on_note_event(self, event):
         if event.response_to is not None:
-            reply = DB.get_note(event.response_to)
-            if reply is not None and reply.public_key == Settings.get('pubkey'):
+            reply = DB.get_note(SETTINGS.get('pubkey'), event.response_to)
+            if reply is not None and reply.public_key == SETTINGS.get('pubkey'):
                 Alert(
                     event.event.id,
                     event.event.created_at, AlertKind.REPLY, event.event.public_key, event.response_to, event.content)
         elif event.thread_root is not None:
-            root = DB.get_note(event.thread_root)
-            if root is not None and root.public_key == Settings.get('pubkey'):
+            root = DB.get_note(SETTINGS.get('pubkey'), event.thread_root)
+            if root is not None and root.public_key == SETTINGS.get('pubkey'):
                 Alert(
                     event.event.id,
                     event.event.created_at, AlertKind.COMMENT_ON_THREAD, event.event.public_key, event.thread_root,
@@ -264,11 +264,9 @@ class RelayHandler:
         last_upd = DB.get_last_contacts_upd(event.public_key)
         logger.info('Contact list last update: {}'.format(last_upd))
         if last_upd is None or last_upd < event.created_at:
-            pk = Settings.get('pubkey')
+            pk = SETTINGS.get('pubkey')
             logger.info('Contact list is newer than last upd: {}'.format(event.created_at))
             e = ContactListEvent(event, pk)
-            DB.add_profile_if_not_exists(event.public_key)
-            DB.add_contact_list(event.public_key, e.keys)
             if event.public_key == pk:
                 logger.info('Contact list updated, restart primary subscription')
                 self.subscribe_primary()
@@ -277,14 +275,14 @@ class RelayHandler:
 
     def receive_private_message_event(self, event):
 
-        e = EncryptedMessageEvent(event, Settings.get('pubkey'))
+        e = EncryptedMessageEvent(event, SETTINGS.get('pubkey'))
         if self.page['page'] == 'message' and self.page['identifier'] == e.pubkey:
             messages = DB.get_unseen_messages(e.pubkey)
             if len(messages) > 0:
-                profile = DB.get_profile(Settings.get('pubkey'))
+                profile = DB.get_profile(SETTINGS.get('pubkey'))
                 DB.set_message_thread_read(e.pubkey)
                 out = render_template("message_thread.items.html",
-                                      me=profile, messages=messages, privkey=Settings.get('privkey'))
+                                      me=profile, messages=messages, privkey=SETTINGS.get('privkey'))
                 socketio.emit('message', out)
         else:
             unseen_n = DB.get_unseen_message_count()
@@ -311,7 +309,7 @@ class RelayHandler:
     # create site wide subscription
     def subscribe_primary(self):
         self.subscriptions.add('primary')
-        SubscribePrimary('primary', Settings.get('pubkey'))
+        SubscribePrimary('primary', SETTINGS.get('pubkey'))
 
     def subscribe_topic(self, term):
         logger.info('Subscribe topic {}'.format(term))
@@ -408,26 +406,36 @@ class ContactListEvent:
         self.changed = False
 
         self.compile_keys()
-        if event.public_key == self.pubkey:
-            self.set_following()
+        DB.add_profile_if_not_exists(self.event.public_key)
+        DB.add_contact_list(self.event.public_key, self.keys)
+        # if event.public_key == self.pubkey:
+        #     self.set_following()
 
     def compile_keys(self):
+        # is_follower = False
         for p in self.event.tags:
             if p[0] == "p":
                 self.keys.append(p[1])
+        #         if p[1] == self.pubkey:
+        #             is_follower = True
+        # self.set_follower(is_follower)
 
-    def set_following(self):
-        following = DB.get_following_pubkeys()
-        new = set(self.keys) - set(following)
-        removed = set(following) - set(self.keys)
-        logger.info('New follows: {}'.format(len(new)))
-        logger.info('Removed follows: {}'.format(len(removed)))
-        if len(new) > 0:
-            self.changed = True
-            DB.set_following(new, True)
-        if len(removed) > 0:
-            self.changed = True
-            DB.set_following(removed, False)
+    # def set_following(self):
+    #     following = DB.get_following_pubkeys()
+    #     new = set(self.keys) - set(following)
+    #     removed = set(following) - set(self.keys)
+    #     logger.info('New follows: {}'.format(len(new)))
+    #     logger.info('Removed follows: {}'.format(len(removed)))
+    #     if len(new) > 0:
+    #         self.changed = True
+    #         DB.set_following(new, True)
+    #     if len(removed) > 0:
+    #         self.changed = True
+    #         DB.set_following(removed, False)
+    #
+    # def set_follower(self, b: bool):
+    #     DB.set_follower(self.event.public_key, b)
+
 
 
 class EncryptedMessageEvent:
@@ -442,11 +450,11 @@ class EncryptedMessageEvent:
 
     def check_pow(self):
         if self.is_sender == 1:
-            f = DB.am_following(self.pubkey)
-            if f is not None:
+            f = DB.a_follows_b(SETTINGS.get('pubkey'), self.pubkey)
+            if f:
                 self.passed = True
             else:
-                req_pow = Settings.get('pow_required_enc')
+                req_pow = SETTINGS.get('pow_required_enc')
                 actual_pow = count_leading_zero_bits(self.event.id)
                 logger.info('required proof of work: {} {}'.format(type(req_pow), req_pow))
                 logger.info('actual proof of work: {} {}'.format(type(actual_pow), actual_pow))
@@ -599,7 +607,7 @@ class NoteEvent:
 
         if len(self.media) < 1 and len(urls) > 0:
             logger.info('note has urls')
-            note = DB.get_note(self.event.id)
+            note = DB.get_note(SETTINGS.get('pubkey'), self.event.id)
             already_scraped = False
             scrape_fail_attempts = 0
             if note is not None:
