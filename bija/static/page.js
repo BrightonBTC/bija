@@ -613,6 +613,20 @@ class bijaMessages{
     constructor(){
         window.scrollTo(0, document.body.scrollHeight);
         this.setSubmitMessage()
+        this.setCfgLoader()
+    }
+
+    setCfgLoader(){
+        const cfg_loaders = document.querySelectorAll('.cfg_loader')
+        for(const el of cfg_loaders){
+            const cb = function(response, data){
+                location.reload()
+            }
+            el.addEventListener("click", (event)=>{
+                event.preventDefault();
+                fetchFromForm('/load_cfg', el, cb, {})
+            });
+        }
     }
 
     setSubmitMessage(){
@@ -646,6 +660,17 @@ class bijaProfile{
 
     constructor(){
         this.setEventListeners()
+        const main_el = document.querySelector('.main')
+        let page = main_el.dataset.page
+        if(['profile', 'profile-me'].includes(page)){
+            page = 'posts'
+        }
+        const nav_el = main_el.querySelector('.profile-menu a[data-page="'+page+'"]')
+        if(nav_el){
+            nav_el.classList.add('actv')
+        }
+        else{
+        }
     }
 
     setEventListeners(){
@@ -687,6 +712,7 @@ class bijaProfile{
             if(main_el && main_el.dataset.settings){
                 const settings = JSON.parse(main_el.dataset.settings)
                 if(settings['cloudinary_cloud'] !== undefined){
+                    console.log(settings['cloudinary_cloud'])
                     const form = document.querySelector("#profile_updater");
                     const im_up = document.querySelector(".profile-img-up");
                     im_up.addEventListener('change', (e) => {
@@ -698,6 +724,9 @@ class bijaProfile{
                             elem.querySelector('.user-image').src = d.secure_url
                         })
                     });
+                }
+                else{
+                    document.querySelector(".profile-img-up").disabled = true;
                 }
             }
         }
@@ -852,14 +881,7 @@ class bijaNotes{
             const ct = note.querySelector('.poster-form textarea');
             if(ct){
                 ct.addEventListener('focus', (e) => {
-                ct.classList.add('focus')
-                ct.classList.remove('blur')
-                });
-                ct.addEventListener('blur', (e) => {
-                    setTimeout(function(){
-                        ct.classList.remove('focus')
-                        ct.classList.add('blur')
-                    }, 1000)
+                    ct.classList.add('focus')
                 });
             }
 
@@ -1111,14 +1133,7 @@ class bijaFeed{
         const ct = document.querySelector('#new_post');
         if(ct){
             ct.addEventListener('focus', (e) => {
-            ct.classList.add('focus')
-            ct.classList.remove('blur')
-            });
-            ct.addEventListener('blur', (e) => {
-                setTimeout(function(){
-                    ct.classList.remove('focus')
-                    ct.classList.add('blur')
-                }, 1000)
+                ct.classList.add('focus')
             });
         }
 
@@ -1550,6 +1565,9 @@ window.addEventListener("load", function () {
         new bijaNotePoster();
     }
     if (document.querySelector(".main[data-page='following']") != null){
+        new bijaProfile();
+    }
+    if (document.querySelector(".main[data-page='followers']") != null){
         new bijaProfile();
     }
     if (document.querySelector(".main[data-page='messages_from']") != null){

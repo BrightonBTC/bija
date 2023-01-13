@@ -34,7 +34,7 @@
             </div>
         </a>
         {%- elif alert['kind'] == 0 -%}
-        <a href="/note?id={{alert['event']}}#focussed">
+        <a href="/note?id={{alert['id']}}#focussed">
             <div class="alert-image">
                 <img class="user-image" src="{{pic}}">
             </div>
@@ -48,7 +48,7 @@
             </div>
         </a>
         {%- elif alert['kind'] == 4 -%}
-        <a href="/note?id={{alert['event']}}#focussed">
+        <a href="/note?id={{alert['id']}}#focussed">
             <div class="alert-image">
                 <img class="user-image" src="{{pic}}">
             </div>

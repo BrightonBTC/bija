@@ -15,7 +15,7 @@ from bija.app import app
 from bija.args import LOGGING_LEVEL
 from bija.db import BijaDB
 from bija.helpers import get_at_tags, is_hex_key, url_linkify, strip_tags, get_invoice, get_hash_tags
-from bija.settings import Settings
+from bija.settings import SETTINGS
 from python_nostr.nostr.key import PrivateKey
 
 DB = BijaDB(app.session)
@@ -30,7 +30,7 @@ def _jinja2_filter_svg(icon, class_name):
 
 @app.template_filter('theme')
 def _jinja2_filter_theme(b):
-    theme = Settings.get('theme')
+    theme = SETTINGS.get('theme')
     if theme is None:
         theme = 'default'
     return DB.get_theme_vars(theme)
@@ -47,7 +47,11 @@ def _jinja2_filter_decr(content, pubkey, privkey):
     try:
         k = bytes.fromhex(privkey)
         pk = PrivateKey(k)
-        return pk.decrypt_message(content, pubkey)
+        message = pk.decrypt_message(content, pubkey)
+        if pubkey == SETTINGS.get('pubkey') and message[:19] == "::BIJA_CFG_BACKUP::":
+            return "BIJA CONFIG BACKUP. <form class='cfg_loader'><input type='hidden' value='{}' name='cfg'><button>Click to reload settings</button></form>".format(message[19:])
+        else:
+            return message
     except ValueError:
         return 'could not decrypt!'
 
@@ -210,7 +214,7 @@ def _jinja2_settings_json(content):
     settings = ['cloudinary_cloud', 'cloudinary_upload_preset']
     out = {}
     for k in settings:
-        v = Settings.get(k)
+        v = SETTINGS.get(k)
         if v is not None:
             out[k] = v
     return json.dumps(out)

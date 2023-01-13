@@ -5,6 +5,7 @@ import time
 from bija.app import app
 from bija.args import LOGGING_LEVEL
 from bija.db import BijaDB
+from bija.settings import SETTINGS
 
 DB = BijaDB(app.session)
 logger = logging.getLogger(__name__)
@@ -72,7 +73,7 @@ class FeedThread:
                 responders.append(note['public_key'])
 
             if note['reshare'] is not None:
-                reshare = DB.get_note(note['reshare'])
+                reshare = DB.get_note(SETTINGS.get('pubkey'), note['reshare'])
                 self.add_id(note['reshare'])
                 if reshare is not None:
                     note['reshare'] = reshare
@@ -81,11 +82,11 @@ class FeedThread:
         t['responder_count'] = len(responders)
 
         if t['self'] is None:
-            t['self'] = DB.get_note(root)
+            t['self'] = DB.get_note(SETTINGS.get('pubkey'), root)
             if t['self'] is not None:
                 t['self'] = dict(t['self'])
                 if t['self']['reshare'] is not None:
-                    reshare = DB.get_note(t['self']['reshare'])
+                    reshare = DB.get_note(SETTINGS.get('pubkey'), t['self']['reshare'])
                     self.add_id(t['self']['reshare'])
                     if reshare is not None:
                         t['self']['reshare'] = reshare
@@ -140,7 +141,7 @@ class NoteThread:
 
     def get_note(self):
         logger.info('get note')
-        n = DB.get_note(self.id)
+        n = DB.get_note(SETTINGS.get('pubkey'), self.id)
         if n is not None:
             n = dict(n)
             n['current'] = True
@@ -157,7 +158,7 @@ class NoteThread:
 
     def get_notes(self):
         logger.info('get notes')
-        return DB.get_note_thread(self.root_id)
+        return DB.get_note_thread(SETTINGS.get('pubkey'), self.root_id)
 
     def get_children(self):
         logger.info('get children')
@@ -215,7 +216,7 @@ class NoteThread:
     def get_reshare(self, note):
         logger.info('get reshare')
         if note['reshare'] is not None:
-            reshare = DB.get_note(note['reshare'])
+            reshare = DB.get_note(SETTINGS.get('pubkey'), note['reshare'])
             if reshare is not None:
                 return reshare
             else:

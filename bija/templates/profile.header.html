@@ -75,11 +75,13 @@
 </div>
 <div class="profile-menu rnd">
     {%- if is_me -%}
-        <a href="/profile">posts</a>
-        <a href="/following">following</a>
+        <a href="/profile" data-page="posts">posts</a>
+        <a href="/profile?view=following" data-page="following">following</a>
+        <a href="/profile?view=followers" data-page="followers">followers</a>
     {%- else -%}
-        <a href="/profile?pk={{profile['public_key']}}">posts</a>
-       <a href="/following?pk={{profile['public_key']}}">following</a>
+        <a href="/profile?pk={{profile['public_key']}}" data-page="posts">posts</a>
+       <a href="/profile?pk={{profile['public_key']}}&view=following" data-page="following">following</a>
+       <a href="/profile?pk={{profile['public_key']}}&view=followers" data-page="followers">followers</a>
     {%- endif -%}
 </div>
 {%- endif -%}

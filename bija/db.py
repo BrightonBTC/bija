@@ -1,14 +1,16 @@
 import json
 import time
 
-from sqlalchemy import create_engine, text, func, or_
+from sqlalchemy import create_engine, text, func, or_, and_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.sql import label
 from sqlalchemy.pool import SingletonThreadPool
+from sqlalchemy.sql.functions import coalesce
 
 from bija.args import args
 from bija.models import *
+
 DB_ENGINE = create_engine("sqlite:///{}.sqlite".format(args.db), echo=False, poolclass=SingletonThreadPool, pool_size=10)
 DB_SESSION = sessionmaker(autocommit=False, autoflush=False, bind=DB_ENGINE)
 
@@ -67,10 +69,13 @@ class BijaDB:
         self.session.commit()
 
     def add_contact_list(self, public_key, keys: list):
-        self.session.merge(Profile(
-            public_key=public_key,
-            contacts=json.dumps(keys)
-        ))
+        self.session.query(Follower).filter(Follower.pk_1==public_key).filter(Follower.pk_2.notin_(keys)).delete()
+        self.session.commit()
+        for pk in keys:
+            self.session.merge(Follower(
+                pk_1=public_key,
+                pk_2=pk
+            ))
         self.session.commit()
 
     def get_last_contacts_upd(self, public_key):
@@ -81,42 +86,80 @@ class BijaDB:
             return result.ts
         return None
 
-    def set_following(self, keys_list, following=True):
-        for public_key in keys_list:
-            self.session.merge(Profile(
-                public_key=public_key,
-                following=following
+    def set_following(self, my_pk, their_pk, following=True):
+        if following:
+            self.session.merge(Follower(
+                pk_1=my_pk,
+                pk_2=their_pk
             ))
-        # self.session.commit()
+        else:
+            self.session.query(Follower).filter(pk_1=my_pk).filter(pk_2=their_pk).delete()
+        self.session.commit()
 
-    def set_follower(self, public_key, follower=True):
-        self.session.merge(Profile(
-            public_key=public_key,
-            follower=follower
-        ))
-        # self.session.commit()
-
-    def get_following_pubkeys(self):
-        keys = self.session.query(Profile).filter_by(following=1).all()
+    def get_following_pubkeys(self, public_key):
+        keys = self.session.query(Follower).filter_by(pk_1=public_key).all()
         out = []
         for k in keys:
-            out.append(k.public_key)
+            out.append(k.pk_2)
         return out
 
-    def get_following(self):
+    def get_following(self, my_pk, public_key):
+        following_counts = self.session.query(
+            Follower.pk_1,
+            Follower.pk_2,
+            func.count(Follower.id).label('count')
+        ).group_by(Follower.id).subquery()
+
+        am_following = coalesce(
+            following_counts.c.count, 0
+        )
         profiles = self.session.query(
             Profile.public_key,
             Profile.name,
             Profile.pic,
             Profile.nip05,
-            Profile.nip05_validated).filter_by(following=1).all()
+            Profile.nip05_validated,
+            label('following', am_following)
+        )
+        profiles = profiles.join(Follower, Follower.pk_2==Profile.public_key)
+        profiles = profiles.outerjoin(following_counts,
+                        and_(following_counts.c.pk_1 == my_pk, following_counts.c.pk_2 == Profile.public_key))
+        profiles = profiles.filter(Follower.pk_1==public_key).all()
         out = []
         for p in profiles:
             out.append(dict(p))
         return out
 
-    def am_following(self, public_key):
-        return self.session.query(Profile.public_key).filter_by(public_key=public_key).filter_by(following=1).first()
+    def get_followers(self, my_pk, public_key):
+        following_counts = self.session.query(
+            Follower.pk_1,
+            Follower.pk_2,
+            func.count(Follower.id).label('count')
+        ).group_by(Follower.id).subquery()
+
+        am_following = coalesce(
+            following_counts.c.count, 0
+        )
+        profiles = self.session.query(
+            Profile.public_key,
+            Profile.name,
+            Profile.pic,
+            Profile.nip05,
+            Profile.nip05_validated,
+            label('following', am_following)
+        )
+        profiles = profiles.join(Follower, Follower.pk_1==Profile.public_key)
+        profiles = profiles.outerjoin(following_counts,
+                        and_(following_counts.c.pk_1 == my_pk, following_counts.c.pk_2 == Profile.public_key))
+        profiles = profiles.filter(Follower.pk_2==public_key).all()
+        out = []
+        for p in profiles:
+            out.append(dict(p))
+        return out
+
+    def a_follows_b(self, pk_a, pk_b):
+        r = self.session.query(Follower).filter(Follower.pk_1==pk_a).filter(Follower.pk_2==pk_b)
+        return r.first() is not None
 
     def get_profile_last_upd(self, public_key):
         return self.session.query(Profile.updated_at).filter_by(public_key=public_key).first()
@@ -191,71 +234,127 @@ class BijaDB:
     def is_note(self, note_id):
         return self.session.query(Note.id).filter_by(id=note_id).first()
 
-    # def is_known_pubkey(self, pk):
-    #     return self.session.query(Profile.public_key).filter_by(public_key=pk).first()
-
     def add_profile_if_not_exists(self, pk):
         self.session.merge(Profile(public_key=pk))
         self.session.commit()
 
-    def get_note(self, note_id):
+    def get_note(self, public_key, note_id):
 
-        return self.session.query(Note.id,
-                                  Note.public_key,
-                                  Note.content,
-                                  Note.response_to,
-                                  Note.thread_root,
-                                  Note.reshare,
-                                  Note.created_at,
-                                  Note.members,
-                                  Note.media,
-                                  ReactionTally.likes,
-                                  ReactionTally.replies,
-                                  ReactionTally.shares,
-                                  Note.liked,
-                                  Note.shared,
-                                  Note.deleted,
-                                  Profile.name,
-                                  Profile.pic,
-                                  Profile.nip05,
-                                  Profile.nip05_validated,
-                                  Profile.following).filter_by(id=note_id) \
-            .outerjoin(ReactionTally, ReactionTally.event_id == Note.id) \
-            .join(Note.profile).first()
+        follower_counts = self.session.query(
+            Follower.pk_1,
+            Follower.pk_2,
+            func.count(Follower.id).label('count')
+        ).group_by(Follower.id).subquery()
+
+        is_follower = coalesce(
+            follower_counts.c.count, 0
+        )
+
+        following_counts = self.session.query(
+            Follower.pk_1,
+            Follower.pk_2,
+            func.count(Follower.id).label('count')
+        ).group_by(Follower.id).subquery()
+
+        am_following = coalesce(
+            following_counts.c.count, 0
+        )
+
+        q = self.session.query(Note.id,
+            Note.public_key,
+            Note.content,
+            Note.response_to,
+            Note.thread_root,
+            Note.reshare,
+            Note.created_at,
+            Note.members,
+            Note.media,
+            ReactionTally.likes,
+            ReactionTally.replies,
+            ReactionTally.shares,
+            Note.liked,
+            Note.shared,
+            Note.deleted,
+            Profile.name,
+            Profile.pic,
+            Profile.nip05,
+            Profile.nip05_validated,
+            label('is_follower', is_follower),
+            label('following', am_following)
+        )
+        q = q.filter_by(id=note_id)
+        q = q.join(Note.profile)
+        q = q.outerjoin(ReactionTally, ReactionTally.event_id == Note.id)
+        q = q.outerjoin(follower_counts,
+                        and_(follower_counts.c.pk_2 == public_key, follower_counts.c.pk_1 == Profile.public_key))
+        q = q.outerjoin(following_counts,
+                        and_(following_counts.c.pk_1 == public_key, following_counts.c.pk_2 == Profile.public_key))
+
+        return q.first()
 
     def get_raw_note_data(self, note_id):
         return self.session.query(Event.raw).filter_by(event_id=note_id).first()
 
-    def get_note_thread(self, note_id):
+    def get_note_thread(self, public_key, note_id):
+
+        follower_counts = self.session.query(
+            Follower.pk_1,
+            Follower.pk_2,
+            func.count(Follower.id).label('count')
+        ).group_by(Follower.id).subquery()
+
+        is_follower = coalesce(
+            follower_counts.c.count, 0
+        )
+
+        following_counts = self.session.query(
+            Follower.pk_1,
+            Follower.pk_2,
+            func.count(Follower.id).label('count')
+        ).group_by(Follower.id).subquery()
+
+        am_following = coalesce(
+            following_counts.c.count, 0
+        )
 
         items = self.session.query(Note.id, Note.response_to) \
             .filter(
             text("note.id='{}' or note.response_to='{}' or note.thread_root='{}'".format(note_id, note_id, note_id))) \
             .join(Note.profile).all()
 
-        return self.session.query(Note.id,
-                                  Note.public_key,
-                                  Note.content,
-                                  Note.response_to,
-                                  Note.thread_root,
-                                  Note.reshare,
-                                  Note.created_at,
-                                  Note.members,
-                                  Note.media,
-                                  Note.liked,
-                                  Note.shared,
-                                  Note.deleted,
-                                  ReactionTally.likes,
-                                  ReactionTally.replies,
-                                  ReactionTally.shares,
-                                  Profile.name,
-                                  Profile.pic,
-                                  Profile.nip05,
-                                  Profile.nip05_validated,
-                                  Profile.following) \
-            .filter(or_(Note.id.in_([i.response_to for i in items]), Note.id.in_([i.id for i in items]))) \
-            .outerjoin(ReactionTally, ReactionTally.event_id == Note.id) \
-            .join(Note.profile).order_by(Note.created_at.asc()).all()
+        q = self.session.query(
+            Note.id,
+            Note.public_key,
+            Note.content,
+            Note.response_to,
+            Note.thread_root,
+            Note.reshare,
+            Note.created_at,
+            Note.members,
+            Note.media,
+            Note.liked,
+            Note.shared,
+            Note.deleted,
+            ReactionTally.likes,
+            ReactionTally.replies,
+            ReactionTally.shares,
+            Profile.name,
+            Profile.pic,
+            Profile.nip05,
+            Profile.nip05_validated,
+            label('is_follower', is_follower),
+            label('following', am_following)
+        )
+        q = q.join(Note.profile)
+        q = q.outerjoin(ReactionTally, ReactionTally.event_id == Note.id)
+        q = q.outerjoin(follower_counts,
+                        and_(follower_counts.c.pk_2 == public_key, follower_counts.c.pk_1 == Profile.public_key))
+        q = q.outerjoin(following_counts,
+                        and_(following_counts.c.pk_1 == public_key, following_counts.c.pk_2 == Profile.public_key))
+        q = q.filter(or_(Note.id.in_([i.response_to for i in items]), Note.id.in_([i.id for i in items])))
+        q = q.order_by(Note.created_at.asc())
+
+        return q.all()
 
     def get_note_thread_ids(self, note_id):
         items = self.session.query(Note.id, Note.response_to, Note.thread_root, Note.reshare) \
@@ -279,6 +378,7 @@ class BijaDB:
                                content,
                                is_sender,
                                created_at,
+                               seen,
                                raw):
         self.session.merge(PrivateMessage(
             id=msg_id,
@@ -286,69 +386,10 @@ class BijaDB:
             content=content,
             is_sender=is_sender,
             created_at=created_at,
+            seen=seen,
             raw=raw
         ))
         self.session.commit()
-
-    def get_feed(self, before, public_key):
-
-        return self.session.query(
-            Note.id,
-            Note.public_key,
-            Note.content,
-            Note.response_to,
-            Note.thread_root,
-            Note.reshare,
-            Note.created_at,
-            Note.members,
-            Note.media,
-            Note.liked,
-            Note.shared,
-            Note.deleted,
-            ReactionTally.likes,
-            ReactionTally.replies,
-            ReactionTally.shares,
-            Profile.name,
-            Profile.pic,
-            Profile.nip05,
-            Profile.nip05_validated,
-            Profile.following) \
-            .outerjoin(ReactionTally, ReactionTally.event_id == Note.id) \
-            .join(Note.profile) \
-            .filter(text("note.created_at<{}".format(before))) \
-            .filter(text("(profile.following=1 OR profile.public_key='{}')".format(public_key))) \
-            .filter(text("note.deleted is not 1")) \
-            .order_by(Note.seen.asc(), Note.created_at.desc()).limit(50).all()
-
-    def get_topic_feed(self, before, search):
-
-        return self.session.query(
-            Note.id,
-            Note.public_key,
-            Note.content,
-            Note.response_to,
-            Note.thread_root,
-            Note.reshare,
-            Note.created_at,
-            Note.members,
-            Note.media,
-            Note.liked,
-            Note.shared,
-            Note.deleted,
-            ReactionTally.likes,
-            ReactionTally.replies,
-            ReactionTally.shares,
-            Profile.name,
-            Profile.pic,
-            Profile.nip05,
-            Profile.nip05_validated,
-            Profile.following) \
-            .outerjoin(ReactionTally, ReactionTally.event_id == Note.id) \
-            .join(Note.profile) \
-            .filter(text("note.created_at<{}".format(before))) \
-            .filter(text("note.deleted is not 1")) \
-            .filter(Note.hashtags.like(f"%\"{search}\"%")) \
-            .order_by(Note.seen.asc()).order_by(Note.created_at.desc()).limit(50).all()
 
     def subscribed_to_topic(self, topic):
         r = self.session.query(Topic).filter_by(tag=topic).first()
@@ -366,6 +407,9 @@ class BijaDB:
 
     def get_topics(self):
         return self.session.query(Topic.tag).all()
+
+    def empty_topics(self):
+        self.session.query(Topic).delete()
 
     def get_unseen_in_topics(self, topics):
         out = {}
@@ -387,36 +431,6 @@ class BijaDB:
             Profile.name,
             Profile.pic,
             Profile.nip05).join(Note.profile).filter(Note.id.in_(note_ids)).all()
-
-    def get_notes_by_pubkey(self, public_key, before, after):
-
-        return self.session.query(
-            Note.id,
-            Note.public_key,
-            Note.content,
-            Note.response_to,
-            Note.thread_root,
-            Note.reshare,
-            Note.created_at,
-            Note.members,
-            Note.media,
-            Note.liked,
-            Note.shared,
-            ReactionTally.likes,
-            ReactionTally.replies,
-            ReactionTally.shares,
-            Note.deleted,
-            Profile.name,
-            Profile.pic,
-            Profile.nip05,
-            Profile.nip05_validated,
-            Profile.following) \
-            .outerjoin(ReactionTally, ReactionTally.event_id == Note.id) \
-            .join(Note.profile) \
-            .filter(text("note.created_at<{}".format(before))) \
-            .filter_by(public_key=public_key) \
-            .filter(text("note.deleted is not 1")) \
-            .order_by(Note.created_at.desc()).limit(100).all()
 
     def get_unseen_message_count(self):
         return self.session.query(PrivateMessage) \
@@ -440,9 +454,23 @@ class BijaDB:
             out.append(dict(item))
         return out
 
-    def get_unseen_in_feed(self):
-        return self.session.query(Note, Profile).join(Note.profile) \
-            .filter(text("(profile.following=1) and note.seen=0")).count()
+    def get_unseen_in_feed(self, public_key):
+
+        following_counts = self.session.query(
+            Follower.pk_1,
+            Follower.pk_2,
+            func.count(Follower.id).label('count')
+        ).group_by(Follower.id).subquery()
+
+        am_following = coalesce(
+            following_counts.c.count, 0
+        )
+        q = self.session.query(Note, Profile, label('following', am_following))
+        q = q.join(Note.profile)
+        q = q.outerjoin(following_counts,
+                        and_(following_counts.c.pk_1 == public_key, following_counts.c.pk_2 == Profile.public_key))
+        q = q.filter(text("following=1 and note.seen=0"))
+        return q.count()
 
     def get_most_recent_for_pk(self, pubkey):
         q = self.session.query(Note.created_at).join(Note.profile) \
@@ -452,10 +480,23 @@ class BijaDB:
         return None
 
     def set_all_seen_in_feed(self, public_key):
-        notes = self.session.query(Note).join(Note.profile) \
-            .filter(text("profile.following=1 OR profile.public_key='{}'".format(public_key)))
-        for note in notes:
-            note.seen = True
+        following_counts = self.session.query(
+            Follower.pk_1,
+            Follower.pk_2,
+            func.count(Follower.id).label('count')
+        ).group_by(Follower.id).subquery()
+
+        am_following = coalesce(
+            following_counts.c.count, 0
+        )
+        q = self.session.query(Note.id, Note.seen, label('following', am_following))
+        q = q.join(Note.profile)
+        q = q.outerjoin(following_counts,
+                        and_(following_counts.c.pk_1 == public_key, following_counts.c.pk_2 == Profile.public_key))
+        q = q.filter(text("following=1 OR profile.public_key='{}'".format(public_key)))
+
+        for note in q:
+            self.session.query(Note).filter(Note.id==note.id).update({'seen': True})
         self.session.commit()
 
     def set_all_seen_in_topic(self, topic):
@@ -468,17 +509,13 @@ class BijaDB:
         self.session.query(Note).filter(Note.id == note_id).update({'seen': True})
         self.session.commit()
 
-    # def get_profile_updates(self, public_key, last_update):
-    #     return self.session.query(Profile).filter_by(public_key=public_key).filter(
-    #         text("profile.updated_at>{}".format(last_update))).first()
-
     def search_profile_name(self, name_str):
         return self.session.query(Profile.name, Profile.nip05, Profile.public_key).filter(
             or_(
                 Profile.name.like(f"{name_str}%"),
                 Profile.public_key.like(f"{name_str}%")
             )
-        ).order_by(Profile.following.desc()).limit(10).all()
+        ).limit(10).all()
 
     def get_profile_by_name_or_pk(self, name_str):
         return self.session.query(Profile.public_key).filter(
@@ -486,7 +523,7 @@ class BijaDB:
                 Profile.name == name_str,
                 Profile.public_key == name_str
             )
-        ).order_by(Profile.following.desc()).first()
+        ).first()
 
     def get_message_list(self):
         return DB_ENGINE.execute(text("""SELECT 
@@ -701,3 +738,67 @@ class BijaDB:
 
     def commit(self):
         self.session.commit()
+
+    def get_feed(self, before, public_key, filters):
+
+        follower_counts = self.session.query(
+            Follower.pk_1,
+            Follower.pk_2,
+            func.count(Follower.id).label('count')
+        ).group_by(Follower.id).subquery()
+
+        is_follower = coalesce(
+            follower_counts.c.count, 0
+        )
+
+        following_counts = self.session.query(
+            Follower.pk_1,
+            Follower.pk_2,
+            func.count(Follower.id).label('count')
+        ).group_by(Follower.id).subquery()
+
+        am_following = coalesce(
+            following_counts.c.count, 0
+        )
+
+        q = self.session.query(
+            Note.id,
+            Note.public_key,
+            Note.content,
+            Note.response_to,
+            Note.thread_root,
+            Note.reshare,
+            Note.created_at,
+            Note.members,
+            Note.media,
+            Note.liked,
+            Note.shared,
+            Note.deleted,
+            ReactionTally.likes,
+            ReactionTally.replies,
+            ReactionTally.shares,
+            Profile.name,
+            Profile.pic,
+            Profile.nip05,
+            Profile.nip05_validated,
+            label('is_follower', is_follower),
+            label('following', am_following)
+        )
+        q = q.join(Note.profile)
+        q = q.outerjoin(ReactionTally, ReactionTally.event_id == Note.id)
+        q = q.outerjoin(follower_counts,
+                                and_(follower_counts.c.pk_2 == public_key, follower_counts.c.pk_1 == Profile.public_key))
+        q = q.outerjoin(following_counts,
+                                and_(following_counts.c.pk_1 == public_key, following_counts.c.pk_2 == Profile.public_key))
+        q = q.filter(text("note.created_at<{}".format(before)))
+        q = q.filter(text("note.deleted is not 1"))
+        if 'main_feed' in filters:
+            q = q.filter(text("(following=1 OR profile.public_key='{}')".format(public_key)))
+        if 'profile' in filters:
+            q = q.filter(Profile.public_key==filters['profile'])
+        if 'topic' in filters:
+            q = q.filter(Note.hashtags.like(f"%\"{filters['topic']}\"%"))
+
+        q = q.order_by(Note.seen.asc(), Note.created_at.desc()).limit(50)
+
+        return q.all()
