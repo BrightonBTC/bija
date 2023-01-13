@@ -70,6 +70,7 @@ class BijaDB:
 
     def add_contact_list(self, public_key, keys: list):
         self.session.query(Follower).filter(Follower.pk_1==public_key).filter(Follower.pk_2.notin_(keys)).delete()
+        self.session.commit()
         for pk in keys:
             self.session.merge(Follower(
                 pk_1=public_key,
@@ -406,6 +407,9 @@ class BijaDB:
 
     def get_topics(self):
         return self.session.query(Topic.tag).all()
+
+    def empty_topics(self):
+        self.session.query(Topic).delete()
 
     def get_unseen_in_topics(self, topics):
         out = {}

@@ -417,9 +417,21 @@ def config_backup():
         'topics': [x.tag for x in topics]
     }
     SubmitEncryptedMessage([
-        ('new_message', json.dumps(data)),
+        ('new_message', '::BIJA_CFG_BACKUP::{}'.format(json.dumps(data))),
         ('new_message_pk', SETTINGS.get('pubkey'))
     ])
+
+@app.route('/load_cfg', methods=['POST'])
+def load_cfg():
+    if len(request.json) > 0 and request.json[0][0] == 'cfg':
+        data = json.loads(request.json[0][1])
+        DB.upd_settings_by_keys(data['settings'])
+        SETTINGS.set_from_db()
+        DB.empty_topics()
+        for t in data['topics']:
+            DB.subscribe_to_topic(t)
+
+    return render_template("upd.json", data=json.dumps({'success': 1}))
 
 @app.route('/reload_relay_list', methods=['GET'])
 def reload_relay_list():

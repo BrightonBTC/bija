@@ -613,6 +613,20 @@ class bijaMessages{
     constructor(){
         window.scrollTo(0, document.body.scrollHeight);
         this.setSubmitMessage()
+        this.setCfgLoader()
+    }
+
+    setCfgLoader(){
+        const cfg_loaders = document.querySelectorAll('.cfg_loader')
+        for(const el of cfg_loaders){
+            const cb = function(response, data){
+                location.reload()
+            }
+            el.addEventListener("click", (event)=>{
+                event.preventDefault();
+                fetchFromForm('/load_cfg', el, cb, {})
+            });
+        }
     }
 
     setSubmitMessage(){

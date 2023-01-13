@@ -47,7 +47,11 @@ def _jinja2_filter_decr(content, pubkey, privkey):
     try:
         k = bytes.fromhex(privkey)
         pk = PrivateKey(k)
-        return pk.decrypt_message(content, pubkey)
+        message = pk.decrypt_message(content, pubkey)
+        if pubkey == SETTINGS.get('pubkey') and message[:19] == "::BIJA_CFG_BACKUP::":
+            return "BIJA CONFIG BACKUP. <form class='cfg_loader'><input type='hidden' value='{}' name='cfg'><button>Click to reload settings</button></form>".format(message[19:])
+        else:
+            return message
     except ValueError:
         return 'could not decrypt!'
 

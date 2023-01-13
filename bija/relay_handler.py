@@ -470,7 +470,7 @@ class EncryptedMessageEvent:
         DB.insert_private_message(
             self.event.id,
             self.pubkey,
-            self.event.content,
+            strip_tags(self.event.content),
             self.is_sender,
             self.event.created_at,
             seen,
