@@ -408,34 +408,11 @@ class ContactListEvent:
         self.compile_keys()
         DB.add_profile_if_not_exists(self.event.public_key)
         DB.add_contact_list(self.event.public_key, self.keys)
-        # if event.public_key == self.pubkey:
-        #     self.set_following()
 
     def compile_keys(self):
-        # is_follower = False
         for p in self.event.tags:
             if p[0] == "p":
                 self.keys.append(p[1])
-        #         if p[1] == self.pubkey:
-        #             is_follower = True
-        # self.set_follower(is_follower)
-
-    # def set_following(self):
-    #     following = DB.get_following_pubkeys()
-    #     new = set(self.keys) - set(following)
-    #     removed = set(following) - set(self.keys)
-    #     logger.info('New follows: {}'.format(len(new)))
-    #     logger.info('Removed follows: {}'.format(len(removed)))
-    #     if len(new) > 0:
-    #         self.changed = True
-    #         DB.set_following(new, True)
-    #     if len(removed) > 0:
-    #         self.changed = True
-    #         DB.set_following(removed, False)
-    #
-    # def set_follower(self, b: bool):
-    #     DB.set_follower(self.event.public_key, b)
-
 
 
 class EncryptedMessageEvent:
@@ -487,12 +464,16 @@ class EncryptedMessageEvent:
 
     def store(self):
         DB.add_profile_if_not_exists(self.event.public_key)
+        seen = False
+        if self.is_sender == 1:
+            seen = True
         DB.insert_private_message(
             self.event.id,
             self.pubkey,
             self.event.content,
             self.is_sender,
             self.event.created_at,
+            seen,
             json.dumps(self.event.to_json_object())
         )
 

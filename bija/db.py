@@ -395,6 +395,7 @@ class BijaDB:
                                content,
                                is_sender,
                                created_at,
+                               seen,
                                raw):
         self.session.merge(PrivateMessage(
             id=msg_id,
@@ -402,6 +403,7 @@ class BijaDB:
             content=content,
             is_sender=is_sender,
             created_at=created_at,
+            seen=seen,
             raw=raw
         ))
         self.session.commit()
