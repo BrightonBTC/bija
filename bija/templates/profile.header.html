@@ -11,7 +11,7 @@
 {%- else -%}
     {%- set updated_at='0' -%}
 {%- endif -%}
-
+<div id="profile-header">
 <div class="profile rnd" id="profile" data-updated_ts="{{updated_at}}" data-pk="{{profile['public_key']}}">
     <div class="profile-tools">
         {%- include 'profile.tools.html' -%}
@@ -85,4 +85,4 @@
     {%- endif -%}
 </div>
 {%- endif -%}
-
+</div>
