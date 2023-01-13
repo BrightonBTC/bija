@@ -144,49 +144,107 @@ def login_page():
 @app.route('/profile', methods=['GET'])
 @login_required
 def profile_page():
-    ACTIVE_EVENTS.clear()
-    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
-    page_id = 'profile'
-    pubkey = SETTINGS.get('pubkey')
-    if 'pk' in request.args and is_hex_key(request.args['pk']) and request.args['pk'] != pubkey:
-        EXECUTOR.submit(RELAY_HANDLER.set_page('profile', request.args['pk']))
-        pubkey = request.args['pk']
-        is_me = False
-        am_following = DB.a_follows_b(SETTINGS.get('pubkey'), pubkey)
+
+    data = ProfilePage()
+
+    if data.page == 'profile':
+        return render_template(
+            "profile.html",
+            page_id=data.page_id,
+            title="Profile",
+            threads=data.data.threads,
+            last=data.data.last_ts,
+            latest=data.latest_in_feed,
+            profile=data.profile,
+            is_me=data.is_me,
+            am_following=data.am_following,
+            meta=data.meta,
+            pubkey=data.pubkey
+        )
     else:
-        EXECUTOR.submit(RELAY_HANDLER.set_page('profile', pubkey))
-        is_me = True
-        page_id = 'profile-me'
-        am_following = False
-    notes = DB.get_feed(int(time.time()), timestamp_minus(TimePeriod.DAY), {'profile': pubkey})
-    t = FeedThread(notes)
-    profile = DB.get_profile(pubkey)
-    if profile is None:
-        DB.add_profile(pubkey)
-        profile = DB.get_profile(pubkey)
+        return render_template(
+            "following.html",
+            page_id=data.page_id,
+            title="Contacts",
+            profile=data.profile,
+            profiles=data.data,
+            is_me=data.is_me,
+            meta=data.meta,
+            am_following=data.am_following
+        )
 
-    EXECUTOR.submit(RELAY_HANDLER.subscribe_profile, pubkey, timestamp_minus(TimePeriod.WEEK), list(t.ids))
+class ProfilePage:
 
-    metadata = {}
-    if profile.raw is not None and len(profile.raw) > 0:
-        raw = json.loads(profile.raw)
-        meta = json.loads(raw['content'])
-        for item in meta.keys():
-            if item in ['website', 'lud06', 'lud16']:
-                metadata[item] = meta[item]
-    return render_template(
-        "profile.html",
-        page_id=page_id,
-        title="Profile",
-        threads=t.threads,
-        last=t.last_ts,
-        latest=DB.get_most_recent_for_pk(pubkey) or 0,
-        profile=profile,
-        is_me=is_me,
-        am_following=am_following,
-        meta=metadata,
-        pubkey=pubkey
-    )
+    def __init__(self):
+        self.page = 'profile'
+        self.is_me = False
+        self.am_following = False
+        self.pubkey = self.set_pubkey()
+        self.page_id = self.set_page_id()
+        self.profile = None
+        self.meta = None
+        self.data = None
+        self.latest_in_feed = None
+        self.subscription_ids = [] # active notes to passed to subscription manager
+
+        ACTIVE_EVENTS.clear()
+        EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
+        EXECUTOR.submit(RELAY_HANDLER.set_page(self.page, self.pubkey))
+
+        self.set_profile()
+        self.set_meta()
+        self.get_data()
+
+        EXECUTOR.submit(
+            RELAY_HANDLER.subscribe_profile,
+            self.pubkey,
+            timestamp_minus(TimePeriod.WEEK),
+            self.subscription_ids
+        )
+
+    def set_pubkey(self):
+        if 'pk' in request.args and is_hex_key(request.args['pk']) and request.args['pk'] != SETTINGS.get('pubkey'):
+            return request.args['pk']
+        else:
+            self.is_me = True
+            return SETTINGS.get('pubkey')
+
+    def set_page_id(self):
+        if 'view' in request.args:
+            self.page = request.args['view']
+            return request.args['view']
+        elif self.pubkey == SETTINGS.get('pubkey'):
+            return 'profile-me'
+        else:
+            return 'profile'
+
+    def set_profile(self):
+        self.profile = DB.get_profile(self.pubkey)
+        if self.profile is None:
+            DB.add_profile(self.pubkey)
+            self.profile = DB.get_profile(self.pubkey)
+
+    def set_meta(self):
+        metadata = {}
+        if self.profile.raw is not None and len(self.profile.raw) > 0:
+            raw = json.loads(self.profile.raw)
+            meta = json.loads(raw['content'])
+            for item in meta.keys():
+                if item in ['website', 'lud06', 'lud16'] and len(meta[item].strip()) > 0:
+                    metadata[item] = meta[item]
+        self.meta = metadata
+
+    def get_data(self):
+        self.am_following = DB.a_follows_b(SETTINGS.get('pubkey'), self.pubkey)
+        if self.page == 'profile':
+            notes = DB.get_feed(int(time.time()), timestamp_minus(TimePeriod.DAY), {'profile': self.pubkey})
+            self.data = FeedThread(notes)
+            self.subscription_ids = list(self.data.ids)
+            self.latest_in_feed = DB.get_most_recent_for_pk(self.pubkey) or 0
+        elif self.page == 'following':
+            self.data = DB.get_following(SETTINGS.get('pubkey'), self.pubkey)
+        elif self.page == 'followers':
+            self.data = DB.get_followers(SETTINGS.get('pubkey'), self.pubkey)
 
 
 @app.route('/profile_feed', methods=['GET'])
@@ -490,79 +548,6 @@ def submit_like():
                     ids.append(event.id)
                 e = SubmitDelete(ids, 'removing like')
                 return render_template('svg/like.svg', class_name='icon')
-
-
-
-@app.route('/following', methods=['GET'])
-@login_required
-def following_page():
-    ACTIVE_EVENTS.clear()
-    EXECUTOR.submit(RELAY_HANDLER.set_page('following', request.args.get('pk')))
-    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
-    if 'pk' in request.args and is_hex_key(request.args['pk']):
-        EXECUTOR.submit(RELAY_HANDLER.subscribe_profile, request.args['pk'], timestamp_minus(TimePeriod.WEEK), [])
-
-        k = request.args['pk']
-        is_me = False
-    else:
-        k = SETTINGS.get('pubkey')
-        is_me = True
-    profiles = DB.get_following(SETTINGS.get('pubkey'), k)
-    profile = DB.get_profile(k)
-    am_following = DB.a_follows_b(SETTINGS.get('pubkey'), k)
-    metadata = {}
-    if profile.raw is not None and len(profile.raw) > 0:
-        raw = json.loads(profile.raw)
-        meta = json.loads(raw['content'])
-        for item in meta.keys():
-            if item in ['website', 'lud06', 'lud16']:
-                metadata[item] = meta[item]
-    return render_template(
-        "following.html",
-        page_id="following",
-        title="Following",
-        profile=profile,
-        profiles=profiles,
-        is_me=is_me,
-        meta=metadata,
-        am_following=am_following
-    )
-
-
-@app.route('/followers', methods=['GET'])
-@login_required
-def followers_page():
-    ACTIVE_EVENTS.clear()
-    EXECUTOR.submit(RELAY_HANDLER.set_page('followers', request.args.get('pk')))
-    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
-    if 'pk' in request.args and is_hex_key(request.args['pk']):
-        EXECUTOR.submit(RELAY_HANDLER.subscribe_profile, request.args['pk'], timestamp_minus(TimePeriod.WEEK), [])
-
-        k = request.args['pk']
-        is_me = False
-    else:
-        k = SETTINGS.get('pubkey')
-        is_me = True
-    profiles = DB.get_followers(SETTINGS.get('pubkey'), k)
-    profile = DB.get_profile(k)
-    am_following = DB.a_follows_b(SETTINGS.get('pubkey'), k)
-    metadata = {}
-    if profile.raw is not None and len(profile.raw) > 0:
-        raw = json.loads(profile.raw)
-        meta = json.loads(raw['content'])
-        for item in meta.keys():
-            if item in ['website', 'lud06', 'lud16']:
-                metadata[item] = meta[item]
-    return render_template(
-        "following.html",
-        page_id="followers",
-        title="Followers",
-        profile=profile,
-        profiles=profiles,
-        is_me=is_me,
-        meta=metadata,
-        am_following=am_following
-    )
 
 
 @app.route('/search', methods=['GET'])

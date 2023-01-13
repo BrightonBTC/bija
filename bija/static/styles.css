@@ -479,9 +479,6 @@ hr{
     height: 150px;
     animation: expandDown .2s linear;
 }
-.poster-form textarea.blur{
-    animation: contractUp .2s linear;
-}
 
 input.post-submit {
     width: auto;

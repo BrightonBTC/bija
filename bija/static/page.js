@@ -867,14 +867,7 @@ class bijaNotes{
             const ct = note.querySelector('.poster-form textarea');
             if(ct){
                 ct.addEventListener('focus', (e) => {
-                ct.classList.add('focus')
-                ct.classList.remove('blur')
-                });
-                ct.addEventListener('blur', (e) => {
-                    setTimeout(function(){
-                        ct.classList.remove('focus')
-                        ct.classList.add('blur')
-                    }, 1000)
+                    ct.classList.add('focus')
                 });
             }
 
@@ -1126,14 +1119,7 @@ class bijaFeed{
         const ct = document.querySelector('#new_post');
         if(ct){
             ct.addEventListener('focus', (e) => {
-            ct.classList.add('focus')
-            ct.classList.remove('blur')
-            });
-            ct.addEventListener('blur', (e) => {
-                setTimeout(function(){
-                    ct.classList.remove('focus')
-                    ct.classList.add('blur')
-                }, 1000)
+                ct.classList.add('focus')
             });
         }
 
