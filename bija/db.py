@@ -95,21 +95,6 @@ class BijaDB:
             self.session.query(Follower).filter(pk_1=my_pk).filter(pk_2=their_pk).delete()
         self.session.commit()
 
-    # def set_following(self, keys_list, following=True):
-    #     for public_key in keys_list:
-    #         self.session.merge(Profile(
-    #             public_key=public_key,
-    #             following=following
-    #         ))
-    #     # self.session.commit()
-    #
-    # def set_follower(self, public_key, follower=True):
-    #     self.session.merge(Profile(
-    #         public_key=public_key,
-    #         follower=follower
-    #     ))
-    #     # self.session.commit()
-
     def get_following_pubkeys(self, public_key):
         keys = self.session.query(Follower).filter_by(pk_1=public_key).all()
         out = []
@@ -170,9 +155,6 @@ class BijaDB:
         for p in profiles:
             out.append(dict(p))
         return out
-
-    # def am_following(self, public_key):
-    #     return self.session.query(Profile.public_key).filter_by(public_key=public_key).filter_by(following=1).first()
 
     def a_follows_b(self, pk_a, pk_b):
         r = self.session.query(Follower).filter(Follower.pk_1==pk_a).filter(Follower.pk_2==pk_b)
@@ -408,66 +390,6 @@ class BijaDB:
         ))
         self.session.commit()
 
-    # def get_feed(self, before, public_key):
-    #
-    #     return self.session.query(
-    #         Note.id,
-    #         Note.public_key,
-    #         Note.content,
-    #         Note.response_to,
-    #         Note.thread_root,
-    #         Note.reshare,
-    #         Note.created_at,
-    #         Note.members,
-    #         Note.media,
-    #         Note.liked,
-    #         Note.shared,
-    #         Note.deleted,
-    #         ReactionTally.likes,
-    #         ReactionTally.replies,
-    #         ReactionTally.shares,
-    #         Profile.name,
-    #         Profile.pic,
-    #         Profile.nip05,
-    #         Profile.nip05_validated,
-    #         Profile.following) \
-    #         .outerjoin(ReactionTally, ReactionTally.event_id == Note.id) \
-    #         .join(Note.profile) \
-    #         .filter(text("note.created_at<{}".format(before))) \
-    #         .filter(text("(profile.following=1 OR profile.public_key='{}')".format(public_key))) \
-    #         .filter(text("note.deleted is not 1")) \
-    #         .order_by(Note.seen.asc(), Note.created_at.desc()).limit(50).all()
-
-    # def get_topic_feed(self, before, search):
-    #
-    #     return self.session.query(
-    #         Note.id,
-    #         Note.public_key,
-    #         Note.content,
-    #         Note.response_to,
-    #         Note.thread_root,
-    #         Note.reshare,
-    #         Note.created_at,
-    #         Note.members,
-    #         Note.media,
-    #         Note.liked,
-    #         Note.shared,
-    #         Note.deleted,
-    #         ReactionTally.likes,
-    #         ReactionTally.replies,
-    #         ReactionTally.shares,
-    #         Profile.name,
-    #         Profile.pic,
-    #         Profile.nip05,
-    #         Profile.nip05_validated,
-    #         Profile.following) \
-    #         .outerjoin(ReactionTally, ReactionTally.event_id == Note.id) \
-    #         .join(Note.profile) \
-    #         .filter(text("note.created_at<{}".format(before))) \
-    #         .filter(text("note.deleted is not 1")) \
-    #         .filter(Note.hashtags.like(f"%\"{search}\"%")) \
-    #         .order_by(Note.seen.asc()).order_by(Note.created_at.desc()).limit(50).all()
-
     def subscribed_to_topic(self, topic):
         r = self.session.query(Topic).filter_by(tag=topic).first()
         return r is not None
@@ -505,36 +427,6 @@ class BijaDB:
             Profile.name,
             Profile.pic,
             Profile.nip05).join(Note.profile).filter(Note.id.in_(note_ids)).all()
-
-    # def get_notes_by_pubkey(self, public_key, before, after):
-    #
-    #     return self.session.query(
-    #         Note.id,
-    #         Note.public_key,
-    #         Note.content,
-    #         Note.response_to,
-    #         Note.thread_root,
-    #         Note.reshare,
-    #         Note.created_at,
-    #         Note.members,
-    #         Note.media,
-    #         Note.liked,
-    #         Note.shared,
-    #         ReactionTally.likes,
-    #         ReactionTally.replies,
-    #         ReactionTally.shares,
-    #         Note.deleted,
-    #         Profile.name,
-    #         Profile.pic,
-    #         Profile.nip05,
-    #         Profile.nip05_validated,
-    #         Profile.following) \
-    #         .outerjoin(ReactionTally, ReactionTally.event_id == Note.id) \
-    #         .join(Note.profile) \
-    #         .filter(text("note.created_at<{}".format(before))) \
-    #         .filter_by(public_key=public_key) \
-    #         .filter(text("note.deleted is not 1")) \
-    #         .order_by(Note.created_at.desc()).limit(100).all()
 
     def get_unseen_message_count(self):
         return self.session.query(PrivateMessage) \
@@ -612,10 +504,6 @@ class BijaDB:
     def set_note_seen(self, note_id):
         self.session.query(Note).filter(Note.id == note_id).update({'seen': True})
         self.session.commit()
-
-    # def get_profile_updates(self, public_key, last_update):
-    #     return self.session.query(Profile).filter_by(public_key=public_key).filter(
-    #         text("profile.updated_at>{}".format(last_update))).first()
 
     def search_profile_name(self, name_str):
         return self.session.query(Profile.name, Profile.nip05, Profile.public_key).filter(
