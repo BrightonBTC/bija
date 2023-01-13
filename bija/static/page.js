@@ -261,7 +261,6 @@ class bijaSearch{
     searchByName(name){
         const cb = function(response, data){
             if(response['result']){
-                console.log(data)
                 data.context.showNameHints(response['result'], data.search)
             }
         }
@@ -358,7 +357,6 @@ class bijaNoteTools{
                 if(name){
                     const cb = function(response, data){
                         if(response['result']){
-                            console.log(data)
                             data.context.showNameHints(data.hint_elem, data.reply_elem, response['result'], data.search)
                         }
                     }
@@ -602,7 +600,6 @@ class bijaThread{
             document.dispatchEvent(new Event('newContentLoaded'))
         }
         else{
-            console.log('replace elem')
             data.elem.replaceWith(new_item)
             document.dispatchEvent(new Event('newContentLoaded'))
         }
@@ -712,7 +709,6 @@ class bijaProfile{
             if(main_el && main_el.dataset.settings){
                 const settings = JSON.parse(main_el.dataset.settings)
                 if(settings['cloudinary_cloud'] !== undefined){
-                    console.log(settings['cloudinary_cloud'])
                     const form = document.querySelector("#profile_updater");
                     const im_up = document.querySelector(".profile-img-up");
                     im_up.addEventListener('change', (e) => {
@@ -792,12 +788,12 @@ class bijaNotes{
         this.setEventListeners()
         document.addEventListener('newContentLoaded', ()=>{
             this.setEventListeners()
+            lazyLoad()
         });
         setInterval(this.tsUpdater, 120000);
     }
 
     tsUpdater(){
-        console.log('update ts')
         const notes = document.querySelectorAll(".dt[data-ts]");
         const timestamps = []
         for (const n of notes) {
@@ -805,7 +801,6 @@ class bijaNotes{
         }
         const cb = function(response, data){
             const stamps = JSON.parse(response)
-            console.log(stamps)
             for (const [k, v] of Object.entries(stamps['data'])) {
                 const elem = document.querySelector(".dt[data-ts='"+k+"']");
                 if(elem){
@@ -1006,6 +1001,7 @@ class bijaNotes{
                 if(response){
                     popup(response)
                     data.context.setQuoteForm()
+                    lazyLoad()
                 }
             }
             fetchGet('/quote_form?id='+note_id, cb, {'context': this})
@@ -1048,7 +1044,6 @@ class bijaNotes{
     setLikeCountClickEvents(elem, id){
         elem.addEventListener('click', (e) => {
             const cb = function(response, data){
-                console.log(response)
                 popup('')
                 data.context.displayReactionDetails(response.data)
 
@@ -1484,7 +1479,6 @@ function setCloudUploads(form){
 }
 
 function lazyloadIntersectionObserver(lazyloadImages) {
-	console.log("lazyloadIntersectionObserver")
 	let imageObserver = new IntersectionObserver(function(entries, observer) {
 		entries.forEach(function(entry) {
 			if(entry.isIntersecting) {
@@ -1527,7 +1521,6 @@ function lazyloadNoIntersectionObserve(lazyloadImages) {
 }
 
 function lazyLoad() {
-	console.log("lazyLoad()")
 	let lazyloadImages = document.querySelectorAll("img.lazy-load");
 	if("IntersectionObserver" in window) {
 		lazyloadIntersectionObserver(lazyloadImages);
