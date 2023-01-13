@@ -152,7 +152,7 @@ class SubscribeThread(Subscribe):
         filters.append(Filter(ids=ids, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION]))
         difficulty = self.required_pow()
         if difficulty is not None:
-            pks = DB.get_following_pubkeys()
+            pks = DB.get_following_pubkeys(SETTINGS.get('pubkey'))
             subid = {"ids": [difficulty]}
             filters.append(Filter(tags={'#e': ids, '#p': pks}, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION]))
             filters.append(Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION], subid=subid))
