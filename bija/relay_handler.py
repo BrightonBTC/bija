@@ -465,7 +465,7 @@ class EncryptedMessageEvent:
     def store(self):
         DB.add_profile_if_not_exists(self.event.public_key)
         seen = False
-        if self.is_sender == 1:
+        if self.is_sender == 1 and self.pubkey == self.my_pubkey: # sent to self
             seen = True
         DB.insert_private_message(
             self.event.id,
