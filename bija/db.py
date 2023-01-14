@@ -495,8 +495,7 @@ class BijaDB:
                         and_(following_counts.c.pk_1 == public_key, following_counts.c.pk_2 == Profile.public_key))
         q = q.filter(text("following=1 OR profile.public_key='{}'".format(public_key)))
 
-        for note in q:
-            self.session.query(Note).filter(Note.id==note.id).update({'seen': True})
+        self.session.query(Note).filter(Note.id.in_([x.id for x in q])).update({'seen': True})
         self.session.commit()
 
     def set_all_seen_in_topic(self, topic):
