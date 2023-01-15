@@ -116,6 +116,7 @@ class BijaDB:
         profiles = self.session.query(
             Profile.public_key,
             Profile.name,
+            Profile.display_name,
             Profile.pic,
             Profile.nip05,
             Profile.nip05_validated,
@@ -143,6 +144,7 @@ class BijaDB:
         profiles = self.session.query(
             Profile.public_key,
             Profile.name,
+            Profile.display_name,
             Profile.pic,
             Profile.nip05,
             Profile.nip05_validated,
@@ -169,6 +171,7 @@ class BijaDB:
         profiles = self.session.query(
             Profile.public_key,
             Profile.name,
+            Profile.display_name,
             Profile.pic,
             Profile.nip05,
             Profile.nip05_validated).filter(Profile.public_key.in_(public_keys)).all()
@@ -180,6 +183,7 @@ class BijaDB:
     def upd_profile(self,
                     public_key,
                     name=None,
+                    display_name=None,
                     nip05=None,
                     pic=None,
                     about=None,
@@ -188,6 +192,7 @@ class BijaDB:
         self.session.merge(Profile(
             public_key=public_key,
             name=name,
+            display_name=display_name,
             nip05=nip05,
             pic=pic,
             about=about,
@@ -276,6 +281,7 @@ class BijaDB:
             Note.shared,
             Note.deleted,
             Profile.name,
+            Profile.display_name,
             Profile.pic,
             Profile.nip05,
             Profile.nip05_validated,
@@ -339,6 +345,7 @@ class BijaDB:
             ReactionTally.replies,
             ReactionTally.shares,
             Profile.name,
+            Profile.display_name,
             Profile.pic,
             Profile.nip05,
             Profile.nip05_validated,
@@ -429,6 +436,7 @@ class BijaDB:
             Note.members,
             Note.media,
             Profile.name,
+            Profile.display_name,
             Profile.pic,
             Profile.nip05).join(Note.profile).filter(Note.id.in_(note_ids)).all()
 
@@ -448,6 +456,7 @@ class BijaDB:
             PrivateMessage.content,
             PrivateMessage.is_sender,
             Profile.name,
+            Profile.display_name,
             Profile.pic).join(Profile) \
             .filter(text(filter_string)).all()
         for item in result:
@@ -544,6 +553,7 @@ class BijaDB:
             PrivateMessage.created_at,
             PrivateMessage.public_key,
             Profile.name,
+            Profile.display_name,
             Profile.pic).join(Profile) \
             .filter(text(filter_text.format(public_key))) \
             .order_by(PrivateMessage.created_at.desc()).limit(100).all()
@@ -643,6 +653,7 @@ class BijaDB:
             Alert.content,
             Alert.seen,
             Profile.name,
+            Profile.display_name,
             Profile.public_key,
             Profile.pic,
             label("note_id", Note.id),
@@ -652,7 +663,7 @@ class BijaDB:
         ) \
             .join(Note, Note.id == Alert.event) \
             .join(Profile, Profile.public_key == Alert.profile) \
-            .order_by(Alert.ts.desc()).limit(50).all()
+            .order_by(Alert.seen.asc()).order_by(Alert.ts.desc()).limit(50).all()
 
     def get_unread_alert_count(self):
         return self.session.query(Alert).filter(Alert.seen == 0).count()
@@ -777,6 +788,7 @@ class BijaDB:
             ReactionTally.replies,
             ReactionTally.shares,
             Profile.name,
+            Profile.display_name,
             Profile.pic,
             Profile.nip05,
             Profile.nip05_validated,

@@ -21,8 +21,8 @@
         {%- endwith -%}
     </div>
     <div class="profile-details profile-item">
-        <h1 class="profile-name">{{profile['name'] | ident_string(profile['public_key'], profile['nip05'], profile['nip05_validated']) | safe }}</h1>
-        {{ profile['public_key'] | relationship | safe }}
+        <h1 class="profile-name">{{profile['name'] | ident_string(profile['display_name'], profile['public_key']) | safe }}</h1>
+        {%- if profile['nip05'] is not none -%}<span class="tag">{{profile['nip05'] | nip05_valid(profile['nip05_validated']) | safe }} {{profile['nip05']}}</span> &nbsp; {%- endif -%}{{ profile['public_key'] | relationship | safe }}
         <pre class="profile-about">{{about| linkify| safe}}</pre>
         {%- if website is not none -%}
         <div class="profile-meta">
@@ -31,21 +31,18 @@
         {%- endif -%}
     </div>
     {%- if is_me and page_id == 'profile-me' -%}
-        {%- if profile['name'] is not none -%}
-            {%- set pname=profile['name'] -%}
-        {%- else -%}
-            {%- set pname="" -%}
-        {%- endif -%}
+
         {%- if profile['pic'] is not none -%}
-            {%- set pic_url=profile['pic'] -%}
             {%- set pic=profile['pic'] -%}
         {%- else -%}
-            {%- set pic_url='' -%}
             {%- set pic="/identicon?id="+pubkey -%}
         {%- endif -%}
     <form id="profile_updater" data-vis="0">
         <label for="pname" class="sm">Handle</label>
-        <input type="text" id="pname" name="name" class="pname" value="{{pname}}">
+        <input type="text" id="pname" name="name" class="pname" value="{{profile['name'] or ''}}">
+
+        <label for="display_name" class="sm">Display name</label>
+        <input type="text" id="display_name" name="display_name" value="{{profile['display_name'] or ''}}">
 
         <label for="pmsg" class="sm">About</label>
         <textarea name="about" id="pmsg" rows="10" cols="30">{{about}}</textarea>
@@ -54,7 +51,7 @@
         <label for="pim" class="sm">Image URL</label>
         <div class="pim-up">
             <label class="note-image"><input type="file" class="profile-img-up" style="display: none;"><img src="{{ pic }}" class="user-image"></label>
-            <input type="text" id="pim" name="picture" value="{{pic_url}}">
+            <input type="text" id="pim" name="picture" value="{{profile['pic'] or ''}}">
         </div>
 
         <label for="pnip5" class="sm">Nip05 identifier</label>

@@ -12,7 +12,7 @@
             <div class="note-outer"><div class="note"><div class="pad-sm">Event: {{item}} not yet seen on network</div></div></div>
         </div>
     {%- else -%}
-        {%- include 'thread.item2.html' -%}
+        {%- include 'thread.item.html' -%}
     {%- endif -%}
 {%- endfor -%}
 </div>
@@ -25,7 +25,7 @@
 {%- for p in members: -%}
     <li class="pad-mid">
     {%- include 'profile.image.html' -%}
-    <a href="/profile?pk={{p['public_key']}}" class="profile-name">{{p['name'] | ident_string(p['public_key'], p['nip05'], p['nip05_validated']) | safe }}</a>
+    <a href="/profile?pk={{p['public_key']}}" class="profile-name">{{p['name'] | ident_string(p['display_name'], p['public_key']) | safe }}</a>
     </li>
 {%- endfor -%}
 </ul>

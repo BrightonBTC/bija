@@ -482,6 +482,7 @@ class MetadataEvent:
     def __init__(self, event):
         self.event = event
         self.name = None
+        self.display_name = None
         self.nip05 = None
         self.about = None
         self.picture = None
@@ -500,6 +501,8 @@ class MetadataEvent:
         s = json.loads(self.event.content)
         if 'name' in s:
             self.name = strip_tags(s['name'].strip())
+        if 'display_name' in s:
+            self.display_name = strip_tags(s['display_name'].strip())
         if 'nip05' in s and is_nip05(s['nip05']):
             self.nip05 = s['nip05'].strip()
         if 'about' in s:
@@ -531,6 +534,7 @@ class MetadataEvent:
         DB.upd_profile(
             self.event.public_key,
             self.name,
+            self.display_name,
             self.nip05,
             self.picture,
             self.about,

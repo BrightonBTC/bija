@@ -55,30 +55,32 @@ def _jinja2_filter_decr(content, pubkey, privkey):
     except ValueError:
         return 'could not decrypt!'
 
-
-@app.template_filter('ident_string')
-def _jinja2_filter_ident(name, pk, nip5=None, validated=None, long=True):
-    html = "<span class='uname' data-pk='{}'><span class='name'>{}</span></span> "
-    nip5_htm = ""
-    if long:
-        html = "<span class='nip5' title='{}'>{}</span><span class='uname' data-pk='{}'><span class='name'>@{}</span></span>"
-    if nip5 is not None and long:
+@app.template_filter('nip05_valid')
+def _jinja2_filter_nip5(nip5, validated):
+    htm = "<span class='nip5' title='{}'>{}</span>"
+    if nip5 is not None:
         if nip5[0:2] == "_@":
             nip5 = nip5[2:]
         if validated:
             status = 'verified'
         else:
             status = 'warn'
-        #nip5 = " <img src='/static/{}.svg' class='icon-sm nip5-{}' title='{}'> ".format(status, status, nip5)
         nip5_htm = render_template('svg/{}.svg'.format(status), title=nip5, class_name='icon-sm {}'.format(status))
-    elif name is None or len(name.strip()) < 1:
-        name = "{}&#8230;".format(pk[0:21])
+        return htm.format(nip5, nip5_htm)
+    return ''
 
+@app.template_filter('ident_string')
+def _jinja2_filter_ident(name, display_name, pk, long=True):
+    html = "<span class='uname' data-pk='{}'><span class='name'>@{}</span></span> "
     if long:
-        if nip5 is None:
-            nip5 = ""
-            nip5_htm = ""
-        return html.format(nip5, nip5_htm, pk, name)
+        html = "<span class='long-name'><span class='uname' data-pk='{}'><span class='display_name'>{}</span><span class='name'>@{}</span></span></span>"
+
+    if name is None or len(name.strip()) < 1:
+        name = "{}&#8230;".format(pk[0:21])
+    if long:
+        if display_name is None:
+            display_name = ''
+        return html.format(pk, display_name, name)
 
     return html.format(pk, name)
 
@@ -102,16 +104,16 @@ def _jinja2_filter_relate(pk):
 def _jinja2_filter_responders(the_dict, n):
     names = []
     for pk, name in the_dict.items():
-        names.append([pk, _jinja2_filter_ident(name, pk, long=False)])
+        names.append([pk, _jinja2_filter_ident(name, '', pk, long=False)])
 
     if n == 1:
-        html = '<a href="/profile?pk={}">@{}</a> commented'
+        html = '<a href="/profile?pk={}">{}</a> commented'
         return html.format(names[0][0], names[0][1])
     elif n == 2:
-        html = '<a href="/profile?pk={}">@{}</a> and <a href="/profile?pk={}">@{}</a> commented'
+        html = '<a href="/profile?pk={}">{}</a> and <a href="/profile?pk={}">{}</a> commented'
         return html.format(names[0][0], names[0][1], names[1][0], names[1][1])
     else:
-        html = '<a href="/profile?pk={}">@{}</a>, <a href="/profile?pk={}">@{}</a> and {} other contacts commented'
+        html = '<a href="/profile?pk={}">{}</a>, <a href="/profile?pk={}">{}</a> and {} other contacts commented'
         return html.format(names[0][0], names[0][1], names[1][0], names[1][1], n - 2)
 
 

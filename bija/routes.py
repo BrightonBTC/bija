@@ -480,7 +480,7 @@ def update_profile():
     if request.method == 'POST':
         profile = {}
         for item in request.json:
-            valid_vals = ['name', 'about', 'picture', 'nip05', 'website', 'lud06', 'lud16']
+            valid_vals = ['name', 'display_name', 'about', 'picture', 'nip05', 'website', 'lud06', 'lud16']
             if item[0] in valid_vals and len(item[1].strip()) > 0:
                 profile[item[0]] = item[1].strip()
         if 'nip05' in profile and len(profile['nip05']) > 0:

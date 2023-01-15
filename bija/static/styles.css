@@ -250,6 +250,7 @@ hr{
 }
 .icon-sm.verified *{
     stroke: var(--verified);
+    fill: var(--bg-clr1);
 }
 .icon-sm.warn *{
     stroke: var(--warning);
@@ -507,6 +508,12 @@ input.post-submit {
     object-fit: cover;
     border: 5px solid var(--bdr-clr-1);
     border-radius: var(--rnd-mid);
+}
+.long-name .uname .name {
+    font-weight: 100;
+    color: var(--txt-clr2);
+    font-style: italic;
+    font-size: var(--fs-sm);
 }
 
 
@@ -913,13 +920,20 @@ svg.lightning *{
 }
 .note-image{
     flex: 0 0 var(--pfp-dim);
+    position: relative;
 }
 .note-image img{
     width: var(--pfp-dim);
     height: var(--pfp-dim);
     position: relative;
 }
-
+.note-image .nip5 {
+    position: absolute;
+    z-index: 10;
+    left: calc(var(--pfp-dim) - var(--spacing-mid)/1.2);
+    filter: drop-shadow(1px 2px 3px var(--bg-clr1));
+    margin-top: calc(0px - var(--spacing-mid)/3);
+}
 .thread-pointer{
     position: absolute;
     border: 2px dashed var(--bdr-clr-2);

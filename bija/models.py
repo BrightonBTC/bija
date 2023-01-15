@@ -18,6 +18,7 @@ class Profile(Base):
     __tablename__ = "profile"
     public_key = Column(String(64), primary_key=True)
     name = Column(String, nullable=True)
+    display_name = Column(String, nullable=True)
     nip05 = Column(String, nullable=True)
     pic = Column(String, nullable=True)
     about = Column(String, nullable=True)
@@ -25,15 +26,6 @@ class Profile(Base):
     nip05_validated = Column(Boolean, default=False)
     raw = Column(String)
 
-    # followers = relationship(
-    #     "Follower",
-    #     back_populates="followers"
-    # )
-    # following = relationship(
-    #     "Follower",
-    #     primaryjoin="Follower.pk_2 == Profile.public_key",
-    #     back_populates="following"
-    # )
     notes = relationship("Note", back_populates="profile")
 
 class Follower(Base):
@@ -42,8 +34,6 @@ class Follower(Base):
     pk_1 = Column(Integer, ForeignKey("profile.public_key"))
     pk_2 = Column(Integer, ForeignKey("profile.public_key"))
 
-    # followers = relationship("Profile", back_populates="followers", foreign_keys=[pk_1])
-    # following = relationship("Profile", back_populates="following", foreign_keys=[pk_2])
     UniqueConstraint(pk_1, pk_2, name='uix_1', sqlite_on_conflict='IGNORE')
 
 

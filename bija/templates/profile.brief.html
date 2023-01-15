@@ -11,6 +11,6 @@
         {%- include 'profile.image.html' -%}
     </div>
     <div class="profile-details profile-item">
-        <a class="name" href="/profile?pk={{profile['public_key']}}">{{profile['name'] | ident_string(profile['public_key'], profile['nip05'], profile['nip05_validated']) | safe }}</a>
+        <a class="name" href="/profile?pk={{profile['public_key']}}">{{profile['name'] | ident_string(profile['display_name'], profile['public_key']) | safe }}</a>
     </div>
 </div>
