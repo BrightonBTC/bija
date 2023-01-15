@@ -116,7 +116,7 @@ class RelayHandler:
                 self.notify_empty_queue = False
 
         i = 0
-        while RELAY_MANAGER.message_pool.has_events() and i < 100:
+        while RELAY_MANAGER.message_pool.has_events() and i < 20:
             i += 1
             msg = RELAY_MANAGER.message_pool.get_event()
             if DB.get_event(msg.event.id) is None:
@@ -487,9 +487,11 @@ class MetadataEvent:
         self.about = None
         self.picture = None
         self.nip05_validated = False
+        self.success = True
         if self.is_fresh():
             self.process_content()
-            self.store()
+            if self.success:
+                self.store()
 
     def is_fresh(self):
         ts = DB.get_profile_last_upd(self.event.public_key)
@@ -498,7 +500,12 @@ class MetadataEvent:
         return False
 
     def process_content(self):
-        s = json.loads(self.event.content)
+        try:
+            s = json.loads(self.event.content)
+        except ValueError as e:
+            self.success = False
+            return
+
         if 'name' in s:
             self.name = strip_tags(s['name'].strip())
         if 'display_name' in s:
