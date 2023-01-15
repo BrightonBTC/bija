@@ -766,7 +766,7 @@ def follow():
     if upd == "1":
         return render_template("profile.tools.html", profile=profile, is_me=is_me, am_following=int(request.args['state']))
     else:
-        return render_template("upd.json", data=json.dumps({'followed': True}))
+        return render_template("svg/following.svg", class_name="icon")
 
 
 @app.route('/fetch_raw', methods=['GET'])
