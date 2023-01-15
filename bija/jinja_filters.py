@@ -123,7 +123,7 @@ def _jinja2_filter_media(json_string):
     if len(a) > 0:
         media = a[0]
         if media[1] == 'image':
-            return '<div class="image-attachment"><img src="{}"></div>'.format(media[0])
+            return '<div class="image-attachment"><img data-src="{}" data-srcset="{}" src="/static/blank.png" class="lazy-load"></div>'.format(media[0], media[0])
         elif media[1] == 'og':
             return render_template("note.og.html", data=media[0])
         elif media[1] == 'video':
