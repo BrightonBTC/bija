@@ -93,7 +93,7 @@ class BijaDB:
                 pk_2=their_pk
             ))
         else:
-            self.session.query(Follower).filter(pk_1=my_pk).filter(pk_2=their_pk).delete()
+            self.session.query(Follower).filter(Follower.pk_1==my_pk).filter(Follower.pk_2==their_pk).delete()
         self.session.commit()
 
     def get_following_pubkeys(self, public_key):

@@ -14,7 +14,7 @@ default_settings = {
     'pow_default_enc': '12',
     'pow_required': '8',
     'pow_required_enc': '16',
-    'theme': 'dark1'
+    'theme': 'default'
 }
 
 themes = {
@@ -28,7 +28,7 @@ themes = {
         'lnk-clr-hvr': '#03d4f6',
         'lnk-clr2': '#b25eb8',
         'bg-clr1': '#121a3a',
-        'bg-clr1-fade': '#1e0f26',
+        'bg-clr1-fade': '#0c1228',
         'bg-clr2': '#10162e',
         'bg-clr3': '#030324',
         'bdr-clr-1': '#00002b',

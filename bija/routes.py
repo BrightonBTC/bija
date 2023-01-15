@@ -3,6 +3,7 @@ from functools import wraps
 
 import bip39
 import pydenticon
+import validators
 from flask import request, redirect, make_response, url_for
 from flask_executor import Executor
 
@@ -159,7 +160,9 @@ def profile_page():
             is_me=data.is_me,
             am_following=data.am_following,
             meta=data.meta,
-            pubkey=data.pubkey
+            pubkey=data.pubkey,
+            website=data.website,
+            has_ln=data.has_ln
         )
     else:
         return render_template(
@@ -170,7 +173,9 @@ def profile_page():
             profiles=data.data,
             is_me=data.is_me,
             meta=data.meta,
-            am_following=data.am_following
+            am_following=data.am_following,
+            website=data.website,
+            has_ln=data.has_ln
         )
 
 class ProfilePage:
@@ -179,6 +184,8 @@ class ProfilePage:
         self.page = 'profile'
         self.is_me = False
         self.am_following = False
+        self.has_ln = False
+        self.website = None
         self.pubkey = self.set_pubkey()
         self.page_id = self.set_page_id()
         self.profile = None
@@ -230,8 +237,13 @@ class ProfilePage:
             raw = json.loads(self.profile.raw)
             meta = json.loads(raw['content'])
             for item in meta.keys():
-                if item in ['website', 'lud06', 'lud16'] and len(meta[item].strip()) > 0:
-                    metadata[item] = meta[item]
+                val = str(meta[item]).strip()
+                if item in ['lud06', 'lud16'] and len(val) > 0:
+                    self.has_ln = True
+                    metadata[item] = val
+                elif item == 'website' and len(val) > 0 and validators.url(val):
+                    self.website = val
+                    metadata[item] = val
         self.meta = metadata
 
     def get_data(self):
@@ -245,6 +257,20 @@ class ProfilePage:
             self.data = DB.get_following(SETTINGS.get('pubkey'), self.pubkey)
         elif self.page == 'followers':
             self.data = DB.get_followers(SETTINGS.get('pubkey'), self.pubkey)
+
+@app.route('/get_profile_sharer', methods=['GET'])
+def get_profile_sharer():
+    pk = request.args['pk']
+    return render_template("profile.sharer.html", hex=pk, bech32=hex64_to_bech32("npub", pk))
+
+@app.route('/get_ln_details', methods=['GET'])
+def get_ln_details():
+    pk = request.args['pk']
+    profile = DB.get_profile(pk)
+    d = json.loads(profile.raw)
+
+    return render_template("profile.lightning.html", data=json.loads(d['content']), name=profile.name)
+
 
 
 @app.route('/profile_feed', methods=['GET'])
@@ -738,7 +764,7 @@ def follow():
     is_me = request.args['id'] == SETTINGS.get('pubkey')
     upd = request.args['upd']
     if upd == "1":
-        return render_template("profile.tools.html", profile=profile, is_me=is_me)
+        return render_template("profile.tools.html", profile=profile, is_me=is_me, am_following=int(request.args['state']))
     else:
         return render_template("upd.json", data=json.dumps({'followed': True}))
 

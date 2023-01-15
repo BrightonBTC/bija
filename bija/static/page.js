@@ -656,6 +656,10 @@ class bijaMessages{
 class bijaProfile{
 
     constructor(){
+
+        const profile_el = document.querySelector('#profile')
+        this.public_key = profile_el.dataset.pk
+
         this.setEventListeners()
         const main_el = document.querySelector('.main')
         let page = main_el.dataset.page
@@ -665,8 +669,6 @@ class bijaProfile{
         const nav_el = main_el.querySelector('.profile-menu a[data-page="'+page+'"]')
         if(nav_el){
             nav_el.classList.add('actv')
-        }
-        else{
         }
     }
 
@@ -730,6 +732,31 @@ class bijaProfile{
         if(invalid_nip5){
             this.setNip5Validator()
         }
+        const share_btn = document.querySelector('.share-profile')
+        if(share_btn){
+            this.setShareBtn(share_btn)
+        }
+        const ln_btn = document.querySelector('.lightning')
+        if(ln_btn){
+            this.setLNBtn(ln_btn)
+        }
+    }
+
+    setLNBtn(el){
+        el.addEventListener('click', (e) => {
+            const cb = function(response, data){
+                popup(response)
+            }
+            fetchGet('/get_ln_details?pk='+this.public_key, cb, {})
+        });
+    }
+    setShareBtn(el){
+        el.addEventListener('click', (e) => {
+            const cb = function(response, data){
+                popup(response)
+            }
+            fetchGet('/get_profile_sharer?pk='+this.public_key, cb, {})
+        });
     }
 
     setNip5Validator(){

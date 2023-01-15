@@ -58,10 +58,10 @@ def _jinja2_filter_decr(content, pubkey, privkey):
 
 @app.template_filter('ident_string')
 def _jinja2_filter_ident(name, pk, nip5=None, validated=None, long=True):
-    html = "<span class='uname' data-pk='{}'><span class='name'>{}</span> "
+    html = "<span class='uname' data-pk='{}'><span class='name'>{}</span></span> "
     nip5_htm = ""
     if long:
-        html = "<span class='nip5' title='{}'>{}</span><span class='uname' data-pk='{}'><span class='name'>{}</span>"
+        html = "<span class='nip5' title='{}'>{}</span><span class='uname' data-pk='{}'><span class='name'>@{}</span></span>"
     if nip5 is not None and long:
         if nip5[0:2] == "_@":
             nip5 = nip5[2:]
@@ -82,6 +82,21 @@ def _jinja2_filter_ident(name, pk, nip5=None, validated=None, long=True):
 
     return html.format(pk, name)
 
+@app.template_filter('relationship')
+def _jinja2_filter_relate(pk):
+    htm = '<span class="tag">{}</span>'
+    if pk == SETTINGS.get('pubkey'):
+        return ''
+    follows_me = DB.a_follows_b(pk, SETTINGS.get('pubkey'))
+    i_follow = DB.a_follows_b(SETTINGS.get('pubkey'), pk)
+    if follows_me and i_follow:
+        return htm.format('you follow each other')
+    elif follows_me:
+        return htm.format('follows you')
+    elif i_follow:
+        return htm.format('following')
+    else:
+        return ''
 
 @app.template_filter('responders_string')
 def _jinja2_filter_responders(the_dict, n):
@@ -193,6 +208,27 @@ def construct_invoice(content: str):
     except:
         return False
 
+@app.template_filter('QR')
+def _jinja2_filter_qr(string):
+    try:
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(string)
+        qr.make(fit=True)
+
+        img = qr.make_image(fill_color="black", back_color="white")
+        img_byte_arr = io.BytesIO()
+        img.save(img_byte_arr, format='PNG')
+        img_byte_arr = img_byte_arr.getvalue()
+        img64 = base64.b64encode(img_byte_arr).decode()
+        out = '<img src="data:image/png;base64,{}">'.format(img64)
+        return out
+    except:
+        return False
 
 @app.template_filter('get_thread_root')
 def _jinja2_filter_thread_root(root, reply, note_id):
