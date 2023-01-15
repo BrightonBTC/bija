@@ -798,11 +798,10 @@ class bijaProfile{
                 document.querySelector(".profile-tools").innerHTML = response
             }
             else{
-                const f_btn = document.createElement('img')
-                f_btn.classList.add('icon')
-                f_btn.src = '/static/following.svg'
                 const c_btn = document.querySelector(".follow-btn[data-rel='"+data.id+"']")
-                c_btn.replaceWith(f_btn)
+                const doc = new DOMParser().parseFromString(response, "text/html")
+                const svg = doc.body.firstChild
+                c_btn.replaceWith(svg)
             }
         }
         fetchGet('/follow?id='+id+"&state="+state+"&upd="+upd, cb, {'upd':upd,'id':id})
@@ -1046,7 +1045,7 @@ class bijaNotes{
                     event.stopPropagation();
                     const on_get_info = function(response, data){
                         if(response['data']){
-                            popup("<pre>"+JSON.stringify(JSON.parse(response['data']), null, 2)+"</pre>")
+                            popup("<pre class='break-word'><h3>Raw event data</h3>"+JSON.stringify(JSON.parse(response['data']), null, 2)+"</pre>")
                         }
                     }
                     fetchGet('/fetch_raw?id='+note_id, on_get_info, {}, 'json')
@@ -1148,7 +1147,7 @@ class bijaFeed{
 
     constructor(){
         const main_el = document.querySelector(".main[data-page]")
-        if(main_el.dataset.page=='home'){
+        if(['home', 'profile-me'].includes(main_el.dataset.page)){
             new Emojis(main_el.querySelector('#note-poster'))
         }
 

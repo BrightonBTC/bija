@@ -51,6 +51,7 @@
     --nav-icon-clr: #7581a7;
 
     --pfp-dim: 40px;
+    --pfp-dim-lg: 60px;
     --pfp-dim-xl: 120px;
 
     --warning: red;
@@ -657,11 +658,11 @@ input.post-submit {
 }
 
 .following-list .pic{
-    flex-basis: 60px;
+    flex-basis: var(--pfp-dim-lg);
 }
 .following-list .pic img{
-    width:60px;
-    height: 60px;
+    width:var(--pfp-dim-lg);
+    height: var(--pfp-dim-lg);
 }
 .following-list .name{
     flex: 1;
@@ -810,7 +811,7 @@ svg.lightning *{
     padding: var(--spacing-mid2) var(--spacing-lg);
     border-radius: var(--rnd-lg);
     max-width: 520px;
-    margin: 0 var(--spacing-xl);
+    margin: 0 var(--spacing-mid);
 }
 .them .speech-bubble{
     background: var(--bg-clr2);
@@ -855,10 +856,11 @@ svg.lightning *{
     padding: var(--spacing-sm);
 }
 .msg-profile-pic{
-    flex-basis: 60px;
+    flex-basis: calc(var(--pfp-dim-lg)+var(--spacing-sm)*2);
 }
 .msg-profile-pic img{
-    width: 60px;
+    width: var(--pfp-dim-lg);
+    height: var(--pfp-dim-lg);
     border-radius:var(--rnd-lg);
 }
 .msg-profile-name{
@@ -1225,6 +1227,7 @@ p.note-tools {
     left: 0;
     background: var(--bg-clr3);
     right: 25%;
+    flex-direction: column;
 }
 .emoji_selector div *{
     float: left;
@@ -1232,7 +1235,6 @@ p.note-tools {
 }
 .emoji_selector input{
     display: none;
-    width: 30%;
     margin: 0;
     padding: var(--spacing-sm);
 }
