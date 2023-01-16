@@ -65,12 +65,12 @@ class SubscribePrimary(Subscribe):
         if len(following_pubkeys) > 0:
             following_filter = Filter(
                 authors=following_pubkeys,
-                kinds=[EventKind.TEXT_NOTE, EventKind.REACTION, EventKind.DELETE, EventKind.CONTACTS],
+                kinds=[EventKind.TEXT_NOTE, EventKind.REACTION, EventKind.DELETE],
                 since=timestamp_minus(TimePeriod.DAY)  # TODO: should be configurable in user settings
             )
             following_profiles_filter = Filter(
                 authors=following_pubkeys,
-                kinds=[EventKind.SET_METADATA],
+                kinds=[EventKind.SET_METADATA, EventKind.CONTACTS],
             )
             f.append(following_filter)
             f.append(following_profiles_filter)

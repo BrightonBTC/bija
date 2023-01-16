@@ -217,3 +217,6 @@ def request_url_head(url):
     except requests.exceptions.HTTPError as e:
         logging.error(e)
         return False
+    except Exception as e:
+        logging.error(e)
+        return False
