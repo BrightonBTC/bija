@@ -430,7 +430,7 @@ class bijaNotePoster{
                 max_btn.style.display = 'block'
             }
             else{
-                container.classList.remove('minimised')
+                container.classList.add('expanded')
                 ct.focus()
                 max_btn.style.display = 'block'
             }
