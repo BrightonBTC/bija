@@ -1,10 +1,6 @@
 import logging
-import os
 import ssl
-import textwrap
-import threading
 import time
-from urllib.parse import urlparse
 
 import validators as validators
 from flask import render_template
@@ -14,7 +10,7 @@ from bija.args import LOGGING_LEVEL
 from bija.deferred_tasks import TaskKind, DeferredTasks
 from bija.helpers import get_embeded_tag_indexes, \
     list_index_exists, get_urls_in_string, request_nip05, url_linkify, strip_tags, request_relay_data, is_nip05, \
-    is_bech32_key, bech32_to_hex64
+    is_bech32_key, bech32_to_hex64, request_url_head
 from bija.app import RELAY_MANAGER
 from bija.subscriptions import *
 from bija.submissions import *
@@ -588,14 +584,16 @@ class NoteEvent:
             logger.info('process {}'.format(url))
             if validators.url(url):
                 logger.info('{} validated'.format(url))
-                path = urlparse(url).path
-                extension = os.path.splitext(path)[1]
-                if extension.lower() in ['.png', '.svg', '.gif', '.jpg', '.jpeg']:
-                    logger.info('{} is image'.format(url))
-                    self.media.append((url, 'image'))
-                if extension.lower() in ['.mp4', '.mov', '.ogg', '.webm', '.avi']:
-                    logger.info('{} is vid'.format(url))
-                    self.media.append((url, 'video', extension.lower()[1:]))
+                h = request_url_head(url)
+                if h:
+                    ct = h.get('content-type')
+                    if ct in ['image/apng', 'image/png', 'image/avif', 'image/gif', 'image/jpeg', 'image/svg+xml', 'image/webp']:
+                        logger.info('{} is image'.format(url))
+                        self.media.append((url, 'image'))
+                    elif ct in ["video/webm", "video/ogg", "video/mp4"]:
+                        logger.info('{} is vid'.format(url))
+                        ext = ct.split('/')
+                        self.media.append((url, 'video', ext[1]))
 
         if len(self.media) < 1 and len(urls) > 0:
             logger.info('note has urls')
