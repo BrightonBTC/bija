@@ -204,3 +204,16 @@ def request_relay_data(url):
     except TimeoutError:
         print("Request timed out")
         return False
+
+def request_url_head(url):
+    try:
+        h = requests.head(url, timeout=1)
+        if h.status_code == 200:
+            return h.headers
+        return False
+    except requests.exceptions.Timeout as e:
+        logging.error(e)
+        return False
+    except requests.exceptions.HTTPError as e:
+        logging.error(e)
+        return False
