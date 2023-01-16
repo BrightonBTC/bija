@@ -212,6 +212,8 @@ class NoteThread:
                 n['class'] = 'root'
                 n['reshare'] = self.get_reshare(n)
                 break
+        if len(self.root) < 1:
+            self.root = [self.root_id]
 
     def get_reshare(self, note):
         logger.info('get reshare')

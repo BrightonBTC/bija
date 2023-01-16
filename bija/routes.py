@@ -162,7 +162,9 @@ def profile_page():
             meta=data.meta,
             pubkey=data.pubkey,
             website=data.website,
-            has_ln=data.has_ln
+            has_ln=data.has_ln,
+            n_following=data.following_count,
+            n_followers=data.follower_count
         )
     else:
         return render_template(
@@ -175,7 +177,9 @@ def profile_page():
             meta=data.meta,
             am_following=data.am_following,
             website=data.website,
-            has_ln=data.has_ln
+            has_ln=data.has_ln,
+            n_following=data.following_count,
+            n_followers=data.follower_count
         )
 
 class ProfilePage:
@@ -184,6 +188,8 @@ class ProfilePage:
         self.page = 'profile'
         self.is_me = False
         self.am_following = False
+        self.follower_count = 0
+        self.following_count = 0
         self.has_ln = False
         self.website = None
         self.pubkey = self.set_pubkey()
@@ -199,6 +205,7 @@ class ProfilePage:
         EXECUTOR.submit(RELAY_HANDLER.set_page(self.page, self.pubkey))
 
         self.set_profile()
+        self.set_contact_counts()
         self.set_meta()
         self.get_data()
 
@@ -230,6 +237,10 @@ class ProfilePage:
         if self.profile is None:
             DB.add_profile(self.pubkey)
             self.profile = DB.get_profile(self.pubkey)
+
+    def set_contact_counts(self):
+        self.follower_count = DB.get_followers(SETTINGS.get('pubkey'), self.pubkey, True)
+        self.following_count = DB.get_following(SETTINGS.get('pubkey'), self.pubkey, True)
 
     def set_meta(self):
         metadata = {}
