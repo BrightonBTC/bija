@@ -56,7 +56,7 @@ def get_at_tags(content: str) -> list[Any]:
 
 
 def get_hash_tags(content: str) -> list[Any]:
-    regex = re.compile(r'\B#\w*[a-zA-Z]+\w*\s')
+    regex = re.compile(r'\B#\w*[a-zA-Z]+\w*\W')
     return re.findall(regex, content+' ')
 
 
