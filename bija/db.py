@@ -126,10 +126,7 @@ class BijaDB:
         profiles = profiles.outerjoin(following_counts,
                         and_(following_counts.c.pk_1 == my_pk, following_counts.c.pk_2 == Profile.public_key))
         profiles = profiles.filter(Follower.pk_1==public_key).all()
-        out = []
-        for p in profiles:
-            out.append(dict(p))
-        return out
+        return profiles
 
     def get_followers(self, my_pk, public_key):
         following_counts = self.session.query(
@@ -154,10 +151,7 @@ class BijaDB:
         profiles = profiles.outerjoin(following_counts,
                         and_(following_counts.c.pk_1 == my_pk, following_counts.c.pk_2 == Profile.public_key))
         profiles = profiles.filter(Follower.pk_2==public_key).all()
-        out = []
-        for p in profiles:
-            out.append(dict(p))
-        return out
+        return profiles
 
     def a_follows_b(self, pk_a, pk_b):
         r = self.session.query(Follower).filter(Follower.pk_1==pk_a).filter(Follower.pk_2==pk_b)
