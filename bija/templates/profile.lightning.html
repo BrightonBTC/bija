@@ -1,0 +1,16 @@
+<h3>Send @{{name}} a tip with {{'lightning'| svg_icon('icon lightning')|safe}} lightning</h3>
+<div class="lightning-details">
+    <div class="details">
+        {%- if data['lud16'] is not none and data['lud16']|length > 0 -%}
+        <p class="sm"><span class="tag">Lightning Address</span><br>{{data['lud16']}}</p>
+        {%- endif -%}
+        {%- if data['lud06'] is not none and data['lud06']|length > 0 -%}
+        <p class="sm break-word lnurl"><span class="tag">LNURL</span> <br>{{data['lud06']}}</p>
+        {%- endif -%}
+    </div>
+    <div class="qr">
+    {%- if data['lud06'] is not none and data['lud06']|length > 0 -%}
+    {{data['lud06']|QR|safe}}
+    {%- endif -%}
+    </div>
+</div>

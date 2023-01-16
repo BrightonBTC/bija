@@ -1,5 +1,5 @@
 <div class="ln_invoice">
-    <div class="sm"><h3>⚡️ Lightning invoice</h3>
+    <div class="sm"><h4>{{'lightning'| svg_icon('icon-lg lightning')|safe}} Lightning invoice</h4>
         <p><strong>Amount</strong>: {{ data['sats'] }} sats</p>
         {%- if data['description']| length > 0 -%}
         <p><strong>Description</strong>:<br> {{- data['description'] -}}</p>

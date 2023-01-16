@@ -413,6 +413,28 @@ class bijaNotePoster{
             }
             fetchFromForm('/submit_note', form, cb, {}, 'json');
         });
+
+
+        const container = document.querySelector('#note-poster');
+        const ct = document.querySelector('#new_post');
+        const max_btn = form.querySelector('.maximise');
+        if(ct){
+            ct.addEventListener('focus', (e) => {
+                ct.classList.add('focus')
+            });
+        }
+        max_btn.addEventListener('click', (e) => {
+            if(container.classList.contains('expanded')){
+                container.classList.remove('expanded')
+                ct.focus()
+                max_btn.style.display = 'block'
+            }
+            else{
+                container.classList.add('expanded')
+                ct.focus()
+                max_btn.style.display = 'block'
+            }
+        });
     }
 }
 
@@ -656,6 +678,10 @@ class bijaMessages{
 class bijaProfile{
 
     constructor(){
+
+        const profile_el = document.querySelector('#profile')
+        this.public_key = profile_el.dataset.pk
+
         this.setEventListeners()
         const main_el = document.querySelector('.main')
         let page = main_el.dataset.page
@@ -665,8 +691,6 @@ class bijaProfile{
         const nav_el = main_el.querySelector('.profile-menu a[data-page="'+page+'"]')
         if(nav_el){
             nav_el.classList.add('actv')
-        }
-        else{
         }
     }
 
@@ -730,6 +754,31 @@ class bijaProfile{
         if(invalid_nip5){
             this.setNip5Validator()
         }
+        const share_btn = document.querySelector('.share-profile')
+        if(share_btn){
+            this.setShareBtn(share_btn)
+        }
+        const ln_btn = document.querySelector('.lightning')
+        if(ln_btn){
+            this.setLNBtn(ln_btn)
+        }
+    }
+
+    setLNBtn(el){
+        el.addEventListener('click', (e) => {
+            const cb = function(response, data){
+                popup(response)
+            }
+            fetchGet('/get_ln_details?pk='+this.public_key, cb, {})
+        });
+    }
+    setShareBtn(el){
+        el.addEventListener('click', (e) => {
+            const cb = function(response, data){
+                popup(response)
+            }
+            fetchGet('/get_profile_sharer?pk='+this.public_key, cb, {})
+        });
     }
 
     setNip5Validator(){
@@ -771,11 +820,10 @@ class bijaProfile{
                 document.querySelector(".profile-tools").innerHTML = response
             }
             else{
-                const f_btn = document.createElement('img')
-                f_btn.classList.add('icon')
-                f_btn.src = '/static/following.svg'
                 const c_btn = document.querySelector(".follow-btn[data-rel='"+data.id+"']")
-                c_btn.replaceWith(f_btn)
+                const doc = new DOMParser().parseFromString(response, "text/html")
+                const svg = doc.body.firstChild
+                c_btn.replaceWith(svg)
             }
         }
         fetchGet('/follow?id='+id+"&state="+state+"&upd="+upd, cb, {'upd':upd,'id':id})
@@ -1019,7 +1067,7 @@ class bijaNotes{
                     event.stopPropagation();
                     const on_get_info = function(response, data){
                         if(response['data']){
-                            popup("<pre>"+JSON.stringify(JSON.parse(response['data']), null, 2)+"</pre>")
+                            popup("<pre class='break-word'><h3>Raw event data</h3>"+JSON.stringify(JSON.parse(response['data']), null, 2)+"</pre>")
                         }
                     }
                     fetchGet('/fetch_raw?id='+note_id, on_get_info, {}, 'json')
@@ -1121,15 +1169,8 @@ class bijaFeed{
 
     constructor(){
         const main_el = document.querySelector(".main[data-page]")
-        if(main_el.dataset.page=='home'){
+        if(['home', 'profile-me'].includes(main_el.dataset.page)){
             new Emojis(main_el.querySelector('#note-poster'))
-        }
-
-        const ct = document.querySelector('#new_post');
-        if(ct){
-            ct.addEventListener('focus', (e) => {
-                ct.classList.add('focus')
-            });
         }
 
         this.page = main_el.dataset.page

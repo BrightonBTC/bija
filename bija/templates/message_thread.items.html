@@ -25,7 +25,7 @@
 {%- endif -%}
 
 <div class="msg {{class}}" data-dt="{{message['created_at']}}">
-    <div class="msg-profile-pic"><img src='{{pic}}'></div>
+    <div class="msg-profile-pic"><img class="user-image" src='{{pic}}'></div>
     <div class="msg-profile">
         <div class="speech-bubble">
             <div>{{message.content|decr(message.public_key, privkey)|safe}}</div>

@@ -2,10 +2,11 @@
 <div class="note" data-dt="{{note['created_at']}}" data-processed="0" data-id="{{note['id']}}">
     <h3>
         <a href="/profile?pk={{note['public_key']}}" class="profile-name">
+            {{note['name'] | ident_string(note['display_name'], note['public_key']) | safe }}
             {%- if note['following'] is not none and note['following']==1 -%}
-            {{'following'| svg_icon('icon')|safe}}
+            &nbsp; {{'following'| svg_icon('icon')|safe}}
             {%- endif -%}
-            {{note['name'] | ident_string(note['public_key'], note['nip05'], note['nip05_validated']) | safe }}</a>
+        </a>
         <span class="note-info">
             <span class="sm dt" data-ts="{{note['created_at']}}">
                 {{note['created_at']|dt}}

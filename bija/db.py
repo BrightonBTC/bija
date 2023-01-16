@@ -93,7 +93,7 @@ class BijaDB:
                 pk_2=their_pk
             ))
         else:
-            self.session.query(Follower).filter(pk_1=my_pk).filter(pk_2=their_pk).delete()
+            self.session.query(Follower).filter(Follower.pk_1==my_pk).filter(Follower.pk_2==their_pk).delete()
         self.session.commit()
 
     def get_following_pubkeys(self, public_key):
@@ -103,7 +103,7 @@ class BijaDB:
             out.append(k.pk_2)
         return out
 
-    def get_following(self, my_pk, public_key):
+    def get_following(self, my_pk, public_key, count=False):
         following_counts = self.session.query(
             Follower.pk_1,
             Follower.pk_2,
@@ -116,6 +116,7 @@ class BijaDB:
         profiles = self.session.query(
             Profile.public_key,
             Profile.name,
+            Profile.display_name,
             Profile.pic,
             Profile.nip05,
             Profile.nip05_validated,
@@ -124,13 +125,12 @@ class BijaDB:
         profiles = profiles.join(Follower, Follower.pk_2==Profile.public_key)
         profiles = profiles.outerjoin(following_counts,
                         and_(following_counts.c.pk_1 == my_pk, following_counts.c.pk_2 == Profile.public_key))
-        profiles = profiles.filter(Follower.pk_1==public_key).all()
-        out = []
-        for p in profiles:
-            out.append(dict(p))
-        return out
+        profiles = profiles.filter(Follower.pk_1==public_key)
+        if count:
+            return profiles.count()
+        return profiles.all()
 
-    def get_followers(self, my_pk, public_key):
+    def get_followers(self, my_pk, public_key, count=False):
         following_counts = self.session.query(
             Follower.pk_1,
             Follower.pk_2,
@@ -143,6 +143,7 @@ class BijaDB:
         profiles = self.session.query(
             Profile.public_key,
             Profile.name,
+            Profile.display_name,
             Profile.pic,
             Profile.nip05,
             Profile.nip05_validated,
@@ -151,11 +152,10 @@ class BijaDB:
         profiles = profiles.join(Follower, Follower.pk_1==Profile.public_key)
         profiles = profiles.outerjoin(following_counts,
                         and_(following_counts.c.pk_1 == my_pk, following_counts.c.pk_2 == Profile.public_key))
-        profiles = profiles.filter(Follower.pk_2==public_key).all()
-        out = []
-        for p in profiles:
-            out.append(dict(p))
-        return out
+        profiles = profiles.filter(Follower.pk_2==public_key)
+        if count:
+            return profiles.count()
+        return profiles.all()
 
     def a_follows_b(self, pk_a, pk_b):
         r = self.session.query(Follower).filter(Follower.pk_1==pk_a).filter(Follower.pk_2==pk_b)
@@ -169,6 +169,7 @@ class BijaDB:
         profiles = self.session.query(
             Profile.public_key,
             Profile.name,
+            Profile.display_name,
             Profile.pic,
             Profile.nip05,
             Profile.nip05_validated).filter(Profile.public_key.in_(public_keys)).all()
@@ -180,6 +181,7 @@ class BijaDB:
     def upd_profile(self,
                     public_key,
                     name=None,
+                    display_name=None,
                     nip05=None,
                     pic=None,
                     about=None,
@@ -188,6 +190,7 @@ class BijaDB:
         self.session.merge(Profile(
             public_key=public_key,
             name=name,
+            display_name=display_name,
             nip05=nip05,
             pic=pic,
             about=about,
@@ -276,6 +279,7 @@ class BijaDB:
             Note.shared,
             Note.deleted,
             Profile.name,
+            Profile.display_name,
             Profile.pic,
             Profile.nip05,
             Profile.nip05_validated,
@@ -339,6 +343,7 @@ class BijaDB:
             ReactionTally.replies,
             ReactionTally.shares,
             Profile.name,
+            Profile.display_name,
             Profile.pic,
             Profile.nip05,
             Profile.nip05_validated,
@@ -429,6 +434,7 @@ class BijaDB:
             Note.members,
             Note.media,
             Profile.name,
+            Profile.display_name,
             Profile.pic,
             Profile.nip05).join(Note.profile).filter(Note.id.in_(note_ids)).all()
 
@@ -448,6 +454,7 @@ class BijaDB:
             PrivateMessage.content,
             PrivateMessage.is_sender,
             Profile.name,
+            Profile.display_name,
             Profile.pic).join(Profile) \
             .filter(text(filter_string)).all()
         for item in result:
@@ -495,8 +502,7 @@ class BijaDB:
                         and_(following_counts.c.pk_1 == public_key, following_counts.c.pk_2 == Profile.public_key))
         q = q.filter(text("following=1 OR profile.public_key='{}'".format(public_key)))
 
-        for note in q:
-            self.session.query(Note).filter(Note.id==note.id).update({'seen': True})
+        self.session.query(Note).filter(Note.id.in_([x.id for x in q])).update({'seen': True})
         self.session.commit()
 
     def set_all_seen_in_topic(self, topic):
@@ -545,6 +551,7 @@ class BijaDB:
             PrivateMessage.created_at,
             PrivateMessage.public_key,
             Profile.name,
+            Profile.display_name,
             Profile.pic).join(Profile) \
             .filter(text(filter_text.format(public_key))) \
             .order_by(PrivateMessage.created_at.desc()).limit(100).all()
@@ -644,6 +651,7 @@ class BijaDB:
             Alert.content,
             Alert.seen,
             Profile.name,
+            Profile.display_name,
             Profile.public_key,
             Profile.pic,
             label("note_id", Note.id),
@@ -653,7 +661,7 @@ class BijaDB:
         ) \
             .join(Note, Note.id == Alert.event) \
             .join(Profile, Profile.public_key == Alert.profile) \
-            .order_by(Alert.ts.desc()).limit(50).all()
+            .order_by(Alert.seen.asc()).order_by(Alert.ts.desc()).limit(50).all()
 
     def get_unread_alert_count(self):
         return self.session.query(Alert).filter(Alert.seen == 0).count()
@@ -778,6 +786,7 @@ class BijaDB:
             ReactionTally.replies,
             ReactionTally.shares,
             Profile.name,
+            Profile.display_name,
             Profile.pic,
             Profile.nip05,
             Profile.nip05_validated,

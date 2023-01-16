@@ -168,7 +168,7 @@ class SubmitNote(Submit):
         matches = get_hash_tags(self.content)
         if len(matches) > 0:
             for match in matches:
-                self.tags.append(["t", match[1:]])
+                self.tags.append(["t", match[1:].strip()])
 
     def store(self):
         logger.info('insert note')

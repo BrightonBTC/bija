@@ -56,7 +56,7 @@ def get_at_tags(content: str) -> list[Any]:
 
 
 def get_hash_tags(content: str) -> list[Any]:
-    regex = re.compile(r'\B#\w*[a-zA-Z]+\w*\s')
+    regex = re.compile(r'\B#\w*[a-zA-Z]+\w*\W')
     return re.findall(regex, content+' ')
 
 
@@ -203,4 +203,17 @@ def request_relay_data(url):
         return False
     except TimeoutError:
         print("Request timed out")
+        return False
+
+def request_url_head(url):
+    try:
+        h = requests.head(url, timeout=1)
+        if h.status_code == 200:
+            return h.headers
+        return False
+    except requests.exceptions.Timeout as e:
+        logging.error(e)
+        return False
+    except requests.exceptions.HTTPError as e:
+        logging.error(e)
         return False

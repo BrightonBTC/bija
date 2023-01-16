@@ -5,7 +5,6 @@
 {%- else -%}
     {%- set about='' -%}
 {%- endif -%}
-
 {%- if profile['updated_at'] is not none -%}
     {%- set updated_at=profile['updated_at'] -%}
 {%- else -%}
@@ -22,30 +21,28 @@
         {%- endwith -%}
     </div>
     <div class="profile-details profile-item">
-        <h1 class="profile-name">{{profile['name'] | ident_string(profile['public_key'], profile['nip05'], profile['nip05_validated']) | safe }}</h1>
-        <p class="sm pk">@{{profile['public_key'] | truncate(21, False, '...')}} <img src="/static/copy.svg" class="clipboard icon-sm" data-str="{{profile['public_key']}}">
-		</p>
+        <h1 class="profile-name">{{profile['name'] | ident_string(profile['display_name'], profile['public_key']) | safe }}</h1>
+        {%- if profile['nip05'] is not none -%}<span class="tag">{{profile['nip05'] | nip05_valid(profile['nip05_validated']) | safe }} {{profile['nip05']}}</span> &nbsp; {%- endif -%}{{ profile['public_key'] | relationship | safe }}
         <pre class="profile-about">{{about| linkify| safe}}</pre>
-        {%- for item in meta: -%}
-        <p><span class="sm rnd pad-sm bg1"> {{ item }}</span><span class="sm pad-sm">{{ meta[item] }}</span></p>
-        {%- endfor -%}
+        {%- if website is not none -%}
+        <div class="profile-meta">
+            {{'web'| svg_icon('icon-sm')|safe}}<span class="sm pad-sm"><a href="{{ website }}">{{ website }}</a></span>
+        </div>
+        {%- endif -%}
     </div>
     {%- if is_me and page_id == 'profile-me' -%}
-        {%- if profile['name'] is not none -%}
-            {%- set pname=profile['name'] -%}
-        {%- else -%}
-            {%- set pname="" -%}
-        {%- endif -%}
+
         {%- if profile['pic'] is not none -%}
-            {%- set pic_url=profile['pic'] -%}
             {%- set pic=profile['pic'] -%}
         {%- else -%}
-            {%- set pic_url='' -%}
             {%- set pic="/identicon?id="+pubkey -%}
         {%- endif -%}
     <form id="profile_updater" data-vis="0">
         <label for="pname" class="sm">Handle</label>
-        <input type="text" id="pname" name="name" class="pname" value="{{pname}}">
+        <input type="text" id="pname" name="name" class="pname" value="{{profile['name'] or ''}}">
+
+        <label for="display_name" class="sm">Display name</label>
+        <input type="text" id="display_name" name="display_name" value="{{profile['display_name'] or ''}}">
 
         <label for="pmsg" class="sm">About</label>
         <textarea name="about" id="pmsg" rows="10" cols="30">{{about}}</textarea>
@@ -54,14 +51,14 @@
         <label for="pim" class="sm">Image URL</label>
         <div class="pim-up">
             <label class="note-image"><input type="file" class="profile-img-up" style="display: none;"><img src="{{ pic }}" class="user-image"></label>
-            <input type="text" id="pim" name="picture" value="{{pic_url}}">
+            <input type="text" id="pim" name="picture" value="{{profile['pic'] or ''}}">
         </div>
 
         <label for="pnip5" class="sm">Nip05 identifier</label>
         <input type="text" id="pnip5" name="nip05" value="{{profile['nip05']}}">
 
         <label for="pwebsite" class="sm">Website</label>
-        <input type="text" id="pwebsite" name="website" value="{{meta['website']}}">
+        <input type="text" id="pwebsite" name="website" value="{{website}}">
 
         <label for="plud06" class="sm">LNURL</label>
         <input type="text" id="plud06" name="lud06" value="{{meta['lud06']}}">
@@ -76,12 +73,16 @@
 <div class="profile-menu rnd">
     {%- if is_me -%}
         <a href="/profile" data-page="posts">posts</a>
-        <a href="/profile?view=following" data-page="following">following</a>
-        <a href="/profile?view=followers" data-page="followers">followers</a>
+        <a href="/profile?view=following" data-page="following">following <span class="tag">{{n_following}}</span></a>
+        <a href="/profile?view=followers" data-page="followers">followers <span class="tag">{{n_followers}}</span></a>
     {%- else -%}
         <a href="/profile?pk={{profile['public_key']}}" data-page="posts">posts</a>
-       <a href="/profile?pk={{profile['public_key']}}&view=following" data-page="following">following</a>
-       <a href="/profile?pk={{profile['public_key']}}&view=followers" data-page="followers">followers</a>
+        <a href="/profile?pk={{profile['public_key']}}&view=following" data-page="following">following <span class="tag">{{n_following}}</span></a>
+        <a href="/profile?pk={{profile['public_key']}}&view=followers" data-page="followers">followers <span class="tag">{{n_followers}}</span></a>
+    {%- endif -%}
+        {{'share'| svg_icon('icon-lg share-profile right')|safe}}
+    {%- if has_ln -%}
+        {{'lightning'| svg_icon('icon-lg lightning right')|safe}}
     {%- endif -%}
 </div>
 {%- endif -%}

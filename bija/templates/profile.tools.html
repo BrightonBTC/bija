@@ -1,5 +1,5 @@
 {%- if is_me and page_id == 'profile-me' -%}
-    <a href="#" class="profile-edit-btn">edit</a>
+    <a href="#" class="profile-edit-btn">{{'edit'| svg_icon('icon-sm')|safe}}</a>
 {%- elif am_following and not is_me -%}
     <a href="#" class="follow-btn" data-rel="{{profile['public_key']}}" data-state="0" data-upd="1">&#8722; unfollow</a> <a href="/message?pk={{profile['public_key']}}" class="private-message-btn">&#9993; message</a>
 {%- elif not is_me -%}

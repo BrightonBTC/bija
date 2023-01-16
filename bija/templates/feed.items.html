@@ -15,6 +15,7 @@
         <div class="{{root_class}}">
             <div class="thread-marker"></div>
             <div class="note-image">
+                {{post['nip05'] | nip05_valid(post['nip05_validated']) | safe }}
                 {%- with p=post -%}
                 {%- include 'profile.image.html' -%}
                 {%- endwith -%}
@@ -56,6 +57,7 @@
         <div class="note-container">
             <div class="thread-marker"></div>
             <div class="note-image">
+                {{post['nip05'] | nip05_valid(post['nip05_validated']) | safe }}
                 {%- with p=post -%}
                 {%- include 'profile.image.html' -%}
                 {%- endwith -%}

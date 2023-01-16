@@ -55,48 +55,65 @@ def _jinja2_filter_decr(content, pubkey, privkey):
     except ValueError:
         return 'could not decrypt!'
 
-
-@app.template_filter('ident_string')
-def _jinja2_filter_ident(name, pk, nip5=None, validated=None, long=True):
-    html = "<span class='uname' data-pk='{}'><span class='name'>{}</span> "
-    nip5_htm = ""
-    if long:
-        html = "<span class='nip5' title='{}'>{}</span><span class='uname' data-pk='{}'><span class='name'>{}</span>"
-    if nip5 is not None and long:
+@app.template_filter('nip05_valid')
+def _jinja2_filter_nip5(nip5, validated):
+    htm = "<span class='nip5' title='{}'>{}</span>"
+    if nip5 is not None:
         if nip5[0:2] == "_@":
             nip5 = nip5[2:]
         if validated:
             status = 'verified'
         else:
             status = 'warn'
-        #nip5 = " <img src='/static/{}.svg' class='icon-sm nip5-{}' title='{}'> ".format(status, status, nip5)
         nip5_htm = render_template('svg/{}.svg'.format(status), title=nip5, class_name='icon-sm {}'.format(status))
-    elif name is None or len(name.strip()) < 1:
-        name = "{}&#8230;".format(pk[0:21])
+        return htm.format(nip5, nip5_htm)
+    return ''
 
+@app.template_filter('ident_string')
+def _jinja2_filter_ident(name, display_name, pk, long=True):
+    html = "<span class='uname' data-pk='{}'><span class='name'>@{}</span></span> "
     if long:
-        if nip5 is None:
-            nip5 = ""
-            nip5_htm = ""
-        return html.format(nip5, nip5_htm, pk, name)
+        html = "<span class='long-name'><span class='uname' data-pk='{}'><span class='display_name'>{}</span><span class='name'>@{}</span></span></span>"
+
+    if name is None or len(name.strip()) < 1:
+        name = "{}&#8230;".format(pk[0:21])
+    if long:
+        if display_name is None:
+            display_name = ''
+        return html.format(pk, display_name, name)
 
     return html.format(pk, name)
 
+@app.template_filter('relationship')
+def _jinja2_filter_relate(pk):
+    htm = '<span class="tag">{}</span>'
+    if pk == SETTINGS.get('pubkey'):
+        return ''
+    follows_me = DB.a_follows_b(pk, SETTINGS.get('pubkey'))
+    i_follow = DB.a_follows_b(SETTINGS.get('pubkey'), pk)
+    if follows_me and i_follow:
+        return htm.format('you follow each other')
+    elif follows_me:
+        return htm.format('follows you')
+    elif i_follow:
+        return htm.format('following')
+    else:
+        return ''
 
 @app.template_filter('responders_string')
 def _jinja2_filter_responders(the_dict, n):
     names = []
     for pk, name in the_dict.items():
-        names.append([pk, _jinja2_filter_ident(name, pk, long=False)])
+        names.append([pk, _jinja2_filter_ident(name, '', pk, long=False)])
 
     if n == 1:
-        html = '<a href="/profile?pk={}">@{}</a> commented'
+        html = '<a href="/profile?pk={}">{}</a> commented'
         return html.format(names[0][0], names[0][1])
     elif n == 2:
-        html = '<a href="/profile?pk={}">@{}</a> and <a href="/profile?pk={}">@{}</a> commented'
+        html = '<a href="/profile?pk={}">{}</a> and <a href="/profile?pk={}">{}</a> commented'
         return html.format(names[0][0], names[0][1], names[1][0], names[1][1])
     else:
-        html = '<a href="/profile?pk={}">@{}</a>, <a href="/profile?pk={}">@{}</a> and {} other contacts commented'
+        html = '<a href="/profile?pk={}">{}</a>, <a href="/profile?pk={}">{}</a> and {} other contacts commented'
         return html.format(names[0][0], names[0][1], names[1][0], names[1][1], n - 2)
 
 
@@ -106,7 +123,7 @@ def _jinja2_filter_media(json_string):
     if len(a) > 0:
         media = a[0]
         if media[1] == 'image':
-            return '<div class="image-attachment"><img src="{}"></div>'.format(media[0])
+            return '<div class="image-attachment"><img data-src="{}" data-srcset="{}" src="/static/blank.png" class="lazy-load"></div>'.format(media[0], media[0])
         elif media[1] == 'og':
             return render_template("note.og.html", data=media[0])
         elif media[1] == 'video':
@@ -193,6 +210,27 @@ def construct_invoice(content: str):
     except:
         return False
 
+@app.template_filter('QR')
+def _jinja2_filter_qr(string):
+    try:
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(string)
+        qr.make(fit=True)
+
+        img = qr.make_image(fill_color="black", back_color="white")
+        img_byte_arr = io.BytesIO()
+        img.save(img_byte_arr, format='PNG')
+        img_byte_arr = img_byte_arr.getvalue()
+        img64 = base64.b64encode(img_byte_arr).decode()
+        out = '<img src="data:image/png;base64,{}">'.format(img64)
+        return out
+    except:
+        return False
 
 @app.template_filter('get_thread_root')
 def _jinja2_filter_thread_root(root, reply, note_id):
