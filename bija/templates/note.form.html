@@ -7,6 +7,7 @@
         {%- endif -%}
     </div>
     <form method="post" action="/submit_note" id="new_post_form" enctype="multipart/form-data">
+        {{'expand'| svg_icon('icon-sm maximise')|safe}}
         <textarea name="new_post" id="new_post" class="note-textarea" placeholder="Say something..."></textarea>
         <div class="name-hints"></div>
         <div class="toolbar">

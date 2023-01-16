@@ -413,6 +413,28 @@ class bijaNotePoster{
             }
             fetchFromForm('/submit_note', form, cb, {}, 'json');
         });
+
+
+        const container = document.querySelector('#note-poster');
+        const ct = document.querySelector('#new_post');
+        const max_btn = form.querySelector('.maximise');
+        if(ct){
+            ct.addEventListener('focus', (e) => {
+                ct.classList.add('focus')
+            });
+        }
+        max_btn.addEventListener('click', (e) => {
+            if(container.classList.contains('expanded')){
+                container.classList.remove('expanded')
+                ct.focus()
+                max_btn.style.display = 'block'
+            }
+            else{
+                container.classList.remove('minimised')
+                ct.focus()
+                max_btn.style.display = 'block'
+            }
+        });
     }
 }
 
@@ -1149,13 +1171,6 @@ class bijaFeed{
         const main_el = document.querySelector(".main[data-page]")
         if(['home', 'profile-me'].includes(main_el.dataset.page)){
             new Emojis(main_el.querySelector('#note-poster'))
-        }
-
-        const ct = document.querySelector('#new_post');
-        if(ct){
-            ct.addEventListener('focus', (e) => {
-                ct.classList.add('focus')
-            });
         }
 
         this.page = main_el.dataset.page
