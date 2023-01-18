@@ -35,6 +35,10 @@ def _jinja2_filter_theme(b):
         theme = 'default'
     return DB.get_theme_vars(theme)
 
+@app.template_filter('theme_settings')
+def _jinja2_filter_theme(b):
+    return DB.get_settings_by_keys(['spacing', 'fs-base', 'rnd', 'icon', 'pfp-dim'])
+
 
 @app.template_filter('dt')
 def _jinja2_filter_datetime(ts):

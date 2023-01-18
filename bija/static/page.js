@@ -497,7 +497,53 @@ class bijaSettings{
             }
             fetchFromForm('/update_settings', theme_form, theme_cb, {}, 'json')
         });
+        this.setThemeSliders()
+    }
 
+    setThemeSliders(){
+        const sliders = document.querySelectorAll('.slider')
+        for(const slider of sliders){
+            const rel = slider.dataset.v
+            slider.addEventListener("input", (event)=>{
+                console.log('--'+slider.dataset.v)
+                document.querySelector('.demo[data-rel="'+rel+'"]').style.setProperty('--'+rel, slider.value+'px');
+            });
+            slider.addEventListener("mousedown", (event)=>{
+                const d_els = document.querySelectorAll('.demo')
+                for(const d_el of d_els){
+                    d_el.style.display = 'none'
+                }
+                document.querySelector('.demo[data-rel="'+rel+'"]').style.display = 'block'
+            });
+            slider.addEventListener("mouseup", (event)=>{
+                const d_els = document.querySelectorAll('.demo')
+                for(const d_el of d_els){
+                    d_el.style.display = 'none'
+                }
+            });
+
+        }
+        const btn = document.querySelector(".update_styles");
+        btn.addEventListener("click", (event)=>{
+            event.preventDefault();
+            event.stopPropagation();
+            const style_form = document.querySelector("#style_form")
+
+            const cb = function(response, data){
+                location.reload();
+            }
+            fetchFromForm('/update_settings', style_form, cb, {}, 'json')
+        });
+        const dflt_btn = document.querySelector(".default_styles");
+        dflt_btn.addEventListener("click", (event)=>{
+            event.preventDefault();
+            event.stopPropagation();
+
+            const scb = function(response, data){
+                location.reload();
+            }
+            fetchGet('/default_styles', scb, {}, 'json')
+        });
     }
 
     setDeleteKeysClicked(){
@@ -1646,7 +1692,5 @@ window.addEventListener("load", function () {
             }, {})
         });
     }
-
+    lazyLoad();
 });
-
-document.addEventListener("DOMContentLoaded", function() { lazyLoad(); });

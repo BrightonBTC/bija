@@ -9,7 +9,7 @@ from flask_executor import Executor
 
 from bija.app import app, socketio, ACTIVE_EVENTS
 from bija.args import SETUP_PK, SETUP_PW, LOGGING_LEVEL
-from bija.config import DEFAULT_RELAYS
+from bija.config import DEFAULT_RELAYS, default_settings
 from bija.emojis import emojis
 from bija.relay_handler import RelayHandler, MetadataEvent
 from bija.helpers import *
@@ -433,10 +433,18 @@ def settings_page():
         }
         themes = DB.get_themes()
         theme = SETTINGS.get('theme')
+
+        theme_settings = SETTINGS.get_list([
+            'spacing',
+            'fs-base',
+            'rnd',
+            'icon',
+            'pfp-dim'])
+
         return render_template(
             "settings.html",
             page_id="settings",
-            title="Settings", relays=relays, settings=settings, k=keys, theme=theme, themes=themes)
+            title="Settings", relays=relays, settings=settings, k=keys, theme=theme, themes=themes, theme_settings=theme_settings)
 
 
 @app.route('/update_settings', methods=['POST'])
@@ -444,6 +452,16 @@ def update_settings():
     for item in request.json:
         SETTINGS.set(item[0], item[1].strip())
     config_backup()
+    return render_template("upd.json", data=json.dumps({'success': 1}))
+
+
+@app.route('/default_styles', methods=['GET'])
+def default_styles():
+    defaults = default_settings
+    vs = ['spacing','fs-base','rnd','icon','pfp-dim']
+    for k in defaults:
+        if k in vs:
+            SETTINGS.set(k, defaults[k])
     return render_template("upd.json", data=json.dumps({'success': 1}))
 
 def config_backup():

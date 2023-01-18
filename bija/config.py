@@ -14,12 +14,17 @@ default_settings = {
     'pow_default_enc': '12',
     'pow_required': '8',
     'pow_required_enc': '16',
-    'theme': 'default'
+    'theme': 'default',
+    'spacing': '8',
+    'fs-base': '16',
+    'rnd': '5',
+    'icon': '14',
+    'pfp-dim': '40'
 }
 
 themes = {
     'default': {
-        'txt-clr': '#fdffee',
+        'txt-clr': '#fdffee'
     },
     'dark1': {
         'txt-clr': '#dee892',
