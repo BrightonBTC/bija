@@ -246,3 +246,16 @@ class NoteThread:
         public_keys = [note['public_key']]
         public_keys = json.loads(note['members']) + public_keys
         self.add_public_keys(public_keys)
+
+
+class BoostsThread:
+    def __init__(self, note_id):
+        logger.info('BOOSTS THREAD')
+        self.id = note_id
+        self.note = DB.get_note(SETTINGS.get('pubkey'), note_id)
+        self.boosts = []
+        boosts = DB.get_feed(int(time.time()), SETTINGS.get('pubkey'), {'boost_id': note_id})
+        for boost in boosts:
+            boost = dict(boost)
+            boost['reshare'] = self.note
+            self.boosts.append(boost)

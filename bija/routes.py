@@ -14,7 +14,7 @@ from bija.emojis import emojis
 from bija.relay_handler import RelayHandler, MetadataEvent
 from bija.helpers import *
 from bija.jinja_filters import *
-from bija.notes import FeedThread, NoteThread
+from bija.notes import FeedThread, NoteThread, BoostsThread
 from bija.password import encrypt_key, decrypt_key
 from bija.search import Search
 from bija.settings import SETTINGS
@@ -322,6 +322,24 @@ def note_page():
                            title="Note",
                            notes=t.result_set,
                            members=t.profiles,
+                           profile=profile,
+                           root=note_id, pubkey=SETTINGS.get('pubkey'))
+
+@app.route('/boosts', methods=['GET'])
+@login_required
+def boosts_page():
+    ACTIVE_EVENTS.clear()
+    note_id = request.args['id']
+    EXECUTOR.submit(RELAY_HANDLER.set_page('boosts', note_id))
+    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
+
+    t = BoostsThread(note_id)
+
+    profile = DB.get_profile(SETTINGS.get('pubkey'))
+    return render_template("boosts.html",
+                           page_id="boosts",
+                           title="Boosts",
+                           notes=t.boosts,
                            profile=profile,
                            root=note_id, pubkey=SETTINGS.get('pubkey'))
 

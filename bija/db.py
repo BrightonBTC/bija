@@ -807,6 +807,8 @@ class BijaDB:
             q = q.filter(Profile.public_key==filters['profile'])
         if 'topic' in filters:
             q = q.filter(Note.hashtags.like(f"%\"{filters['topic']}\"%"))
+        if 'boost_id' in filters:
+            q = q.filter(Note.reshare==filters['boost_id'])
 
         q = q.order_by(Note.seen.asc(), Note.created_at.desc()).limit(50)
 

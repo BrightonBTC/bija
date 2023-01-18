@@ -1661,6 +1661,10 @@ window.addEventListener("load", function () {
         new bijaNotes();
     }
 
+    if (document.querySelector(".main[data-page='boosts']") != null){
+        new bijaNotes();
+    }
+
     SOCK();
 
     new bijaNoteTools();
