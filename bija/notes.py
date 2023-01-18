@@ -166,11 +166,11 @@ class NoteThread:
         for note in self.notes:
             n = dict(note)
             if n['response_to'] == self.id or (n['thread_root'] == self.id and n['response_to'] is None):
+                n['reshare'] = self.get_reshare(n)
+                n['class'] = 'reply'
                 self.children.append(n)
                 self.add_members(n)
                 to_remove.append(note)
-                n['reshare'] = self.get_reshare(n)
-                n['class'] = 'reply'
                 self.note_ids.append(n['id'])
         self.remove_notes_from_list(to_remove)
 
@@ -186,14 +186,14 @@ class NoteThread:
         for note in self.notes:
             n = dict(note)
             if n['id'] == note_id:
-                self.ancestors.insert(0, n)
-                self.add_members(n)
-                to_remove.append(note)
-                self.note_ids.insert(0, n['id'])
                 n['reshare'] = self.get_reshare(n)
                 n['class'] = 'ancestor'
                 if n['response_to'] is not None:
                     self.get_ancestor(n['response_to'])
+                self.ancestors.insert(0, n)
+                self.add_members(n)
+                to_remove.append(note)
+                self.note_ids.insert(0, n['id'])
                 found = True
                 break
         if not found and note_id != self.root_id:
@@ -205,12 +205,12 @@ class NoteThread:
         for note in self.notes:
             n = dict(note)
             if n['id'] == self.root_id:
+                n['class'] = 'root'
+                n['reshare'] = self.get_reshare(n)
                 self.root = [n]
                 self.add_members(n)
                 self.notes.remove(note)
                 self.note_ids.append(n['id'])
-                n['class'] = 'root'
-                n['reshare'] = self.get_reshare(n)
                 break
         if len(self.root) < 1:
             self.root = [self.root_id]
