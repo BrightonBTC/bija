@@ -192,6 +192,12 @@ let notifyNewProfilePosts = function(ts){
             elem.prepend(notification)
         }
     }
+    const a_el = document.querySelector('.archive_fetcher .n_fetched')
+    const fetching_archive = a_el.dataset.active == '1'
+    if(fetching_archive){
+        const n = parseInt(a_el.innerText)+1
+        a_el.innerText = n
+    }
 }
 let updateProfile = function(profile){
     document.querySelector(".profile-about").innerHTML = profile.about
@@ -808,6 +814,29 @@ class bijaProfile{
         if(ln_btn){
             this.setLNBtn(ln_btn)
         }
+        const archive_fetcher = document.querySelector('#fetch_archived');
+        if(archive_fetcher){
+            this.setArchiveFetcher(archive_fetcher)
+        }
+    }
+
+    setArchiveFetcher(el){
+        el.addEventListener('change', (e) => {
+            const container =  document.querySelector('.archive_fetcher')
+            const a_el = container.querySelector('.n_fetched')
+            container.querySelector('.loading').style.display = 'flex'
+            a_el.dataset.active = "1"
+            a_el.innerText = '0'
+            let nodes = document.querySelectorAll('.ts[data-ts]')
+            let ts = Math.floor(Date.now() / 1000)
+            if(nodes.length > 0){
+                ts = nodes[nodes.length-1].dataset.ts
+            }
+            const cb = function(response, data){
+
+            }
+            fetchGet('/fetch_archived?pk='+this.public_key+'&tf='+el.value+'&ts='+ts, cb, {})
+        });
     }
 
     setLNBtn(el){
@@ -1269,7 +1298,7 @@ class bijaFeed{
     loadArticles(response){
         const doc = new DOMParser().parseFromString(response, "text/html")
         const htm = doc.body.firstChild
-        document.getElementById("main-content").append(htm);
+        document.getElementById("feed").append(htm);
         const o = this
         setTimeout(function(){
             o.loading = 0;

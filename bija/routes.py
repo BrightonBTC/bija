@@ -160,7 +160,7 @@ def profile_page():
             is_me=data.is_me,
             am_following=data.am_following,
             meta=data.meta,
-            pubkey=data.pubkey,
+            pubkey=SETTINGS.get('pubkey'),
             website=data.website,
             has_ln=data.has_ln,
             n_following=data.following_count,
@@ -268,6 +268,35 @@ class ProfilePage:
             self.data = DB.get_following(SETTINGS.get('pubkey'), self.pubkey)
         elif self.page == 'followers':
             self.data = DB.get_followers(SETTINGS.get('pubkey'), self.pubkey)
+
+
+@app.route('/fetch_archived', methods=['GET'])
+def fetch_archived():
+    pk = request.args['pk']
+    ts = int(request.args['ts'])
+    tf = request.args['tf']
+    timeframe = TimePeriod.DAY
+    tx = 1
+    if tf == 'w':
+        timeframe = TimePeriod.WEEK
+        tx = 1
+    elif tf == 'm':
+        timeframe = TimePeriod.DAY
+        tx = 30
+    elif tf == 'y':
+        timeframe = TimePeriod.WEEK
+        tx = 52
+    elif tf == 'a':
+        timeframe = TimePeriod.WEEK
+        tx = 10000
+
+    EXECUTOR.submit(
+        RELAY_HANDLER.subscribe_profile,
+        pk,
+        timestamp_minus(timeframe, tx, ts),
+        []
+    )
+    return render_template("upd.json", data=json.dumps({'success': 1}))
 
 @app.route('/get_profile_sharer', methods=['GET'])
 def get_profile_sharer():

@@ -135,9 +135,10 @@ class TimePeriod(IntEnum):
     WEEK = 60 * 60 * 24 * 7
 
 
-def timestamp_minus(period: TimePeriod, multiplier: int = 1):
-    now = int(time.time())
-    return now - (period * multiplier)
+def timestamp_minus(period: TimePeriod, multiplier: int = 1, start=False):
+    if not start:
+        start = int(time.time())
+    return start - (period * multiplier)
 
 
 def list_index_exists(lst, i):
