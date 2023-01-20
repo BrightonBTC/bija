@@ -12,6 +12,14 @@
         {%- set post = thread['self'] -%}
 
         {%- if post['deleted'] is none -%}
+        {%- if thread['responder_count'] > 0 -%}
+        <div class="response-accounts">
+            {{ thread['responders'] | responders_string(thread['responder_count']) | safe }}
+            {%- if thread['self'] is none -%}
+            on a <a href="/note?id={{thread['id']}}#{{thread['id']}}">thread</a>
+            {%- endif -%}
+        </div>
+        {%- endif -%}
         <div class="{{root_class}}">
             <div class="thread-marker"></div>
             <div class="note-image">
@@ -21,14 +29,6 @@
                 {%- endwith -%}
             </div>
             <div class="note-outer">
-                {%- if thread['responder_count'] > 0 -%}
-                <div class="response-accounts">
-                    {{ thread['responders'] | responders_string(thread['responder_count']) | safe }}
-                    {%- if thread['self'] is none -%}
-                    on a <a href="/note?id={{thread['id']}}#{{thread['id']}}">thread</a>
-                    {%- endif -%}
-                </div>
-                {%- endif -%}
                 {%- set reply_chain = post['thread_root'] | get_thread_root(post['response_to'], post['id']) -%}
                 {%- with note=post -%}
                 {%- include 'note.html' -%}
@@ -54,6 +54,14 @@
         {%- endif -%}
 
         {%- if post['deleted'] is none -%}
+        {%- if thread['responder_count'] > 0 and thread['self'] is none -%}
+        <div class="response-accounts">
+            {{ thread['responders'] | responders_string(thread['responder_count']) | safe }}
+            {%- if thread['self'] is none -%}
+            on a <a href="{{ url_for('note_page', id=thread['id']) }}#focussed">thread</a>
+            {%- endif -%}
+        </div>
+        {%- endif -%}
         <div class="note-container">
             <div class="thread-marker"></div>
             <div class="note-image">
@@ -63,14 +71,6 @@
                 {%- endwith -%}
             </div>
             <div class="note-outer">
-            {%- if thread['responder_count'] > 0 and thread['self'] is none -%}
-            <div class="response-accounts">
-                {{ thread['responders'] | responders_string(thread['responder_count']) | safe }}
-                {%- if thread['self'] is none -%}
-                on a <a href="{{ url_for('note_page', id=thread['id']) }}#focussed">thread</a>
-                {%- endif -%}
-            </div>
-            {%- endif -%}
             {%- set reply_chain = post['thread_root'] | get_thread_root(post['response_to'], post['id']) -%}
             {%- with note=post -%}
             {%- include 'note.html' -%}

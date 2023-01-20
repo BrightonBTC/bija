@@ -1236,7 +1236,9 @@ svg.lightning *{
 .response-accounts{
     font-size: var(--fs-tiny);
     font-weight: 200;
-    padding: 0px var(--spacing-sm) var(--spacing-mid);
+    padding: 0px var(--spacing-sm) 0 calc(var(--pfp-dim) + var(--spacing-mid)*3);
+    margin-left: calc(var(--spacing-mid)*2);
+    margin-right: var(--spacing-lg);
 }
 .response-accounts a{
     color: var(--lnk-clr2);
