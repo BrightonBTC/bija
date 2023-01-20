@@ -682,9 +682,25 @@ class bijaThread{
 
 class bijaMessages{
     constructor(){
-        window.scrollTo(0, document.body.scrollHeight);
-        this.setSubmitMessage()
-        this.setCfgLoader()
+        const main_el = document.querySelector('.main')
+        let page = main_el.dataset.page
+        if(page == 'messages_from'){
+            window.scrollTo(0, document.body.scrollHeight);
+            this.setSubmitMessage()
+            this.setCfgLoader()
+        }
+        else if(page=='messages'){
+            this.setAllReadBtn()
+        }
+    }
+
+    setAllReadBtn(){
+        const cb = function(response, data){
+            location.reload()
+        }
+        document.querySelector('#mark_all_read').addEventListener("click", (event)=>{
+            fetchGet('/mark_read', cb, {})
+        });
     }
 
     setCfgLoader(){
@@ -1692,6 +1708,9 @@ window.addEventListener("load", function () {
         new bijaProfile();
     }
     if (document.querySelector(".main[data-page='messages_from']") != null){
+        new bijaMessages();
+    }
+    if (document.querySelector(".main[data-page='messages']") != null){
         new bijaMessages();
     }
     if (document.querySelector(".main[data-page='settings']") != null){
