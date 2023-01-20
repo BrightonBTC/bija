@@ -318,6 +318,12 @@ def get_share():
     return render_template("share.popup.html", key=k)
 
 
+@app.route('/mark_read', methods=['GET'])
+def mark_read():
+    DB.set_all_messages_read()
+    return render_template("upd.json", title="Home", data=json.dumps({'success':1}))
+
+
 @app.route('/profile_feed', methods=['GET'])
 def profile_feed():
     if request.method == 'GET':

@@ -584,6 +584,10 @@ class BijaDB:
         self.session.query(PrivateMessage).filter(PrivateMessage.public_key == public_key).update({'seen': True})
         self.session.commit()
 
+    def set_all_messages_read(self):
+        self.session.query(PrivateMessage).update({'seen': True})
+        self.session.commit()
+
     def add_note_reaction(self, eid, public_key, event_id, event_pk, content, members, raw):
         self.session.merge(NoteReaction(
             id=eid,
