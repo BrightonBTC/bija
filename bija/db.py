@@ -69,13 +69,14 @@ class BijaDB:
         self.session.commit()
 
     def add_contact_list(self, public_key, keys: list):
-        self.session.query(Follower).filter(Follower.pk_1==public_key).filter(Follower.pk_2.notin_(keys)).delete()
-        self.session.commit()
+
         for pk in keys:
             self.session.merge(Follower(
                 pk_1=public_key,
                 pk_2=pk
             ))
+            self.session.commit()
+        self.session.query(Follower).filter(Follower.pk_1==public_key).filter(Follower.pk_2.notin_(keys)).delete()
         self.session.commit()
 
     def get_last_contacts_upd(self, public_key):
@@ -486,6 +487,29 @@ class BijaDB:
             return q['created_at']
         return None
 
+    def latest_in_primary(self, pubkey):
+        following_counts = self.session.query(
+            Follower.pk_1,
+            Follower.pk_2,
+            func.count(Follower.id).label('count')
+        ).group_by(Follower.id).subquery()
+
+        am_following = coalesce(
+            following_counts.c.count, 0
+        )
+        q = self.session.query(
+            Note.created_at,
+            label('following', am_following)
+        )
+        q = q.join(Note.profile)
+        q = q.outerjoin(following_counts,
+                        and_(following_counts.c.pk_1 == pubkey, following_counts.c.pk_2 == Profile.public_key))
+        q = q.filter(text("(following=1 OR profile.public_key='{}')".format(pubkey))).order_by(Note.created_at.desc()).first()
+        if q is not None:
+            return q['created_at']
+        return None
+
+
     def set_all_seen_in_feed(self, public_key):
         following_counts = self.session.query(
             Follower.pk_1,
@@ -807,6 +831,8 @@ class BijaDB:
             q = q.filter(Profile.public_key==filters['profile'])
         if 'topic' in filters:
             q = q.filter(Note.hashtags.like(f"%\"{filters['topic']}\"%"))
+        if 'boost_id' in filters:
+            q = q.filter(Note.reshare==filters['boost_id'])
 
         q = q.order_by(Note.seen.asc(), Note.created_at.desc()).limit(50)
 

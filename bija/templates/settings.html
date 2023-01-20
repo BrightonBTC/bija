@@ -7,15 +7,63 @@
 <div class="card themer">
     <h3>Theme</h3>
     <form id="theme_form">
-    <select name="theme">
-        {%- for t in themes: -%}
-            {%- if t.theme == theme -%}
-            <option selected>{{t.theme}}</option>
-            {%- else -%}
-            <option>{{t.theme}}</option>
-            {%- endif -%}
-        {%- endfor -%}
-    </select>
+        <p>
+            <select name="theme">
+            {%- for t in themes: -%}
+                {%- if t.theme == theme -%}
+                <option selected>{{t.theme}}</option>
+                {%- else -%}
+                <option>{{t.theme}}</option>
+                {%- endif -%}
+            {%- endfor -%}
+        </select>
+        </p>
+    </form>
+</div>
+<div class="card styles">
+    <h3>Other style settings</h3>
+    <form id="style_form">
+        <p>
+            <input type="range" min="10" max="24" value="{{theme_settings['fs-base']}}" class="slider" data-v="fs-base" name="fs-base" id="style_fs"> <label>Font size</label>
+            <div class="demo" data-rel="fs-base">
+                <span class="sm">Small text</span><br>
+                <span class="mid">Medium text</span><br>
+                <span class="lg">Large text</span>
+            </div>
+        </p>
+        <p>
+            <input type="range" min="0" max="12" value="{{theme_settings['rnd']}}" class="slider" data-v="rnd"  name="rnd" id="style_rnd"> <label>Rounded corners</label>
+            <div class="demo" data-rel="rnd">
+                <div class="rnd rnd-sm">Small</div>
+                <div class="rnd rnd-mid">Medium</div>
+                <div class="rnd rnd-lg">Large</div>
+            </div>
+        </p>
+        <p>
+            <input type="range" min="1" max="15" value="{{theme_settings['spacing']}}" class="slider" data-v="spacing" name="spacing" id="style_spacing"> <label>Spacing</label>
+            <div class="demo" data-rel="spacing">
+                <span class="spacing spacing-sm">Small </span>
+                <span class="spacing spacing-mid">Medium</span><br>
+                <span class="spacing spacing-lg">Large</span>
+            </div>
+        </p>
+        <p>
+            <input type="range" min="6" max="24" value="{{theme_settings['icon']}}" class="slider" data-v="icon" name="icon" id="style_icons"> <label>Icon size</label>
+            <div class="demo" data-rel="icon">
+                {{'emoji'| svg_icon('icon-sm')|safe}}
+                {{'emoji'| svg_icon('icon-mid')|safe}}
+                {{'emoji'| svg_icon('icon-lg')|safe}}
+            </div>
+        </p>
+        <p>
+            <input type="range" min="15" max="80" value="{{theme_settings['pfp-dim']}}" class="slider" data-v="pfp-dim" name="pfp-dim" id="style_pfp"> <label>Profile image size</label>
+            <div class="demo" data-rel="pfp-dim">
+                {{'profile'| svg_icon('pfp pfp-sm')|safe}}
+                {{'profile'| svg_icon('pfp pfp-mid')|safe}}
+                {{'profile'| svg_icon('pfp pfp-lg')|safe}}
+            </div>
+        </p>
+        <button class="update_styles">Save</button> <button class="default_styles">Reset to defaults</button>
     </form>
 </div>
 <div class="card keys">

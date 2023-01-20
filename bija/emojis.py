@@ -6641,7 +6641,7 @@ emojis = [
       {
         "emoji": "☕",
         "skin_tone_support": False,
-        "name": "hot beverage",
+        "name": "hot beverage coffee tea",
         "slug": "hot_beverage",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -8527,8 +8527,8 @@ emojis = [
       {
         "emoji": "⚡",
         "skin_tone_support": False,
-        "name": "high voltage",
-        "slug": "high_voltage",
+        "name": "lightning",
+        "slug": "lightning",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
       },

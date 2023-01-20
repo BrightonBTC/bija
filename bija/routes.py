@@ -9,12 +9,12 @@ from flask_executor import Executor
 
 from bija.app import app, socketio, ACTIVE_EVENTS
 from bija.args import SETUP_PK, SETUP_PW, LOGGING_LEVEL
-from bija.config import DEFAULT_RELAYS
+from bija.config import DEFAULT_RELAYS, default_settings
 from bija.emojis import emojis
 from bija.relay_handler import RelayHandler, MetadataEvent
 from bija.helpers import *
 from bija.jinja_filters import *
-from bija.notes import FeedThread, NoteThread
+from bija.notes import FeedThread, NoteThread, BoostsThread
 from bija.password import encrypt_key, decrypt_key
 from bija.search import Search
 from bija.settings import SETTINGS
@@ -160,7 +160,7 @@ def profile_page():
             is_me=data.is_me,
             am_following=data.am_following,
             meta=data.meta,
-            pubkey=data.pubkey,
+            pubkey=SETTINGS.get('pubkey'),
             website=data.website,
             has_ln=data.has_ln,
             n_following=data.following_count,
@@ -269,6 +269,35 @@ class ProfilePage:
         elif self.page == 'followers':
             self.data = DB.get_followers(SETTINGS.get('pubkey'), self.pubkey)
 
+
+@app.route('/fetch_archived', methods=['GET'])
+def fetch_archived():
+    pk = request.args['pk']
+    ts = int(request.args['ts'])
+    tf = request.args['tf']
+    timeframe = TimePeriod.DAY
+    tx = 1
+    if tf == 'w':
+        timeframe = TimePeriod.WEEK
+        tx = 1
+    elif tf == 'm':
+        timeframe = TimePeriod.DAY
+        tx = 30
+    elif tf == 'y':
+        timeframe = TimePeriod.WEEK
+        tx = 52
+    elif tf == 'a':
+        timeframe = TimePeriod.WEEK
+        tx = 10000
+
+    EXECUTOR.submit(
+        RELAY_HANDLER.subscribe_profile,
+        pk,
+        timestamp_minus(timeframe, tx, ts),
+        []
+    )
+    return render_template("upd.json", data=json.dumps({'success': 1}))
+
 @app.route('/get_profile_sharer', methods=['GET'])
 def get_profile_sharer():
     pk = request.args['pk']
@@ -282,6 +311,11 @@ def get_ln_details():
 
     return render_template("profile.lightning.html", data=json.loads(d['content']), name=profile.name)
 
+@app.route('/get_share', methods=['GET'])
+def get_share():
+    note_id = request.args['id']
+    k = hex64_to_bech32('note', note_id)
+    return render_template("share.popup.html", key=k)
 
 
 @app.route('/profile_feed', methods=['GET'])
@@ -322,6 +356,24 @@ def note_page():
                            title="Note",
                            notes=t.result_set,
                            members=t.profiles,
+                           profile=profile,
+                           root=note_id, pubkey=SETTINGS.get('pubkey'))
+
+@app.route('/boosts', methods=['GET'])
+@login_required
+def boosts_page():
+    ACTIVE_EVENTS.clear()
+    note_id = request.args['id']
+    EXECUTOR.submit(RELAY_HANDLER.set_page('boosts', note_id))
+    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
+
+    t = BoostsThread(note_id)
+
+    profile = DB.get_profile(SETTINGS.get('pubkey'))
+    return render_template("boosts.html",
+                           page_id="boosts",
+                           title="Boosts",
+                           notes=t.boosts,
                            profile=profile,
                            root=note_id, pubkey=SETTINGS.get('pubkey'))
 
@@ -433,10 +485,18 @@ def settings_page():
         }
         themes = DB.get_themes()
         theme = SETTINGS.get('theme')
+
+        theme_settings = SETTINGS.get_list([
+            'spacing',
+            'fs-base',
+            'rnd',
+            'icon',
+            'pfp-dim'])
+
         return render_template(
             "settings.html",
             page_id="settings",
-            title="Settings", relays=relays, settings=settings, k=keys, theme=theme, themes=themes)
+            title="Settings", relays=relays, settings=settings, k=keys, theme=theme, themes=themes, theme_settings=theme_settings)
 
 
 @app.route('/update_settings', methods=['POST'])
@@ -444,6 +504,16 @@ def update_settings():
     for item in request.json:
         SETTINGS.set(item[0], item[1].strip())
     config_backup()
+    return render_template("upd.json", data=json.dumps({'success': 1}))
+
+
+@app.route('/default_styles', methods=['GET'])
+def default_styles():
+    defaults = default_settings
+    vs = ['spacing','fs-base','rnd','icon','pfp-dim']
+    for k in defaults:
+        if k in vs:
+            SETTINGS.set(k, defaults[k])
     return render_template("upd.json", data=json.dumps({'success': 1}))
 
 def config_backup():
