@@ -311,6 +311,11 @@ def get_ln_details():
 
     return render_template("profile.lightning.html", data=json.loads(d['content']), name=profile.name)
 
+@app.route('/get_share', methods=['GET'])
+def get_share():
+    note_id = request.args['id']
+    k = hex64_to_bech32('note', note_id)
+    return render_template("share.popup.html", key=k)
 
 
 @app.route('/profile_feed', methods=['GET'])

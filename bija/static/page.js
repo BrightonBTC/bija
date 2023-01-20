@@ -1161,6 +1161,18 @@ class bijaNotes{
                     fetchGet('/confirm_delete?id='+note_id, on_req_delete_confirm, {context:this})
                 })
             }
+            else if(tool == 'share'){
+                tool_el.addEventListener('click', (e) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const get_share_cb = function(response, data){
+                        if(response){
+                            popup(response)
+                        }
+                    }
+                    fetchGet('/get_share?id='+note_id, get_share_cb, {context:this})
+                })
+            }
         }
     }
 
