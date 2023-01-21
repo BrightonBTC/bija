@@ -112,7 +112,7 @@ class RelayHandler:
                 self.notify_empty_queue = False
 
         i = 0
-        while RELAY_MANAGER.message_pool.has_events() and i < 20:
+        while RELAY_MANAGER.message_pool.has_events() and i < 100:
             i += 1
             msg = RELAY_MANAGER.message_pool.get_event()
             if DB.get_event(msg.event.id) is None:

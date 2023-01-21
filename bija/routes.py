@@ -800,10 +800,22 @@ def emojis_req():
                     n += 1
     else:
         d = {
-            'emojis': ['😄', '🤣', '🙃', '🤩', '🥲', '😝', '👍', '👎']
+            'emojis': json.loads(SETTINGS.get('recent_emojis'))
         }
     return render_template("upd.json", data=json.dumps(d))
 
+@app.route('/recent_emojis', methods=['GET'])
+def recent_emojis():
+    emoji = request.args['s']
+    recent = SETTINGS.get('recent_emojis')
+    emojis = json.loads(recent)
+    if emoji in emojis:
+        emojis.remove(emoji)
+    emojis.insert(0, emoji)
+    if len(emojis) > 8:
+        emojis.pop()
+    SETTINGS.set('recent_emojis', json.dumps(emojis))
+    return '1'
 
 @socketio.on('connect')
 def io_connect(m):

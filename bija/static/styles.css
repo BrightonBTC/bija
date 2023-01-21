@@ -1346,27 +1346,34 @@ p.note-tools {
     position: relative;
 }
 .emoji_selector{
-    display: flex;
+    display: none;
     align-items: flex-start;
     font-size: var(--fs-mid1);
-    position: absolute;
-    top: 0;
-    left: 0;
+    position: fixed;
     background: var(--bg-clr3);
     right: 25%;
     flex-direction: column;
+    width: calc(var(--fs-mid2)*8 + var(--spacing-sm)*9);
+    z-index: 2000;
+    padding: var(--spacing-sm);
+    gap: var(--spacing-sm);
+}
+.emoji_selector div{
+    display: grid;
+    grid-template-columns: auto auto auto auto auto auto auto auto;
+    gap: var(--spacing-sm);
 }
 .emoji_selector div *{
-    float: left;
-    margin: var(--spacing-sm);
+    width: var(--fs-mid2);
+    font-size: var(--fs-mid1);
+    display: inline-block;
 }
 .emoji_selector input{
-    display: none;
     margin: 0;
     padding: var(--spacing-sm);
 }
-.emoji_selector.show input{
-    display: block;
+.emoji_selector.show{
+    display: flex;
 }
 .ln_invoice {
     display: flex;

@@ -6673,7 +6673,7 @@ emojis = [
       {
         "emoji": "🍾",
         "skin_tone_support": False,
-        "name": "bottle with popping cork",
+        "name": "bottle with popping cork champagne",
         "slug": "bottle_with_popping_cork",
         "unicode_version": "1.0",
         "emoji_version": "1.0"
@@ -10327,6 +10327,14 @@ emojis = [
         "slug": "coin",
         "unicode_version": "13.0",
         "emoji_version": "13.0"
+      },
+      {
+        "emoji": "₿",
+        "skin_tone_support": False,
+        "name": "bitcoin",
+        "slug": "bitcoin",
+        "unicode_version": "10.0",
+        "emoji_version": "10.0"
       },
       {
         "emoji": "💴",

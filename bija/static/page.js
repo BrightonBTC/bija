@@ -1000,7 +1000,11 @@ class bijaNotes{
             }
             const emoji_link = note.querySelector(".emojis");
             if(emoji_link){
-                new Emojis(note)
+                emoji_link.addEventListener('click', (e) => {
+                    document.dispatchEvent(new CustomEvent("emojiReq", {
+                        detail: {elem: note}
+                    }));
+                });
             }
             const read_more_link = note.querySelector(".read-more");
             if(read_more_link){
@@ -1141,6 +1145,11 @@ class bijaNotes{
                     popup(response)
                     data.context.setQuoteForm()
                     lazyLoad()
+                    document.querySelector('.popup .emojis').addEventListener('click', (e) => {
+                        document.dispatchEvent(new CustomEvent("emojiReq", {
+                            detail: {elem: document.querySelector('.popup')}
+                        }));
+                    });
                 }
             }
             fetchGet('/quote_form?id='+note_id, cb, {'context': this})
@@ -1273,7 +1282,11 @@ class bijaFeed{
     constructor(){
         const main_el = document.querySelector(".main[data-page]")
         if(['home', 'profile-me'].includes(main_el.dataset.page)){
-            new Emojis(main_el.querySelector('#note-poster'))
+            main_el.querySelector('#note-poster .emojis').addEventListener('click', (e) => {
+                document.dispatchEvent(new CustomEvent("emojiReq", {
+                    detail: {elem: main_el.querySelector('#note-poster')}
+                }));
+            });
         }
 
         this.page = main_el.dataset.page
@@ -1360,37 +1373,55 @@ class bijaTopic{
 }
 
 class Emojis{
+    target_el = null
+    active = false
     constructor(target_el){
-        this.target_el = target_el
-        this.search_el = target_el.querySelector('.emoji_selector input')
-        this.trigger_btn = target_el.querySelector('.emojis')
-        this.emoji_container = target_el.querySelector('.emoji_selector')
-        this.emoji_div = target_el.querySelector('.emoji_selector div')
-        this.textarea = target_el.querySelector('.poster-form textarea')
+        this.emoji_container = document.querySelector('#emoji_selector')
+        this.search_el = this.emoji_container.querySelector('#emoji_selector input')
+        this.emoji_div = this.emoji_container.querySelector('#emoji_selector div')
 
         this.setEventsListeners()
     }
+    anchor(elem){
+        this.reset()
+        this.target_el = elem
+        this.trigger_btn = this.target_el.querySelector('.emojis')
+        this.emoji_container.classList.add('show')
+        const pos = this.trigger_btn.getBoundingClientRect()
+        this.emoji_container.style.top = parseInt(pos.top)+'px'
+        this.emoji_container.style.left = parseInt(pos.left - this.emoji_container.offsetWidth)+'px'
+        this.fetch()
+        this.active = true
+
+        window.addEventListener("click", this.closeOnClickOutside);
+    }
+    fetch(){
+        fetchGet('/emojis?s='+this.search_el.value, this.loadEmojis, {'context': this}, 'json')
+    }
+    reset(){
+        this.search_el.value = ''
+        this.emoji_div.innerHTML = ""
+    }
     setEventsListeners(){
-        this.textarea.addEventListener("keydown", (event)=>{
-            this.closeEmojisContainer()
-        });
-        this.trigger_btn.addEventListener("click", (event)=>{
-            let is_showed = this.emoji_container.classList.contains('show')
-            if (is_showed) {
-                this.closeEmojisContainer()
-            } else {
-                fetchGet('/emojis', this.loadEmojis, {'context': this}, 'json')
-            }
-        });
+        document.addEventListener("emojiReq", (event)=>{
+            this.anchor(event.detail.elem)
+        })
         this.search_el.addEventListener("keyup", (event)=>{
-            fetchGet('/emojis?s='+this.search_el.value, this.loadEmojis, {'context': this}, 'json')
+            this.fetch()
+        });
+        document.body.addEventListener("mouseup", (event)=>{
+            console.log(this.active)
+            console.log(this.emoji_container.contains(event.target))
+            if (this.active && !this.emoji_container.contains(event.target)) {
+                this.close()
+            }
         });
     }
     loadEmojis(response, data){
         if(response){
             data.context.emoji_div.innerHTML = ""
-            data.context.emoji_container.classList.add('show')
-
+            data.context.search_el.focus()
+            document.addEventListener("scroll", data.context.close);
             for(const item of response.emojis){
                 const a = document.createElement('a')
                 a.href = '#'
@@ -1398,18 +1429,24 @@ class Emojis{
                 a.addEventListener("click", (event)=>{
                     event.stopPropagation();
                     event.preventDefault();
-                    data.context.textarea.value += a.innerText
-                    data.context.search_el.value = ''
-                    fetchGet('/emojis', data.context.loadEmojis, {'context': data.context}, 'json')
+                    data.context.target_el.querySelector('textarea').value += a.innerText
+                    data.context.updateRecent(a.innerText)
+                    data.context.reset()
+                    data.context.close()
                 });
                 data.context.emoji_div.append(a)
             }
         }
     }
-    closeEmojisContainer() {
-        this.emoji_container.classList.remove('show')
-        this.search_el.value = ''
-        this.emoji_div.innerHTML = ""
+    updateRecent(emoji){
+        fetchGet('/recent_emojis?s='+emoji, false, {})
+    }
+    close() {
+        document.removeEventListener("scroll", this.close);
+        const container = document.querySelector('#emoji_selector')
+        container.classList.remove('show')
+        container.querySelector('input').value = ''
+        container.querySelector('div').innerHTML = ""
     }
 }
 
@@ -1527,7 +1564,9 @@ function fetchGet(url, cb, cb_data = {}, response_type='text'){
         if(response_type == 'text') return response.text();
         else if(response_type == 'json') return response.json();
     }).then(function(response) {
-        cb(response, cb_data)
+        if(cb){
+            cb(response, cb_data)
+        }
     }).catch(function(err) {
         console.log(err);
     });
@@ -1724,6 +1763,7 @@ window.addEventListener("load", function () {
     if (document.querySelector(".main[data-page='boosts']") != null){
         new bijaNotes();
     }
+    new Emojis();
 
     SOCK();
 
