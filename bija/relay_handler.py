@@ -112,7 +112,7 @@ class RelayHandler:
                 self.notify_empty_queue = False
 
         i = 0
-        while RELAY_MANAGER.message_pool.has_events() and i < 20:
+        while RELAY_MANAGER.message_pool.has_events() and i < 100:
             i += 1
             msg = RELAY_MANAGER.message_pool.get_event()
             if DB.get_event(msg.event.id) is None:
@@ -564,8 +564,6 @@ class NoteEvent:
             self.mentions_me = False
 
             self.process_content()
-            self.tags = [x for x in self.tags if x not in self.used_tags]
-            self.process_tags()
             self.update_db()
             self.update_referenced()
 
@@ -573,6 +571,8 @@ class NoteEvent:
         logger.info('process note content')
         self.process_embedded_tags()
         self.process_embedded_urls()
+        self.tags = [x for x in self.tags if x not in self.used_tags]
+        self.process_tags()
 
     def process_embedded_urls(self):
         logger.info('process note urls')
@@ -627,6 +627,10 @@ class NoteEvent:
         elif list_index_exists(self.tags, item) and self.tags[item][0] == "e":
             self.used_tags.append(self.tags[item])
             self.process_e_tag(item)
+        elif list_index_exists(self.tags, item) and self.tags[item][0] == "t":
+            self.used_tags.append(self.tags[item])
+            self.hashtags.append(self.tags[item][1])
+            self.process_t_tag(item)
 
     def process_p_tag(self, item):
         logger.info('process note p tag')
@@ -647,6 +651,14 @@ class NoteEvent:
             self.content = self.content.replace(
                 "#[{}]".format(item),
                 "<a href='/note?id={}#{}'>event:{}&#8230;</a>".format(event_id, event_id, event_id[:21]))
+
+    def process_t_tag(self, item):
+        logger.info('process note t tag')
+        tag = self.tags[item][1]
+        self.content = self.content.replace(
+            "#[{}]".format(item),
+            "#{}".format(tag))
+
 
     def process_tags(self):
         logger.info('process note tags')

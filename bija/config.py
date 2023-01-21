@@ -1,3 +1,5 @@
+import json
+
 DEFAULT_RELAYS = [
     'wss://nostr.drss.io',
     'wss://nostr-pub.wellorder.net',
@@ -19,7 +21,8 @@ default_settings = {
     'fs-base': '16',
     'rnd': '5',
     'icon': '14',
-    'pfp-dim': '40'
+    'pfp-dim': '40',
+    'recent_emojis': '["\u2615", "\ud83e\udd23", "\ud83e\udd19", "\ud83d\udc9c", "\ud83d\ude48", "\ud83d\udc4d", "\ud83d\udc4e", "\ud83e\udd72"]'
 }
 
 themes = {
