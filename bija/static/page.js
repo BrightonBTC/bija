@@ -337,13 +337,26 @@ class bijaNoteTools{
     }
 
     setEventListeners(){
-        const reply_els = document.querySelectorAll('textarea.note-textarea');
-        for(const reply_el of reply_els){
-            if(!reply_el.dataset.toolset){
-                reply_el.dataset.toolset = true
-                this.setNameHintFetch(reply_el)
+        const els = document.querySelectorAll('textarea.note-textarea');
+        for(const el of els){
+            if(!el.dataset.toolset){
+                el.dataset.toolset = true
+                this.setNameHintFetch(el)
+                this.setRegisterCursorPos(el)
             }
         }
+    }
+
+    setRegisterCursorPos(el){
+        el.addEventListener("keyup", (event)=>{
+            el.dataset.pos = event.target.selectionStart
+        });
+        el.addEventListener("click", (event)=>{
+            el.dataset.pos = event.target.selectionStart
+        });
+        el.addEventListener("focus", (event)=>{
+            el.dataset.pos = event.target.selectionStart
+        });
     }
 
     setNameHintFetch(reply_el){
@@ -1429,7 +1442,8 @@ class Emojis{
                 a.addEventListener("click", (event)=>{
                     event.stopPropagation();
                     event.preventDefault();
-                    data.context.target_el.querySelector('textarea').value += a.innerText
+                    // data.context.target_el.querySelector('textarea').value += a.innerText
+                    data.context.insert(data.context.target_el.querySelector('textarea'), a.innerText)
                     data.context.updateRecent(a.innerText)
                     data.context.reset()
                     data.context.close()
@@ -1437,6 +1451,12 @@ class Emojis{
                 data.context.emoji_div.append(a)
             }
         }
+    }
+    insert(el, val){
+        const pos = parseInt(el.dataset.pos)
+        el.value = el.value.substring(0, pos) + val + el.value.substring(pos, el.value.length);
+        el.setSelectionRange(pos+1, pos+1)
+        el.focus()
     }
     updateRecent(emoji){
         fetchGet('/recent_emojis?s='+emoji, false, {})
