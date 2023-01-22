@@ -127,7 +127,7 @@ def _jinja2_filter_media(json_string):
     if len(a) > 0:
         media = a[0]
         if media[1] == 'image':
-            return '<div class="image-attachment"><img data-src="{}" data-srcset="{}" src="/static/blank.png" class="lazy-load"></div>'.format(media[0], media[0])
+            return '<div class="image-attachment"><img data-src="{}" data-srcset="{}" src="/static/blank.png" class="lazy-load" referrerpolicy="no-referrer"></div>'.format(media[0], media[0])
         elif media[1] == 'og':
             return render_template("note.og.html", data=media[0])
         elif media[1] == 'video':
@@ -155,10 +155,10 @@ def _jinja2_filter_note(content: str, limit=500):
 
     hashtags.sort(key=len, reverse=True)
     for tag in hashtags:
-        term = tag[1:].strip()
+        term = tag[1:-1].strip()
         content = "{} ".format(content).replace(
-            tag,
-            "<a href='/topic?tag={}'>{}</a> ".format(term, tag.strip())).strip()
+            tag[:-1],
+            "<a href='/topic?tag={}'>{}</a>".format(term, tag[:-1]))
 
     tags = get_at_tags(content)
     for tag in tags:

@@ -1,6 +1,7 @@
 <a href="/profile?pk={{p['public_key']}}">
 {%- if p['pic'] is not none and p['pic']|length > 0 -%}
 <img src="/static/user.svg"
+	 referrerpolicy="no-referrer"
 	 data-src="{{p['pic']}}"
 	 data-srcset="{{p['pic']}}"
 	 data-rel="{{p['public_key']}}"
@@ -9,6 +10,7 @@
 	 onerror="defaultImage(this);"/>
 {%- else -%}
 <img src="/static/user.svg"
+	 referrerpolicy="no-referrer"
 	 data-src="/identicon?id={{p['public_key']}}"
 	 data-srcset="/identicon?id={{p['public_key']}}"
 	 data-rel="{{p['public_key']}}"
