@@ -193,10 +193,12 @@ let notifyNewProfilePosts = function(ts){
         }
     }
     const a_el = document.querySelector('.archive_fetcher .n_fetched')
-    const fetching_archive = a_el.dataset.active == '1'
-    if(fetching_archive){
-        const n = parseInt(a_el.innerText)+1
-        a_el.innerText = n
+    if(a_el){
+        const fetching_archive = a_el.dataset.active == '1'
+        if(fetching_archive){
+            const n = parseInt(a_el.innerText)+1
+            a_el.innerText = n
+        }
     }
 }
 let updateProfile = function(profile){

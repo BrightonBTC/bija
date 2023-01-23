@@ -54,7 +54,7 @@ class SubscribePrimary(Subscribe):
         if latest is not None:
             self.since = timestamp_minus(TimePeriod.HOUR, start=latest)
         else:
-            self.since = timestamp_minus(TimePeriod.DAY)
+            self.since = timestamp_minus(TimePeriod.WEEK)
 
     def build_filters(self):
         logger.info('build subscription filters')

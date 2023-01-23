@@ -69,15 +69,19 @@ class BijaDB:
         self.session.commit()
 
     def add_contact_list(self, public_key, keys: list):
+        following = self.get_following_pubkeys(public_key)
+        new = set(keys) - set(following)
+        removed = set(following) - set(keys)
 
-        for pk in keys:
+        for pk in new:
             self.session.merge(Follower(
                 pk_1=public_key,
                 pk_2=pk
             ))
             self.session.commit()
-        self.session.query(Follower).filter(Follower.pk_1==public_key).filter(Follower.pk_2.notin_(keys)).delete()
+        self.session.query(Follower).filter(Follower.pk_1==public_key).filter(Follower.pk_2.in_(removed)).delete()
         self.session.commit()
+        return list(new), list(removed)
 
     def get_last_contacts_upd(self, public_key):
         result = self.session.query(Event.ts) \
@@ -659,37 +663,17 @@ class BijaDB:
     def get_event(self, event_id):
         return self.session.query(Event.event_id, Event.kind).filter(Event.event_id == event_id).first()
 
-    def add_alert(self, event_id, kind, profile, event, ts, content):
+    def add_alert(self, kind, ts, data):
+
         self.session.merge(Alert(
-            id=event_id,
             kind=kind,
-            profile=profile,
-            event=event,
             ts=ts,
-            content=content
+            data=data
         ))
         self.session.commit()
 
     def get_alerts(self):
-        return self.session.query(
-            Alert.id,
-            Alert.kind,
-            Alert.event,
-            Alert.profile,
-            Alert.content,
-            Alert.seen,
-            Profile.name,
-            Profile.display_name,
-            Profile.public_key,
-            Profile.pic,
-            label("note_id", Note.id),
-            Note.thread_root,
-            Note.response_to,
-            label("note_content", Note.content)
-        ) \
-            .join(Note, Note.id == Alert.event) \
-            .join(Profile, Profile.public_key == Alert.profile) \
-            .order_by(Alert.seen.asc()).order_by(Alert.ts.desc()).limit(50).all()
+        return self.session.query(Alert).order_by(Alert.seen.asc()).order_by(Alert.ts.desc()).limit(500).all()
 
     def get_unread_alert_count(self):
         return self.session.query(Alert).filter(Alert.seen == 0).count()

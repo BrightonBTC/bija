@@ -6,6 +6,7 @@ import re
 import textwrap
 import qrcode
 
+from bija.alerts import AlertKind
 from lightning.lnaddr import lndecode
 
 from flask import render_template
@@ -22,6 +23,32 @@ DB = BijaDB(app.session)
 logger = logging.getLogger(__name__)
 logger.setLevel(LOGGING_LEVEL)
 
+
+@app.template_filter('alert')
+def _jinja2_filter_alert(kind, data):
+    data = json.loads(data)
+    tpl = None
+    if kind == AlertKind.REPLY:
+        data['profile'] = DB.get_profile(data['public_key'])
+        tpl = 'reply'
+    if kind == AlertKind.COMMENT_ON_THREAD:
+        data['profile'] = DB.get_profile(data['public_key'])
+        tpl = 'thread_comment'
+    if kind == AlertKind.REACTION:
+        data['profile'] = DB.get_profile(data['public_key'])
+        data['note'] = DB.get_note(SETTINGS.get('pubkey'), data['referenced_event'])
+        tpl = 'reaction'
+    if kind == AlertKind.FOLLOW:
+        data['profile'] = DB.get_profile(data['public_key'])
+        tpl = 'follow'
+    if kind == AlertKind.UNFOLLOW:
+        data['profile'] = DB.get_profile(data['public_key'])
+        tpl = 'unfollow'
+
+    if tpl is not None:
+        return render_template('alerts/{}.html'.format(tpl), data=data)
+    else:
+        return 'failed to load alert'
 
 @app.template_filter('svg_icon')
 def _jinja2_filter_svg(icon, class_name):
@@ -69,7 +96,7 @@ def _jinja2_filter_nip5(nip5, validated):
             status = 'verified'
         else:
             status = 'warn'
-        nip5_htm = render_template('svg/{}.svg'.format(status), title=nip5, class_name='icon-sm {}'.format(status))
+        nip5_htm = render_template('svg/{}.svg'.format(status), title=nip5, class_name='icon {}'.format(status))
         return htm.format(nip5, nip5_htm)
     return ''
 

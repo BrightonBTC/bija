@@ -186,9 +186,11 @@ class RelayHandler:
                     logger.info('Get reaction from DB')
                     reaction = DB.get_reaction_by_id(e.event.id)
                     logger.info('Compose reaction alert')
-                    Alert(
-                        e.event.id,
-                        e.event.created_at, AlertKind.REACTION, e.event.public_key, e.event_id, reaction.content)
+                    Alert(AlertKind.REACTION, e.event.created_at, {
+                        'public_key': e.event.public_key,
+                        'referenced_event': e.event_id,
+                        'reaction': reaction.content
+                    })
                     logger.info('Get unread alert count')
                     n = DB.get_unread_alert_count()
                     if n > 0:
@@ -233,16 +235,19 @@ class RelayHandler:
         if event.response_to is not None:
             reply = DB.get_note(SETTINGS.get('pubkey'), event.response_to)
             if reply is not None and reply.public_key == SETTINGS.get('pubkey'):
-                Alert(
-                    event.event.id,
-                    event.event.created_at, AlertKind.REPLY, event.event.public_key, event.response_to, event.content)
+                Alert(AlertKind.REPLY, event.event.created_at, {
+                    'public_key': event.event.public_key,
+                    'response_to': event.response_to,
+                    'content': event.content
+                })
         elif event.thread_root is not None:
             root = DB.get_note(SETTINGS.get('pubkey'), event.thread_root)
             if root is not None and root.public_key == SETTINGS.get('pubkey'):
-                Alert(
-                    event.event.id,
-                    event.event.created_at, AlertKind.COMMENT_ON_THREAD, event.event.public_key, event.thread_root,
-                    event.content)
+                Alert(AlertKind.COMMENT_ON_THREAD, event.event.created_at, {
+                    'public_key': event.event.public_key,
+                    'thread_root': event.thread_root,
+                    'content': event.content
+                })
 
     def notify_on_note_event(self, event, subscription):
         if subscription == 'primary':
@@ -268,6 +273,15 @@ class RelayHandler:
                 self.subscribe_primary()
             if event.public_key != pk and subscription == 'profile':
                 self.subscribe_profile(event.public_key, timestamp_minus(TimePeriod.WEEK), [])
+            if len(e.new) > 0 and SETTINGS.get('pubkey') in e.new:
+                Alert(AlertKind.FOLLOW, event.created_at, {
+                    'public_key': e.event.public_key
+                })
+            if len(e.removed) > 0 and SETTINGS.get('pubkey') in e.removed:
+                Alert(AlertKind.UNFOLLOW, event.created_at, {
+                    'public_key': e.event.public_key
+                })
+
 
     def receive_private_message_event(self, event):
 
@@ -399,16 +413,23 @@ class ContactListEvent:
         self.event = event
         self.pubkey = pubkey
         self.keys = []
+        self.new = []
+        self.removed = []
         self.changed = False
 
         self.compile_keys()
         DB.add_profile_if_not_exists(self.event.public_key)
-        DB.add_contact_list(self.event.public_key, self.keys)
+        self.update()
 
     def compile_keys(self):
         for p in self.event.tags:
             if p[0] == "p":
                 self.keys.append(p[1])
+
+    def update(self):
+        self.new, self.removed = DB.add_contact_list(self.event.public_key, self.keys)
+        print('>NEW', self.new)
+        print('>REMOVED', self.removed)
 
 
 class EncryptedMessageEvent:

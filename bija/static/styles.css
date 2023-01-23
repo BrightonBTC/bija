@@ -260,11 +260,11 @@ hr{
 .icon *,.icon-sm *,.icon-lg * {
     stroke: var(--icon-clr);
 }
-.icon-sm.verified *{
+.icon.verified *{
     stroke: var(--verified);
     fill: var(--bg-clr1);
 }
-.icon-sm.warn *{
+.icon.warn *{
     stroke: var(--warning);
 }
 .icon.liked *{
@@ -1062,9 +1062,9 @@ svg.lightning *{
 .note-image .nip5 {
     position: absolute;
     z-index: 10;
-    left: calc(var(--pfp-dim) - var(--spacing-mid)/1.2);
+    left: calc(var(--pfp-dim) - var(--spacing-mid)/1.5);
     filter: drop-shadow(1px 2px 3px var(--bg-clr1));
-    margin-top: calc(0px - var(--spacing-mid)/3);
+    margin-top: calc(0px - var(--spacing-mid)/2);
 }
 .thread-pointer{
     position: absolute;
