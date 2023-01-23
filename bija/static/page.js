@@ -334,24 +334,56 @@ class bijaNoteTools{
         document.addEventListener('quoteFormLoaded', ()=>{
             this.setEventListeners()
         });
+
+        this.auto_filler = document.querySelector('#name-hints');
+        this.setNameAutoFiller()
+        document.addEventListener("profileReq", (event)=>{
+            this.anchorNameAutoFiller(event.detail.elem)
+        })
     }
 
     setEventListeners(){
-        const reply_els = document.querySelectorAll('textarea.note-textarea');
-        for(const reply_el of reply_els){
-            if(!reply_el.dataset.toolset){
-                reply_el.dataset.toolset = true
-                this.setNameHintFetch(reply_el)
+        const els = document.querySelectorAll('textarea.note-textarea');
+        for(const el of els){
+            if(!el.dataset.toolset){
+                el.dataset.toolset = true
+                this.setNameHintFetch(el)
+                this.setRegisterCursorPos(el)
             }
         }
     }
 
+    setRegisterCursorPos(el){
+        el.addEventListener("keyup", (event)=>{
+            el.dataset.pos = event.target.selectionStart
+        });
+        el.addEventListener("click", (event)=>{
+            el.dataset.pos = event.target.selectionStart
+        });
+        el.addEventListener("focus", (event)=>{
+            el.dataset.pos = event.target.selectionStart
+        });
+    }
+
+    anchorNameAutoFiller(elem){
+
+        const pos = elem.getBoundingClientRect()
+        this.auto_filler.style.top = parseInt(pos.bottom)+'px'
+        this.auto_filler.style.left = parseInt(pos.left)+'px'
+    }
+
+    setNameAutoFiller(){
+
+    }
+
     setNameHintFetch(reply_el){
         reply_el.addEventListener("keyup", (event)=>{
-            const hint_elem = reply_el.parentElement.querySelector('.name-hints')
-            hint_elem.innerHTML = ''
+            this.auto_filler.innerHTML = ''
             const matches = match_mentions(reply_el.value);
             if(matches){
+                document.dispatchEvent(new CustomEvent("profileReq", {
+                    detail: {elem: reply_el}
+                }));
                 let name = false
                 for(const match of matches){
                     const match_pos = reply_el.value.search(match)+match.length
@@ -368,7 +400,7 @@ class bijaNoteTools{
                     }
                     fetchGet('/search_name?name='+name, cb, {
                         'context':this,
-                        'hint_elem':hint_elem,
+                        'hint_elem':this.auto_filler,
                         'reply_elem':reply_el,
                         'search':name
                     }, 'json')
@@ -1429,7 +1461,8 @@ class Emojis{
                 a.addEventListener("click", (event)=>{
                     event.stopPropagation();
                     event.preventDefault();
-                    data.context.target_el.querySelector('textarea').value += a.innerText
+                    // data.context.target_el.querySelector('textarea').value += a.innerText
+                    data.context.insert(data.context.target_el.querySelector('textarea'), a.innerText)
                     data.context.updateRecent(a.innerText)
                     data.context.reset()
                     data.context.close()
@@ -1437,6 +1470,12 @@ class Emojis{
                 data.context.emoji_div.append(a)
             }
         }
+    }
+    insert(el, val){
+        const pos = parseInt(el.dataset.pos)
+        el.value = el.value.substring(0, pos) + val + el.value.substring(pos, el.value.length);
+        el.setSelectionRange(pos+1, pos+1)
+        el.focus()
     }
     updateRecent(emoji){
         fetchGet('/recent_emojis?s='+emoji, false, {})

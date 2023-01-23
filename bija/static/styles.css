@@ -53,6 +53,7 @@
     --nav-icon-clr: #7581a7;
 
     --pfp-dim: 40px;
+    --pfp-dim-sm: calc(var(--pfp-dim)*0.7);
     --pfp-dim-lg: calc(var(--pfp-dim)*1.3);
     --pfp-dim-xl: calc(var(--pfp-dim)*2.2);
 
@@ -165,6 +166,7 @@ select{
 button.img-btn{
     display: flex;
     padding: 0;
+    align-items: center;
 }
 button.img-btn > *{
     margin: var(--spacing-mid);
@@ -483,11 +485,11 @@ hr{
     background: var(--bg-clr2);
 }
 .poster-form .pic{
-    flex-basis: 50px;
+    flex-basis: calc(var(--pfp-dim-sm) + var(--spacing-sm)*2);
 }
 .poster-form .pic img{
-    width: var(--pfp-dim);
-    height: var(--pfp-dim);
+    width: var(--pfp-dim-sm);
+    height: var(--pfp-dim-sm);
 }
 .poster-form form{
     flex: 1;
@@ -1043,7 +1045,10 @@ svg.lightning *{
     margin: var(--spacing-sm);
     border-radius: var(--rnd-lg);
     background: var(--bg-clr1);
-    display: flex !important;
+    display: flex;
+}
+.note-container .note-container .note-container {
+    display: none;
 }
 .note-image{
     flex: 0 0 var(--pfp-dim);
@@ -1293,19 +1298,21 @@ p.note-tools {
     border-radius: var(--rnd-lg);
     cursor: pointer;
 }
-.name-hints{
+#name-hints{
+    position: fixed;
+    z-index: 5000;
     background: var(--bg-clr3);
     border-radius: var(--rnd);
     flex: 100%;
 }
-.name-hints ul{
+#name-hints ul{
     padding: var(--spacing-sm);
 }
-.name-hints li {
+#name-hints li {
     padding: var(--spacing-tiny);
     cursor: pointer;
 }
-.name-hints li:hover {
+#name-hints li:hover {
     background: var(--bg-clr2);
 }
 .note .og {
@@ -1447,8 +1454,8 @@ p.note-tools {
     margin-right: var(--spacing-mid);
 }
 .alerts .user-image{
-    width: var(--pfp-dim);
-    height: var(--pfp-dim);
+    width: var(--pfp-dim-sm);
+    height: var(--pfp-dim-sm);
     margin-right: var(--spacing-mid);
 }
 

@@ -540,7 +540,7 @@ class BijaDB:
         self.session.commit()
 
     def search_profile_name(self, name_str):
-        return self.session.query(Profile.name, Profile.nip05, Profile.public_key).filter(
+        return self.session.query(Profile.name, Profile.nip05, Profile.public_key, Profile.pic).filter(
             or_(
                 Profile.name.like(f"{name_str}%"),
                 Profile.public_key.like(f"{name_str}%")
