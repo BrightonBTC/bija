@@ -1045,7 +1045,10 @@ svg.lightning *{
     margin: var(--spacing-sm);
     border-radius: var(--rnd-lg);
     background: var(--bg-clr1);
-    display: flex !important;
+    display: flex;
+}
+.note-container .note-container .note-container {
+    display: none;
 }
 .note-image{
     flex: 0 0 var(--pfp-dim);
