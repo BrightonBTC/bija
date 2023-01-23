@@ -1298,19 +1298,21 @@ p.note-tools {
     border-radius: var(--rnd-lg);
     cursor: pointer;
 }
-.name-hints{
+#name-hints{
+    position: fixed;
+    z-index: 5000;
     background: var(--bg-clr3);
     border-radius: var(--rnd);
     flex: 100%;
 }
-.name-hints ul{
+#name-hints ul{
     padding: var(--spacing-sm);
 }
-.name-hints li {
+#name-hints li {
     padding: var(--spacing-tiny);
     cursor: pointer;
 }
-.name-hints li:hover {
+#name-hints li:hover {
     background: var(--bg-clr2);
 }
 .note .og {

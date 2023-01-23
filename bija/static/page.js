@@ -334,6 +334,12 @@ class bijaNoteTools{
         document.addEventListener('quoteFormLoaded', ()=>{
             this.setEventListeners()
         });
+
+        this.auto_filler = document.querySelector('#name-hints');
+        this.setNameAutoFiller()
+        document.addEventListener("profileReq", (event)=>{
+            this.anchorNameAutoFiller(event.detail.elem)
+        })
     }
 
     setEventListeners(){
@@ -359,12 +365,25 @@ class bijaNoteTools{
         });
     }
 
+    anchorNameAutoFiller(elem){
+
+        const pos = elem.getBoundingClientRect()
+        this.auto_filler.style.top = parseInt(pos.bottom)+'px'
+        this.auto_filler.style.left = parseInt(pos.left)+'px'
+    }
+
+    setNameAutoFiller(){
+
+    }
+
     setNameHintFetch(reply_el){
         reply_el.addEventListener("keyup", (event)=>{
-            const hint_elem = reply_el.parentElement.querySelector('.name-hints')
-            hint_elem.innerHTML = ''
+            this.auto_filler.innerHTML = ''
             const matches = match_mentions(reply_el.value);
             if(matches){
+                document.dispatchEvent(new CustomEvent("profileReq", {
+                    detail: {elem: reply_el}
+                }));
                 let name = false
                 for(const match of matches){
                     const match_pos = reply_el.value.search(match)+match.length
@@ -381,7 +400,7 @@ class bijaNoteTools{
                     }
                     fetchGet('/search_name?name='+name, cb, {
                         'context':this,
-                        'hint_elem':hint_elem,
+                        'hint_elem':this.auto_filler,
                         'reply_elem':reply_el,
                         'search':name
                     }, 'json')
