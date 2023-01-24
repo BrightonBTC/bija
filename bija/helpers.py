@@ -32,10 +32,10 @@ def bech32_to_hex64(prefix: str, b_key: str):
     if hrp != prefix:
         return False
     decoded = convertbits(data, 5, 8, False)
-    private_key = bytes(decoded).hex()
-    if not is_hex_key(private_key):
+    key = bytes(decoded).hex()
+    if not is_hex_key(key):
         return False
-    return private_key
+    return key
 
 
 # TODO: regex for this
@@ -58,6 +58,11 @@ def get_at_tags(content: str) -> list[Any]:
 def get_hash_tags(content: str) -> list[Any]:
     regex = re.compile(r'\B#\w*[a-zA-Z]+\w*\W')
     return re.findall(regex, content+' ')
+
+
+def get_note_links(content: str) -> list[Any]:
+    regex = re.compile(r'\Wnote1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{58}\W')
+    return re.findall(regex, ' '+content+' ')
 
 
 def get_embeded_tag_indexes(content: str):
@@ -135,9 +140,10 @@ class TimePeriod(IntEnum):
     WEEK = 60 * 60 * 24 * 7
 
 
-def timestamp_minus(period: TimePeriod, multiplier: int = 1):
-    now = int(time.time())
-    return now - (period * multiplier)
+def timestamp_minus(period: TimePeriod, multiplier: int = 1, start=False):
+    if not start:
+        start = int(time.time())
+    return start - (period * multiplier)
 
 
 def list_index_exists(lst, i):

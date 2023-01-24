@@ -7,8 +7,25 @@
 {%- include 'profile.header.html' -%}
 <h2 class="posts-title">Public posts</h2>
 <div id="profile-posts" data-latest="{{latest}}">
+    <div id="feed">
     {%- include 'feed.items.html' -%}
+    </div>
 </div>
+<div class="archive_fetcher">
+    <label>Fetch older posts: </label>
+    <select id="fetch_archived">
+        <option value="n">-- Select timeframe --</option>
+        <option value="w">1 week</option>
+        <option value="m">1 month</option>
+        <option value="y">1 year</option>
+        <option value="a">All time</option>
+    </select>
+    <div class="loading">
+        <div class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
+        <div>Found <span class="n_fetched" data-active="0"></span> new notes</div>
+    </div>
+</div>
+
 {%- endblock content -%}
 
 {%- block right_content -%}

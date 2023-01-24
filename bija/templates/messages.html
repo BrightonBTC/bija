@@ -4,6 +4,7 @@
 {%- endblock css -%}
 
 {%- block content -%}
+<button id="mark_all_read" class="right">Mark all read</button>
 {%- for message in messages: -%}
 
 {%- if message.pic is not none and message.pic|length > 0  -%}

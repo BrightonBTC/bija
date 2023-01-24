@@ -35,7 +35,7 @@
         {%- if profile['pic'] is not none -%}
             {%- set pic=profile['pic'] -%}
         {%- else -%}
-            {%- set pic="/identicon?id="+pubkey -%}
+            {%- set pic="/identicon?id="+profile['public_key'] -%}
         {%- endif -%}
     <form id="profile_updater" data-vis="0">
         <label for="pname" class="sm">Handle</label>

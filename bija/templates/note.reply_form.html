@@ -10,7 +10,7 @@
     </span>
     <span class="section">
         <a href="#" class="quote-link" data-rel="{{note['id']}}">{{'reshare'| svg_icon('icon')|safe}}</a>
-        <span class="quote-n counts rnd">{{note['shares'] if note['shares']}}</span>
+        <a href="{{ url_for('boosts_page', id=note['id']) }}#focussed" class="quote-n counts rnd">{{note['shares'] if note['shares']}}</a>
     </span>
     <span class="section">
         <a href="#" class="like" data-rel="{{note['id']}}" data-liked="{{note['liked']}}">{{liked_im| svg_icon('icon '+liked_im)|safe}}</a>
@@ -28,5 +28,4 @@
         <span>{{'emoji'| svg_icon('icon-lg emojis')|safe}}</span>
     </div>
     <div class="media_uploads"></div>
-    <div class="name-hints"></div>
 </form>

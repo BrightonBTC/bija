@@ -10,7 +10,7 @@
         <p>{{data['description']|truncate(300, False, '...', 0)}}</p>
     {%- endif -%}
     {%- if 'image' in data -%}
-        <img src="{{data['image']}}"   data-dflt="/static/blank.png"  onerror="defaultImage(this);">
+        <img src="{{data['image']}}" referrerpolicy="no-referrer" data-dflt="/static/blank.png"  onerror="defaultImage(this);">
     {%- endif -%}
 {%- if 'url' not in data -%}
     </div>

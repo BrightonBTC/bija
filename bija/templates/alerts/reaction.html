@@ -1,0 +1,23 @@
+{%- if data.profile.pic is not none -%}
+    {%- set pic=data.profile.pic -%}
+{%- else -%}
+    {%- set pic="/identicon?id="+data.profile.public_key -%}
+{%- endif -%}
+{%- if data.reaction == '+' or data.reaction == '' -%}
+    {%- set content = "🤍" -%}
+{%- else -%}
+    {%- set content = data.reaction -%}
+{%- endif -%}
+<a href="/note?id={{data['referenced_event']}}#focussed">
+    <div class="alert-image">
+        <img class="user-image" src="{{pic}}"> <span class="reaction">{{content}}</span>
+    </div>
+    <div class="alert-main">
+        <div class="alert-title">
+            {{data.profile['name'] | ident_string(data.profile['display_name'], data.profile['public_key']) | safe }} reacted
+        </div>
+        <div class="alert-content">
+            {{data.note['content'][:210]| striptags}}
+        </div>
+    </div>
+</a>

@@ -166,11 +166,11 @@ class NoteThread:
         for note in self.notes:
             n = dict(note)
             if n['response_to'] == self.id or (n['thread_root'] == self.id and n['response_to'] is None):
+                n['reshare'] = self.get_reshare(n)
+                n['class'] = 'reply'
                 self.children.append(n)
                 self.add_members(n)
                 to_remove.append(note)
-                n['reshare'] = self.get_reshare(n)
-                n['class'] = 'reply'
                 self.note_ids.append(n['id'])
         self.remove_notes_from_list(to_remove)
 
@@ -186,18 +186,18 @@ class NoteThread:
         for note in self.notes:
             n = dict(note)
             if n['id'] == note_id:
-                self.ancestors.insert(0, n)
-                self.add_members(n)
-                to_remove.append(note)
-                self.note_ids.insert(0, n['id'])
                 n['reshare'] = self.get_reshare(n)
                 n['class'] = 'ancestor'
                 if n['response_to'] is not None:
                     self.get_ancestor(n['response_to'])
+                self.ancestors.append(n)
+                self.add_members(n)
+                to_remove.append(note)
+                self.note_ids.insert(0, n['id'])
                 found = True
                 break
         if not found and note_id != self.root_id:
-            self.ancestors.insert(0, note_id)
+            self.ancestors.append(note_id)
         self.remove_notes_from_list(to_remove)
 
     def get_root(self):
@@ -205,12 +205,12 @@ class NoteThread:
         for note in self.notes:
             n = dict(note)
             if n['id'] == self.root_id:
+                n['class'] = 'root'
+                n['reshare'] = self.get_reshare(n)
                 self.root = [n]
                 self.add_members(n)
                 self.notes.remove(note)
                 self.note_ids.append(n['id'])
-                n['class'] = 'root'
-                n['reshare'] = self.get_reshare(n)
                 break
         if len(self.root) < 1:
             self.root = [self.root_id]
@@ -246,3 +246,16 @@ class NoteThread:
         public_keys = [note['public_key']]
         public_keys = json.loads(note['members']) + public_keys
         self.add_public_keys(public_keys)
+
+
+class BoostsThread:
+    def __init__(self, note_id):
+        logger.info('BOOSTS THREAD')
+        self.id = note_id
+        self.note = DB.get_note(SETTINGS.get('pubkey'), note_id)
+        self.boosts = []
+        boosts = DB.get_feed(int(time.time()), SETTINGS.get('pubkey'), {'boost_id': note_id})
+        for boost in boosts:
+            boost = dict(boost)
+            boost['reshare'] = self.note
+            self.boosts.append(boost)

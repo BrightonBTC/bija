@@ -1,0 +1,18 @@
+{%- if data.profile.pic is not none -%}
+    {%- set pic=data.profile.pic -%}
+{%- else -%}
+    {%- set pic="/identicon?id="+data.profile.public_key -%}
+{%- endif -%}
+<a href="/note?id={{data['thread_root']}}#focussed">
+    <div class="alert-image">
+        <img class="user-image" src="{{pic}}">
+    </div>
+    <div class="alert-main">
+        <div class="alert-title">
+            <img src="/static/speech-bubble.svg" class="comment"> {{data.profile['name'] | ident_string(data.profile['display_name'], data.profile['public_key']) | safe }} commented on your thread
+        </div>
+        <div class="alert-content">
+            {{data['content'][:500]| striptags}}
+        </div>
+    </div>
+</a>

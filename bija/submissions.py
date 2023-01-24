@@ -5,7 +5,7 @@ import time
 from bija.app import app
 from bija.args import LOGGING_LEVEL
 from bija.db import BijaDB
-from bija.helpers import is_hex_key, get_at_tags, get_hash_tags
+from bija.helpers import is_hex_key, get_at_tags, get_hash_tags, get_note_links, bech32_to_hex64
 from bija.settings import SETTINGS
 from python_nostr.nostr.event import EventKind, Event
 from python_nostr.nostr.key import PrivateKey
@@ -153,6 +153,7 @@ class SubmitNote(Submit):
     def process_mentions(self):
         logger.info('process mentions')
         matches = get_at_tags(self.content)
+        note_matches = get_note_links(self.content)
         offset = 1
         if self.pow_difficulty is not None and self.pow_difficulty > 0:
             offset = 0
@@ -162,6 +163,13 @@ class SubmitNote(Submit):
                 self.tags.append(["p", name['public_key']])
                 index = len(self.tags) - offset
                 self.content = self.content.replace(match, "#[{}]".format(index))
+        for match in note_matches:
+            print('MATCH', match)
+            match = match[1:-1]
+            print('MATCH', match)
+            self.tags.append(["e", bech32_to_hex64('note', match)])
+            index = len(self.tags) - offset
+            self.content = self.content.replace(match, "#[{}]".format(index))
 
     def process_hash_tags(self):
         logger.info('process hashtags')

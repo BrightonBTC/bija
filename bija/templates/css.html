@@ -4,5 +4,9 @@
 {%- for setting in vars -%}
 --{{setting.var}}: {{setting.val}};
 {%- endfor -%}
+{%- set settings = 1|theme_settings -%}
+{%- for s in settings -%}
+--{{s.key}}: {{s.value}}px;
+{%- endfor -%}
 }
 </style>

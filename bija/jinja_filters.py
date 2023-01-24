@@ -6,6 +6,7 @@ import re
 import textwrap
 import qrcode
 
+from bija.alerts import AlertKind
 from lightning.lnaddr import lndecode
 
 from flask import render_template
@@ -23,6 +24,32 @@ logger = logging.getLogger(__name__)
 logger.setLevel(LOGGING_LEVEL)
 
 
+@app.template_filter('alert')
+def _jinja2_filter_alert(kind, data):
+    data = json.loads(data)
+    tpl = None
+    if kind == AlertKind.REPLY:
+        data['profile'] = DB.get_profile(data['public_key'])
+        tpl = 'reply'
+    if kind == AlertKind.COMMENT_ON_THREAD:
+        data['profile'] = DB.get_profile(data['public_key'])
+        tpl = 'thread_comment'
+    if kind == AlertKind.REACTION:
+        data['profile'] = DB.get_profile(data['public_key'])
+        data['note'] = DB.get_note(SETTINGS.get('pubkey'), data['referenced_event'])
+        tpl = 'reaction'
+    if kind == AlertKind.FOLLOW:
+        data['profile'] = DB.get_profile(data['public_key'])
+        tpl = 'follow'
+    if kind == AlertKind.UNFOLLOW:
+        data['profile'] = DB.get_profile(data['public_key'])
+        tpl = 'unfollow'
+
+    if tpl is not None:
+        return render_template('alerts/{}.html'.format(tpl), data=data)
+    else:
+        return 'failed to load alert'
+
 @app.template_filter('svg_icon')
 def _jinja2_filter_svg(icon, class_name):
     return render_template('svg/{}.svg'.format(icon), class_name=class_name)
@@ -34,6 +61,10 @@ def _jinja2_filter_theme(b):
     if theme is None:
         theme = 'default'
     return DB.get_theme_vars(theme)
+
+@app.template_filter('theme_settings')
+def _jinja2_filter_theme(b):
+    return DB.get_settings_by_keys(['spacing', 'fs-base', 'rnd', 'icon', 'pfp-dim'])
 
 
 @app.template_filter('dt')
@@ -65,7 +96,7 @@ def _jinja2_filter_nip5(nip5, validated):
             status = 'verified'
         else:
             status = 'warn'
-        nip5_htm = render_template('svg/{}.svg'.format(status), title=nip5, class_name='icon-sm {}'.format(status))
+        nip5_htm = render_template('svg/{}.svg'.format(status), title=nip5, class_name='icon {}'.format(status))
         return htm.format(nip5, nip5_htm)
     return ''
 
@@ -123,7 +154,7 @@ def _jinja2_filter_media(json_string):
     if len(a) > 0:
         media = a[0]
         if media[1] == 'image':
-            return '<div class="image-attachment"><img data-src="{}" data-srcset="{}" src="/static/blank.png" class="lazy-load"></div>'.format(media[0], media[0])
+            return '<div class="image-attachment"><img data-src="{}" data-srcset="{}" src="/static/blank.png" class="lazy-load" referrerpolicy="no-referrer"></div>'.format(media[0], media[0])
         elif media[1] == 'og':
             return render_template("note.og.html", data=media[0])
         elif media[1] == 'video':
@@ -151,10 +182,10 @@ def _jinja2_filter_note(content: str, limit=500):
 
     hashtags.sort(key=len, reverse=True)
     for tag in hashtags:
-        term = tag[1:].strip()
+        term = tag[1:-1].strip()
         content = "{} ".format(content).replace(
-            tag,
-            "<a href='/topic?tag={}'>{}</a> ".format(term, tag.strip())).strip()
+            tag[:-1],
+            "<a href='/topic?tag={}'>{}</a>".format(term, tag[:-1]))
 
     tags = get_at_tags(content)
     for tag in tags:

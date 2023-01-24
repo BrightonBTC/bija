@@ -7,7 +7,10 @@
         <input type="hidden" name="quote_id" value="{{id}}">
         <textarea name="comment" class="note-textarea" placeholder="Add a comment to your re-post"></textarea>
         <div class="name-hints"></div>
-        <input type="submit" value="Share" class="right post-submit pad-sm">
+         <div class="toolbar">
+            <input type="submit" value="Share" class="right post-submit pad-sm">
+            <span>{{'emoji'| svg_icon('icon-lg emojis')|safe}}</span>
+        </div>
     </form>
 </div>
 

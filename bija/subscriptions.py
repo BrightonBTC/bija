@@ -29,7 +29,7 @@ class Subscribe:
         logger.info('add subscription to relay manager')
         RELAY_MANAGER.add_subscription(self.name, self.filters)
         message = json.dumps(request)
-        logger.info('publish subscriptiom: {}'.format(message))
+        logger.info('publish subscription: {}'.format(message))
         RELAY_MANAGER.publish_message(message)
 
     @staticmethod
@@ -44,29 +44,38 @@ class SubscribePrimary(Subscribe):
     def __init__(self, name, pubkey):
         super().__init__(name)
         self.pubkey = pubkey
+        self.since = 0
+        self.set_since()
         self.build_filters()
         self.send()
+
+    def set_since(self):
+        latest = DB.latest_in_primary(SETTINGS.get('pubkey'))
+        if latest is not None:
+            self.since = timestamp_minus(TimePeriod.HOUR, start=latest)
+        else:
+            self.since = timestamp_minus(TimePeriod.WEEK)
 
     def build_filters(self):
         logger.info('build subscription filters')
         kinds = [EventKind.SET_METADATA,
-                 EventKind.TEXT_NOTE,
+                 EventKind.TEXT_NOTE, EventKind.BOOST,
                  EventKind.RECOMMEND_RELAY,
                  EventKind.CONTACTS,
                  EventKind.ENCRYPTED_DIRECT_MESSAGE,
                  EventKind.DELETE,
                  EventKind.REACTION]
-        profile_filter = Filter(authors=[self.pubkey], kinds=kinds)
-        kinds = [EventKind.TEXT_NOTE, EventKind.ENCRYPTED_DIRECT_MESSAGE, EventKind.REACTION, EventKind.CONTACTS]
-        mentions_filter = Filter(tags={'#p': [self.pubkey]}, kinds=kinds)
+        profile_filter = Filter(authors=[self.pubkey], kinds=kinds, since=self.since)
+        kinds = [EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.ENCRYPTED_DIRECT_MESSAGE, EventKind.REACTION, EventKind.CONTACTS]
+        mentions_filter = Filter(tags={'#p': [self.pubkey]}, kinds=kinds, since=self.since)
         f = [profile_filter, mentions_filter]
         following_pubkeys = DB.get_following_pubkeys(SETTINGS.get('pubkey'))
 
         if len(following_pubkeys) > 0:
             following_filter = Filter(
                 authors=following_pubkeys,
-                kinds=[EventKind.TEXT_NOTE, EventKind.REACTION, EventKind.DELETE],
-                since=timestamp_minus(TimePeriod.DAY)  # TODO: should be configurable in user settings
+                kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION, EventKind.DELETE],
+                since=self.since  # TODO: should be configurable in user settings
             )
             following_profiles_filter = Filter(
                 authors=following_pubkeys,
@@ -82,9 +91,10 @@ class SubscribePrimary(Subscribe):
             for topic in topics:
                 t.append(topic.tag)
             topics_filter = Filter(
-                kinds=[EventKind.TEXT_NOTE],
+                kinds=[EventKind.TEXT_NOTE, EventKind.BOOST],
                 subid={"ids": [difficulty]},
-                tags={"#t": t}
+                tags={"#t": t},
+                since=self.since
             )
             f.append(topics_filter)
 
@@ -106,7 +116,7 @@ class SubscribeTopic(Subscribe):
             logger.info('calculated difficulty {}'.format(difficulty))
             subid = {"ids": [difficulty]}
         f = [
-            Filter(kinds=[EventKind.TEXT_NOTE], tags={'#t': [self.term]}, since=timestamp_minus(TimePeriod.WEEK*4), subid=subid)
+            Filter(kinds=[EventKind.TEXT_NOTE, EventKind.BOOST], tags={'#t': [self.term]}, since=timestamp_minus(TimePeriod.WEEK*4), subid=subid)
         ]
         self.filters = Filters(f)
 
@@ -124,11 +134,11 @@ class SubscribeProfile(Subscribe):
         profile = DB.get_profile(self.pubkey)
         f = [
             Filter(authors=[self.pubkey], kinds=[EventKind.SET_METADATA, EventKind.CONTACTS]),
-            Filter(authors=[self.pubkey], kinds=[EventKind.TEXT_NOTE, EventKind.DELETE, EventKind.REACTION],
+            Filter(authors=[self.pubkey], kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.DELETE, EventKind.REACTION],
                    since=self.since),
             Filter(tags={'#p': [self.pubkey]}, kinds=[EventKind.CONTACTS])
         ]
-        followers = DB.get_following_pubkeys(profile.public_key)
+        followers = DB.get_following_pubkeys(self.pubkey)
         if followers is not None and len(followers) > 0:
             contacts_filter = Filter(authors=followers, kinds=[EventKind.SET_METADATA])
             f.append(contacts_filter)
@@ -149,15 +159,15 @@ class SubscribeThread(Subscribe):
         ids = DB.get_note_thread_ids(self.root)
         if ids is None:
             ids = [self.root]
-        filters.append(Filter(ids=ids, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION]))
+        filters.append(Filter(ids=ids, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION]))
         difficulty = self.required_pow()
         if difficulty is not None:
             pks = DB.get_following_pubkeys(SETTINGS.get('pubkey'))
             subid = {"ids": [difficulty]}
-            filters.append(Filter(tags={'#e': ids, '#p': pks}, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION]))
-            filters.append(Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION], subid=subid))
+            filters.append(Filter(tags={'#e': ids, '#p': pks}, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION]))
+            filters.append(Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION], subid=subid))
         else:
-            filters.append(Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION]))  # event responses
+            filters.append(Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION]))  # event responses
 
 
         self.filters = Filters(filters)
@@ -173,6 +183,6 @@ class SubscribeFeed(Subscribe):
     def build_filters(self):
         logger.info('build subscription filters')
         self.filters = Filters([
-            Filter(tags={'#e': self.ids}, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION]),  # event responses
-            Filter(ids=self.ids, kinds=[EventKind.TEXT_NOTE, EventKind.REACTION])
+            Filter(tags={'#e': self.ids}, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION]),  # event responses
+            Filter(ids=self.ids, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION])
         ])

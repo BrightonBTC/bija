@@ -192,6 +192,14 @@ let notifyNewProfilePosts = function(ts){
             elem.prepend(notification)
         }
     }
+    const a_el = document.querySelector('.archive_fetcher .n_fetched')
+    if(a_el){
+        const fetching_archive = a_el.dataset.active == '1'
+        if(fetching_archive){
+            const n = parseInt(a_el.innerText)+1
+            a_el.innerText = n
+        }
+    }
 }
 let updateProfile = function(profile){
     document.querySelector(".profile-about").innerHTML = profile.about
@@ -328,24 +336,56 @@ class bijaNoteTools{
         document.addEventListener('quoteFormLoaded', ()=>{
             this.setEventListeners()
         });
+
+        this.auto_filler = document.querySelector('#name-hints');
+        this.setNameAutoFiller()
+        document.addEventListener("profileReq", (event)=>{
+            this.anchorNameAutoFiller(event.detail.elem)
+        })
     }
 
     setEventListeners(){
-        const reply_els = document.querySelectorAll('textarea.note-textarea');
-        for(const reply_el of reply_els){
-            if(!reply_el.dataset.toolset){
-                reply_el.dataset.toolset = true
-                this.setNameHintFetch(reply_el)
+        const els = document.querySelectorAll('textarea.note-textarea');
+        for(const el of els){
+            if(!el.dataset.toolset){
+                el.dataset.toolset = true
+                this.setNameHintFetch(el)
+                this.setRegisterCursorPos(el)
             }
         }
     }
 
+    setRegisterCursorPos(el){
+        el.addEventListener("keyup", (event)=>{
+            el.dataset.pos = event.target.selectionStart
+        });
+        el.addEventListener("click", (event)=>{
+            el.dataset.pos = event.target.selectionStart
+        });
+        el.addEventListener("focus", (event)=>{
+            el.dataset.pos = event.target.selectionStart
+        });
+    }
+
+    anchorNameAutoFiller(elem){
+
+        const pos = elem.getBoundingClientRect()
+        this.auto_filler.style.top = parseInt(pos.bottom)+'px'
+        this.auto_filler.style.left = parseInt(pos.left)+'px'
+    }
+
+    setNameAutoFiller(){
+
+    }
+
     setNameHintFetch(reply_el){
         reply_el.addEventListener("keyup", (event)=>{
-            const hint_elem = reply_el.parentElement.querySelector('.name-hints')
-            hint_elem.innerHTML = ''
+            this.auto_filler.innerHTML = ''
             const matches = match_mentions(reply_el.value);
             if(matches){
+                document.dispatchEvent(new CustomEvent("profileReq", {
+                    detail: {elem: reply_el}
+                }));
                 let name = false
                 for(const match of matches){
                     const match_pos = reply_el.value.search(match)+match.length
@@ -362,7 +402,7 @@ class bijaNoteTools{
                     }
                     fetchGet('/search_name?name='+name, cb, {
                         'context':this,
-                        'hint_elem':hint_elem,
+                        'hint_elem':this.auto_filler,
                         'reply_elem':reply_el,
                         'search':name
                     }, 'json')
@@ -497,7 +537,53 @@ class bijaSettings{
             }
             fetchFromForm('/update_settings', theme_form, theme_cb, {}, 'json')
         });
+        this.setThemeSliders()
+    }
 
+    setThemeSliders(){
+        const sliders = document.querySelectorAll('.slider')
+        for(const slider of sliders){
+            const rel = slider.dataset.v
+            slider.addEventListener("input", (event)=>{
+                console.log('--'+slider.dataset.v)
+                document.querySelector('.demo[data-rel="'+rel+'"]').style.setProperty('--'+rel, slider.value+'px');
+            });
+            slider.addEventListener("mousedown", (event)=>{
+                const d_els = document.querySelectorAll('.demo')
+                for(const d_el of d_els){
+                    d_el.style.display = 'none'
+                }
+                document.querySelector('.demo[data-rel="'+rel+'"]').style.display = 'block'
+            });
+            slider.addEventListener("mouseup", (event)=>{
+                const d_els = document.querySelectorAll('.demo')
+                for(const d_el of d_els){
+                    d_el.style.display = 'none'
+                }
+            });
+
+        }
+        const btn = document.querySelector(".update_styles");
+        btn.addEventListener("click", (event)=>{
+            event.preventDefault();
+            event.stopPropagation();
+            const style_form = document.querySelector("#style_form")
+
+            const cb = function(response, data){
+                location.reload();
+            }
+            fetchFromForm('/update_settings', style_form, cb, {}, 'json')
+        });
+        const dflt_btn = document.querySelector(".default_styles");
+        dflt_btn.addEventListener("click", (event)=>{
+            event.preventDefault();
+            event.stopPropagation();
+
+            const scb = function(response, data){
+                location.reload();
+            }
+            fetchGet('/default_styles', scb, {}, 'json')
+        });
     }
 
     setDeleteKeysClicked(){
@@ -630,9 +716,25 @@ class bijaThread{
 
 class bijaMessages{
     constructor(){
-        window.scrollTo(0, document.body.scrollHeight);
-        this.setSubmitMessage()
-        this.setCfgLoader()
+        const main_el = document.querySelector('.main')
+        let page = main_el.dataset.page
+        if(page == 'messages_from'){
+            window.scrollTo(0, document.body.scrollHeight);
+            this.setSubmitMessage()
+            this.setCfgLoader()
+        }
+        else if(page=='messages'){
+            this.setAllReadBtn()
+        }
+    }
+
+    setAllReadBtn(){
+        const cb = function(response, data){
+            location.reload()
+        }
+        document.querySelector('#mark_all_read').addEventListener("click", (event)=>{
+            fetchGet('/mark_read', cb, {})
+        });
     }
 
     setCfgLoader(){
@@ -762,6 +864,29 @@ class bijaProfile{
         if(ln_btn){
             this.setLNBtn(ln_btn)
         }
+        const archive_fetcher = document.querySelector('#fetch_archived');
+        if(archive_fetcher){
+            this.setArchiveFetcher(archive_fetcher)
+        }
+    }
+
+    setArchiveFetcher(el){
+        el.addEventListener('change', (e) => {
+            const container =  document.querySelector('.archive_fetcher')
+            const a_el = container.querySelector('.n_fetched')
+            container.querySelector('.loading').style.display = 'flex'
+            a_el.dataset.active = "1"
+            a_el.innerText = '0'
+            let nodes = document.querySelectorAll('.ts[data-ts]')
+            let ts = Math.floor(Date.now() / 1000)
+            if(nodes.length > 0){
+                ts = nodes[nodes.length-1].dataset.ts
+            }
+            const cb = function(response, data){
+
+            }
+            fetchGet('/fetch_archived?pk='+this.public_key+'&tf='+el.value+'&ts='+ts, cb, {})
+        });
     }
 
     setLNBtn(el){
@@ -909,7 +1034,11 @@ class bijaNotes{
             }
             const emoji_link = note.querySelector(".emojis");
             if(emoji_link){
-                new Emojis(note)
+                emoji_link.addEventListener('click', (e) => {
+                    document.dispatchEvent(new CustomEvent("emojiReq", {
+                        detail: {elem: note}
+                    }));
+                });
             }
             const read_more_link = note.querySelector(".read-more");
             if(read_more_link){
@@ -1050,6 +1179,11 @@ class bijaNotes{
                     popup(response)
                     data.context.setQuoteForm()
                     lazyLoad()
+                    document.querySelector('.popup .emojis').addEventListener('click', (e) => {
+                        document.dispatchEvent(new CustomEvent("emojiReq", {
+                            detail: {elem: document.querySelector('.popup')}
+                        }));
+                    });
                 }
             }
             fetchGet('/quote_form?id='+note_id, cb, {'context': this})
@@ -1084,6 +1218,18 @@ class bijaNotes{
                         }
                     }
                     fetchGet('/confirm_delete?id='+note_id, on_req_delete_confirm, {context:this})
+                })
+            }
+            else if(tool == 'share'){
+                tool_el.addEventListener('click', (e) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const get_share_cb = function(response, data){
+                        if(response){
+                            popup(response)
+                        }
+                    }
+                    fetchGet('/get_share?id='+note_id, get_share_cb, {context:this})
                 })
             }
         }
@@ -1170,7 +1316,11 @@ class bijaFeed{
     constructor(){
         const main_el = document.querySelector(".main[data-page]")
         if(['home', 'profile-me'].includes(main_el.dataset.page)){
-            new Emojis(main_el.querySelector('#note-poster'))
+            main_el.querySelector('#note-poster .emojis').addEventListener('click', (e) => {
+                document.dispatchEvent(new CustomEvent("emojiReq", {
+                    detail: {elem: main_el.querySelector('#note-poster')}
+                }));
+            });
         }
 
         this.page = main_el.dataset.page
@@ -1223,7 +1373,7 @@ class bijaFeed{
     loadArticles(response){
         const doc = new DOMParser().parseFromString(response, "text/html")
         const htm = doc.body.firstChild
-        document.getElementById("main-content").append(htm);
+        document.getElementById("feed").append(htm);
         const o = this
         setTimeout(function(){
             o.loading = 0;
@@ -1257,37 +1407,55 @@ class bijaTopic{
 }
 
 class Emojis{
+    target_el = null
+    active = false
     constructor(target_el){
-        this.target_el = target_el
-        this.search_el = target_el.querySelector('.emoji_selector input')
-        this.trigger_btn = target_el.querySelector('.emojis')
-        this.emoji_container = target_el.querySelector('.emoji_selector')
-        this.emoji_div = target_el.querySelector('.emoji_selector div')
-        this.textarea = target_el.querySelector('.poster-form textarea')
+        this.emoji_container = document.querySelector('#emoji_selector')
+        this.search_el = this.emoji_container.querySelector('#emoji_selector input')
+        this.emoji_div = this.emoji_container.querySelector('#emoji_selector div')
 
         this.setEventsListeners()
     }
+    anchor(elem){
+        this.reset()
+        this.target_el = elem
+        this.trigger_btn = this.target_el.querySelector('.emojis')
+        this.emoji_container.classList.add('show')
+        const pos = this.trigger_btn.getBoundingClientRect()
+        this.emoji_container.style.top = parseInt(pos.top)+'px'
+        this.emoji_container.style.left = parseInt(pos.left - this.emoji_container.offsetWidth)+'px'
+        this.fetch()
+        this.active = true
+
+        window.addEventListener("click", this.closeOnClickOutside);
+    }
+    fetch(){
+        fetchGet('/emojis?s='+this.search_el.value, this.loadEmojis, {'context': this}, 'json')
+    }
+    reset(){
+        this.search_el.value = ''
+        this.emoji_div.innerHTML = ""
+    }
     setEventsListeners(){
-        this.textarea.addEventListener("keydown", (event)=>{
-            this.closeEmojisContainer()
-        });
-        this.trigger_btn.addEventListener("click", (event)=>{
-            let is_showed = this.emoji_container.classList.contains('show')
-            if (is_showed) {
-                this.closeEmojisContainer()
-            } else {
-                fetchGet('/emojis', this.loadEmojis, {'context': this}, 'json')
-            }
-        });
+        document.addEventListener("emojiReq", (event)=>{
+            this.anchor(event.detail.elem)
+        })
         this.search_el.addEventListener("keyup", (event)=>{
-            fetchGet('/emojis?s='+this.search_el.value, this.loadEmojis, {'context': this}, 'json')
+            this.fetch()
+        });
+        document.body.addEventListener("mouseup", (event)=>{
+            console.log(this.active)
+            console.log(this.emoji_container.contains(event.target))
+            if (this.active && !this.emoji_container.contains(event.target)) {
+                this.close()
+            }
         });
     }
     loadEmojis(response, data){
         if(response){
             data.context.emoji_div.innerHTML = ""
-            data.context.emoji_container.classList.add('show')
-
+            data.context.search_el.focus()
+            document.addEventListener("scroll", data.context.close);
             for(const item of response.emojis){
                 const a = document.createElement('a')
                 a.href = '#'
@@ -1295,18 +1463,31 @@ class Emojis{
                 a.addEventListener("click", (event)=>{
                     event.stopPropagation();
                     event.preventDefault();
-                    data.context.textarea.value += a.innerText
-                    data.context.search_el.value = ''
-                    fetchGet('/emojis', data.context.loadEmojis, {'context': data.context}, 'json')
+                    // data.context.target_el.querySelector('textarea').value += a.innerText
+                    data.context.insert(data.context.target_el.querySelector('textarea'), a.innerText)
+                    data.context.updateRecent(a.innerText)
+                    data.context.reset()
+                    data.context.close()
                 });
                 data.context.emoji_div.append(a)
             }
         }
     }
-    closeEmojisContainer() {
-        this.emoji_container.classList.remove('show')
-        this.search_el.value = ''
-        this.emoji_div.innerHTML = ""
+    insert(el, val){
+        const pos = parseInt(el.dataset.pos)
+        el.value = el.value.substring(0, pos) + val + el.value.substring(pos, el.value.length);
+        el.setSelectionRange(pos+1, pos+1)
+        el.focus()
+    }
+    updateRecent(emoji){
+        fetchGet('/recent_emojis?s='+emoji, false, {})
+    }
+    close() {
+        document.removeEventListener("scroll", this.close);
+        const container = document.querySelector('#emoji_selector')
+        container.classList.remove('show')
+        container.querySelector('input').value = ''
+        container.querySelector('div').innerHTML = ""
     }
 }
 
@@ -1424,7 +1605,9 @@ function fetchGet(url, cb, cb_data = {}, response_type='text'){
         if(response_type == 'text') return response.text();
         else if(response_type == 'json') return response.json();
     }).then(function(response) {
-        cb(response, cb_data)
+        if(cb){
+            cb(response, cb_data)
+        }
     }).catch(function(err) {
         console.log(err);
     });
@@ -1607,6 +1790,9 @@ window.addEventListener("load", function () {
     if (document.querySelector(".main[data-page='messages_from']") != null){
         new bijaMessages();
     }
+    if (document.querySelector(".main[data-page='messages']") != null){
+        new bijaMessages();
+    }
     if (document.querySelector(".main[data-page='settings']") != null){
         new bijaSettings();
     }
@@ -1614,6 +1800,11 @@ window.addEventListener("load", function () {
     if (document.querySelector(".main[data-page='search']") != null){
         new bijaNotes();
     }
+
+    if (document.querySelector(".main[data-page='boosts']") != null){
+        new bijaNotes();
+    }
+    new Emojis();
 
     SOCK();
 
@@ -1646,7 +1837,5 @@ window.addEventListener("load", function () {
             }, {})
         });
     }
-
+    lazyLoad();
 });
-
-document.addEventListener("DOMContentLoaded", function() { lazyLoad(); });
