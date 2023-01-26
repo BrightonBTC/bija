@@ -4,7 +4,7 @@
         <a href="/profile?pk={{note['public_key']}}" class="profile-name">
             {{note['name'] | ident_string(note['display_name'], note['public_key']) | safe }}
             {%- if note['following'] is not none and note['following']==1 -%}
-            &nbsp; {{'following'| svg_icon('icon')|safe}}
+            {{'following'| svg_icon('icon')|safe}}
             {%- endif -%}
         </a>
         <span class="note-info">

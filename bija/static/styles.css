@@ -538,11 +538,26 @@ input.post-submit {
     border: 5px solid var(--bdr-clr-1);
     border-radius: var(--rnd-mid);
 }
+.long-name .uname{
+    display: grid;
+    grid-template-columns: auto auto;
+    align-items: center;
+    float: left;
+}
 .long-name .uname .name {
     font-weight: 100;
     color: var(--txt-clr2);
     font-style: italic;
     font-size: var(--fs-sm);
+}
+.long-name .uname .display_name {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    display: inline-block;
+}
+.long-name .uname .icon {
+    margin-left: var(--spacing-sm);
 }
 
 
@@ -1182,6 +1197,13 @@ svg.lightning *{
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+.note h3 .profile-name {
+    flex: 3;
+    display: grid;
+    grid-template-columns: auto auto;
+    align-items: center;
+    justify-content: start;
 }
 .note h3 > *{
     flex: 1;
