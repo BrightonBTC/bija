@@ -24,7 +24,7 @@
 <ul class="thread-members">
 {%- for p in members: -%}
     <li class="pad-mid">
-    {%- include 'profile.image.html' -%}
+    {%- include 'profile/profile.image.html' -%}
     <a href="/profile?pk={{p['public_key']}}" class="profile-name">{{p['name'] | ident_string(p['display_name'], p['public_key']) | safe }}</a>
     </li>
 {%- endfor -%}

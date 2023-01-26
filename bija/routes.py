@@ -150,7 +150,7 @@ def profile_page():
 
     if data.page == 'profile':
         return render_template(
-            "profile.html",
+            "profile/profile.html",
             page_id=data.page_id,
             title="Profile",
             threads=data.data.threads,
@@ -168,7 +168,7 @@ def profile_page():
         )
     else:
         return render_template(
-            "following.html",
+            "profile/following.html",
             page_id=data.page_id,
             title="Contacts",
             profile=data.profile,
@@ -301,7 +301,7 @@ def fetch_archived():
 @app.route('/get_profile_sharer', methods=['GET'])
 def get_profile_sharer():
     pk = request.args['pk']
-    return render_template("profile.sharer.html", hex=pk, bech32=hex64_to_bech32("npub", pk))
+    return render_template("profile/profile.sharer.html", hex=pk, bech32=hex64_to_bech32("npub", pk))
 
 @app.route('/get_ln_details', methods=['GET'])
 def get_ln_details():
@@ -309,7 +309,7 @@ def get_ln_details():
     profile = DB.get_profile(pk)
     d = json.loads(profile.raw)
 
-    return render_template("profile.lightning.html", data=json.loads(d['content']), name=profile.name)
+    return render_template("profile/profile.lightning.html", data=json.loads(d['content']), name=profile.name)
 
 @app.route('/get_share', methods=['GET'])
 def get_share():
@@ -863,7 +863,7 @@ def follow():
     is_me = request.args['id'] == SETTINGS.get('pubkey')
     upd = request.args['upd']
     if upd == "1":
-        return render_template("profile.tools.html", profile=profile, is_me=is_me, am_following=int(request.args['state']))
+        return render_template("profile/profile.tools.html", profile=profile, is_me=is_me, am_following=int(request.args['state']))
     else:
         return render_template("svg/following.svg", class_name="icon")
 

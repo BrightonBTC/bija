@@ -1,7 +1,7 @@
 <div class="poster-form rnd pad-mid">
     <div class="pic pad-sm">
         {%- set p=profile -%}
-        {%- include 'profile.image.html' -%}
+        {%- include 'profile/profile.image.html' -%}
     </div>
     <form id="quote_form">
         <input type="hidden" name="quote_id" value="{{id}}">
@@ -18,7 +18,7 @@
     <div class="thread-marker"></div>
     <div class="note-image">
         {%- set p=item -%}
-        {%- include 'profile.image.html' -%}
+        {%- include 'profile/profile.image.html' -%}
     </div>
     <div class="note-outer">
     {%- set note=item -%}

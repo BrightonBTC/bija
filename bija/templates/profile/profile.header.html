@@ -13,11 +13,11 @@
 <div id="profile-header">
 <div class="profile rnd" id="profile" data-updated_ts="{{updated_at}}" data-pk="{{profile['public_key']}}">
     <div class="profile-tools">
-        {%- include 'profile.tools.html' -%}
+        {%- include 'profile/profile.tools.html' -%}
     </div>
     <div class="profile-image profile-item">
         {%- with p=profile -%}
-        {%- include 'profile.image.html' -%}
+        {%- include 'profile/profile.image.html' -%}
         {%- endwith -%}
     </div>
     <div class="profile-details profile-item">

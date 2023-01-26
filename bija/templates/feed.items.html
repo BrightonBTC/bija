@@ -25,7 +25,7 @@
             <div class="note-image">
                 {{post['nip05'] | nip05_valid(post['nip05_validated']) | safe }}
                 {%- with p=post -%}
-                {%- include 'profile.image.html' -%}
+                {%- include 'profile/profile.image.html' -%}
                 {%- endwith -%}
             </div>
             <div class="note-outer">
@@ -67,7 +67,7 @@
             <div class="note-image">
                 {{post['nip05'] | nip05_valid(post['nip05_validated']) | safe }}
                 {%- with p=post -%}
-                {%- include 'profile.image.html' -%}
+                {%- include 'profile/profile.image.html' -%}
                 {%- endwith -%}
             </div>
             <div class="note-outer">

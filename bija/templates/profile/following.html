@@ -4,12 +4,12 @@
 {%- endblock css -%}
 
 {%- block content -%}
-{%- include 'profile.header.html' -%}
+{%- include 'profile/profile.header.html' -%}
 <div class="following-list">
 {%- for p in profiles: -%}
     <div class="following-item">
         <div class="pic">
-            {%- include 'profile.image.html' -%}
+            {%- include 'profile/profile.image.html' -%}
         </div>
         <div class="name"><a href="/profile?pk={{p['public_key']}}">{{p['name'] | ident_string(p['display_name'], p['public_key']) | safe }}</a> <br>{{ p['public_key'] | relationship | safe }}</div>
         {%- if p['following'] == False: -%}

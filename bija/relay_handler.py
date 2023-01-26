@@ -271,7 +271,7 @@ class RelayHandler:
             if event.public_key == pk:
                 logger.info('Contact list updated, restart primary subscription')
                 self.subscribe_primary()
-            if event.public_key != pk and subscription == 'profile':
+            elif self.page['page'] == 'profile' and self.page['identifier'] == pk:
                 self.subscribe_profile(event.public_key, timestamp_minus(TimePeriod.WEEK), [])
             if len(e.new) > 0 and SETTINGS.get('pubkey') in e.new:
                 Alert(AlertKind.FOLLOW, event.created_at, {
