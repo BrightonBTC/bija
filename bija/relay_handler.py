@@ -522,16 +522,15 @@ class MetadataEvent:
         except ValueError as e:
             self.success = False
             return
-
-        if 'name' in s:
+        if 'name' in s and s['name'] is not None:
             self.name = strip_tags(s['name'].strip())
-        if 'display_name' in s:
+        if 'display_name' in s and s['display_name'] is not None:
             self.display_name = strip_tags(s['display_name'].strip())
-        if 'nip05' in s and is_nip05(s['nip05']):
+        if 'nip05' in s and s['nip05'] is not None and is_nip05(s['nip05']):
             self.nip05 = s['nip05'].strip()
-        if 'about' in s:
+        if 'about' in s and s['about'] is not None:
             self.about = strip_tags(s['about'])
-        if 'picture' in s and validators.url(s['picture'].strip(), public=True):
+        if 'picture' in s and s['picture'] is not None and validators.url(s['picture'].strip(), public=True):
             self.picture = s['picture'].strip()
 
         if self.nip05 is not None:
