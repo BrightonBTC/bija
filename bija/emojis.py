@@ -4553,6 +4553,13 @@ emojis = [
     "slug": "animals_nature",
     "emojis": [
       {
+        "emoji": "𓅦",
+        "skin_tone_support": False,
+        "name": "ostrich nostrich",
+        "slug": "ostrich",
+        "unicode_version": "5.2"
+      },
+      {
         "emoji": "🐵",
         "skin_tone_support": False,
         "name": "monkey face",
