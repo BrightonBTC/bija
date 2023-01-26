@@ -4,7 +4,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import base64
 
-salt = b'z9ZNrHLedGvBmxfu_XsGEqwx1ZP2LIYEeaxnj6A'
+salt = b"\x00\xe9\xb9\x7f\xf3+\x8c\x97\x97T\x9a\xbc(m\xef\x1e\xda\n\x11lH'\x00"
 
 
 def encrypt_key(password, to_encrypt):

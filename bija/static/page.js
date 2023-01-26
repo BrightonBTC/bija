@@ -245,31 +245,41 @@ let updateMessageThread = function(data){
 
 class bijaSearch{
     constructor(){
+        this.input_el = document.querySelector('input[name="search_term"]');
+        this.hint_el = document.querySelector('#search_hints')
+        this.tips_el = document.querySelector('#search_tips')
         this.setEventListeners()
     }
 
     setEventListeners(){
-        const search = document.querySelector('input[name="search_term"]');
-        search.addEventListener("keyup", (event)=>{
-            document.querySelector('#search_hints').innerHTML = ''
-            const val = search.value
-            if (val.substring(0, 1) == '@'){
+        this.input_el.addEventListener("keyup", (event)=>{
+            this.hint_el.innerHTML = ''
+            const val = this.input_el.value
+            if(val.length > 0){
+                this.tips_el.style.display = 'none'
+            }
+            else{
+                this.tips_el.style.display = 'block'
+            }
+            if (val.substring(0, 1) == '@' && val.length > 1){
                 this.searchByName(val.substring(1))
             }
         })
-        this.searchTipsFill()
-        search.addEventListener("focus", (event)=>{
-            document.querySelector('#search_tips').style.display = 'block'
+        this.setSearchTips()
+        this.input_el.addEventListener("focus", (event)=>{
+            if(this.input_el.value.length == 0){
+                this.tips_el.style.display = 'block'
+            }
         })
-        search.addEventListener("blur", (event)=>{
-            document.querySelector('#search_tips').style.display = 'none'
+        this.input_el.addEventListener("blur", (event)=>{
+            this.tips_el.style.display = 'none'
         })
     }
 
     searchByName(name){
         const cb = function(response, data){
             if(response['result']){
-                data.context.showNameHints(response['result'], data.search)
+                data.context.showNameHints(response['result'], data.search, data.context)
             }
         }
         fetchGet('/search_name?name='+name, cb, {
@@ -278,9 +288,7 @@ class bijaSearch{
         }, 'json')
     }
 
-    showNameHints(results, search_str){
-        const reply_elem = document.querySelector('input[name="search_term"]')
-        const hint_elem = document.querySelector('#search_hints')
+    showNameHints(results, search_str, context){
         if(results.length > 0){
             const ul = document.createElement('ul')
             ul.classList.add('hint-list')
@@ -291,36 +299,31 @@ class bijaSearch{
                 }
                 li.innerText = name['name']
                 li.addEventListener("click", (event)=>{
-                    reply_elem.value = reply_elem.value.replace('@'+search_str, '@'+name['name'])
-                    reply_elem.parentElement.submit();
+                    context.input_el.value = context.input_el.value.replace('@'+search_str, '@'+name['name'])
+                    context.input_el.parentElement.submit();
                 });
                 ul.append(li)
             }
-            hint_elem.append(ul)
+            context.hint_el.append(ul)
         }
     }
     
-    searchTipsFill() {
-        const reply_elem = document.querySelector('input[name="search_term"]')
-        const tips_elems = document.querySelectorAll('#search_tips > li')
-        let fill_contents = Array.from(tips_elems).map(li => li.getAttribute('data-fill'))
+    setSearchTips() {
+        const tips_elems = this.tips_el.querySelectorAll('li')
         tips_elems.forEach(elem => {
             elem.addEventListener('mousedown', (event) => {
                 event.preventDefault()
             }); 
             elem.addEventListener("click", (event) => {
                 let fill_content = elem.getAttribute('data-fill')
+                console.log(fill_content)
                 if (fill_content.length > 0) {
-                    if (fill_contents.includes(reply_elem.value[0])) {
-                        reply_elem.value = reply_elem.value.replace(reply_elem.value[0], fill_content)
-                    } else {
-                        reply_elem.value = fill_content + reply_elem.value
-                    }
+                    this.input_el.value = fill_content
                 } else {
-                    reply_elem.value = ''
+                    this.input_el.value = ''
                 }
-                reply_elem.blur()
-                reply_elem.focus()
+                this.input_el.blur()
+                this.input_el.focus()
             })
         })
     }
@@ -1444,8 +1447,6 @@ class Emojis{
             this.fetch()
         });
         document.body.addEventListener("mouseup", (event)=>{
-            console.log(this.active)
-            console.log(this.emoji_container.contains(event.target))
             if (this.active && !this.emoji_container.contains(event.target)) {
                 this.close()
             }
