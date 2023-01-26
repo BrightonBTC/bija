@@ -3,7 +3,7 @@
 {%- else -%}
     {%- set pic="/identicon?id="+data.profile.public_key -%}
 {%- endif -%}
-<a href="/note?id={{data['thread_root']}}#focussed">
+<a href="/note?id={{data['event']}}#focussed">
     <div class="alert-image">
         <img class="user-image" src="{{pic}}">
     </div>

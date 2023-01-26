@@ -237,7 +237,7 @@ class RelayHandler:
             if reply is not None and reply.public_key == SETTINGS.get('pubkey'):
                 Alert(AlertKind.REPLY, event.event.created_at, {
                     'public_key': event.event.public_key,
-                    'response_to': event.response_to,
+                    'event': event.event.id,
                     'content': event.content
                 })
         elif event.thread_root is not None:
@@ -245,7 +245,7 @@ class RelayHandler:
             if root is not None and root.public_key == SETTINGS.get('pubkey'):
                 Alert(AlertKind.COMMENT_ON_THREAD, event.event.created_at, {
                     'public_key': event.event.public_key,
-                    'thread_root': event.thread_root,
+                    'event': event.event.id,
                     'content': event.content
                 })
 

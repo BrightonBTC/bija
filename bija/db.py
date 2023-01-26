@@ -72,13 +72,13 @@ class BijaDB:
         following = self.get_following_pubkeys(public_key)
         new = set(keys) - set(following)
         removed = set(following) - set(keys)
-
+        a = []
         for pk in new:
-            self.session.merge(Follower(
+            a.append(Follower(
                 pk_1=public_key,
                 pk_2=pk
             ))
-            self.session.commit()
+        self.session.add_all(a)
         self.session.query(Follower).filter(Follower.pk_1==public_key).filter(Follower.pk_2.in_(removed)).delete()
         self.session.commit()
         return list(new), list(removed)
@@ -673,7 +673,7 @@ class BijaDB:
         self.session.commit()
 
     def get_alerts(self):
-        return self.session.query(Alert).order_by(Alert.seen.asc()).order_by(Alert.ts.desc()).limit(500).all()
+        return self.session.query(Alert).order_by(Alert.seen.asc()).order_by(Alert.ts.desc()).limit(20).all()
 
     def get_unread_alert_count(self):
         return self.session.query(Alert).filter(Alert.seen == 0).count()
@@ -822,6 +822,6 @@ class BijaDB:
         if 'boost_id' in filters:
             q = q.filter(Note.reshare==filters['boost_id'])
 
-        q = q.order_by(Note.seen.asc(), Note.created_at.desc()).limit(50)
+        q = q.order_by(Note.seen.asc(), Note.created_at.desc()).limit(20)
 
         return q.all()

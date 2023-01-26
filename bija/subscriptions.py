@@ -66,9 +66,10 @@ class SubscribePrimary(Subscribe):
                  EventKind.DELETE,
                  EventKind.REACTION]
         profile_filter = Filter(authors=[self.pubkey], kinds=kinds, since=self.since)
-        kinds = [EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.ENCRYPTED_DIRECT_MESSAGE, EventKind.REACTION, EventKind.CONTACTS]
+        kinds = [EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.ENCRYPTED_DIRECT_MESSAGE, EventKind.REACTION]
         mentions_filter = Filter(tags={'#p': [self.pubkey]}, kinds=kinds, since=self.since)
-        f = [profile_filter, mentions_filter]
+        followers_filter = Filter(tags={'#p': [self.pubkey]}, kinds=[EventKind.CONTACTS])
+        f = [profile_filter, mentions_filter, followers_filter]
         following_pubkeys = DB.get_following_pubkeys(SETTINGS.get('pubkey'))
 
         if len(following_pubkeys) > 0:
@@ -131,7 +132,6 @@ class SubscribeProfile(Subscribe):
 
     def build_filters(self):
         logger.info('build subscription filters')
-        profile = DB.get_profile(self.pubkey)
         f = [
             Filter(authors=[self.pubkey], kinds=[EventKind.SET_METADATA, EventKind.CONTACTS]),
             Filter(authors=[self.pubkey], kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.DELETE, EventKind.REACTION],
@@ -143,7 +143,7 @@ class SubscribeProfile(Subscribe):
             contacts_filter = Filter(authors=followers, kinds=[EventKind.SET_METADATA])
             f.append(contacts_filter)
 
-        self. filters = Filters(f)
+        self.filters = Filters(f)
 
 
 class SubscribeThread(Subscribe):
