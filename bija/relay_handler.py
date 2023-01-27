@@ -12,6 +12,7 @@ from bija.helpers import get_embeded_tag_indexes, \
     list_index_exists, get_urls_in_string, request_nip05, url_linkify, strip_tags, request_relay_data, is_nip05, \
     is_bech32_key, bech32_to_hex64, request_url_head
 from bija.app import RELAY_MANAGER
+from bija.ogtags import OGTags
 from bija.subscriptions import *
 from bija.submissions import *
 from bija.alerts import *
@@ -121,7 +122,7 @@ class RelayHandler:
                     self.receive_metadata_event(msg.event)
 
                 if msg.event.kind == EventKind.CONTACTS:
-                    self.receive_contact_list_event(msg.event, msg.subscription_id)
+                    self.receive_contact_list_event(msg.event)
 
                 if msg.event.kind == EventKind.TEXT_NOTE:
                     self.receive_note_event(msg.event, msg.subscription_id)
@@ -157,7 +158,8 @@ class RelayHandler:
                     socketio.emit('unseen_in_topics', unseen_in_topics)
 
         if RELAY_MANAGER.message_pool.events.qsize() == 0:
-            D_TASKS.next()
+            self.handle_tasks()
+
         t = int(time.time())
         logger.info('Event loop {}'.format(t))
         if t % 60 == 0:
@@ -169,6 +171,14 @@ class RelayHandler:
         while self.should_run:
             self.check_messages()
             time.sleep(1)
+
+    def handle_tasks(self):
+        t = D_TASKS.next()
+        if t is not None:
+            if t.kind == TaskKind.FETCH_OG:
+                OGTags(t.data)
+            elif t.kind == TaskKind.CONTACT_LIST:
+                self.process_contact_list(t.data)
 
     def receive_del_event(self, event):
         DeleteEvent(event)
@@ -252,7 +262,7 @@ class RelayHandler:
     def notify_on_note_event(self, event, subscription):
         if subscription == 'primary':
             self.new_on_primary = True
-        if subscription == 'profile':
+        if self.page['page'] == 'profile' and self.page['identifier'] == event.public_key:
             DB.set_note_seen(event.id)
             socketio.emit('new_profile_posts', DB.get_most_recent_for_pk(event.public_key))
         elif subscription == 'note-thread':
@@ -260,28 +270,30 @@ class RelayHandler:
         elif subscription == 'topic':
             socketio.emit('new_in_topic', True)
 
-    def receive_contact_list_event(self, event, subscription):
+    def receive_contact_list_event(self, event):
         logger.info('Contact list received for: {}'.format(event.public_key))
         last_upd = DB.get_last_contacts_upd(event.public_key)
         logger.info('Contact list last update: {}'.format(last_upd))
         if last_upd is None or last_upd < event.created_at:
-            pk = SETTINGS.get('pubkey')
             logger.info('Contact list is newer than last upd: {}'.format(event.created_at))
-            e = ContactListEvent(event, pk)
-            if event.public_key == pk:
-                logger.info('Contact list updated, restart primary subscription')
-                self.subscribe_primary()
-            elif self.page['page'] == 'profile' and self.page['identifier'] == pk:
-                self.subscribe_profile(event.public_key, timestamp_minus(TimePeriod.WEEK), [])
-            if len(e.new) > 0 and SETTINGS.get('pubkey') in e.new:
-                Alert(AlertKind.FOLLOW, event.created_at, {
-                    'public_key': e.event.public_key
-                })
-            if len(e.removed) > 0 and SETTINGS.get('pubkey') in e.removed:
-                Alert(AlertKind.UNFOLLOW, event.created_at, {
-                    'public_key': e.event.public_key
-                })
+            D_TASKS.pool.add(TaskKind.CONTACT_LIST, event)
 
+    def process_contact_list(self, event):
+        pk = SETTINGS.get('pubkey')
+        e = ContactListEvent(event, pk)
+        if event.public_key == pk:
+            logger.info('Contact list updated, restart primary subscription')
+            self.subscribe_primary()
+        elif self.page['page'] == 'profile' and self.page['identifier'] == pk:
+            self.subscribe_profile(event.public_key, timestamp_minus(TimePeriod.WEEK), [])
+        if len(e.new) > 0 and SETTINGS.get('pubkey') in e.new:
+            Alert(AlertKind.FOLLOW, event.created_at, {
+                'public_key': e.event.public_key
+            })
+        if len(e.removed) > 0 and SETTINGS.get('pubkey') in e.removed:
+            Alert(AlertKind.UNFOLLOW, event.created_at, {
+                'public_key': e.event.public_key
+            })
 
     def receive_private_message_event(self, event):
 
