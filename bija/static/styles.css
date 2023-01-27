@@ -36,8 +36,8 @@
     --fs-sm: 0.8rem;
     --fs-mid1: 1rem;
     --fs-mid2: 1.2rem;
-    --fs-lg:1.6rem;
-    --fs-xl:1.8rem;
+    --fs-lg:1.4rem;
+    --fs-xl:1.6rem;
 
     /* border-radius */
 
@@ -722,7 +722,7 @@ input.post-submit {
 .profile-details h1{
     font-weight: 800;
     font-size: var(--fs-xl);
-    line-height: 20px;
+    line-height: var(--fs-xl);
     margin-bottom: 0;
 }
 .profile-tools{
