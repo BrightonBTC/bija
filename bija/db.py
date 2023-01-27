@@ -74,11 +74,11 @@ class BijaDB:
         removed = set(following) - set(keys)
         a = []
         for pk in new:
-            a.append(Follower(
-                pk_1=public_key,
-                pk_2=pk
-            ))
-        self.session.add_all(a)
+            a.append(' ("{}","{}")'.format(public_key, pk))
+        if len(new) > 0:
+            sql = 'INSERT INTO follower (pk_1, pk_2) VALUES {}'.format(','.join(a))
+            print(sql)
+            DB_ENGINE.execute(text(sql))
         self.session.query(Follower).filter(Follower.pk_1==public_key).filter(Follower.pk_2.in_(removed)).delete()
         self.session.commit()
         return list(new), list(removed)
@@ -822,6 +822,6 @@ class BijaDB:
         if 'boost_id' in filters:
             q = q.filter(Note.reshare==filters['boost_id'])
 
-        q = q.order_by(Note.seen.asc(), Note.created_at.desc()).limit(20)
+        q = q.order_by(Note.seen.asc(), Note.created_at.desc()).limit(50)
 
         return q.all()
