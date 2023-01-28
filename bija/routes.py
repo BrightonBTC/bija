@@ -260,7 +260,7 @@ class ProfilePage:
     def get_data(self):
         self.am_following = DB.a_follows_b(SETTINGS.get('pubkey'), self.pubkey)
         if self.page == 'profile':
-            notes = DB.get_feed(int(time.time()), timestamp_minus(TimePeriod.DAY), {'profile': self.pubkey})
+            notes = DB.get_feed(int(time.time()), SETTINGS.get('pubkey'), {'profile': self.pubkey})
             self.data = FeedThread(notes)
             self.subscription_ids = list(self.data.ids)
             self.latest_in_feed = DB.get_most_recent_for_pk(self.pubkey) or 0

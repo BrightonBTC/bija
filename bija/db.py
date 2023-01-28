@@ -77,7 +77,6 @@ class BijaDB:
             a.append(' ("{}","{}")'.format(public_key, pk))
         if len(new) > 0:
             sql = 'INSERT INTO follower (pk_1, pk_2) VALUES {}'.format(','.join(a))
-            print(sql)
             DB_ENGINE.execute(text(sql))
         self.session.query(Follower).filter(Follower.pk_1==public_key).filter(Follower.pk_2.in_(removed)).delete()
         self.session.commit()
@@ -430,18 +429,18 @@ class BijaDB:
             return out
         return None
 
-    def get_note_by_id_list(self, note_ids):
-        return self.session.query(
-            Note.id,
-            Note.public_key,
-            Note.content,
-            Note.created_at,
-            Note.members,
-            Note.media,
-            Profile.name,
-            Profile.display_name,
-            Profile.pic,
-            Profile.nip05).join(Note.profile).filter(Note.id.in_(note_ids)).all()
+    # def get_notes_by_id_list(self, note_ids):
+    #     return self.session.query(
+    #         Note.id,
+    #         Note.public_key,
+    #         Note.content,
+    #         Note.created_at,
+    #         Note.members,
+    #         Note.media,
+    #         Profile.name,
+    #         Profile.display_name,
+    #         Profile.pic,
+    #         Profile.nip05).join(Note.profile).filter(Note.id.in_(note_ids)).all()
 
     def get_unseen_message_count(self):
         return self.session.query(PrivateMessage) \
@@ -821,6 +820,8 @@ class BijaDB:
             q = q.filter(Note.hashtags.like(f"%\"{filters['topic']}\"%"))
         if 'boost_id' in filters:
             q = q.filter(Note.reshare==filters['boost_id'])
+        if 'id_list' in filters:
+            q = q.filter(Note.id.in_(filters['id_list']))
 
         q = q.order_by(Note.seen.asc(), Note.created_at.desc()).limit(50)
 
