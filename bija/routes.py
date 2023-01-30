@@ -11,6 +11,7 @@ from bija.app import app, socketio, ACTIVE_EVENTS
 from bija.args import SETUP_PK, SETUP_PW, LOGGING_LEVEL
 from bija.config import DEFAULT_RELAYS, default_settings
 from bija.emojis import emojis
+from bija.nip5 import Nip5
 from bija.relay_handler import RelayHandler, MetadataEvent
 from bija.helpers import *
 from bija.jinja_filters import *
@@ -579,7 +580,8 @@ def update_profile():
             if item[0] in valid_vals and len(item[1].strip()) > 0:
                 profile[item[0]] = item[1].strip()
         if 'nip05' in profile and len(profile['nip05']) > 0:
-            valid_nip5 = MetadataEvent.validate_nip05(profile['nip05'], SETTINGS.get('pubkey'))
+            nip5 = Nip5(profile['nip05'])
+            valid_nip5 = nip5.match(SETTINGS.get('pubkey'))
             out['nip05'] = valid_nip5
             if valid_nip5:
                 e = SubmitProfile(profile)
@@ -613,10 +615,10 @@ def reset_relays():
 @app.route('/validate_nip5', methods=['GET'])
 def validate_nip5():
     profile = DB.get_profile(request.args['pk'])
-    valid_nip5 = MetadataEvent.validate_nip05(profile.nip05, profile.public_key)
-    if valid_nip5:
-        DB.set_valid_nip05(profile.public_key)
-    return render_template("upd.json", data=json.dumps({'valid': valid_nip5}))
+    nip5 = Nip5(profile.nip05)
+    match = nip5.match(profile.public_key)
+    DB.set_valid_nip05(profile.public_key, match)
+    return render_template("upd.json", data=json.dumps({'valid': match}))
 
 
 @app.route('/messages', methods=['GET'])

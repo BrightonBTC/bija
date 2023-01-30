@@ -213,12 +213,12 @@ let updateProfile = function(profile){
                 nm.innerText = profile.name
             }
         }
-        if(profile.nip05 != null && profile.nip05.length > 0 && profile.nip05_validated){
-            const nip5 = name_el.querySelector('.nip5')
-            if(nip5){
-                nip5.innerText = profile.nip05
-            }
-        }
+//        if(profile.nip05 != null && profile.nip05.length > 0 && profile.nip05_validated){
+//            const nip5 = name_el.querySelector('.nip5')
+//            if(nip5){
+//                nip5.innerText = profile.nip05
+//            }
+//        }
     }
     const pic_els = document.querySelectorAll(".user-image[data-rel='"+profile.public_key+"']");
     for (const pic_el of pic_els) {

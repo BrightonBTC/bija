@@ -9,9 +9,10 @@ from bija.app import socketio, ACTIVE_EVENTS
 from bija.args import LOGGING_LEVEL
 from bija.deferred_tasks import TaskKind, DeferredTasks
 from bija.helpers import get_embeded_tag_indexes, \
-    list_index_exists, get_urls_in_string, request_nip05, url_linkify, strip_tags, request_relay_data, is_nip05, \
+    list_index_exists, get_urls_in_string, url_linkify, strip_tags, request_relay_data, is_nip05, \
     is_bech32_key, bech32_to_hex64, request_url_head
 from bija.app import RELAY_MANAGER
+from bija.nip5 import Nip5
 from bija.ogtags import OGTags
 from bija.subscriptions import *
 from bija.submissions import *
@@ -239,15 +240,23 @@ class RelayHandler:
             self.check_messages()
             time.sleep(1)
 
-    def handle_tasks(self):
+    @staticmethod
+    def handle_tasks():
         while not RELAY_MANAGER.message_pool.has_events() and D_TASKS.pool.has_tasks():
             t = D_TASKS.next()
             if t is not None:
                 if t.kind == TaskKind.FETCH_OG:
                     OGTags(t.data)
-                # elif t.kind == TaskKind.CONTACT_LIST:
-                #     logger.info('process_contact_list')
-                #     self.process_contact_list(t.data)
+                elif t.kind == TaskKind.VALIDATE_NIP5:
+                    logger.info('Validate Nip05 {}'.format(t.data['pk']))
+                    profile = DB.get_profile(t.data['pk'])
+                    if profile is not None:
+                        valid = False
+                        if profile.nip05 is not None:
+                            nip5 = Nip5(profile.nip05)
+                            valid = nip5.match(profile.public_key)
+                        DB.set_valid_nip05(profile.public_key, valid)
+                        logger.info('Validated? {}'.format(valid))
 
     def receive_del_event(self, event):
         DeleteEvent(event)
@@ -322,7 +331,6 @@ class RelayHandler:
                 'public_key': meta.event.public_key,
                 'name': meta.name,
                 'nip05': meta.nip05,
-                'nip05_validated': meta.nip05_validated,
                 'pic': meta.picture,
                 'about': meta.about,
                 'created_at': meta.event.created_at
@@ -672,21 +680,6 @@ class DirectMessageEvent:
             "raw": json.dumps(self.event.to_json_object())
         }
 
-    # def store(self):
-    #     # DB.add_profile_if_not_exists(self.event.public_key)
-    #     seen = False
-    #     if self.is_sender == 1 and self.pubkey == self.my_pubkey: # sent to self
-    #         seen = True
-    #     DB.insert_private_message(
-    #         self.event.id,
-    #         self.pubkey,
-    #         strip_tags(self.event.content),
-    #         self.is_sender,
-    #         self.event.created_at,
-    #         seen,
-    #         json.dumps(self.event.to_json_object())
-    #     )
-
 
 class MetadataEvent:
     def __init__(self, event):
@@ -696,7 +689,6 @@ class MetadataEvent:
         self.nip05 = None
         self.about = None
         self.picture = None
-        self.nip05_validated = False
         self.success = True
         if self.is_fresh():
             self.process_content()
@@ -725,25 +717,18 @@ class MetadataEvent:
         if 'picture' in s and s['picture'] is not None and validators.url(s['picture'].strip(), public=True):
             self.picture = s['picture'].strip()
 
-        if self.nip05 is not None:
-            current = DB.get_profile(self.event.public_key)
-            if current is None or current.nip05 != self.nip05:
-                if self.validate_nip05(self.nip05, self.event.public_key):
-                    DB.set_valid_nip05(self.event.public_key)
-                    self.nip05_validated = True
-            elif current is not None:
-                self.nip05_validated = current.nip05
-            else:
-                self.nip05_validated = False
+        D_TASKS.pool.add(TaskKind.VALIDATE_NIP5, {'pk': self.event.public_key})
 
-    @staticmethod
-    def validate_nip05(nip05, pk):
-        validated_name = request_nip05(nip05)
-        if validated_name is not None and is_bech32_key('npub', validated_name):
-            validated_name = bech32_to_hex64('npub', validated_name)
-        if validated_name is not None and validated_name == pk:
-            return True
-        return False
+        # if self.nip05 is not None:
+        #
+        #     current = DB.get_profile(self.event.public_key)
+        #     if current is None or current.nip05 != self.nip05:
+        #         nip5 = Nip5(self.nip05)
+        #         self.nip05_validated = nip5.match(self.event.public_key)
+        #     elif current is not None:
+        #         self.nip05_validated = current.nip05
+        #     else:
+        #         self.nip05_validated = False
 
     def to_dict(self):
         return {
@@ -776,7 +761,6 @@ class NoteEvent:
             self.mentions_me = False
 
             self.process_content()
-            # self.update_db()
             self.update_referenced()
 
     def process_content(self):
@@ -920,21 +904,6 @@ class NoteEvent:
             'raw':json.dumps(self.event.to_json_object())
         }
 
-    # def update_db(self):
-    #     logger.info('update db new note')
-    #     DB.add_profile_if_not_exists(self.event.public_key)
-        # DB.insert_note(
-        #     self.event.id,
-        #     self.event.public_key,
-        #     self.content,
-        #     self.response_to,
-        #     self.thread_root,
-        #     self.reshare,
-        #     self.event.created_at,
-        #     json.dumps(self.members),
-        #     json.dumps(self.media),
-        #     json.dumps(self.hashtags)
-        # )
 
     def update_referenced(self):
         logger.info('update refs new note')
