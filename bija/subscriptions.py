@@ -52,7 +52,7 @@ class SubscribePrimary(Subscribe):
     def set_since(self):
         latest = DB.latest_in_primary(SETTINGS.get('pubkey'))
         if latest is not None:
-            self.since = timestamp_minus(TimePeriod.HOUR, start=latest)
+            self.since = timestamp_minus(TimePeriod.DAY, start=latest)
         else:
             self.since = timestamp_minus(TimePeriod.WEEK)
 
@@ -66,17 +66,18 @@ class SubscribePrimary(Subscribe):
                  EventKind.DELETE,
                  EventKind.REACTION]
         profile_filter = Filter(authors=[self.pubkey], kinds=kinds, since=self.since)
-        kinds = [EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.ENCRYPTED_DIRECT_MESSAGE, EventKind.REACTION]
+        kinds = [EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION]
         mentions_filter = Filter(tags={'#p': [self.pubkey]}, kinds=kinds, since=self.since)
         followers_filter = Filter(tags={'#p': [self.pubkey]}, kinds=[EventKind.CONTACTS])
-        f = [profile_filter, mentions_filter, followers_filter]
+        messages_filter = Filter(authors=[self.pubkey], kinds=[EventKind.ENCRYPTED_DIRECT_MESSAGE], since=timestamp_minus(TimePeriod.WEEK, 52))
+        f = [profile_filter, mentions_filter, followers_filter, messages_filter]
         following_pubkeys = DB.get_following_pubkeys(SETTINGS.get('pubkey'))
 
         if len(following_pubkeys) > 0:
             following_filter = Filter(
                 authors=following_pubkeys,
                 kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION, EventKind.DELETE],
-                since=self.since  # TODO: should be configurable in user settings
+                since=self.since
             )
             following_profiles_filter = Filter(
                 authors=following_pubkeys,

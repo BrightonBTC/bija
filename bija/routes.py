@@ -100,6 +100,8 @@ def feed():
 @login_required
 def alerts_page():
     ACTIVE_EVENTS.clear()
+    EXECUTOR.submit(RELAY_HANDLER.set_page('alerts', None))
+    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
     alerts = DB.get_alerts()
     DB.set_alerts_read()
     return render_template("alerts.html", page_id="alerts", title="alerts", alerts=alerts)
@@ -200,8 +202,13 @@ class ProfilePage:
         self.latest_in_feed = None
         self.subscription_ids = [] # active notes to passed to subscription manager
 
+        set_subscription = False
+        valid_pages = ['profile', 'following', 'followers']
+
         ACTIVE_EVENTS.clear()
-        EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
+        if RELAY_HANDLER.page['page'] not in valid_pages or RELAY_HANDLER.page['identifier'] != self.pubkey:
+            set_subscription = True
+            EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
         EXECUTOR.submit(RELAY_HANDLER.set_page(self.page, self.pubkey))
 
         self.set_profile()
@@ -209,12 +216,13 @@ class ProfilePage:
         self.set_meta()
         self.get_data()
 
-        EXECUTOR.submit(
-            RELAY_HANDLER.subscribe_profile,
-            self.pubkey,
-            timestamp_minus(TimePeriod.WEEK),
-            self.subscription_ids
-        )
+        if set_subscription:
+            EXECUTOR.submit(
+                RELAY_HANDLER.subscribe_profile,
+                self.pubkey,
+                timestamp_minus(TimePeriod.WEEK),
+                self.subscription_ids
+            )
 
     def set_pubkey(self):
         if 'pk' in request.args and is_hex_key(request.args['pk']) and request.args['pk'] != SETTINGS.get('pubkey'):

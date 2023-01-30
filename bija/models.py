@@ -11,7 +11,6 @@ class Event(Base):
     public_key = Column(String(64))
     kind = Column(Integer)
     ts = Column(Integer)
-    raw = Column(String)
 
 
 class Profile(Base):
@@ -53,6 +52,7 @@ class Note(Base):
     liked = Column(Boolean, default=False)
     shared = Column(Boolean, default=False)
     deleted = Column(Integer)
+    raw = Column(String)
 
     profile = relationship("Profile", back_populates="notes")
 
@@ -86,7 +86,6 @@ class NoteReaction(Base):
     event_pk = Column(Integer)
     content = Column(String(7))
     members = Column(String)
-    raw = Column(String)
 
 
 class MessageReaction(Base):
