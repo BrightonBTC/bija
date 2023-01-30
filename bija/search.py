@@ -6,7 +6,8 @@ from flask import request
 from bija.app import app
 from bija.args import LOGGING_LEVEL
 from bija.db import BijaDB
-from bija.helpers import is_hex_key, is_bech32_key, is_nip05, bech32_to_hex64, request_nip05
+from bija.helpers import is_hex_key, is_bech32_key, is_nip05, bech32_to_hex64
+from bija.nip5 import Nip5
 
 DB = BijaDB(app.session)
 logger = logging.getLogger(__name__)
@@ -69,9 +70,9 @@ class Search:
         if profile is not None:
             self.redirect = '/profile?pk={}'.format(profile.public_key)
         else:
-            pk = request_nip05(self.term)
-            if pk is not None:
-                self.redirect = '/profile?pk={}'.format(pk)
+            nip5 = Nip5(self.term)
+            if nip5.pk is not None:
+                self.redirect = '/profile?pk={}'.format(nip5.pk)
             else:
                 self.message = "Nip-05 identifier could not be located"
 

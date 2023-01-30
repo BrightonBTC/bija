@@ -153,45 +153,6 @@ def list_index_exists(lst, i):
         return None
 
 
-def request_nip05(nip05):
-    valid_parts = is_nip05(nip05)
-    if valid_parts:
-        logger.info('valid nip05 format')
-        name = valid_parts[0]
-        address = valid_parts[1]
-        try:
-            url = 'https://{}/.well-known/nostr.json'.format(address)
-            logger.info('request: {}'.format(url))
-            response = requests.get(
-                url, params={'name': name}, timeout=2, headers={'User-Agent': 'Bija Nostr Client'}
-            )
-            logger.info('response staus: {}'.format(response.status_code))
-            if response.status_code == 200:
-                try:
-                    d = response.json()
-                    logger.info('response.json: {}'.format(d))
-                    logger.info('search name: [{}]'.format(name))
-                    if name in d['names']:
-                        logger.info('name found: {}'.format(name))
-                        return d['names'][name]
-                    if name.lower() in d['names']:
-                        logger.info('name found: {}'.format(name.lower()))
-                        return d['names'][name.lower()]
-                except ValueError:
-                    return None
-                except Exception as e:
-                    logging.error(traceback.format_exc())
-            else:
-                return None
-        except ConnectionError:
-            return None
-        except Exception as e:
-            logging.error(traceback.format_exc())
-            return None
-    else:
-        return None
-
-
 def request_relay_data(url):
     parts = urlparse(url)
     url = url.replace(parts.scheme, 'https')

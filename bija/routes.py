@@ -11,6 +11,7 @@ from bija.app import app, socketio, ACTIVE_EVENTS
 from bija.args import SETUP_PK, SETUP_PW, LOGGING_LEVEL
 from bija.config import DEFAULT_RELAYS, default_settings
 from bija.emojis import emojis
+from bija.nip5 import Nip5
 from bija.relay_handler import RelayHandler, MetadataEvent
 from bija.helpers import *
 from bija.jinja_filters import *
@@ -100,6 +101,8 @@ def feed():
 @login_required
 def alerts_page():
     ACTIVE_EVENTS.clear()
+    EXECUTOR.submit(RELAY_HANDLER.set_page('alerts', None))
+    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
     alerts = DB.get_alerts()
     DB.set_alerts_read()
     return render_template("alerts.html", page_id="alerts", title="alerts", alerts=alerts)
@@ -150,7 +153,7 @@ def profile_page():
 
     if data.page == 'profile':
         return render_template(
-            "profile.html",
+            "profile/profile.html",
             page_id=data.page_id,
             title="Profile",
             threads=data.data.threads,
@@ -168,7 +171,7 @@ def profile_page():
         )
     else:
         return render_template(
-            "following.html",
+            "profile/following.html",
             page_id=data.page_id,
             title="Contacts",
             profile=data.profile,
@@ -200,8 +203,13 @@ class ProfilePage:
         self.latest_in_feed = None
         self.subscription_ids = [] # active notes to passed to subscription manager
 
+        set_subscription = False
+        valid_pages = ['profile', 'following', 'followers']
+
         ACTIVE_EVENTS.clear()
-        EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
+        if RELAY_HANDLER.page['page'] not in valid_pages or RELAY_HANDLER.page['identifier'] != self.pubkey:
+            set_subscription = True
+            EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
         EXECUTOR.submit(RELAY_HANDLER.set_page(self.page, self.pubkey))
 
         self.set_profile()
@@ -209,12 +217,13 @@ class ProfilePage:
         self.set_meta()
         self.get_data()
 
-        EXECUTOR.submit(
-            RELAY_HANDLER.subscribe_profile,
-            self.pubkey,
-            timestamp_minus(TimePeriod.WEEK),
-            self.subscription_ids
-        )
+        if set_subscription:
+            EXECUTOR.submit(
+                RELAY_HANDLER.subscribe_profile,
+                self.pubkey,
+                timestamp_minus(TimePeriod.WEEK),
+                self.subscription_ids
+            )
 
     def set_pubkey(self):
         if 'pk' in request.args and is_hex_key(request.args['pk']) and request.args['pk'] != SETTINGS.get('pubkey'):
@@ -260,7 +269,7 @@ class ProfilePage:
     def get_data(self):
         self.am_following = DB.a_follows_b(SETTINGS.get('pubkey'), self.pubkey)
         if self.page == 'profile':
-            notes = DB.get_feed(int(time.time()), timestamp_minus(TimePeriod.DAY), {'profile': self.pubkey})
+            notes = DB.get_feed(int(time.time()), SETTINGS.get('pubkey'), {'profile': self.pubkey})
             self.data = FeedThread(notes)
             self.subscription_ids = list(self.data.ids)
             self.latest_in_feed = DB.get_most_recent_for_pk(self.pubkey) or 0
@@ -301,7 +310,7 @@ def fetch_archived():
 @app.route('/get_profile_sharer', methods=['GET'])
 def get_profile_sharer():
     pk = request.args['pk']
-    return render_template("profile.sharer.html", hex=pk, bech32=hex64_to_bech32("npub", pk))
+    return render_template("profile/profile.sharer.html", hex=pk, bech32=hex64_to_bech32("npub", pk))
 
 @app.route('/get_ln_details', methods=['GET'])
 def get_ln_details():
@@ -309,7 +318,7 @@ def get_ln_details():
     profile = DB.get_profile(pk)
     d = json.loads(profile.raw)
 
-    return render_template("profile.lightning.html", data=json.loads(d['content']), name=profile.name)
+    return render_template("profile/profile.lightning.html", data=json.loads(d['content']), name=profile.name)
 
 @app.route('/get_share', methods=['GET'])
 def get_share():
@@ -571,7 +580,8 @@ def update_profile():
             if item[0] in valid_vals and len(item[1].strip()) > 0:
                 profile[item[0]] = item[1].strip()
         if 'nip05' in profile and len(profile['nip05']) > 0:
-            valid_nip5 = MetadataEvent.validate_nip05(profile['nip05'], SETTINGS.get('pubkey'))
+            nip5 = Nip5(profile['nip05'])
+            valid_nip5 = nip5.match(SETTINGS.get('pubkey'))
             out['nip05'] = valid_nip5
             if valid_nip5:
                 e = SubmitProfile(profile)
@@ -605,10 +615,10 @@ def reset_relays():
 @app.route('/validate_nip5', methods=['GET'])
 def validate_nip5():
     profile = DB.get_profile(request.args['pk'])
-    valid_nip5 = MetadataEvent.validate_nip05(profile.nip05, profile.public_key)
-    if valid_nip5:
-        DB.set_valid_nip05(profile.public_key)
-    return render_template("upd.json", data=json.dumps({'valid': valid_nip5}))
+    nip5 = Nip5(profile.nip05)
+    match = nip5.match(profile.public_key)
+    DB.set_valid_nip05(profile.public_key, match)
+    return render_template("upd.json", data=json.dumps({'valid': match}))
 
 
 @app.route('/messages', methods=['GET'])
@@ -863,7 +873,7 @@ def follow():
     is_me = request.args['id'] == SETTINGS.get('pubkey')
     upd = request.args['upd']
     if upd == "1":
-        return render_template("profile.tools.html", profile=profile, is_me=is_me, am_following=int(request.args['state']))
+        return render_template("profile/profile.tools.html", profile=profile, is_me=is_me, am_following=int(request.args['state']))
     else:
         return render_template("svg/following.svg", class_name="icon")
 

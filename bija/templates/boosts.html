@@ -19,7 +19,7 @@
             <div class="note-image">
                 {{item['nip05'] | nip05_valid(item['nip05_validated']) | safe }}
                 {%- set p=item -%}
-                {%- include 'profile.image.html' -%}
+                {%- include 'profile/profile.image.html' -%}
             </div>
             <div class="note-outer">
             {%- set reply_chain = item['thread_root'] | get_thread_root(item['response_to'], item['id']) -%}

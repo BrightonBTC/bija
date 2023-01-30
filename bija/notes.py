@@ -5,6 +5,7 @@ import time
 from bija.app import app
 from bija.args import LOGGING_LEVEL
 from bija.db import BijaDB
+from bija.helpers import timestamp_minus
 from bija.settings import SETTINGS
 
 DB = BijaDB(app.session)
@@ -22,7 +23,7 @@ class FeedThread:
         self.last_ts = int(time.time())
 
         self.get_roots()
-        self.build()
+        self.construct_threads()
 
     def get_roots(self):
         logger.info('get roots')
@@ -39,70 +40,43 @@ class FeedThread:
             elif note['thread_root'] is None and note['response_to'] is None:
                 roots.append(note['id'])
                 self.add_id(note['id'])
-
         self.roots = list(dict.fromkeys(roots))
 
-    def add_id(self, note_id):
-        logger.info('add id: {}'.format(note_id))
-        if note_id not in self.ids:
-            self.ids.add(note_id)
+        ids = [n['id'] for n in self.notes]
 
-    def build(self):
-        logger.info('build')
+        fids = [x for x in self.roots if x not in ids]
+        extra_notes = DB.get_feed(int(time.time()), SETTINGS.get('pubkey'), {'id_list': fids})
+        if extra_notes is not None:
+            self.notes += extra_notes
+
         for root in self.roots:
-            t = self.build_thread(root)
-            self.threads.append(t)
+            self.threads.append({'self': None, 'id': root, 'response': None, 'responders': {}, 'responder_count': 0})
 
-    def build_thread(self, root):
-        logger.info('build thread')
-        t = {'self': None, 'id': root, 'response': None, 'responders': {}}
-        responders = []
+    def construct_threads(self):
         for _note in self.notes:
             note = dict(_note)
-
-            is_root, is_response = self.is_in_thread(note, root)
-            if is_root:
-                self.notes.remove(_note)
-                t['self'] = note
-            elif is_response:
-                self.notes.remove(_note)
-                if t['response'] is None:
-                    t['response'] = note
-                if len(t['responders']) < 2:
-                    t['responders'][note['public_key']] = note['name']
-                responders.append(note['public_key'])
-
             if note['reshare'] is not None:
                 reshare = DB.get_note(SETTINGS.get('pubkey'), note['reshare'])
                 self.add_id(note['reshare'])
                 if reshare is not None:
                     note['reshare'] = reshare
-
-        responders = list(dict.fromkeys(responders))
-        t['responder_count'] = len(responders)
-
-        if t['self'] is None:
-            t['self'] = DB.get_note(SETTINGS.get('pubkey'), root)
-            if t['self'] is not None:
-                t['self'] = dict(t['self'])
-                if t['self']['reshare'] is not None:
-                    reshare = DB.get_note(SETTINGS.get('pubkey'), t['self']['reshare'])
-                    self.add_id(t['self']['reshare'])
-                    if reshare is not None:
-                        t['self']['reshare'] = reshare
-        return t
+            thread = next((sub for sub in self.threads if sub['id'] == note['id']), None)
+            if thread is not None:
+                thread['self'] = note
+            elif note['thread_root'] is not None:
+                thread = next((sub for sub in self.threads if sub['id'] == note['thread_root']), None)
+                if thread['response'] is None:
+                    thread['response'] = note
+                if note['public_key'] not in thread['responders']:
+                    thread['responder_count'] += 1
+                if len(thread['responders']) < 2:
+                    thread['responders'][note['public_key']] = note['name']
 
 
-    @staticmethod
-    def is_in_thread(note, root):
-        is_root = False
-        is_response = False
-        if note['id'] == root:
-            is_root = True
-        elif note['response_to'] == root or note['thread_root'] == root:
-            is_response = True
-        return is_root, is_response
-
+    def add_id(self, note_id):
+        logger.info('add id: {}'.format(note_id))
+        if note_id not in self.ids:
+            self.ids.add(note_id)
 
 class NoteThread:
     def __init__(self, note_id):

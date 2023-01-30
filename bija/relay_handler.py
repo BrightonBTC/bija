@@ -9,9 +9,11 @@ from bija.app import socketio, ACTIVE_EVENTS
 from bija.args import LOGGING_LEVEL
 from bija.deferred_tasks import TaskKind, DeferredTasks
 from bija.helpers import get_embeded_tag_indexes, \
-    list_index_exists, get_urls_in_string, request_nip05, url_linkify, strip_tags, request_relay_data, is_nip05, \
+    list_index_exists, get_urls_in_string, url_linkify, strip_tags, request_relay_data, is_nip05, \
     is_bech32_key, bech32_to_hex64, request_url_head
 from bija.app import RELAY_MANAGER
+from bija.nip5 import Nip5
+from bija.ogtags import OGTags
 from bija.subscriptions import *
 from bija.submissions import *
 from bija.alerts import *
@@ -23,6 +25,7 @@ logger = logging.getLogger(__name__)
 FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
 logging.basicConfig(format=FORMAT)
 logger.setLevel(LOGGING_LEVEL)
+
 
 D_TASKS = DeferredTasks()
 DB = BijaDB(app.session)
@@ -38,6 +41,35 @@ class RelayHandler:
     processing = False
     new_on_primary = False
     notify_empty_queue = False
+
+    contacts_batch = {
+        'inserts': {},
+        'objects': []
+    }
+
+    reaction_batch = {
+        'inserts': [],
+        'objects': []
+    }
+
+    profile_batch = {
+        'inserts': [],
+        'objects': []
+    }
+
+    missing_profiles_batch = []
+
+    note_batch = {
+        'inserts': [],
+        'objects': []
+    }
+
+    dm_batch = {
+        'inserts': [],
+        'objects': []
+    }
+
+    event_batch = []
 
     def __init__(self):
         self.should_run = True
@@ -112,7 +144,7 @@ class RelayHandler:
                 self.notify_empty_queue = False
 
         i = 0
-        while RELAY_MANAGER.message_pool.has_events() and i < 100:
+        while RELAY_MANAGER.message_pool.has_events() and i < 500:
             i += 1
             msg = RELAY_MANAGER.message_pool.get_event()
             if DB.get_event(msg.event.id) is None:
@@ -121,13 +153,13 @@ class RelayHandler:
                     self.receive_metadata_event(msg.event)
 
                 if msg.event.kind == EventKind.CONTACTS:
-                    self.receive_contact_list_event(msg.event, msg.subscription_id)
+                    self.receive_contact_list_event(msg.event)
 
                 if msg.event.kind == EventKind.TEXT_NOTE:
                     self.receive_note_event(msg.event, msg.subscription_id)
 
                 if msg.event.kind == EventKind.ENCRYPTED_DIRECT_MESSAGE:
-                    self.receive_private_message_event(msg.event)
+                    self.receive_direct_message_event(msg.event)
 
                 if msg.event.kind == EventKind.DELETE:
                     self.receive_del_event(msg.event)
@@ -135,14 +167,51 @@ class RelayHandler:
                 if msg.event.kind == EventKind.REACTION:
                     self.receive_reaction_event(msg.event)
 
-                DB.add_event(
-                    msg.event.id,
-                    msg.event.public_key,
-                    int(msg.event.kind),
-                    int(msg.event.created_at),
-                    json.dumps(msg.event.to_json_object())
-                )
+                self.event_batch.append({
+                    'event_id':msg.event.id,
+                    'public_key':msg.event.public_key,
+                    'kind':int(msg.event.kind),
+                    'ts':int(msg.event.created_at)
+                })
         DB.commit()
+
+        n = len(self.contacts_batch['inserts'])
+        if n > 0:
+            logger.info('Insert {} batched contact lists'.format(n))
+            self.process_contacts()
+
+        n = len(self.event_batch)
+        if n > 0:
+            logger.info('Insert {} batched events'.format(n))
+            DB.insert_events(self.event_batch)
+            self.event_batch.clear()
+
+        n = len(self.profile_batch['inserts'])
+        if n > 0:
+            logger.info('Insert {} batched profiles'.format(n))
+            self.process_profiles()
+
+        n = len(self.missing_profiles_batch)
+        if n > 0:
+            logger.info('Insert {} batched missing profiles'.format(n))
+            DB.add_profiles_if_not_exists(self.missing_profiles_batch)
+            self.missing_profiles_batch.clear()
+
+        n = len(self.note_batch['inserts'])
+        if n > 0:
+            logger.info('Insert {} batched notes'.format(n))
+            self.process_notes()
+
+        n = len(self.reaction_batch['inserts'])
+        if n > 0:
+            logger.info('Insert {} batched reactions'.format(n))
+            self.process_reactions()
+
+        n = len(self.dm_batch['inserts'])
+        if n > 0:
+            logger.info('Insert {} batched direct messages'.format(n))
+            self.process_direct_messages()
+
 
         if self.new_on_primary:
             self.new_on_primary = False
@@ -157,7 +226,8 @@ class RelayHandler:
                     socketio.emit('unseen_in_topics', unseen_in_topics)
 
         if RELAY_MANAGER.message_pool.events.qsize() == 0:
-            D_TASKS.next()
+            self.handle_tasks()
+
         t = int(time.time())
         logger.info('Event loop {}'.format(t))
         if t % 60 == 0:
@@ -170,18 +240,62 @@ class RelayHandler:
             self.check_messages()
             time.sleep(1)
 
+    @staticmethod
+    def handle_tasks():
+        while not RELAY_MANAGER.message_pool.has_events() and D_TASKS.pool.has_tasks():
+            t = D_TASKS.next()
+            if t is not None:
+                if t.kind == TaskKind.FETCH_OG:
+                    OGTags(t.data)
+                elif t.kind == TaskKind.VALIDATE_NIP5:
+                    logger.info('Validate Nip05 {}'.format(t.data['pk']))
+                    profile = DB.get_profile(t.data['pk'])
+                    if profile is not None:
+                        valid = False
+                        if profile.nip05 is not None:
+                            nip5 = Nip5(profile.nip05)
+                            valid = nip5.match(profile.public_key)
+                        DB.set_valid_nip05(profile.public_key, valid)
+                        logger.info('Validated? {}'.format(valid))
+
     def receive_del_event(self, event):
         DeleteEvent(event)
 
+    def add_profile_if_not_exists(self, pk):
+        if is_hex_key(pk):
+            self.missing_profiles_batch.append(pk)
+
+    def add_to_contacts_batch(self, e):
+        insert = True
+        if e.event.public_key in self.contacts_batch['inserts']:
+            if e.event.created_at < self.contacts_batch['inserts'][e.event.public_key]['ts']:
+                insert = False
+        if insert:
+            self.contacts_batch['inserts'][e.event.public_key] = {'ts':e.event.created_at, 'pks': e.keys}
+            self.contacts_batch['objects'].append(e)
+
     def receive_reaction_event(self, event):
         e = ReactionEvent(event, SETTINGS.get('pubkey'))
+        if e.valid:
+            self.add_profile_if_not_exists(e.event_pk)
+            self.add_profile_if_not_exists(e.event.public_key)
+            self.reaction_batch['inserts'].append(e.to_dict())
+            self.reaction_batch['objects'].append(e)
+
+    def process_reactions(self):
+        DB.add_note_reactions(self.reaction_batch['inserts'])
+        self.reaction_batch['inserts'].clear()
+        for e in self.reaction_batch['objects']:
+            self.signal_on_reaction(e)
+        self.reaction_batch['objects'].clear()
+
+    def signal_on_reaction(self, e):
         if e.valid:
             note = DB.get_note(SETTINGS.get('pubkey'), e.event_id)
             if e.event.content != '-' and len(ACTIVE_EVENTS.notes) > 0 and e.event_id in ACTIVE_EVENTS.notes:
                 socketio.emit('new_reaction', e.event_id)
                 logger.info('Reaction on active note detected, signal to UI')
             if e.event.public_key != SETTINGS.get('pubkey'):
-                logger.info('Reaction is not from me')
                 if note is not None and note.public_key == SETTINGS.get('pubkey'):
                     logger.info('Get reaction from DB')
                     reaction = DB.get_reaction_by_id(e.event.id)
@@ -198,24 +312,49 @@ class RelayHandler:
 
     def receive_metadata_event(self, event):
         meta = MetadataEvent(event)
-        if self.page['page'] == 'profile' and self.page['identifier'] == event.public_key:
+        if meta.success:
+            self.profile_batch['inserts'].append(meta.to_dict())
+            self.profile_batch['objects'].append(meta)
+
+    def process_profiles(self):
+        DB.update_profiles(self.profile_batch['inserts'])
+        self.profile_batch['inserts'].clear()
+        for e in self.profile_batch['objects']:
+            self.signal_on_profile_update(e)
+        self.profile_batch['objects'].clear()
+
+    def signal_on_profile_update(self, meta):
+        if self.page['page'] == 'profile' and self.page['identifier'] == meta.event.public_key:
             if meta.picture is None or len(meta.picture.strip()) == 0:
-                meta.picture = '/identicon?id={}'.format(event.public_key)
+                meta.picture = '/identicon?id={}'.format(meta.event.public_key)
             socketio.emit('profile_update', {
-                'public_key': event.public_key,
+                'public_key': meta.event.public_key,
                 'name': meta.name,
                 'nip05': meta.nip05,
-                'nip05_validated': meta.nip05_validated,
                 'pic': meta.picture,
                 'about': meta.about,
-                'created_at': event.created_at
+                'created_at': meta.event.created_at
             })
 
     def receive_note_event(self, event, subscription):
         e = NoteEvent(event, SETTINGS.get('pubkey'))
+        self.add_profile_if_not_exists(e.event.public_key)
+        self.note_batch['inserts'].append(e.to_dict())
+        self.note_batch['objects'].append({'obj':e, 'sub':subscription})
+
+    def process_notes(self):
+        DB.insert_notes(self.note_batch['inserts'])
+        self.note_batch['inserts'].clear()
+        for e in self.note_batch['objects']:
+            self.signal_on_note_inserted(e)
+        self.note_batch['objects'].clear()
+
+    def signal_on_note_inserted(self, o):
+        e = o['obj']
+        subscription = o['sub']
         if e.mentions_me:
             self.alert_on_note_event(e)
-        self.notify_on_note_event(event, subscription)
+        self.notify_on_note_event(e.event, subscription)
 
         if len(ACTIVE_EVENTS.notes) > 0:
             if e.event.id in ACTIVE_EVENTS.notes:
@@ -237,7 +376,7 @@ class RelayHandler:
             if reply is not None and reply.public_key == SETTINGS.get('pubkey'):
                 Alert(AlertKind.REPLY, event.event.created_at, {
                     'public_key': event.event.public_key,
-                    'response_to': event.response_to,
+                    'event': event.event.id,
                     'content': event.content
                 })
         elif event.thread_root is not None:
@@ -245,14 +384,14 @@ class RelayHandler:
             if root is not None and root.public_key == SETTINGS.get('pubkey'):
                 Alert(AlertKind.COMMENT_ON_THREAD, event.event.created_at, {
                     'public_key': event.event.public_key,
-                    'thread_root': event.thread_root,
+                    'event': event.event.id,
                     'content': event.content
                 })
 
     def notify_on_note_event(self, event, subscription):
         if subscription == 'primary':
             self.new_on_primary = True
-        if subscription == 'profile':
+        if self.page['page'] == 'profile' and self.page['identifier'] == event.public_key:
             DB.set_note_seen(event.id)
             socketio.emit('new_profile_posts', DB.get_most_recent_for_pk(event.public_key))
         elif subscription == 'note-thread':
@@ -260,32 +399,72 @@ class RelayHandler:
         elif subscription == 'topic':
             socketio.emit('new_in_topic', True)
 
-    def receive_contact_list_event(self, event, subscription):
+    def receive_contact_list_event(self, event):
         logger.info('Contact list received for: {}'.format(event.public_key))
         last_upd = DB.get_last_contacts_upd(event.public_key)
         logger.info('Contact list last update: {}'.format(last_upd))
         if last_upd is None or last_upd < event.created_at:
-            pk = SETTINGS.get('pubkey')
             logger.info('Contact list is newer than last upd: {}'.format(event.created_at))
+            # D_TASKS.pool.add(TaskKind.CONTACT_LIST, event)
+            pk = SETTINGS.get('pubkey')
             e = ContactListEvent(event, pk)
-            if event.public_key == pk:
-                logger.info('Contact list updated, restart primary subscription')
-                self.subscribe_primary()
-            if event.public_key != pk and subscription == 'profile':
-                self.subscribe_profile(event.public_key, timestamp_minus(TimePeriod.WEEK), [])
-            if len(e.new) > 0 and SETTINGS.get('pubkey') in e.new:
-                Alert(AlertKind.FOLLOW, event.created_at, {
-                    'public_key': e.event.public_key
-                })
-            if len(e.removed) > 0 and SETTINGS.get('pubkey') in e.removed:
-                Alert(AlertKind.UNFOLLOW, event.created_at, {
-                    'public_key': e.event.public_key
-                })
+            self.add_to_contacts_batch(e)
+            self.add_profile_if_not_exists(e.event.public_key)
 
+    def process_contacts(self):
+        follows, unfollows, is_mine = DB.add_contact_lists(SETTINGS.get('pubkey'), self.contacts_batch['inserts'])
+        self.contacts_batch['inserts'].clear()
+        if is_mine:
+            logger.info('Contact list updated, restart primary subscription')
+            self.subscribe_primary()
+        for pk in follows:
+            Alert(AlertKind.FOLLOW, int(time.time()), {
+                'public_key': pk
+            })
+        for pk in unfollows:
+            Alert(AlertKind.UNFOLLOW, int(time.time()), {
+                'public_key': pk
+            })
 
-    def receive_private_message_event(self, event):
+    # def on_contact_list_inserted(self, e):
+    #     logger.info('on_contact_list_inserted')
+    #     pk = SETTINGS.get('pubkey')
+    #     # e = ContactListEvent(event, pk)
+    #     # DB.add_profile_if_not_exists(e.event.public_key)
+    #     logger.info('-------------------- 1', e.event.to_json_object())
+    #     if e.event.public_key == pk:
+    #         logger.info('-------------------- 2')
+    #         logger.info('Contact list updated, restart primary subscription')
+    #         self.subscribe_primary()
+    #     # elif self.page['page'] == 'profile' and self.page['identifier'] == pk:
+    #     #     self.subscribe_profile(event.public_key, timestamp_minus(TimePeriod.WEEK), [])
+    #     if len(e.new) > 0 and SETTINGS.get('pubkey') in e.new:
+    #         logger.info('-------------------- 3')
+    #         Alert(AlertKind.FOLLOW, e.event.created_at, {
+    #             'public_key': e.event.public_key
+    #         })
+    #     if len(e.removed) > 0 and SETTINGS.get('pubkey') in e.removed:
+    #         logger.info('-------------------- 4')
+    #         Alert(AlertKind.UNFOLLOW, e.event.created_at, {
+    #             'public_key': e.event.public_key
+    #         })
+    #     logger.info('-------------------- 5')
 
-        e = EncryptedMessageEvent(event, SETTINGS.get('pubkey'))
+    def receive_direct_message_event(self, event):
+        e = DirectMessageEvent(event, SETTINGS.get('pubkey'))
+        if e.pubkey is not None and e.is_sender is not None and e.passed:
+            self.dm_batch['inserts'].append(e.to_dict())
+            self.dm_batch['objects'].append(e)
+            self.add_profile_if_not_exists(e.event.public_key)
+            
+    def process_direct_messages(self):
+        DB.insert_direct_messages(self.dm_batch['inserts'])
+        self.dm_batch['inserts'].clear()
+        for e in self.note_batch['objects']:
+            self.signal_on_direct_message(e)
+        self.dm_batch['objects'].clear()
+
+    def signal_on_direct_message(self, e):
         if self.page['page'] == 'message' and self.page['identifier'] == e.pubkey:
             messages = DB.get_unseen_messages(e.pubkey)
             if len(messages) > 0:
@@ -371,19 +550,29 @@ class ReactionEvent:
             if tag[0] == "e" and is_hex_key(tag[1]):
                 self.event_id = tag[1]
 
+    def to_dict(self) -> dict:
+        return {
+            "id": self.event.id,
+            "public_key": self.event.public_key,
+            "event_id": self.event_id,
+            "event_pk": self.event_pk,
+            "content": strip_tags(self.event.content),
+            "members": json.dumps(self.event_members)
+        }
+
     def store(self):
         logger.info('store reaction')
-        DB.add_note_reaction(
-            self.event.id,
-            self.event.public_key,
-            self.event_id,
-            self.event_pk,
-            strip_tags(self.event.content),
-            json.dumps(self.event_members),
-            json.dumps(self.event.to_json_object())
-        )
-        DB.add_profile_if_not_exists(self.event_pk)
-        DB.add_profile_if_not_exists(self.event.public_key)
+        # DB.add_note_reaction(
+        #     self.event.id,
+        #     self.event.public_key,
+        #     self.event_id,
+        #     self.event_pk,
+        #     strip_tags(self.event.content),
+        #     json.dumps(self.event_members),
+        #     json.dumps(self.event.to_json_object())
+        # )
+        # DB.add_profile_if_not_exists(self.event_pk)
+        # DB.add_profile_if_not_exists(self.event.public_key)
         if self.event.public_key == self.pubkey:
             DB.set_note_liked(self.event_id)
 
@@ -413,26 +602,24 @@ class ContactListEvent:
         self.event = event
         self.pubkey = pubkey
         self.keys = []
-        self.new = []
-        self.removed = []
-        self.changed = False
+        # self.new = []
+        # self.removed = []
+        # self.changed = False
 
         self.compile_keys()
-        DB.add_profile_if_not_exists(self.event.public_key)
-        self.update()
+        # DB.add_profile_if_not_exists(self.event.public_key)
+        # self.update()
 
     def compile_keys(self):
         for p in self.event.tags:
             if p[0] == "p":
                 self.keys.append(p[1])
 
-    def update(self):
-        self.new, self.removed = DB.add_contact_list(self.event.public_key, self.keys)
-        print('>NEW', self.new)
-        print('>REMOVED', self.removed)
+    # def update(self):
+    #     self.new, self.removed = DB.add_contact_list(self.event.public_key, self.keys)
 
 
-class EncryptedMessageEvent:
+class DirectMessageEvent:
     def __init__(self, event, my_pubkey):
         self.my_pubkey = my_pubkey
         self.event = event
@@ -463,8 +650,8 @@ class EncryptedMessageEvent:
     def process_data(self):
         self.set_receiver_sender()
         self.check_pow()
-        if self.pubkey is not None and self.is_sender is not None and self.passed:
-            self.store()
+        # if self.pubkey is not None and self.is_sender is not None and self.passed:
+        #     self.store()
 
     def set_receiver_sender(self):
         to = None
@@ -479,20 +666,19 @@ class EncryptedMessageEvent:
                 self.pubkey = to
                 self.is_sender = 0
 
-    def store(self):
-        DB.add_profile_if_not_exists(self.event.public_key)
+    def to_dict(self) -> dict:
         seen = False
-        if self.is_sender == 1 and self.pubkey == self.my_pubkey: # sent to self
+        if self.is_sender == 1 and self.pubkey == self.my_pubkey:  # sent to self
             seen = True
-        DB.insert_private_message(
-            self.event.id,
-            self.pubkey,
-            strip_tags(self.event.content),
-            self.is_sender,
-            self.event.created_at,
-            seen,
-            json.dumps(self.event.to_json_object())
-        )
+        return {
+            "id": self.event.id,
+            "public_key": self.pubkey,
+            "content": strip_tags(self.event.content),
+            "is_sender": self.is_sender,
+            "created_at": self.event.created_at,
+            "seen": seen,
+            "raw": json.dumps(self.event.to_json_object())
+        }
 
 
 class MetadataEvent:
@@ -503,17 +689,15 @@ class MetadataEvent:
         self.nip05 = None
         self.about = None
         self.picture = None
-        self.nip05_validated = False
         self.success = True
         if self.is_fresh():
             self.process_content()
-            if self.success:
-                self.store()
 
     def is_fresh(self):
         ts = DB.get_profile_last_upd(self.event.public_key)
         if ts is None or ts.updated_at < self.event.created_at:
             return True
+        self.success = False
         return False
 
     def process_content(self):
@@ -522,49 +706,41 @@ class MetadataEvent:
         except ValueError as e:
             self.success = False
             return
-
-        if 'name' in s:
+        if 'name' in s and s['name'] is not None:
             self.name = strip_tags(s['name'].strip())
-        if 'display_name' in s:
+        if 'display_name' in s and s['display_name'] is not None:
             self.display_name = strip_tags(s['display_name'].strip())
-        if 'nip05' in s and is_nip05(s['nip05']):
+        if 'nip05' in s and s['nip05'] is not None and is_nip05(s['nip05']):
             self.nip05 = s['nip05'].strip()
-        if 'about' in s:
+        if 'about' in s and s['about'] is not None:
             self.about = strip_tags(s['about'])
-        if 'picture' in s and validators.url(s['picture'].strip(), public=True):
+        if 'picture' in s and s['picture'] is not None and validators.url(s['picture'].strip(), public=True):
             self.picture = s['picture'].strip()
 
-        if self.nip05 is not None:
-            current = DB.get_profile(self.event.public_key)
-            if current is None or current.nip05 != self.nip05:
-                if self.validate_nip05(self.nip05, self.event.public_key):
-                    DB.set_valid_nip05(self.event.public_key)
-                    self.nip05_validated = True
-            elif current is not None:
-                self.nip05_validated = current.nip05
-            else:
-                self.nip05_validated = False
+        D_TASKS.pool.add(TaskKind.VALIDATE_NIP5, {'pk': self.event.public_key})
 
-    @staticmethod
-    def validate_nip05(nip05, pk):
-        validated_name = request_nip05(nip05)
-        if validated_name is not None and is_bech32_key('npub', validated_name):
-            validated_name = bech32_to_hex64('npub', validated_name)
-        if validated_name is not None and validated_name == pk:
-            return True
-        return False
+        # if self.nip05 is not None:
+        #
+        #     current = DB.get_profile(self.event.public_key)
+        #     if current is None or current.nip05 != self.nip05:
+        #         nip5 = Nip5(self.nip05)
+        #         self.nip05_validated = nip5.match(self.event.public_key)
+        #     elif current is not None:
+        #         self.nip05_validated = current.nip05
+        #     else:
+        #         self.nip05_validated = False
 
-    def store(self):
-        DB.upd_profile(
-            self.event.public_key,
-            self.name,
-            self.display_name,
-            self.nip05,
-            self.picture,
-            self.about,
-            self.event.created_at,
-            json.dumps(self.event.to_json_object())
-        )
+    def to_dict(self):
+        return {
+            'public_key':self.event.public_key,
+            'name':self.name,
+            'display_name':self.display_name,
+            'nip05':self.nip05,
+            'pic':self.picture,
+            'about':self.about,
+            'updated_at':self.event.created_at,
+            'raw':json.dumps(self.event.to_json_object())
+        }
 
 
 class NoteEvent:
@@ -585,7 +761,6 @@ class NoteEvent:
             self.mentions_me = False
 
             self.process_content()
-            self.update_db()
             self.update_referenced()
 
     def process_content(self):
@@ -714,21 +889,21 @@ class NoteEvent:
                     self.thread_root = parents[0]
                     self.response_to = parents[1]
 
-    def update_db(self):
-        logger.info('update db new note')
-        DB.add_profile_if_not_exists(self.event.public_key)
-        DB.insert_note(
-            self.event.id,
-            self.event.public_key,
-            self.content,
-            self.response_to,
-            self.thread_root,
-            self.reshare,
-            self.event.created_at,
-            json.dumps(self.members),
-            json.dumps(self.media),
-            json.dumps(self.hashtags)
-        )
+    def to_dict(self):
+        return {
+            'id': self.event.id,
+            'public_key': self.event.public_key,
+            'content': self.content,
+            'response_to': self.response_to,
+            'thread_root': self.thread_root,
+            'reshare': self.reshare,
+            'created_at': self.event.created_at,
+            'members': json.dumps(self.members),
+            'media': json.dumps(self.media),
+            'hashtags': json.dumps(self.hashtags),
+            'raw':json.dumps(self.event.to_json_object())
+        }
+
 
     def update_referenced(self):
         logger.info('update refs new note')
