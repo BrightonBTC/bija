@@ -108,20 +108,6 @@ class BijaDB:
 
         return new_follows, new_unfollows, is_mine
 
-    # def add_contact_list(self, public_key, keys: list):
-    #     following = self.get_following_pubkeys(public_key)
-    #     new = set(keys) - set(following)
-    #     removed = set(following) - set(keys)
-    #     a = []
-    #     for pk in new:
-    #         a.append(' ("{}","{}")'.format(public_key, pk))
-    #     if len(new) > 0:
-    #         sql = 'INSERT INTO follower (pk_1, pk_2) VALUES {}'.format(','.join(a))
-    #         DB_ENGINE.execute(text(sql))
-    #     self.session.query(Follower).filter(Follower.pk_1==public_key).filter(Follower.pk_2.in_(removed)).delete()
-    #     self.session.commit()
-    #     return list(new), list(removed)
-
     def get_last_contacts_upd(self, public_key):
         result = self.session.query(Event.ts) \
             .filter(Event.public_key == public_key) \
