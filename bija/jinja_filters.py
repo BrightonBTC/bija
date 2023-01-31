@@ -138,15 +138,30 @@ def _jinja2_filter_responders(the_dict, n):
         names.append([pk, _jinja2_filter_ident(name, '', pk, long=False)])
 
     if n == 1:
-        html = '<a href="/profile?pk={}">{}</a> commented'
+        html = '<a href="/profile?pk={}">{}</a> commented '
         return html.format(names[0][0], names[0][1])
     elif n == 2:
-        html = '<a href="/profile?pk={}">{}</a> and <a href="/profile?pk={}">{}</a> commented'
+        html = '<a href="/profile?pk={}">{}</a> and <a href="/profile?pk={}">{}</a> commented '
         return html.format(names[0][0], names[0][1], names[1][0], names[1][1])
     else:
-        html = '<a href="/profile?pk={}">{}</a>, <a href="/profile?pk={}">{}</a> and {} other contacts commented'
+        html = '<a href="/profile?pk={}">{}</a>, <a href="/profile?pk={}">{}</a> and {} others commented '
         return html.format(names[0][0], names[0][1], names[1][0], names[1][1], n - 2)
 
+@app.template_filter('boosters_string')
+def _jinja2_filter_boosters(the_dict, n):
+    names = []
+    for pk, name in the_dict.items() :
+        names.append([pk, _jinja2_filter_ident(name, '', pk, long=False)])
+    icon = _jinja2_filter_svg('reshare', 'icon-sm')
+    if n == 1:
+        html = '{} boosted by <a href="/profile?pk={}">{}</a> '
+        return html.format(icon, names[0][0], names[0][1])
+    elif n == 2:
+        html = '{} boosted by <a href="/profile?pk={}">{}</a> and <a href="/profile?pk={}">{}</a> '
+        return html.format(icon, names[0][0], names[0][1], names[1][0], names[1][1])
+    else:
+        html = '{} boosted by <a href="/profile?pk={}">{}</a>, <a href="/profile?pk={}">{}</a> and {} others'
+        return html.format(icon, names[0][0], names[0][1], names[1][0], names[1][1], n - 2)
 
 @app.template_filter('process_media_attachments')
 def _jinja2_filter_media(json_string):

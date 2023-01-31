@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import time
@@ -139,6 +140,12 @@ class TimePeriod(IntEnum):
     DAY = 60 * 60 * 24
     WEEK = 60 * 60 * 24 * 7
 
+def is_json(s):
+  try:
+    json.loads(s)
+  except ValueError as e:
+    return False
+  return True
 
 def timestamp_minus(period: TimePeriod, multiplier: int = 1, start=False):
     if not start:

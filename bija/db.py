@@ -95,16 +95,16 @@ class BijaDB:
                 new_follows.append(pk)
             if my_pk in removed:
                 new_unfollows.append(pk)
-
-        stmt = sqlite_upsert(Follower).values(inserts)
-        stmt = stmt.on_conflict_do_nothing(
-            index_elements=[Follower.pk_1, Follower.pk_2]
-        )
-        try:
-            self.session.execute(stmt)
-            self.session.commit()
-        except SQLAlchemyError as e:
-            print(str(e.__dict__['orig']))
+        if len(inserts) > 0:
+            stmt = sqlite_upsert(Follower).values(inserts)
+            stmt = stmt.on_conflict_do_nothing(
+                index_elements=[Follower.pk_1, Follower.pk_2]
+            )
+            try:
+                self.session.execute(stmt)
+                self.session.commit()
+            except SQLAlchemyError as e:
+                print(str(e.__dict__['orig']))
 
         return new_follows, new_unfollows, is_mine
 
@@ -571,18 +571,8 @@ class BijaDB:
             return out
         return None
 
-    # def get_notes_by_id_list(self, note_ids):
-    #     return self.session.query(
-    #         Note.id,
-    #         Note.public_key,
-    #         Note.content,
-    #         Note.created_at,
-    #         Note.members,
-    #         Note.media,
-    #         Profile.name,
-    #         Profile.display_name,
-    #         Profile.pic,
-    #         Profile.nip05).join(Note.profile).filter(Note.id.in_(note_ids)).all()
+    def get_notes_by_id_list(self, note_ids):
+        return self.session.query(Note).filter(Note.id.in_(note_ids)).all()
 
     def get_unseen_message_count(self):
         return self.session.query(PrivateMessage) \
@@ -682,6 +672,10 @@ class BijaDB:
 
     def set_note_seen(self, note_id):
         self.session.query(Note).filter(Note.id == note_id).update({'seen': True})
+        self.session.commit()
+
+    def set_note_boosted(self, note_id):
+        self.session.query(Note).filter(Note.id == note_id).update({'shared': True})
         self.session.commit()
 
     def search_profile_name(self, name_str):

@@ -44,6 +44,14 @@ class Submit:
         RELAY_MANAGER.publish_message(message)
         logger.info('PUBLISHED')
 
+class SubmitBoost(Submit):
+    def __init__(self, note_id, content):
+        super().__init__()
+        logger.info('SUBMIT boost')
+        self.kind = EventKind.BOOST
+        self.tags.append(['e', note_id])
+        self.content = content
+        self.send()
 
 class SubmitDelete(Submit):
     def __init__(self, ids, reason=""):

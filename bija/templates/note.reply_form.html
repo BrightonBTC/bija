@@ -9,7 +9,13 @@
         <a href="{{ url_for('note_page', id=note['id']) }}#focussed" class="reply-n counts rnd">{{note['replies'] if note['replies']}}</a>
     </span>
     <span class="section">
-        <a href="#" class="quote-link" data-rel="{{note['id']}}">{{'reshare'| svg_icon('icon')|safe}}</a>
+        <span class="share">
+            {{'reshare'| svg_icon('icon')|safe}}
+            <span class="share-links">
+                <a href="#" class="boost-link" data-rel="{{note['id']}}">{{'reshare'| svg_icon('icon-sm')|safe}} <span>Boost</span></a>
+                <a href="#" class="quote-link" data-rel="{{note['id']}}">{{'edit'| svg_icon('icon-sm')|safe}} <span>Quote</span></a>
+            </span>
+        </span>
         <a href="{{ url_for('boosts_page', id=note['id']) }}#focussed" class="quote-n counts rnd">{{note['shares'] if note['shares']}}</a>
     </span>
     <span class="section">

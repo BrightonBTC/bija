@@ -17,6 +17,7 @@ class FeedThread:
     def __init__(self, notes):
         logger.info('FEED THREAD')
         self.notes = notes
+        self.processed_notes = []
         self.threads = []
         self.roots = []
         self.ids = set()
@@ -31,7 +32,11 @@ class FeedThread:
         for note in self.notes:
             note = dict(note)
             self.last_ts = note['created_at']
-            if note['thread_root'] is not None:
+            if note['reshare'] is not None and len(note['content'].strip()) < 1:
+                roots.append(note['reshare'])
+                note['boost'] = True
+                self.add_id(note['reshare'])
+            elif note['thread_root'] is not None:
                 roots.append(note['thread_root'])
                 self.add_id(note['thread_root'])
             elif note['response_to'] is not None:
@@ -40,6 +45,7 @@ class FeedThread:
             elif note['thread_root'] is None and note['response_to'] is None:
                 roots.append(note['id'])
                 self.add_id(note['id'])
+            self.processed_notes.append(note)
         self.roots = list(dict.fromkeys(roots))
 
         ids = [n['id'] for n in self.notes]
@@ -47,15 +53,23 @@ class FeedThread:
         fids = [x for x in self.roots if x not in ids]
         extra_notes = DB.get_feed(int(time.time()), SETTINGS.get('pubkey'), {'id_list': fids})
         if extra_notes is not None:
-            self.notes += extra_notes
+            self.processed_notes += extra_notes
 
         for root in self.roots:
-            self.threads.append({'self': None, 'id': root, 'response': None, 'responders': {}, 'responder_count': 0})
+            self.threads.append({
+                'self': None,
+                'id': root,
+                'response': None,
+                'responders': {},
+                'responder_count': 0,
+                'boosters':{},
+                'booster_count': 0
+            })
 
     def construct_threads(self):
-        for _note in self.notes:
-            note = dict(_note)
-            if note['reshare'] is not None:
+        for note in self.processed_notes:
+            note = dict(note)
+            if note['reshare'] is not None and 'boost' not in note:
                 reshare = DB.get_note(SETTINGS.get('pubkey'), note['reshare'])
                 self.add_id(note['reshare'])
                 if reshare is not None:
@@ -65,12 +79,24 @@ class FeedThread:
                 thread['self'] = note
             elif note['thread_root'] is not None:
                 thread = next((sub for sub in self.threads if sub['id'] == note['thread_root']), None)
-                if thread['response'] is None:
-                    thread['response'] = note
-                if note['public_key'] not in thread['responders']:
-                    thread['responder_count'] += 1
-                if len(thread['responders']) < 2:
-                    thread['responders'][note['public_key']] = note['name']
+                if thread is not None:
+                    if thread['response'] is None:
+                        thread['response'] = note
+                    if note['public_key'] not in thread['responders']:
+                        thread['responder_count'] += 1
+                    if len(thread['responders']) < 2:
+                        thread['responders'][note['public_key']] = note['name']
+            elif 'boost' in note:
+                thread = next((sub for sub in self.threads if sub['id'] == note['reshare']), None)
+                if thread is not None:
+                    if note['public_key'] not in thread['boosters']:
+                        thread['booster_count'] += 1
+                    if len(thread['boosters']) < 2:
+                        thread['boosters'][note['public_key']] = note['name']
+                # if thread['self'] is None:
+                #     thread['self'] = thread['id']
+
+
 
 
     def add_id(self, note_id):

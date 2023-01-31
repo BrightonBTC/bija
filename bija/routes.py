@@ -20,7 +20,7 @@ from bija.password import encrypt_key, decrypt_key
 from bija.search import Search
 from bija.settings import SETTINGS
 from bija.submissions import SubmitDelete, SubmitNote, SubmitProfile, SubmitEncryptedMessage, SubmitLike, \
-    SubmitFollowList
+    SubmitFollowList, SubmitBoost
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOGGING_LEVEL)
@@ -75,7 +75,7 @@ def index_page():
     EXECUTOR.submit(RELAY_HANDLER.subscribe_feed(list(t.ids)))
     profile = DB.get_profile(pk)
     topics = DB.get_topics()
-    return render_template("feed.html", page_id="home", title="Home", threads=t.threads, last=t.last_ts,
+    return render_template("feed/feed.html", page_id="home", title="Home", threads=t.threads, last=t.last_ts,
                            profile=profile, pubkey=pk, topics=topics)
 
 
@@ -92,7 +92,7 @@ def feed():
             t = FeedThread(notes)
             EXECUTOR.submit(RELAY_HANDLER.subscribe_feed(list(t.ids)))
             profile = DB.get_profile(pk)
-            return render_template("feed.items.html", threads=t.threads, last=t.last_ts, profile=profile, pubkey=pk)
+            return render_template("feed/feed.items.html", threads=t.threads, last=t.last_ts, profile=profile, pubkey=pk)
         else:
             return 'END'
 
@@ -348,7 +348,7 @@ def profile_feed():
             EXECUTOR.submit(
                 RELAY_HANDLER.subscribe_profile, request.args['pk'], t.last_ts - TimePeriod.WEEK, list(t.ids)
             )
-            return render_template("feed.items.html", threads=t.threads, last=t.last_ts, profile=profile,
+            return render_template("feed/feed.items.html", threads=t.threads, last=t.last_ts, profile=profile,
                                    pubkey=SETTINGS.get('pubkey'))
         else:
             return 'END'
@@ -422,6 +422,20 @@ def delete_note():
         event_id = e.event_id
         #event_id = EVENT_HANDLER.submit_delete([note_id], reason)
     return render_template("upd.json", data=json.dumps({'event_id': event_id}))
+
+@app.route('/boost', methods=['GET'])
+def boost_submit():
+    status = False
+    note_id = request.args['id']
+    note = DB.get_note(SETTINGS.get('pubkey'), note_id)
+    if not note['shared']:
+        raw = DB.get_raw_note_data(note_id)
+        SubmitBoost(note_id, raw['raw'])
+        DB.set_note_boosted(note_id)
+        status = True
+
+    return render_template("upd.json", data=json.dumps({'status': status}))
+
 
 
 @app.route('/quote', methods=['POST'])
@@ -735,7 +749,7 @@ def topic_feed():
         if len(notes) > 0:
             t = FeedThread(notes)
             profile = DB.get_profile(pk)
-            return render_template("feed.items.html", threads=t.threads, last=t.last_ts, profile=profile, pubkey=pk)
+            return render_template("feed/feed.items.html", threads=t.threads, last=t.last_ts, profile=profile, pubkey=pk)
         else:
             return 'END'
 

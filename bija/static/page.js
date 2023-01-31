@@ -1016,6 +1016,11 @@ class bijaNotes{
                 this.setQuoteClickedEvents(q_el)
             }
 
+            const boost_el = note.querySelector(".boost-link");
+            if(boost_el){
+                this.setBoostClickedEvents(boost_el)
+            }
+
             const like_el = note.querySelector("a.like");
             if(like_el){
                 this.setLikeClickedEvents(like_el)
@@ -1190,6 +1195,22 @@ class bijaNotes{
                 }
             }
             fetchGet('/quote_form?id='+note_id, cb, {'context': this})
+        })
+    }
+    setBoostClickedEvents(elem){
+        elem.addEventListener('click', (e) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const note_id = elem.dataset.rel
+            const cb = function(response, data){
+                if(response['status'] == true){
+                    notify('boosted')
+                }
+                else{
+                    notify('already boosted')
+                }
+            }
+            fetchGet('/boost?id='+note_id, cb, {}, 'json')
         })
     }
 

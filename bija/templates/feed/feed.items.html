@@ -12,14 +12,22 @@
         {%- set post = thread['self'] -%}
 
         {%- if post['deleted'] is none -%}
-        {%- if thread['responder_count'] > 0 -%}
+
+        {%- if (thread['responder_count'] > 0 or thread['booster_count'] > 0) -%}
         <div class="response-accounts">
-            {{ thread['responders'] | responders_string(thread['responder_count']) | safe }}
-            {%- if thread['self'] is none -%}
-            on a <a href="/note?id={{thread['id']}}#{{thread['id']}}">thread</a>
+            {%- if thread['booster_count'] > 0 -%}
+                {{ thread['boosters'] | boosters_string(thread['booster_count']) | safe }}
+                {% if thread['responder_count'] > 0 %} ... {% endif %}
+            {%- endif -%}
+            {%- if thread['responder_count'] > 0 -%}
+                {{ thread['responders'] | responders_string(thread['responder_count']) | safe }}
+                {%- if thread['self'] is none -%}
+                on a <a href="/note?id={{thread['id']}}#{{thread['id']}}">thread</a>
+                {%- endif -%}
             {%- endif -%}
         </div>
         {%- endif -%}
+
         <div class="{{root_class}}">
             <div class="thread-marker"></div>
             <div class="note-image">
