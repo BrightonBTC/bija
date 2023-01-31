@@ -81,7 +81,7 @@ class SubscribePrimary(Subscribe):
             )
             following_profiles_filter = Filter(
                 authors=following_pubkeys,
-                kinds=[EventKind.SET_METADATA, EventKind.CONTACTS],
+                kinds=[EventKind.SET_METADATA, EventKind.CONTACTS, EventKind.ENCRYPTED_DIRECT_MESSAGE],
             )
             f.append(following_filter)
             f.append(following_profiles_filter)
