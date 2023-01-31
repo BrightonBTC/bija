@@ -545,7 +545,7 @@ class RelayHandler:
         ACTIVE_EVENTS.add_notes(ids)
         subscription_id = 'profile'
         self.subscriptions.add(subscription_id)
-        SubscribeProfile(subscription_id, pubkey, since)
+        SubscribeProfile(subscription_id, pubkey, since, ids)
 
     # create site wide subscription
     def subscribe_primary(self):

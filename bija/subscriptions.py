@@ -124,8 +124,9 @@ class SubscribeTopic(Subscribe):
 
 
 class SubscribeProfile(Subscribe):
-    def __init__(self, name, pubkey, since):
+    def __init__(self, name, pubkey, since, ids):
         super().__init__(name)
+        self.ids = ids
         self.pubkey = pubkey
         self.since = since
         self.build_filters()
@@ -137,7 +138,8 @@ class SubscribeProfile(Subscribe):
             Filter(authors=[self.pubkey], kinds=[EventKind.SET_METADATA, EventKind.CONTACTS]),
             Filter(authors=[self.pubkey], kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.DELETE, EventKind.REACTION],
                    since=self.since),
-            Filter(tags={'#p': [self.pubkey]}, kinds=[EventKind.CONTACTS])
+            Filter(tags={'#p': [self.pubkey]}, kinds=[EventKind.CONTACTS]),
+            Filter(ids=self.ids, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION])
         ]
         followers = DB.get_following_pubkeys(self.pubkey)
         if followers is not None and len(followers) > 0:

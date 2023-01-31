@@ -93,11 +93,8 @@ class FeedThread:
                         thread['booster_count'] += 1
                     if len(thread['boosters']) < 2:
                         thread['boosters'][note['public_key']] = note['name']
-                # if thread['self'] is None:
-                #     thread['self'] = thread['id']
-
-
-
+                if thread['self'] is None:
+                    thread['self'] = thread['id']
 
     def add_id(self, note_id):
         logger.info('add id: {}'.format(note_id))
