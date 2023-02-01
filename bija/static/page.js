@@ -1028,7 +1028,7 @@ class bijaNotes{
 
             const im_el = note.querySelector(".image-attachment img");
             if(im_el){
-                this.setImageClickEvents(im_el)
+                this.setImageClickEvents(note.querySelector(".image-attachment"))
             }
 
             const like_n_el = note.querySelector(".likes.counts");
@@ -1098,11 +1098,14 @@ class bijaNotes{
         })
     }
 
-    setImageClickEvents(elem){
-        elem.addEventListener("click", (event)=>{
-            const im = elem.parentElement.innerHTML
-            popup(im)
-        });
+    setImageClickEvents(container){
+        const elems = container.querySelectorAll('img')
+        for (const elem of elems) {
+            elem.addEventListener("click", (event)=>{
+                const im = elem.parentElement.innerHTML
+                popup(im)
+            });
+        }
     }
 
     

@@ -1187,6 +1187,37 @@ svg.lightning *{
 .note .image-attachment{
     text-align: center;
     margin-top: var(--spacing-lg);
+    display: grid;
+    grid-template-columns: auto;
+    gap: var(--spacing);
+}
+.note .image-attachment.col2{
+    grid-template-columns: auto auto;
+}
+.note .image-attachment.col3{
+    grid-template-columns: auto auto auto;
+}
+.note .image-attachment.col5{
+    grid-template-columns: auto auto auto auto auto;
+    gap: var(--spacing-sm);
+}
+
+.note-media img{
+    height: 300px;
+    width: 100%;
+    object-fit: cover;
+    border: 1px solid var(--bdr-clr-2);
+    border-radius: var(--rnd-sm);
+    cursor: pointer;
+}
+.note-media .image-attachment.col2 img{
+    height: 150px;
+}
+.note-media .image-attachment.col3 img{
+    height: 100px;
+}
+.note-media .image-attachment.col5 img{
+    height: 50px;
 }
 
 .note a{
@@ -1340,14 +1371,7 @@ p.note-tools {
     font-size: var(--fs-sm);
 }
 
-.note-media img{
-    height: 300px;
-    width: 100%;
-    object-fit: cover;
-    border: 1px solid var(--bdr-clr-2);
-    border-radius: var(--rnd-lg);
-    cursor: pointer;
-}
+
 #name-hints{
     position: fixed;
     z-index: 5000;

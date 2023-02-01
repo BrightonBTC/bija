@@ -613,6 +613,8 @@ def add_relay():
         for item in request.json:
             ws = item[1].strip()
             if item[0] == 'newrelay' and is_valid_relay(ws):
+                d = request_relay_data(ws)
+                print(d)
                 success = True
                 DB.insert_relay(ws)
                 EXECUTOR.submit(RELAY_HANDLER.add_relay(ws))

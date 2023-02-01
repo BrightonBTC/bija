@@ -169,7 +169,21 @@ def _jinja2_filter_media(json_string):
     if len(a) > 0:
         media = a[0]
         if media[1] == 'image':
-            return '<div class="image-attachment"><img data-src="{}" data-srcset="{}" src="/static/blank.png" class="lazy-load" referrerpolicy="no-referrer"></div>'.format(media[0], media[0])
+            n = 0
+            ims_htm = ''
+            ims_class = ''
+            for m in a:
+                if m[1] == 'image':
+                    n += 1
+                    ims_htm += '<span><img data-src="{}" data-srcset="{}" src="/static/blank.png" class="lazy-load" referrerpolicy="no-referrer"></span>'.format(m[0], m[0])
+            if n == 2:
+                ims_class = ' col2'
+            elif n > 2 < 6:
+                ims_class = ' col3'
+            elif n >= 6:
+                ims_class = ' col5'
+            return '<div class="image-attachment{}">{}</div>'.format(ims_class, ims_htm)
+
         elif media[1] == 'og':
             return render_template("note.og.html", data=media[0])
         elif media[1] == 'video':
