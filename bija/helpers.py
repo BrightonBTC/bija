@@ -57,8 +57,8 @@ def get_at_tags(content: str) -> list[Any]:
 
 
 def get_hash_tags(content: str) -> list[Any]:
-    regex = re.compile(r'\B#\w*[a-zA-Z]+\w*\W')
-    return re.findall(regex, content+' ')
+    regex = re.compile(r'\s\B#\w*[a-zA-Z]+\w*\W')
+    return re.findall(regex, ' '+content+' ')
 
 
 def get_note_links(content: str) -> list[Any]:
