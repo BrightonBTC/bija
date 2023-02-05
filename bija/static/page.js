@@ -1016,6 +1016,11 @@ class bijaNotes{
                 this.setQuoteClickedEvents(q_el)
             }
 
+            const boost_el = note.querySelector(".boost-link");
+            if(boost_el){
+                this.setBoostClickedEvents(boost_el)
+            }
+
             const like_el = note.querySelector("a.like");
             if(like_el){
                 this.setLikeClickedEvents(like_el)
@@ -1023,7 +1028,7 @@ class bijaNotes{
 
             const im_el = note.querySelector(".image-attachment img");
             if(im_el){
-                this.setImageClickEvents(im_el)
+                this.setImageClickEvents(note.querySelector(".image-attachment"))
             }
 
             const like_n_el = note.querySelector(".likes.counts");
@@ -1093,11 +1098,14 @@ class bijaNotes{
         })
     }
 
-    setImageClickEvents(elem){
-        elem.addEventListener("click", (event)=>{
-            const im = elem.parentElement.innerHTML
-            popup(im)
-        });
+    setImageClickEvents(container){
+        const elems = container.querySelectorAll('img')
+        for (const elem of elems) {
+            elem.addEventListener("click", (event)=>{
+                const im = elem.parentElement.innerHTML
+                popup(im)
+            });
+        }
     }
 
     
@@ -1190,6 +1198,22 @@ class bijaNotes{
                 }
             }
             fetchGet('/quote_form?id='+note_id, cb, {'context': this})
+        })
+    }
+    setBoostClickedEvents(elem){
+        elem.addEventListener('click', (e) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const note_id = elem.dataset.rel
+            const cb = function(response, data){
+                if(response['status'] == true){
+                    notify('boosted')
+                }
+                else{
+                    notify('already boosted')
+                }
+            }
+            fetchGet('/boost?id='+note_id, cb, {}, 'json')
         })
     }
 
@@ -1709,9 +1733,18 @@ function lazyloadIntersectionObserver(lazyloadImages) {
 			if(entry.isIntersecting) {
 				let image = entry.target;
 				image.src = image.dataset.src;
-				image.srcset = image.dataset.srcset;
 				image.classList.remove("lazy-load");
 				imageObserver.unobserve(image);
+			    setTimeout(function(){
+			        if(!image.complete){
+			            if(image.dataset.dflt){
+			                image.src = image.dataset.dflt
+			            }
+			            else{
+			                image.src = '/static/blank.png'
+			            }
+			        }
+			    }, 1000)
 			}
 		});
 	});

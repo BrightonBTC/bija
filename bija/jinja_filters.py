@@ -17,7 +17,7 @@ from bija.args import LOGGING_LEVEL
 from bija.db import BijaDB
 from bija.helpers import get_at_tags, is_hex_key, url_linkify, strip_tags, get_invoice, get_hash_tags
 from bija.settings import SETTINGS
-from python_nostr.nostr.key import PrivateKey
+from bija.ws.key import PrivateKey
 
 DB = BijaDB(app.session)
 logger = logging.getLogger(__name__)
@@ -138,15 +138,30 @@ def _jinja2_filter_responders(the_dict, n):
         names.append([pk, _jinja2_filter_ident(name, '', pk, long=False)])
 
     if n == 1:
-        html = '<a href="/profile?pk={}">{}</a> commented'
+        html = '<a href="/profile?pk={}">{}</a> commented '
         return html.format(names[0][0], names[0][1])
     elif n == 2:
-        html = '<a href="/profile?pk={}">{}</a> and <a href="/profile?pk={}">{}</a> commented'
+        html = '<a href="/profile?pk={}">{}</a> and <a href="/profile?pk={}">{}</a> commented '
         return html.format(names[0][0], names[0][1], names[1][0], names[1][1])
     else:
-        html = '<a href="/profile?pk={}">{}</a>, <a href="/profile?pk={}">{}</a> and {} other contacts commented'
+        html = '<a href="/profile?pk={}">{}</a>, <a href="/profile?pk={}">{}</a> and {} others commented '
         return html.format(names[0][0], names[0][1], names[1][0], names[1][1], n - 2)
 
+@app.template_filter('boosters_string')
+def _jinja2_filter_boosters(the_dict, n):
+    names = []
+    for pk, name in the_dict.items() :
+        names.append([pk, _jinja2_filter_ident(name, '', pk, long=False)])
+    icon = _jinja2_filter_svg('reshare', 'icon-sm')
+    if n == 1:
+        html = '{} boosted by <a href="/profile?pk={}">{}</a> '
+        return html.format(icon, names[0][0], names[0][1])
+    elif n == 2:
+        html = '{} boosted by <a href="/profile?pk={}">{}</a> and <a href="/profile?pk={}">{}</a> '
+        return html.format(icon, names[0][0], names[0][1], names[1][0], names[1][1])
+    else:
+        html = '{} boosted by <a href="/profile?pk={}">{}</a>, <a href="/profile?pk={}">{}</a> and {} others'
+        return html.format(icon, names[0][0], names[0][1], names[1][0], names[1][1], n - 2)
 
 @app.template_filter('process_media_attachments')
 def _jinja2_filter_media(json_string):
@@ -154,7 +169,21 @@ def _jinja2_filter_media(json_string):
     if len(a) > 0:
         media = a[0]
         if media[1] == 'image':
-            return '<div class="image-attachment"><img data-src="{}" data-srcset="{}" src="/static/blank.png" class="lazy-load" referrerpolicy="no-referrer"></div>'.format(media[0], media[0])
+            n = 0
+            ims_htm = ''
+            ims_class = ''
+            for m in a:
+                if m[1] == 'image':
+                    n += 1
+                    ims_htm += '<span><img data-src="{}" data-srcset="{}" src="/static/blank.png" class="lazy-load" referrerpolicy="no-referrer"></span>'.format(m[0], m[0])
+            if n == 2:
+                ims_class = ' col2'
+            elif n > 2 < 6:
+                ims_class = ' col3'
+            elif n >= 6:
+                ims_class = ' col5'
+            return '<div class="image-attachment{}">{}</div>'.format(ims_class, ims_htm)
+
         elif media[1] == 'og':
             return render_template("note.og.html", data=media[0])
         elif media[1] == 'video':
@@ -182,7 +211,7 @@ def _jinja2_filter_note(content: str, limit=500):
 
     hashtags.sort(key=len, reverse=True)
     for tag in hashtags:
-        term = tag[1:-1].strip()
+        term = tag[2:-1].strip()
         content = "{} ".format(content).replace(
             tag[:-1],
             "<a href='/topic?tag={}'>{}</a>".format(term, tag[:-1]))

@@ -1,7 +1,7 @@
 from bip39 import bip39
 
 from bija.helpers import is_hex_key, is_bech32_key, bech32_to_hex64, hex64_to_bech32
-from python_nostr.nostr.key import PrivateKey
+from bija.ws.key import PrivateKey
 
 
 PK = None

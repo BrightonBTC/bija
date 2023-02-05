@@ -1,10 +1,9 @@
-import os
+import json
 import re
 import time
 import urllib
 from enum import IntEnum
 import logging
-import traceback
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
@@ -13,8 +12,8 @@ from urllib.request import Request
 import requests
 from bs4 import BeautifulSoup
 
-from python_nostr.nostr import bech32
-from python_nostr.nostr.bech32 import bech32_encode, bech32_decode, convertbits
+from bija.ws import bech32
+from bija.ws.bech32 import bech32_encode, bech32_decode, convertbits
 
 logger = logging.getLogger(__name__)
 FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
@@ -56,8 +55,8 @@ def get_at_tags(content: str) -> list[Any]:
 
 
 def get_hash_tags(content: str) -> list[Any]:
-    regex = re.compile(r'\B#\w*[a-zA-Z]+\w*\W')
-    return re.findall(regex, content+' ')
+    regex = re.compile(r'\s\B#\w*[a-zA-Z]+\w*\W')
+    return re.findall(regex, ' '+content+' ')
 
 
 def get_note_links(content: str) -> list[Any]:
@@ -83,7 +82,7 @@ def get_invoice(content: str):
 
 def url_linkify(content):
     urls = get_urls_in_string(content)
-    for url in urls:
+    for url in set(urls):
         parts = url.split('//')
         if len(parts) < 2:
             parts = ['', url]
@@ -112,8 +111,9 @@ def is_nip05(name: str):
     else:
         test_str = 'test@{}'.format(parts[0])
         parts.insert(0, '_')
+
     regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
-    if re.fullmatch(regex, test_str) is not None:
+    if re.fullmatch(regex, test_str):
         return parts
     else:
         return False
@@ -139,6 +139,12 @@ class TimePeriod(IntEnum):
     DAY = 60 * 60 * 24
     WEEK = 60 * 60 * 24 * 7
 
+def is_json(s):
+  try:
+    json.loads(s)
+  except ValueError as e:
+    return False
+  return True
 
 def timestamp_minus(period: TimePeriod, multiplier: int = 1, start=False):
     if not start:

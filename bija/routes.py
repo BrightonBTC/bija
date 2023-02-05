@@ -1,3 +1,4 @@
+import os
 import sys
 from functools import wraps
 
@@ -20,7 +21,8 @@ from bija.password import encrypt_key, decrypt_key
 from bija.search import Search
 from bija.settings import SETTINGS
 from bija.submissions import SubmitDelete, SubmitNote, SubmitProfile, SubmitEncryptedMessage, SubmitLike, \
-    SubmitFollowList
+    SubmitFollowList, SubmitBoost
+from bija.subscription_manager import SUBSCRIPTION_MANAGER
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOGGING_LEVEL)
@@ -67,7 +69,7 @@ def login_required(f):
 def index_page():
     ACTIVE_EVENTS.clear()
     EXECUTOR.submit(RELAY_HANDLER.set_page('home', None))
-    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
+    EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
     pk = SETTINGS.get('pubkey')
     notes = DB.get_feed(time.time(), pk, {'main_feed': True})
     DB.set_all_seen_in_feed(pk)
@@ -75,7 +77,7 @@ def index_page():
     EXECUTOR.submit(RELAY_HANDLER.subscribe_feed(list(t.ids)))
     profile = DB.get_profile(pk)
     topics = DB.get_topics()
-    return render_template("feed.html", page_id="home", title="Home", threads=t.threads, last=t.last_ts,
+    return render_template("feed/feed.html", page_id="home", title="Home", threads=t.threads, last=t.last_ts,
                            profile=profile, pubkey=pk, topics=topics)
 
 
@@ -92,7 +94,7 @@ def feed():
             t = FeedThread(notes)
             EXECUTOR.submit(RELAY_HANDLER.subscribe_feed(list(t.ids)))
             profile = DB.get_profile(pk)
-            return render_template("feed.items.html", threads=t.threads, last=t.last_ts, profile=profile, pubkey=pk)
+            return render_template("feed/feed.items.html", threads=t.threads, last=t.last_ts, profile=profile, pubkey=pk)
         else:
             return 'END'
 
@@ -102,7 +104,7 @@ def feed():
 def alerts_page():
     ACTIVE_EVENTS.clear()
     EXECUTOR.submit(RELAY_HANDLER.set_page('alerts', None))
-    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
+    EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
     alerts = DB.get_alerts()
     DB.set_alerts_read()
     return render_template("alerts.html", page_id="alerts", title="alerts", alerts=alerts)
@@ -117,7 +119,7 @@ def logout_page():
 @app.route('/login', methods=['GET', 'POST'])
 def login_page():
     EXECUTOR.submit(RELAY_HANDLER.set_page('login', None))
-    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
+    EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
     login_state = get_login_state()
     message = None
     data = None
@@ -209,7 +211,7 @@ class ProfilePage:
         ACTIVE_EVENTS.clear()
         if RELAY_HANDLER.page['page'] not in valid_pages or RELAY_HANDLER.page['identifier'] != self.pubkey:
             set_subscription = True
-            EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
+            EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
         EXECUTOR.submit(RELAY_HANDLER.set_page(self.page, self.pubkey))
 
         self.set_profile()
@@ -348,7 +350,7 @@ def profile_feed():
             EXECUTOR.submit(
                 RELAY_HANDLER.subscribe_profile, request.args['pk'], t.last_ts - TimePeriod.WEEK, list(t.ids)
             )
-            return render_template("feed.items.html", threads=t.threads, last=t.last_ts, profile=profile,
+            return render_template("feed/feed.items.html", threads=t.threads, last=t.last_ts, profile=profile,
                                    pubkey=SETTINGS.get('pubkey'))
         else:
             return 'END'
@@ -360,7 +362,7 @@ def note_page():
     ACTIVE_EVENTS.clear()
     note_id = request.args['id']
     EXECUTOR.submit(RELAY_HANDLER.set_page('note', note_id))
-    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
+    EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
 
     t = NoteThread(note_id)
     EXECUTOR.submit(RELAY_HANDLER.subscribe_thread, note_id, t.note_ids)
@@ -380,7 +382,7 @@ def boosts_page():
     ACTIVE_EVENTS.clear()
     note_id = request.args['id']
     EXECUTOR.submit(RELAY_HANDLER.set_page('boosts', note_id))
-    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
+    EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
 
     t = BoostsThread(note_id)
 
@@ -422,6 +424,20 @@ def delete_note():
         event_id = e.event_id
         #event_id = EVENT_HANDLER.submit_delete([note_id], reason)
     return render_template("upd.json", data=json.dumps({'event_id': event_id}))
+
+@app.route('/boost', methods=['GET'])
+def boost_submit():
+    status = False
+    note_id = request.args['id']
+    note = DB.get_note(SETTINGS.get('pubkey'), note_id)
+    if not note['shared']:
+        raw = DB.get_raw_note_data(note_id)
+        SubmitBoost(note_id, raw['raw'])
+        DB.set_note_boosted(note_id)
+        status = True
+
+    return render_template("upd.json", data=json.dumps({'status': status}))
+
 
 
 @app.route('/quote', methods=['POST'])
@@ -474,7 +490,7 @@ def settings_page():
         return redirect('/')
     else:
         EXECUTOR.submit(RELAY_HANDLER.set_page('settings', None))
-        EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
+        EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
         settings = SETTINGS.get_list([
             'cloudinary_cloud',
             'cloudinary_upload_preset',
@@ -599,6 +615,8 @@ def add_relay():
         for item in request.json:
             ws = item[1].strip()
             if item[0] == 'newrelay' and is_valid_relay(ws):
+                d = request_relay_data(ws)
+                print(d)
                 success = True
                 DB.insert_relay(ws)
                 EXECUTOR.submit(RELAY_HANDLER.add_relay(ws))
@@ -626,7 +644,7 @@ def validate_nip5():
 def private_messages_page():
     ACTIVE_EVENTS.clear()
     EXECUTOR.submit(RELAY_HANDLER.set_page('messages', None))
-    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
+    EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
 
     messages = DB.get_message_list()
 
@@ -638,7 +656,7 @@ def private_messages_page():
 def private_message_page():
     ACTIVE_EVENTS.clear()
     EXECUTOR.submit(RELAY_HANDLER.set_page('message', request.args['pk']))
-    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
+    EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
     messages = []
     pk = ''
     if 'pk' in request.args and is_hex_key(request.args['pk']):
@@ -690,7 +708,7 @@ def submit_like():
 def search_page():
     ACTIVE_EVENTS.clear()
     EXECUTOR.submit(RELAY_HANDLER.set_page('search', request.args['search_term']))
-    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
+    EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
     search = Search()
     results, goto, message, action = search.get()
     if goto is not None:
@@ -707,7 +725,7 @@ def topic_page():
     ACTIVE_EVENTS.clear()
     topic = request.args['tag']
     EXECUTOR.submit(RELAY_HANDLER.set_page('topic', topic))
-    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
+    EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
     EXECUTOR.submit(RELAY_HANDLER.subscribe_topic, topic)
     pk = SETTINGS.get('pubkey')
 
@@ -735,7 +753,7 @@ def topic_feed():
         if len(notes) > 0:
             t = FeedThread(notes)
             profile = DB.get_profile(pk)
-            return render_template("feed.items.html", threads=t.threads, last=t.last_ts, profile=profile, pubkey=pk)
+            return render_template("feed/feed.items.html", threads=t.threads, last=t.last_ts, profile=profile, pubkey=pk)
         else:
             return 'END'
 

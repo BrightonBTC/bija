@@ -1,25 +1,22 @@
-import logging
 import ssl
-import time
 
 import validators as validators
 from flask import render_template
 
 from bija.app import socketio, ACTIVE_EVENTS
-from bija.args import LOGGING_LEVEL
 from bija.deferred_tasks import TaskKind, DeferredTasks
 from bija.helpers import get_embeded_tag_indexes, \
-    list_index_exists, get_urls_in_string, url_linkify, strip_tags, request_relay_data, is_nip05, \
-    is_bech32_key, bech32_to_hex64, request_url_head
-from bija.app import RELAY_MANAGER
+    list_index_exists, get_urls_in_string, url_linkify, strip_tags, is_nip05, \
+    request_url_head, is_json
 from bija.nip5 import Nip5
 from bija.ogtags import OGTags
 from bija.subscriptions import *
 from bija.submissions import *
 from bija.alerts import *
 from bija.settings import SETTINGS
-from python_nostr.nostr.event import EventKind
-from python_nostr.nostr.pow import count_leading_zero_bits
+from bija.ws.event import EventKind
+from bija.ws.pow import count_leading_zero_bits
+from bija.subscription_manager import SUBSCRIPTION_MANAGER
 
 logger = logging.getLogger(__name__)
 FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
@@ -31,8 +28,9 @@ D_TASKS = DeferredTasks()
 DB = BijaDB(app.session)
 
 
+
+
 class RelayHandler:
-    subscriptions = set()
     pool_handler_running = False
     page = {
         'page': None,
@@ -49,7 +47,8 @@ class RelayHandler:
 
     reaction_batch = {
         'inserts': [],
-        'objects': []
+        'objects': [],
+        'ids': []
     }
 
     profile_batch = {
@@ -127,14 +126,19 @@ class RelayHandler:
         self.processing = True
         while RELAY_MANAGER.message_pool.has_notices():
             notice = RELAY_MANAGER.message_pool.get_notice()
+            print('NOTICE', notice.url, notice.content)
 
         while RELAY_MANAGER.message_pool.has_ok_notices():
             notice = RELAY_MANAGER.message_pool.get_ok_notice()
+            print('OK', notice.url, notice.content)
 
         while RELAY_MANAGER.message_pool.has_eose_notices():
             notice = RELAY_MANAGER.message_pool.get_eose_notice()
             if hasattr(notice, 'url') and hasattr(notice, 'subscription_id'):
                 print('EOSE', notice.url, notice.subscription_id)
+                if notice.subscription_id == 'note-thread':
+                    print('------------------ next thread batch')
+                    SUBSCRIPTION_MANAGER.next_batch(notice.url, notice.subscription_id)
 
         n_queued = RELAY_MANAGER.message_pool.events.qsize()
         if n_queued > 0 or self.notify_empty_queue:
@@ -157,6 +161,9 @@ class RelayHandler:
 
                 if msg.event.kind == EventKind.TEXT_NOTE:
                     self.receive_note_event(msg.event, msg.subscription_id)
+
+                if msg.event.kind == EventKind.BOOST:
+                    self.receive_boost_event(msg.event)
 
                 if msg.event.kind == EventKind.ENCRYPTED_DIRECT_MESSAGE:
                     self.receive_direct_message_event(msg.event)
@@ -276,39 +283,58 @@ class RelayHandler:
 
     def receive_reaction_event(self, event):
         e = ReactionEvent(event, SETTINGS.get('pubkey'))
-        if e.valid:
+        if e.valid and e.event.id not in self.reaction_batch['ids']:
             self.add_profile_if_not_exists(e.event_pk)
             self.add_profile_if_not_exists(e.event.public_key)
             self.reaction_batch['inserts'].append(e.to_dict())
             self.reaction_batch['objects'].append(e)
+            self.reaction_batch['ids'].append(e.event.id)
+
 
     def process_reactions(self):
         DB.add_note_reactions(self.reaction_batch['inserts'])
         self.reaction_batch['inserts'].clear()
+        self.signal_on_reactions()
         for e in self.reaction_batch['objects']:
-            self.signal_on_reaction(e)
+            #self.signal_on_reaction(e)
+            self.increment_reaction_counts(e)
+        self.reaction_batch['ids'].clear()
         self.reaction_batch['objects'].clear()
 
-    def signal_on_reaction(self, e):
-        if e.valid:
-            note = DB.get_note(SETTINGS.get('pubkey'), e.event_id)
-            if e.event.content != '-' and len(ACTIVE_EVENTS.notes) > 0 and e.event_id in ACTIVE_EVENTS.notes:
-                socketio.emit('new_reaction', e.event_id)
-                logger.info('Reaction on active note detected, signal to UI')
-            if e.event.public_key != SETTINGS.get('pubkey'):
-                if note is not None and note.public_key == SETTINGS.get('pubkey'):
-                    logger.info('Get reaction from DB')
-                    reaction = DB.get_reaction_by_id(e.event.id)
-                    logger.info('Compose reaction alert')
-                    Alert(AlertKind.REACTION, e.event.created_at, {
-                        'public_key': e.event.public_key,
-                        'referenced_event': e.event_id,
-                        'reaction': reaction.content
-                    })
-                    logger.info('Get unread alert count')
-                    n = DB.get_unread_alert_count()
-                    if n > 0:
-                        socketio.emit('alert_n', n)
+    def increment_reaction_counts(self, e):
+        logger.info('update referenced in reaction')
+        if e.event.content != "-":
+            DB.increment_note_like_count(e.event_id)
+
+    def signal_on_reactions(self):
+        has_alerts = False
+        ids = []
+        for o in self.reaction_batch['objects']:
+            ids.append(o.event_id)
+
+        notes = DB.get_notes_by_id_list(ids)
+        for e in self.reaction_batch['objects']:
+            note = next((sub for sub in notes if sub.id == e.event_id), None)
+            if note is not None:
+                if e.event.content != '-' and len(ACTIVE_EVENTS.notes) > 0 and e.event_id in ACTIVE_EVENTS.notes:
+                    socketio.emit('new_reaction', e.event_id)
+                    logger.info('Reaction on active note detected, signal to UI')
+                if e.event.public_key != SETTINGS.get('pubkey'):
+                    if note is not None and note.public_key == SETTINGS.get('pubkey'):
+                        has_alerts =True
+                        logger.info('Get reaction from DB')
+                        reaction = DB.get_reaction_by_id(e.event.id)
+                        logger.info('Compose reaction alert')
+                        Alert(AlertKind.REACTION, e.event.created_at, {
+                            'public_key': e.event.public_key,
+                            'referenced_event': e.event_id,
+                            'reaction': reaction.content
+                        })
+        if has_alerts:
+            logger.info('Get unread alert count')
+            n = DB.get_unread_alert_count()
+            if n > 0:
+                socketio.emit('alert_n', n)
 
     def receive_metadata_event(self, event):
         meta = MetadataEvent(event)
@@ -336,18 +362,49 @@ class RelayHandler:
                 'created_at': meta.event.created_at
             })
 
+    def receive_boost_event(self, event):
+        e = BoostEvent(event)
+        if e.reshare_id is not None:
+            res = next((sub for sub in self.note_batch['inserts'] if sub['id'] == e.event.id), None)
+            if res is None:
+                if is_json(e.note_content):
+                    j = json.loads(e.note_content)
+                    parent_event = Event(j['pubkey'], j['content'], j['created_at'], j['kind'], j['tags'], j['id'], j['sig'])
+                    if parent_event.verify():
+                        self.receive_note_event(parent_event, 'bija')
+                self.add_profile_if_not_exists(e.event.public_key)
+                self.note_batch['inserts'].append(e.to_dict())
+                DB.increment_note_share_count(e.reshare_id)
+
     def receive_note_event(self, event, subscription):
+        if subscription == 'bija':
+            print('NOTE FROM BOOST CONTENT', event.id)
         e = NoteEvent(event, SETTINGS.get('pubkey'))
-        self.add_profile_if_not_exists(e.event.public_key)
-        self.note_batch['inserts'].append(e.to_dict())
-        self.note_batch['objects'].append({'obj':e, 'sub':subscription})
+        print(e)
+        res = next((sub for sub in self.note_batch['inserts'] if sub['id'] == e.event.id), None)
+        if res is None:
+            self.add_profile_if_not_exists(e.event.public_key)
+            self.note_batch['inserts'].append(e.to_dict())
+            self.note_batch['objects'].append({'obj':e, 'sub':subscription})
 
     def process_notes(self):
         DB.insert_notes(self.note_batch['inserts'])
         self.note_batch['inserts'].clear()
         for e in self.note_batch['objects']:
             self.signal_on_note_inserted(e)
+            self.update_referenced_in_note(e['obj'])
         self.note_batch['objects'].clear()
+
+    def update_referenced_in_note(self, e):
+        logger.info('update refs new note')
+        # is this a reply to another note?
+        if e.response_to is not None:
+            DB.increment_note_reply_count(e.response_to)
+        elif e.thread_root is not None:
+            DB.increment_note_reply_count(e.thread_root)
+        # is this a re-share of another note?
+        elif e.reshare is not None:
+            DB.increment_note_share_count(e.reshare)
 
     def signal_on_note_inserted(self, o):
         e = o['obj']
@@ -426,30 +483,6 @@ class RelayHandler:
                 'public_key': pk
             })
 
-    # def on_contact_list_inserted(self, e):
-    #     logger.info('on_contact_list_inserted')
-    #     pk = SETTINGS.get('pubkey')
-    #     # e = ContactListEvent(event, pk)
-    #     # DB.add_profile_if_not_exists(e.event.public_key)
-    #     logger.info('-------------------- 1', e.event.to_json_object())
-    #     if e.event.public_key == pk:
-    #         logger.info('-------------------- 2')
-    #         logger.info('Contact list updated, restart primary subscription')
-    #         self.subscribe_primary()
-    #     # elif self.page['page'] == 'profile' and self.page['identifier'] == pk:
-    #     #     self.subscribe_profile(event.public_key, timestamp_minus(TimePeriod.WEEK), [])
-    #     if len(e.new) > 0 and SETTINGS.get('pubkey') in e.new:
-    #         logger.info('-------------------- 3')
-    #         Alert(AlertKind.FOLLOW, e.event.created_at, {
-    #             'public_key': e.event.public_key
-    #         })
-    #     if len(e.removed) > 0 and SETTINGS.get('pubkey') in e.removed:
-    #         logger.info('-------------------- 4')
-    #         Alert(AlertKind.UNFOLLOW, e.event.created_at, {
-    #             'public_key': e.event.public_key
-    #         })
-    #     logger.info('-------------------- 5')
-
     def receive_direct_message_event(self, event):
         e = DirectMessageEvent(event, SETTINGS.get('pubkey'))
         if e.pubkey is not None and e.is_sender is not None and e.passed:
@@ -480,39 +513,31 @@ class RelayHandler:
     def subscribe_thread(self, root_id, ids):
         ACTIVE_EVENTS.add_notes(ids)
         subscription_id = 'note-thread'
-        self.subscriptions.add(subscription_id)
-        SubscribeThread(subscription_id, root_id)
+        SUBSCRIPTION_MANAGER.add_subscription(subscription_id, 2, root=root_id)
 
     def subscribe_feed(self, ids):
         ACTIVE_EVENTS.add_notes(ids)
         subscription_id = 'main-feed'
-        self.subscriptions.add(subscription_id)
-        SubscribeFeed(subscription_id, ids)
+        SUBSCRIPTION_MANAGER.add_subscription(subscription_id, 1, ids=ids)
 
     def subscribe_profile(self, pubkey, since, ids):
         ACTIVE_EVENTS.add_notes(ids)
         subscription_id = 'profile'
-        self.subscriptions.add(subscription_id)
-        SubscribeProfile(subscription_id, pubkey, since)
+        SUBSCRIPTION_MANAGER.add_subscription(subscription_id, 1, pubkey=pubkey, since=since, ids=ids)
 
     # create site wide subscription
     def subscribe_primary(self):
-        self.subscriptions.add('primary')
-        SubscribePrimary('primary', SETTINGS.get('pubkey'))
+        SUBSCRIPTION_MANAGER.add_subscription('primary', 1, pubkey=SETTINGS.get('pubkey'))
 
     def subscribe_topic(self, term):
         logger.info('Subscribe topic {}'.format(term))
-        self.subscriptions.add('topic')
-        SubscribeTopic('topic', term)
+        SUBSCRIPTION_MANAGER.add_subscription('topic', 1, term=term)
 
     def close_subscription(self, name):
-        self.subscriptions.remove(name)
-        RELAY_MANAGER.close_subscription(name)
+        SUBSCRIPTION_MANAGER.remove_subscription(name)
 
     def close_secondary_subscriptions(self):
-        for s in self.subscriptions:
-            if s not in ['primary']:
-                self.close_subscription(s)
+        SUBSCRIPTION_MANAGER.clear_subscriptions()
 
     def close(self):
         self.should_run = False
@@ -521,7 +546,7 @@ class RelayHandler:
 
 class ReactionEvent:
     def __init__(self, event, my_pubkey):
-        logger.info('REACTION EVENT')
+        logger.info('REACTION EVENT {}'.format(event.id))
         self.event = event
         self.pubkey = my_pubkey
         self.event_id = None
@@ -537,7 +562,6 @@ class ReactionEvent:
         if self.event_id is not None and self.event_pk is not None:
             self.valid = True
             self.store()
-            self.update_referenced()
         else:
             logger.debug('Invalid reaction event could not be stored.')
 
@@ -562,24 +586,8 @@ class ReactionEvent:
 
     def store(self):
         logger.info('store reaction')
-        # DB.add_note_reaction(
-        #     self.event.id,
-        #     self.event.public_key,
-        #     self.event_id,
-        #     self.event_pk,
-        #     strip_tags(self.event.content),
-        #     json.dumps(self.event_members),
-        #     json.dumps(self.event.to_json_object())
-        # )
-        # DB.add_profile_if_not_exists(self.event_pk)
-        # DB.add_profile_if_not_exists(self.event.public_key)
         if self.event.public_key == self.pubkey:
             DB.set_note_liked(self.event_id)
-
-    def update_referenced(self):
-        logger.info('update referenced in reaction')
-        if self.event.content != "-":
-            DB.increment_note_like_count(self.event_id)
 
 
 class DeleteEvent:
@@ -602,21 +610,13 @@ class ContactListEvent:
         self.event = event
         self.pubkey = pubkey
         self.keys = []
-        # self.new = []
-        # self.removed = []
-        # self.changed = False
 
         self.compile_keys()
-        # DB.add_profile_if_not_exists(self.event.public_key)
-        # self.update()
 
     def compile_keys(self):
         for p in self.event.tags:
             if p[0] == "p":
                 self.keys.append(p[1])
-
-    # def update(self):
-    #     self.new, self.removed = DB.add_contact_list(self.event.public_key, self.keys)
 
 
 class DirectMessageEvent:
@@ -650,8 +650,6 @@ class DirectMessageEvent:
     def process_data(self):
         self.set_receiver_sender()
         self.check_pow()
-        # if self.pubkey is not None and self.is_sender is not None and self.passed:
-        #     self.store()
 
     def set_receiver_sender(self):
         to = None
@@ -716,19 +714,7 @@ class MetadataEvent:
             self.about = strip_tags(s['about'])
         if 'picture' in s and s['picture'] is not None and validators.url(s['picture'].strip(), public=True):
             self.picture = s['picture'].strip()
-
         D_TASKS.pool.add(TaskKind.VALIDATE_NIP5, {'pk': self.event.public_key})
-
-        # if self.nip05 is not None:
-        #
-        #     current = DB.get_profile(self.event.public_key)
-        #     if current is None or current.nip05 != self.nip05:
-        #         nip5 = Nip5(self.nip05)
-        #         self.nip05_validated = nip5.match(self.event.public_key)
-        #     elif current is not None:
-        #         self.nip05_validated = current.nip05
-        #     else:
-        #         self.nip05_validated = False
 
     def to_dict(self):
         return {
@@ -745,23 +731,22 @@ class MetadataEvent:
 
 class NoteEvent:
     def __init__(self, event, my_pk):
-        if DB.get_event(event.id) is None:
-            logger.info('New note')
-            self.event = event
-            self.content = strip_tags(event.content)
-            self.tags = event.tags
-            self.media = []
-            self.members = []
-            self.hashtags = []
-            self.thread_root = None
-            self.response_to = None
-            self.reshare = None
-            self.used_tags = []
-            self.my_pk = my_pk
-            self.mentions_me = False
+        logger.info('New note')
+        self.event = event
+        self.content = strip_tags(event.content)
+        self.tags = event.tags
+        self.media = []
+        self.members = []
+        self.hashtags = []
+        self.thread_root = None
+        self.response_to = None
+        self.reshare = None
+        self.used_tags = []
+        self.my_pk = my_pk
+        self.mentions_me = False
 
-            self.process_content()
-            self.update_referenced()
+        self.process_content()
+
 
     def process_content(self):
         logger.info('process note content')
@@ -905,13 +890,33 @@ class NoteEvent:
         }
 
 
-    def update_referenced(self):
-        logger.info('update refs new note')
-        # is this a reply to another note?
-        if self.response_to is not None:
-            DB.increment_note_reply_count(self.response_to)
-        elif self.thread_root is not None:
-            DB.increment_note_reply_count(self.thread_root)
-        # is this a re-share of another note?
-        elif self.reshare is not None:
-            DB.increment_note_share_count(self.reshare)
+class BoostEvent:
+    def __init__(self, event):
+        logger.info('New boost')
+        self.event = event
+        self.reshare_id = None
+        self.get_boosted_event()
+        self.note_content = event.content
+        # if self.reshare_id is not None:
+        #     DB.increment_note_share_count(self.reshare_id)
+
+    def get_boosted_event(self):
+        for tag in self.event.tags:
+            if tag[0] == "e" and len(tag) > 1:
+                self.reshare_id = tag[1]
+
+
+    def to_dict(self):
+        return {
+            'id': self.event.id,
+            'public_key': self.event.public_key,
+            'content': '',
+            'response_to': None,
+            'thread_root': None,
+            'reshare': self.reshare_id,
+            'created_at': self.event.created_at,
+            'members': json.dumps([]),
+            'media': json.dumps([]),
+            'hashtags': json.dumps([]),
+            'raw':json.dumps(self.event.to_json_object())
+        }

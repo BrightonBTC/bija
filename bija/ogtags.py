@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 from bija.app import app
 from bija.args import LOGGING_LEVEL
 from bija.db import BijaDB
+from bija.helpers import request_url_head
 from bija.settings import SETTINGS
 
 DB = BijaDB(app.session)
@@ -26,33 +27,33 @@ class OGTags:
         self.url = data['url']
         self.og = {}
         self.note = DB.get_note(SETTINGS.get('pubkey'), self.note_id)
+        self.response = None
 
-        response = self.fetch()
-        if response:
-            self.process(response)
+        self.fetch()
+        if self.response:
+            self.process()
 
     def fetch(self):
         logger.info('fetch for {}'.format(self.url))
         req = Request(self.url, headers={'User-Agent': 'Bija Nostr Client'})
-        try:
-            with urllib.request.urlopen(req, timeout=2) as response:
-                if response.status == 200:
-                    return response.read()
-                return False
-        except HTTPError as error:
-            print(error.status, error.reason)
-            return False
-        except URLError as error:
-            print(error.reason)
-            return False
-        except TimeoutError:
-            print("Request timed out")
-            return False
+        h = request_url_head(self.url)
+        if h:
+            if h.get('content-type').split(';')[0] == 'text/html':
+                try:
+                    with urllib.request.urlopen(req, timeout=2) as response:
+                        if response.status == 200:
+                            self.response = response.read()
+                except HTTPError as error:
+                    print(error.status, error.reason)
+                except URLError as error:
+                    print(error.reason)
+                except TimeoutError:
+                    print("Request timed out")
 
-    def process(self, response):
+    def process(self):
         logger.info('process {}'.format(self.url))
-        if response is not None:
-            soup = BeautifulSoup(response, 'html.parser')
+        if self.response is not None:
+            soup = BeautifulSoup(self.response, 'html.parser')
             for prop in ['image', 'title', 'description', 'url']:
                 item = soup.find("meta", property="og:{}".format(prop))
                 if item is not None:

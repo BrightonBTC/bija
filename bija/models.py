@@ -131,3 +131,7 @@ class Relay(Base):
     __tablename__ = "relay"
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True)
+    # weight = Column(Integer)
+    # send = Column(Boolean)
+    # receive = Column(Boolean)
+    # data = Column(String)

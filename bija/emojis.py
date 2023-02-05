@@ -1,6 +1,6 @@
 emojis = [
   {
-    "name": "Smileys & Emotion",
+    "name": "smileys & emotion",
     "slug": "smileys_emotion",
     "emojis": [
       {
@@ -1326,7 +1326,7 @@ emojis = [
       {
         "emoji": "💤",
         "skin_tone_support": False,
-        "name": "ZZZ",
+        "name": "zzz",
         "slug": "zzz",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -1334,7 +1334,7 @@ emojis = [
     ]
   },
   {
-    "name": "People & Body",
+    "name": "people & body",
     "slug": "people_body",
     "emojis": [
       {
@@ -1440,7 +1440,7 @@ emojis = [
         "emoji": "👌",
         "skin_tone_support": True,
         "skin_tone_support_unicode_version": "1.0",
-        "name": "OK hand",
+        "name": "ok hand",
         "slug": "ok_hand",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -2184,7 +2184,7 @@ emojis = [
         "emoji": "🙅",
         "skin_tone_support": True,
         "skin_tone_support_unicode_version": "1.0",
-        "name": "person gesturing NO",
+        "name": "person gesturing no",
         "slug": "person_gesturing_no",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -2193,7 +2193,7 @@ emojis = [
         "emoji": "🙅‍♂️",
         "skin_tone_support": True,
         "skin_tone_support_unicode_version": "4.0",
-        "name": "man gesturing NO",
+        "name": "man gesturing no",
         "slug": "man_gesturing_no",
         "unicode_version": "4.0",
         "emoji_version": "4.0"
@@ -2202,7 +2202,7 @@ emojis = [
         "emoji": "🙅‍♀️",
         "skin_tone_support": True,
         "skin_tone_support_unicode_version": "4.0",
-        "name": "woman gesturing NO",
+        "name": "woman gesturing no",
         "slug": "woman_gesturing_no",
         "unicode_version": "4.0",
         "emoji_version": "4.0"
@@ -2211,7 +2211,7 @@ emojis = [
         "emoji": "🙆",
         "skin_tone_support": True,
         "skin_tone_support_unicode_version": "1.0",
-        "name": "person gesturing OK",
+        "name": "person gesturing ok",
         "slug": "person_gesturing_ok",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -2220,7 +2220,7 @@ emojis = [
         "emoji": "🙆‍♂️",
         "skin_tone_support": True,
         "skin_tone_support_unicode_version": "4.0",
-        "name": "man gesturing OK",
+        "name": "man gesturing ok",
         "slug": "man_gesturing_ok",
         "unicode_version": "4.0",
         "emoji_version": "4.0"
@@ -2229,7 +2229,7 @@ emojis = [
         "emoji": "🙆‍♀️",
         "skin_tone_support": True,
         "skin_tone_support_unicode_version": "4.0",
-        "name": "woman gesturing OK",
+        "name": "woman gesturing ok",
         "slug": "woman_gesturing_ok",
         "unicode_version": "4.0",
         "emoji_version": "4.0"
@@ -3147,7 +3147,7 @@ emojis = [
         "emoji": "🎅",
         "skin_tone_support": True,
         "skin_tone_support_unicode_version": "1.0",
-        "name": "Santa Claus",
+        "name": "santa claus",
         "slug": "santa_claus",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -3156,7 +3156,7 @@ emojis = [
         "emoji": "🤶",
         "skin_tone_support": True,
         "skin_tone_support_unicode_version": "3.0",
-        "name": "Mrs. Claus",
+        "name": "mrs. claus",
         "slug": "mrs_claus",
         "unicode_version": "3.0",
         "emoji_version": "3.0"
@@ -4549,7 +4549,7 @@ emojis = [
     ]
   },
   {
-    "name": "Animals & Nature",
+    "name": "animals & nature",
     "slug": "animals_nature",
     "emojis": [
       {
@@ -5322,7 +5322,7 @@ emojis = [
       {
         "emoji": "🦖",
         "skin_tone_support": False,
-        "name": "T-Rex",
+        "name": "t-rex",
         "slug": "t_rex",
         "unicode_version": "5.0",
         "emoji_version": "5.0"
@@ -5778,7 +5778,7 @@ emojis = [
     ]
   },
   {
-    "name": "Food & Drink",
+    "name": "food & drink",
     "slug": "food_drink",
     "emojis": [
       {
@@ -6848,13 +6848,13 @@ emojis = [
     ]
   },
   {
-    "name": "Travel & Places",
+    "name": "travel & places",
     "slug": "travel_places",
     "emojis": [
       {
         "emoji": "🌍",
         "skin_tone_support": False,
-        "name": "globe showing Europe-Africa",
+        "name": "globe showing europe-africa",
         "slug": "globe_showing_europe_africa",
         "unicode_version": "0.7",
         "emoji_version": "0.7"
@@ -6862,7 +6862,7 @@ emojis = [
       {
         "emoji": "🌎",
         "skin_tone_support": False,
-        "name": "globe showing Americas",
+        "name": "globe showing americas",
         "slug": "globe_showing_americas",
         "unicode_version": "0.7",
         "emoji_version": "0.7"
@@ -6870,7 +6870,7 @@ emojis = [
       {
         "emoji": "🌏",
         "skin_tone_support": False,
-        "name": "globe showing Asia-Australia",
+        "name": "globe showing asia-australia",
         "slug": "globe_showing_asia_australia",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -6894,7 +6894,7 @@ emojis = [
       {
         "emoji": "🗾",
         "skin_tone_support": False,
-        "name": "map of Japan",
+        "name": "map of japan",
         "slug": "map_of_japan",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -7078,7 +7078,7 @@ emojis = [
       {
         "emoji": "🏣",
         "skin_tone_support": False,
-        "name": "Japanese post office",
+        "name": "japanese post office",
         "slug": "japanese_post_office",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -7158,7 +7158,7 @@ emojis = [
       {
         "emoji": "🏯",
         "skin_tone_support": False,
-        "name": "Japanese castle",
+        "name": "japanese castle",
         "slug": "japanese_castle",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -7182,7 +7182,7 @@ emojis = [
       {
         "emoji": "🗼",
         "skin_tone_support": False,
-        "name": "Tokyo tower",
+        "name": "tokyo tower",
         "slug": "tokyo_tower",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -7190,7 +7190,7 @@ emojis = [
       {
         "emoji": "🗽",
         "skin_tone_support": False,
-        "name": "Statue of Liberty",
+        "name": "statue of liberty",
         "slug": "statue_of_liberty",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -8598,7 +8598,7 @@ emojis = [
     ]
   },
   {
-    "name": "Activities",
+    "name": "activities",
     "slug": "activities",
     "emojis": [
       {
@@ -8612,7 +8612,7 @@ emojis = [
       {
         "emoji": "🎄",
         "skin_tone_support": False,
-        "name": "Christmas tree",
+        "name": "christmas tree",
         "slug": "christmas_tree",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -8692,7 +8692,7 @@ emojis = [
       {
         "emoji": "🎎",
         "skin_tone_support": False,
-        "name": "Japanese dolls",
+        "name": "japanese dolls",
         "slug": "japanese_dolls",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -9284,7 +9284,7 @@ emojis = [
     ]
   },
   {
-    "name": "Objects",
+    "name": "objects",
     "slug": "objects",
     "emojis": [
       {
@@ -11386,13 +11386,13 @@ emojis = [
     ]
   },
   {
-    "name": "Symbols",
+    "name": "symbols",
     "slug": "symbols",
     "emojis": [
       {
         "emoji": "🏧",
         "skin_tone_support": False,
-        "name": "ATM sign",
+        "name": "atm sign",
         "slug": "atm_sign",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -11728,7 +11728,7 @@ emojis = [
       {
         "emoji": "🔙",
         "skin_tone_support": False,
-        "name": "BACK arrow",
+        "name": "back arrow",
         "slug": "back_arrow",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -11736,7 +11736,7 @@ emojis = [
       {
         "emoji": "🔚",
         "skin_tone_support": False,
-        "name": "END arrow",
+        "name": "end arrow",
         "slug": "end_arrow",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -11744,7 +11744,7 @@ emojis = [
       {
         "emoji": "🔛",
         "skin_tone_support": False,
-        "name": "ON! arrow",
+        "name": "on! arrow",
         "slug": "on_arrow",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -11752,7 +11752,7 @@ emojis = [
       {
         "emoji": "🔜",
         "skin_tone_support": False,
-        "name": "SOON arrow",
+        "name": "soon arrow",
         "slug": "soon_arrow",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -11760,7 +11760,7 @@ emojis = [
       {
         "emoji": "🔝",
         "skin_tone_support": False,
-        "name": "TOP arrow",
+        "name": "top arrow",
         "slug": "top_arrow",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -11792,7 +11792,7 @@ emojis = [
       {
         "emoji": "✡️",
         "skin_tone_support": False,
-        "name": "star of David",
+        "name": "star of david",
         "slug": "star_of_david",
         "unicode_version": "0.7",
         "emoji_version": "0.7"
@@ -11872,7 +11872,7 @@ emojis = [
       {
         "emoji": "♈",
         "skin_tone_support": False,
-        "name": "Aries",
+        "name": "aries",
         "slug": "aries",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -11880,7 +11880,7 @@ emojis = [
       {
         "emoji": "♉",
         "skin_tone_support": False,
-        "name": "Taurus",
+        "name": "taurus",
         "slug": "taurus",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -11888,7 +11888,7 @@ emojis = [
       {
         "emoji": "♊",
         "skin_tone_support": False,
-        "name": "Gemini",
+        "name": "gemini",
         "slug": "gemini",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -11896,7 +11896,7 @@ emojis = [
       {
         "emoji": "♋",
         "skin_tone_support": False,
-        "name": "Cancer",
+        "name": "cancer",
         "slug": "cancer",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -11904,7 +11904,7 @@ emojis = [
       {
         "emoji": "♌",
         "skin_tone_support": False,
-        "name": "Leo",
+        "name": "leo",
         "slug": "leo",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -11912,7 +11912,7 @@ emojis = [
       {
         "emoji": "♍",
         "skin_tone_support": False,
-        "name": "Virgo",
+        "name": "virgo",
         "slug": "virgo",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -11920,7 +11920,7 @@ emojis = [
       {
         "emoji": "♎",
         "skin_tone_support": False,
-        "name": "Libra",
+        "name": "libra",
         "slug": "libra",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -11928,7 +11928,7 @@ emojis = [
       {
         "emoji": "♏",
         "skin_tone_support": False,
-        "name": "Scorpio",
+        "name": "scorpio",
         "slug": "scorpio",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -11936,7 +11936,7 @@ emojis = [
       {
         "emoji": "♐",
         "skin_tone_support": False,
-        "name": "Sagittarius",
+        "name": "sagittarius",
         "slug": "sagittarius",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -11944,7 +11944,7 @@ emojis = [
       {
         "emoji": "♑",
         "skin_tone_support": False,
-        "name": "Capricorn",
+        "name": "capricorn",
         "slug": "capricorn",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -11952,7 +11952,7 @@ emojis = [
       {
         "emoji": "♒",
         "skin_tone_support": False,
-        "name": "Aquarius",
+        "name": "aquarius",
         "slug": "aquarius",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -11960,7 +11960,7 @@ emojis = [
       {
         "emoji": "♓",
         "skin_tone_support": False,
-        "name": "Pisces",
+        "name": "pisces",
         "slug": "pisces",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -11968,7 +11968,7 @@ emojis = [
       {
         "emoji": "⛎",
         "skin_tone_support": False,
-        "name": "Ophiuchus",
+        "name": "ophiuchus",
         "slug": "ophiuchus",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12360,7 +12360,7 @@ emojis = [
       {
         "emoji": "🔰",
         "skin_tone_support": False,
-        "name": "Japanese symbol for beginner",
+        "name": "japanese symbol for beginner",
         "slug": "japanese_symbol_for_beginner",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12632,7 +12632,7 @@ emojis = [
       {
         "emoji": "🅰️",
         "skin_tone_support": False,
-        "name": "A button (blood type)",
+        "name": "a button (blood type)",
         "slug": "a_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12640,7 +12640,7 @@ emojis = [
       {
         "emoji": "🆎",
         "skin_tone_support": False,
-        "name": "AB button (blood type)",
+        "name": "ab button (blood type)",
         "slug": "ab_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12648,7 +12648,7 @@ emojis = [
       {
         "emoji": "🅱️",
         "skin_tone_support": False,
-        "name": "B button (blood type)",
+        "name": "b button (blood type)",
         "slug": "b_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12656,7 +12656,7 @@ emojis = [
       {
         "emoji": "🆑",
         "skin_tone_support": False,
-        "name": "CL button",
+        "name": "cl button",
         "slug": "cl_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12664,7 +12664,7 @@ emojis = [
       {
         "emoji": "🆒",
         "skin_tone_support": False,
-        "name": "COOL button",
+        "name": "cool button",
         "slug": "cool_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12672,7 +12672,7 @@ emojis = [
       {
         "emoji": "🆓",
         "skin_tone_support": False,
-        "name": "FREE button",
+        "name": "free button",
         "slug": "free_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12688,7 +12688,7 @@ emojis = [
       {
         "emoji": "🆔",
         "skin_tone_support": False,
-        "name": "ID button",
+        "name": "id button",
         "slug": "id_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12696,7 +12696,7 @@ emojis = [
       {
         "emoji": "Ⓜ️",
         "skin_tone_support": False,
-        "name": "circled M",
+        "name": "circled m",
         "slug": "circled_m",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12704,7 +12704,7 @@ emojis = [
       {
         "emoji": "🆕",
         "skin_tone_support": False,
-        "name": "NEW button",
+        "name": "new button",
         "slug": "new_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12712,7 +12712,7 @@ emojis = [
       {
         "emoji": "🆖",
         "skin_tone_support": False,
-        "name": "NG button",
+        "name": "ng button",
         "slug": "ng_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12720,7 +12720,7 @@ emojis = [
       {
         "emoji": "🅾️",
         "skin_tone_support": False,
-        "name": "O button (blood type)",
+        "name": "o button (blood type)",
         "slug": "o_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12728,7 +12728,7 @@ emojis = [
       {
         "emoji": "🆗",
         "skin_tone_support": False,
-        "name": "OK button",
+        "name": "ok button",
         "slug": "ok_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12736,7 +12736,7 @@ emojis = [
       {
         "emoji": "🅿️",
         "skin_tone_support": False,
-        "name": "P button",
+        "name": "p button",
         "slug": "p_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12744,7 +12744,7 @@ emojis = [
       {
         "emoji": "🆘",
         "skin_tone_support": False,
-        "name": "SOS button",
+        "name": "sos button",
         "slug": "sos_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12752,7 +12752,7 @@ emojis = [
       {
         "emoji": "🆙",
         "skin_tone_support": False,
-        "name": "UP! button",
+        "name": "up! button",
         "slug": "up_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12760,7 +12760,7 @@ emojis = [
       {
         "emoji": "🆚",
         "skin_tone_support": False,
-        "name": "VS button",
+        "name": "vs button",
         "slug": "vs_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12768,7 +12768,7 @@ emojis = [
       {
         "emoji": "🈁",
         "skin_tone_support": False,
-        "name": "Japanese “here” button",
+        "name": "japanese “here” button",
         "slug": "japanese_here_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12776,7 +12776,7 @@ emojis = [
       {
         "emoji": "🈂️",
         "skin_tone_support": False,
-        "name": "Japanese “service charge” button",
+        "name": "japanese “service charge” button",
         "slug": "japanese_service_charge_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12784,7 +12784,7 @@ emojis = [
       {
         "emoji": "🈷️",
         "skin_tone_support": False,
-        "name": "Japanese “monthly amount” button",
+        "name": "japanese “monthly amount” button",
         "slug": "japanese_monthly_amount_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12792,7 +12792,7 @@ emojis = [
       {
         "emoji": "🈶",
         "skin_tone_support": False,
-        "name": "Japanese “not free of charge” button",
+        "name": "japanese “not free of charge” button",
         "slug": "japanese_not_free_of_charge_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12800,7 +12800,7 @@ emojis = [
       {
         "emoji": "🈯",
         "skin_tone_support": False,
-        "name": "Japanese “reserved” button",
+        "name": "japanese “reserved” button",
         "slug": "japanese_reserved_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12808,7 +12808,7 @@ emojis = [
       {
         "emoji": "🉐",
         "skin_tone_support": False,
-        "name": "Japanese “bargain” button",
+        "name": "japanese “bargain” button",
         "slug": "japanese_bargain_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12816,7 +12816,7 @@ emojis = [
       {
         "emoji": "🈹",
         "skin_tone_support": False,
-        "name": "Japanese “discount” button",
+        "name": "japanese “discount” button",
         "slug": "japanese_discount_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12824,7 +12824,7 @@ emojis = [
       {
         "emoji": "🈚",
         "skin_tone_support": False,
-        "name": "Japanese “free of charge” button",
+        "name": "japanese “free of charge” button",
         "slug": "japanese_free_of_charge_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12832,7 +12832,7 @@ emojis = [
       {
         "emoji": "🈲",
         "skin_tone_support": False,
-        "name": "Japanese “prohibited” button",
+        "name": "japanese “prohibited” button",
         "slug": "japanese_prohibited_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12840,7 +12840,7 @@ emojis = [
       {
         "emoji": "🉑",
         "skin_tone_support": False,
-        "name": "Japanese “acceptable” button",
+        "name": "japanese “acceptable” button",
         "slug": "japanese_acceptable_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12848,7 +12848,7 @@ emojis = [
       {
         "emoji": "🈸",
         "skin_tone_support": False,
-        "name": "Japanese “application” button",
+        "name": "japanese “application” button",
         "slug": "japanese_application_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12856,7 +12856,7 @@ emojis = [
       {
         "emoji": "🈴",
         "skin_tone_support": False,
-        "name": "Japanese “passing grade” button",
+        "name": "japanese “passing grade” button",
         "slug": "japanese_passing_grade_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12864,7 +12864,7 @@ emojis = [
       {
         "emoji": "🈳",
         "skin_tone_support": False,
-        "name": "Japanese “vacancy” button",
+        "name": "japanese “vacancy” button",
         "slug": "japanese_vacancy_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12872,7 +12872,7 @@ emojis = [
       {
         "emoji": "㊗️",
         "skin_tone_support": False,
-        "name": "Japanese “congratulations” button",
+        "name": "japanese “congratulations” button",
         "slug": "japanese_congratulations_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12880,7 +12880,7 @@ emojis = [
       {
         "emoji": "㊙️",
         "skin_tone_support": False,
-        "name": "Japanese “secret” button",
+        "name": "japanese “secret” button",
         "slug": "japanese_secret_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12888,7 +12888,7 @@ emojis = [
       {
         "emoji": "🈺",
         "skin_tone_support": False,
-        "name": "Japanese “open for business” button",
+        "name": "japanese “open for business” button",
         "slug": "japanese_open_for_business_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -12896,7 +12896,7 @@ emojis = [
       {
         "emoji": "🈵",
         "skin_tone_support": False,
-        "name": "Japanese “no vacancy” button",
+        "name": "japanese “no vacancy” button",
         "slug": "japanese_no_vacancy_button",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -13176,7 +13176,7 @@ emojis = [
     ]
   },
   {
-    "name": "Flags",
+    "name": "flags",
     "slug": "flags",
     "emojis": [
       {
@@ -13246,7 +13246,7 @@ emojis = [
       {
         "emoji": "🇦🇨",
         "skin_tone_support": False,
-        "name": "flag Ascension Island",
+        "name": "flag ascension island",
         "slug": "flag_ascension_island",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13254,7 +13254,7 @@ emojis = [
       {
         "emoji": "🇦🇩",
         "skin_tone_support": False,
-        "name": "flag Andorra",
+        "name": "flag andorra",
         "slug": "flag_andorra",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13262,7 +13262,7 @@ emojis = [
       {
         "emoji": "🇦🇪",
         "skin_tone_support": False,
-        "name": "flag United Arab Emirates",
+        "name": "flag united arab emirates",
         "slug": "flag_united_arab_emirates",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13270,7 +13270,7 @@ emojis = [
       {
         "emoji": "🇦🇫",
         "skin_tone_support": False,
-        "name": "flag Afghanistan",
+        "name": "flag afghanistan",
         "slug": "flag_afghanistan",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13278,7 +13278,7 @@ emojis = [
       {
         "emoji": "🇦🇬",
         "skin_tone_support": False,
-        "name": "flag Antigua & Barbuda",
+        "name": "flag antigua & barbuda",
         "slug": "flag_antigua_barbuda",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13286,7 +13286,7 @@ emojis = [
       {
         "emoji": "🇦🇮",
         "skin_tone_support": False,
-        "name": "flag Anguilla",
+        "name": "flag anguilla",
         "slug": "flag_anguilla",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13294,7 +13294,7 @@ emojis = [
       {
         "emoji": "🇦🇱",
         "skin_tone_support": False,
-        "name": "flag Albania",
+        "name": "flag albania",
         "slug": "flag_albania",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13302,7 +13302,7 @@ emojis = [
       {
         "emoji": "🇦🇲",
         "skin_tone_support": False,
-        "name": "flag Armenia",
+        "name": "flag armenia",
         "slug": "flag_armenia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13310,7 +13310,7 @@ emojis = [
       {
         "emoji": "🇦🇴",
         "skin_tone_support": False,
-        "name": "flag Angola",
+        "name": "flag angola",
         "slug": "flag_angola",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13318,7 +13318,7 @@ emojis = [
       {
         "emoji": "🇦🇶",
         "skin_tone_support": False,
-        "name": "flag Antarctica",
+        "name": "flag antarctica",
         "slug": "flag_antarctica",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13326,7 +13326,7 @@ emojis = [
       {
         "emoji": "🇦🇷",
         "skin_tone_support": False,
-        "name": "flag Argentina",
+        "name": "flag argentina",
         "slug": "flag_argentina",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13334,7 +13334,7 @@ emojis = [
       {
         "emoji": "🇦🇸",
         "skin_tone_support": False,
-        "name": "flag American Samoa",
+        "name": "flag american samoa",
         "slug": "flag_american_samoa",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13342,7 +13342,7 @@ emojis = [
       {
         "emoji": "🇦🇹",
         "skin_tone_support": False,
-        "name": "flag Austria",
+        "name": "flag austria",
         "slug": "flag_austria",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13350,7 +13350,7 @@ emojis = [
       {
         "emoji": "🇦🇺",
         "skin_tone_support": False,
-        "name": "flag Australia",
+        "name": "flag australia",
         "slug": "flag_australia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13358,7 +13358,7 @@ emojis = [
       {
         "emoji": "🇦🇼",
         "skin_tone_support": False,
-        "name": "flag Aruba",
+        "name": "flag aruba",
         "slug": "flag_aruba",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13366,7 +13366,7 @@ emojis = [
       {
         "emoji": "🇦🇽",
         "skin_tone_support": False,
-        "name": "flag Åland Islands",
+        "name": "flag Åland islands",
         "slug": "flag_aland_islands",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13374,7 +13374,7 @@ emojis = [
       {
         "emoji": "🇦🇿",
         "skin_tone_support": False,
-        "name": "flag Azerbaijan",
+        "name": "flag azerbaijan",
         "slug": "flag_azerbaijan",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13382,7 +13382,7 @@ emojis = [
       {
         "emoji": "🇧🇦",
         "skin_tone_support": False,
-        "name": "flag Bosnia & Herzegovina",
+        "name": "flag bosnia & herzegovina",
         "slug": "flag_bosnia_herzegovina",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13390,7 +13390,7 @@ emojis = [
       {
         "emoji": "🇧🇧",
         "skin_tone_support": False,
-        "name": "flag Barbados",
+        "name": "flag barbados",
         "slug": "flag_barbados",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13398,7 +13398,7 @@ emojis = [
       {
         "emoji": "🇧🇩",
         "skin_tone_support": False,
-        "name": "flag Bangladesh",
+        "name": "flag bangladesh",
         "slug": "flag_bangladesh",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13406,7 +13406,7 @@ emojis = [
       {
         "emoji": "🇧🇪",
         "skin_tone_support": False,
-        "name": "flag Belgium",
+        "name": "flag belgium",
         "slug": "flag_belgium",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13414,7 +13414,7 @@ emojis = [
       {
         "emoji": "🇧🇫",
         "skin_tone_support": False,
-        "name": "flag Burkina Faso",
+        "name": "flag burkina faso",
         "slug": "flag_burkina_faso",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13422,7 +13422,7 @@ emojis = [
       {
         "emoji": "🇧🇬",
         "skin_tone_support": False,
-        "name": "flag Bulgaria",
+        "name": "flag bulgaria",
         "slug": "flag_bulgaria",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13430,7 +13430,7 @@ emojis = [
       {
         "emoji": "🇧🇭",
         "skin_tone_support": False,
-        "name": "flag Bahrain",
+        "name": "flag bahrain",
         "slug": "flag_bahrain",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13438,7 +13438,7 @@ emojis = [
       {
         "emoji": "🇧🇮",
         "skin_tone_support": False,
-        "name": "flag Burundi",
+        "name": "flag burundi",
         "slug": "flag_burundi",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13446,7 +13446,7 @@ emojis = [
       {
         "emoji": "🇧🇯",
         "skin_tone_support": False,
-        "name": "flag Benin",
+        "name": "flag benin",
         "slug": "flag_benin",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13454,7 +13454,7 @@ emojis = [
       {
         "emoji": "🇧🇱",
         "skin_tone_support": False,
-        "name": "flag St. Barthélemy",
+        "name": "flag st. barthélemy",
         "slug": "flag_st_barthelemy",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13462,7 +13462,7 @@ emojis = [
       {
         "emoji": "🇧🇲",
         "skin_tone_support": False,
-        "name": "flag Bermuda",
+        "name": "flag bermuda",
         "slug": "flag_bermuda",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13470,7 +13470,7 @@ emojis = [
       {
         "emoji": "🇧🇳",
         "skin_tone_support": False,
-        "name": "flag Brunei",
+        "name": "flag brunei",
         "slug": "flag_brunei",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13478,7 +13478,7 @@ emojis = [
       {
         "emoji": "🇧🇴",
         "skin_tone_support": False,
-        "name": "flag Bolivia",
+        "name": "flag bolivia",
         "slug": "flag_bolivia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13486,7 +13486,7 @@ emojis = [
       {
         "emoji": "🇧🇶",
         "skin_tone_support": False,
-        "name": "flag Caribbean Netherlands",
+        "name": "flag caribbean netherlands",
         "slug": "flag_caribbean_netherlands",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13494,7 +13494,7 @@ emojis = [
       {
         "emoji": "🇧🇷",
         "skin_tone_support": False,
-        "name": "flag Brazil",
+        "name": "flag brazil",
         "slug": "flag_brazil",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13502,7 +13502,7 @@ emojis = [
       {
         "emoji": "🇧🇸",
         "skin_tone_support": False,
-        "name": "flag Bahamas",
+        "name": "flag bahamas",
         "slug": "flag_bahamas",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13510,7 +13510,7 @@ emojis = [
       {
         "emoji": "🇧🇹",
         "skin_tone_support": False,
-        "name": "flag Bhutan",
+        "name": "flag bhutan",
         "slug": "flag_bhutan",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13518,7 +13518,7 @@ emojis = [
       {
         "emoji": "🇧🇻",
         "skin_tone_support": False,
-        "name": "flag Bouvet Island",
+        "name": "flag bouvet island",
         "slug": "flag_bouvet_island",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13526,7 +13526,7 @@ emojis = [
       {
         "emoji": "🇧🇼",
         "skin_tone_support": False,
-        "name": "flag Botswana",
+        "name": "flag botswana",
         "slug": "flag_botswana",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13534,7 +13534,7 @@ emojis = [
       {
         "emoji": "🇧🇾",
         "skin_tone_support": False,
-        "name": "flag Belarus",
+        "name": "flag belarus",
         "slug": "flag_belarus",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13542,7 +13542,7 @@ emojis = [
       {
         "emoji": "🇧🇿",
         "skin_tone_support": False,
-        "name": "flag Belize",
+        "name": "flag belize",
         "slug": "flag_belize",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13550,7 +13550,7 @@ emojis = [
       {
         "emoji": "🇨🇦",
         "skin_tone_support": False,
-        "name": "flag Canada",
+        "name": "flag canada",
         "slug": "flag_canada",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13558,7 +13558,7 @@ emojis = [
       {
         "emoji": "🇨🇨",
         "skin_tone_support": False,
-        "name": "flag Cocos (Keeling) Islands",
+        "name": "flag cocos (keeling) islands",
         "slug": "flag_cocos_islands",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13566,7 +13566,7 @@ emojis = [
       {
         "emoji": "🇨🇩",
         "skin_tone_support": False,
-        "name": "flag Congo - Kinshasa",
+        "name": "flag congo - kinshasa",
         "slug": "flag_congo_kinshasa",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13574,7 +13574,7 @@ emojis = [
       {
         "emoji": "🇨🇫",
         "skin_tone_support": False,
-        "name": "flag Central African Republic",
+        "name": "flag central african republic",
         "slug": "flag_central_african_republic",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13582,7 +13582,7 @@ emojis = [
       {
         "emoji": "🇨🇬",
         "skin_tone_support": False,
-        "name": "flag Congo - Brazzaville",
+        "name": "flag congo - brazzaville",
         "slug": "flag_congo_brazzaville",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13590,7 +13590,7 @@ emojis = [
       {
         "emoji": "🇨🇭",
         "skin_tone_support": False,
-        "name": "flag Switzerland",
+        "name": "flag switzerland",
         "slug": "flag_switzerland",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13598,7 +13598,7 @@ emojis = [
       {
         "emoji": "🇨🇮",
         "skin_tone_support": False,
-        "name": "flag Côte d’Ivoire",
+        "name": "flag côte d’ivoire",
         "slug": "flag_cote_d_ivoire",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13606,7 +13606,7 @@ emojis = [
       {
         "emoji": "🇨🇰",
         "skin_tone_support": False,
-        "name": "flag Cook Islands",
+        "name": "flag cook islands",
         "slug": "flag_cook_islands",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13614,7 +13614,7 @@ emojis = [
       {
         "emoji": "🇨🇱",
         "skin_tone_support": False,
-        "name": "flag Chile",
+        "name": "flag chile",
         "slug": "flag_chile",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13622,7 +13622,7 @@ emojis = [
       {
         "emoji": "🇨🇲",
         "skin_tone_support": False,
-        "name": "flag Cameroon",
+        "name": "flag cameroon",
         "slug": "flag_cameroon",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13630,7 +13630,7 @@ emojis = [
       {
         "emoji": "🇨🇳",
         "skin_tone_support": False,
-        "name": "flag China",
+        "name": "flag china",
         "slug": "flag_china",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -13638,7 +13638,7 @@ emojis = [
       {
         "emoji": "🇨🇴",
         "skin_tone_support": False,
-        "name": "flag Colombia",
+        "name": "flag colombia",
         "slug": "flag_colombia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13646,7 +13646,7 @@ emojis = [
       {
         "emoji": "🇨🇵",
         "skin_tone_support": False,
-        "name": "flag Clipperton Island",
+        "name": "flag clipperton island",
         "slug": "flag_clipperton_island",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13654,7 +13654,7 @@ emojis = [
       {
         "emoji": "🇨🇷",
         "skin_tone_support": False,
-        "name": "flag Costa Rica",
+        "name": "flag costa rica",
         "slug": "flag_costa_rica",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13662,7 +13662,7 @@ emojis = [
       {
         "emoji": "🇨🇺",
         "skin_tone_support": False,
-        "name": "flag Cuba",
+        "name": "flag cuba",
         "slug": "flag_cuba",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13670,7 +13670,7 @@ emojis = [
       {
         "emoji": "🇨🇻",
         "skin_tone_support": False,
-        "name": "flag Cape Verde",
+        "name": "flag cape verde",
         "slug": "flag_cape_verde",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13678,7 +13678,7 @@ emojis = [
       {
         "emoji": "🇨🇼",
         "skin_tone_support": False,
-        "name": "flag Curaçao",
+        "name": "flag curaçao",
         "slug": "flag_curacao",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13686,7 +13686,7 @@ emojis = [
       {
         "emoji": "🇨🇽",
         "skin_tone_support": False,
-        "name": "flag Christmas Island",
+        "name": "flag christmas island",
         "slug": "flag_christmas_island",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13694,7 +13694,7 @@ emojis = [
       {
         "emoji": "🇨🇾",
         "skin_tone_support": False,
-        "name": "flag Cyprus",
+        "name": "flag cyprus",
         "slug": "flag_cyprus",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13702,7 +13702,7 @@ emojis = [
       {
         "emoji": "🇨🇿",
         "skin_tone_support": False,
-        "name": "flag Czechia",
+        "name": "flag czechia",
         "slug": "flag_czechia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13710,7 +13710,7 @@ emojis = [
       {
         "emoji": "🇩🇪",
         "skin_tone_support": False,
-        "name": "flag Germany",
+        "name": "flag germany",
         "slug": "flag_germany",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -13718,7 +13718,7 @@ emojis = [
       {
         "emoji": "🇩🇬",
         "skin_tone_support": False,
-        "name": "flag Diego Garcia",
+        "name": "flag diego garcia",
         "slug": "flag_diego_garcia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13726,7 +13726,7 @@ emojis = [
       {
         "emoji": "🇩🇯",
         "skin_tone_support": False,
-        "name": "flag Djibouti",
+        "name": "flag djibouti",
         "slug": "flag_djibouti",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13734,7 +13734,7 @@ emojis = [
       {
         "emoji": "🇩🇰",
         "skin_tone_support": False,
-        "name": "flag Denmark",
+        "name": "flag denmark",
         "slug": "flag_denmark",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13742,7 +13742,7 @@ emojis = [
       {
         "emoji": "🇩🇲",
         "skin_tone_support": False,
-        "name": "flag Dominica",
+        "name": "flag dominica",
         "slug": "flag_dominica",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13750,7 +13750,7 @@ emojis = [
       {
         "emoji": "🇩🇴",
         "skin_tone_support": False,
-        "name": "flag Dominican Republic",
+        "name": "flag dominican republic",
         "slug": "flag_dominican_republic",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13758,7 +13758,7 @@ emojis = [
       {
         "emoji": "🇩🇿",
         "skin_tone_support": False,
-        "name": "flag Algeria",
+        "name": "flag algeria",
         "slug": "flag_algeria",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13766,7 +13766,7 @@ emojis = [
       {
         "emoji": "🇪🇦",
         "skin_tone_support": False,
-        "name": "flag Ceuta & Melilla",
+        "name": "flag ceuta & melilla",
         "slug": "flag_ceuta_melilla",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13774,7 +13774,7 @@ emojis = [
       {
         "emoji": "🇪🇨",
         "skin_tone_support": False,
-        "name": "flag Ecuador",
+        "name": "flag ecuador",
         "slug": "flag_ecuador",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13782,7 +13782,7 @@ emojis = [
       {
         "emoji": "🇪🇪",
         "skin_tone_support": False,
-        "name": "flag Estonia",
+        "name": "flag estonia",
         "slug": "flag_estonia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13790,7 +13790,7 @@ emojis = [
       {
         "emoji": "🇪🇬",
         "skin_tone_support": False,
-        "name": "flag Egypt",
+        "name": "flag egypt",
         "slug": "flag_egypt",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13798,7 +13798,7 @@ emojis = [
       {
         "emoji": "🇪🇭",
         "skin_tone_support": False,
-        "name": "flag Western Sahara",
+        "name": "flag western sahara",
         "slug": "flag_western_sahara",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13806,7 +13806,7 @@ emojis = [
       {
         "emoji": "🇪🇷",
         "skin_tone_support": False,
-        "name": "flag Eritrea",
+        "name": "flag eritrea",
         "slug": "flag_eritrea",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13814,7 +13814,7 @@ emojis = [
       {
         "emoji": "🇪🇸",
         "skin_tone_support": False,
-        "name": "flag Spain",
+        "name": "flag spain",
         "slug": "flag_spain",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -13822,7 +13822,7 @@ emojis = [
       {
         "emoji": "🇪🇹",
         "skin_tone_support": False,
-        "name": "flag Ethiopia",
+        "name": "flag ethiopia",
         "slug": "flag_ethiopia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13830,7 +13830,7 @@ emojis = [
       {
         "emoji": "🇪🇺",
         "skin_tone_support": False,
-        "name": "flag European Union",
+        "name": "flag european union",
         "slug": "flag_european_union",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13838,7 +13838,7 @@ emojis = [
       {
         "emoji": "🇫🇮",
         "skin_tone_support": False,
-        "name": "flag Finland",
+        "name": "flag finland",
         "slug": "flag_finland",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13846,7 +13846,7 @@ emojis = [
       {
         "emoji": "🇫🇯",
         "skin_tone_support": False,
-        "name": "flag Fiji",
+        "name": "flag fiji",
         "slug": "flag_fiji",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13854,7 +13854,7 @@ emojis = [
       {
         "emoji": "🇫🇰",
         "skin_tone_support": False,
-        "name": "flag Falkland Islands",
+        "name": "flag falkland islands",
         "slug": "flag_falkland_islands",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13862,7 +13862,7 @@ emojis = [
       {
         "emoji": "🇫🇲",
         "skin_tone_support": False,
-        "name": "flag Micronesia",
+        "name": "flag micronesia",
         "slug": "flag_micronesia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13870,7 +13870,7 @@ emojis = [
       {
         "emoji": "🇫🇴",
         "skin_tone_support": False,
-        "name": "flag Faroe Islands",
+        "name": "flag faroe islands",
         "slug": "flag_faroe_islands",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13878,7 +13878,7 @@ emojis = [
       {
         "emoji": "🇫🇷",
         "skin_tone_support": False,
-        "name": "flag France",
+        "name": "flag france",
         "slug": "flag_france",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -13886,7 +13886,7 @@ emojis = [
       {
         "emoji": "🇬🇦",
         "skin_tone_support": False,
-        "name": "flag Gabon",
+        "name": "flag gabon",
         "slug": "flag_gabon",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13894,7 +13894,7 @@ emojis = [
       {
         "emoji": "🇬🇧",
         "skin_tone_support": False,
-        "name": "flag United Kingdom",
+        "name": "flag united kingdom",
         "slug": "flag_united_kingdom",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -13902,7 +13902,7 @@ emojis = [
       {
         "emoji": "🇬🇩",
         "skin_tone_support": False,
-        "name": "flag Grenada",
+        "name": "flag grenada",
         "slug": "flag_grenada",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13910,7 +13910,7 @@ emojis = [
       {
         "emoji": "🇬🇪",
         "skin_tone_support": False,
-        "name": "flag Georgia",
+        "name": "flag georgia",
         "slug": "flag_georgia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13918,7 +13918,7 @@ emojis = [
       {
         "emoji": "🇬🇫",
         "skin_tone_support": False,
-        "name": "flag French Guiana",
+        "name": "flag french guiana",
         "slug": "flag_french_guiana",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13926,7 +13926,7 @@ emojis = [
       {
         "emoji": "🇬🇬",
         "skin_tone_support": False,
-        "name": "flag Guernsey",
+        "name": "flag guernsey",
         "slug": "flag_guernsey",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13934,7 +13934,7 @@ emojis = [
       {
         "emoji": "🇬🇭",
         "skin_tone_support": False,
-        "name": "flag Ghana",
+        "name": "flag ghana",
         "slug": "flag_ghana",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13942,7 +13942,7 @@ emojis = [
       {
         "emoji": "🇬🇮",
         "skin_tone_support": False,
-        "name": "flag Gibraltar",
+        "name": "flag gibraltar",
         "slug": "flag_gibraltar",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13950,7 +13950,7 @@ emojis = [
       {
         "emoji": "🇬🇱",
         "skin_tone_support": False,
-        "name": "flag Greenland",
+        "name": "flag greenland",
         "slug": "flag_greenland",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13958,7 +13958,7 @@ emojis = [
       {
         "emoji": "🇬🇲",
         "skin_tone_support": False,
-        "name": "flag Gambia",
+        "name": "flag gambia",
         "slug": "flag_gambia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13966,7 +13966,7 @@ emojis = [
       {
         "emoji": "🇬🇳",
         "skin_tone_support": False,
-        "name": "flag Guinea",
+        "name": "flag guinea",
         "slug": "flag_guinea",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13974,7 +13974,7 @@ emojis = [
       {
         "emoji": "🇬🇵",
         "skin_tone_support": False,
-        "name": "flag Guadeloupe",
+        "name": "flag guadeloupe",
         "slug": "flag_guadeloupe",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13982,7 +13982,7 @@ emojis = [
       {
         "emoji": "🇬🇶",
         "skin_tone_support": False,
-        "name": "flag Equatorial Guinea",
+        "name": "flag equatorial guinea",
         "slug": "flag_equatorial_guinea",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13990,7 +13990,7 @@ emojis = [
       {
         "emoji": "🇬🇷",
         "skin_tone_support": False,
-        "name": "flag Greece",
+        "name": "flag greece",
         "slug": "flag_greece",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -13998,7 +13998,7 @@ emojis = [
       {
         "emoji": "🇬🇸",
         "skin_tone_support": False,
-        "name": "flag South Georgia & South Sandwich Islands",
+        "name": "flag south georgia & south sandwich islands",
         "slug": "flag_south_georgia_south_sandwich_islands",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14006,7 +14006,7 @@ emojis = [
       {
         "emoji": "🇬🇹",
         "skin_tone_support": False,
-        "name": "flag Guatemala",
+        "name": "flag guatemala",
         "slug": "flag_guatemala",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14014,7 +14014,7 @@ emojis = [
       {
         "emoji": "🇬🇺",
         "skin_tone_support": False,
-        "name": "flag Guam",
+        "name": "flag guam",
         "slug": "flag_guam",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14022,7 +14022,7 @@ emojis = [
       {
         "emoji": "🇬🇼",
         "skin_tone_support": False,
-        "name": "flag Guinea-Bissau",
+        "name": "flag guinea-bissau",
         "slug": "flag_guinea_bissau",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14030,7 +14030,7 @@ emojis = [
       {
         "emoji": "🇬🇾",
         "skin_tone_support": False,
-        "name": "flag Guyana",
+        "name": "flag guyana",
         "slug": "flag_guyana",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14038,7 +14038,7 @@ emojis = [
       {
         "emoji": "🇭🇰",
         "skin_tone_support": False,
-        "name": "flag Hong Kong SAR China",
+        "name": "flag hong kong sar china",
         "slug": "flag_hong_kong_sar_china",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14046,7 +14046,7 @@ emojis = [
       {
         "emoji": "🇭🇲",
         "skin_tone_support": False,
-        "name": "flag Heard & McDonald Islands",
+        "name": "flag heard & mcdonald islands",
         "slug": "flag_heard_mcdonald_islands",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14054,7 +14054,7 @@ emojis = [
       {
         "emoji": "🇭🇳",
         "skin_tone_support": False,
-        "name": "flag Honduras",
+        "name": "flag honduras",
         "slug": "flag_honduras",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14062,7 +14062,7 @@ emojis = [
       {
         "emoji": "🇭🇷",
         "skin_tone_support": False,
-        "name": "flag Croatia",
+        "name": "flag croatia",
         "slug": "flag_croatia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14070,7 +14070,7 @@ emojis = [
       {
         "emoji": "🇭🇹",
         "skin_tone_support": False,
-        "name": "flag Haiti",
+        "name": "flag haiti",
         "slug": "flag_haiti",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14078,7 +14078,7 @@ emojis = [
       {
         "emoji": "🇭🇺",
         "skin_tone_support": False,
-        "name": "flag Hungary",
+        "name": "flag hungary",
         "slug": "flag_hungary",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14086,7 +14086,7 @@ emojis = [
       {
         "emoji": "🇮🇨",
         "skin_tone_support": False,
-        "name": "flag Canary Islands",
+        "name": "flag canary islands",
         "slug": "flag_canary_islands",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14094,7 +14094,7 @@ emojis = [
       {
         "emoji": "🇮🇩",
         "skin_tone_support": False,
-        "name": "flag Indonesia",
+        "name": "flag indonesia",
         "slug": "flag_indonesia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14102,7 +14102,7 @@ emojis = [
       {
         "emoji": "🇮🇪",
         "skin_tone_support": False,
-        "name": "flag Ireland",
+        "name": "flag ireland",
         "slug": "flag_ireland",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14110,7 +14110,7 @@ emojis = [
       {
         "emoji": "🇮🇱",
         "skin_tone_support": False,
-        "name": "flag Israel",
+        "name": "flag israel",
         "slug": "flag_israel",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14118,7 +14118,7 @@ emojis = [
       {
         "emoji": "🇮🇲",
         "skin_tone_support": False,
-        "name": "flag Isle of Man",
+        "name": "flag isle of man",
         "slug": "flag_isle_of_man",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14126,7 +14126,7 @@ emojis = [
       {
         "emoji": "🇮🇳",
         "skin_tone_support": False,
-        "name": "flag India",
+        "name": "flag india",
         "slug": "flag_india",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14134,7 +14134,7 @@ emojis = [
       {
         "emoji": "🇮🇴",
         "skin_tone_support": False,
-        "name": "flag British Indian Ocean Territory",
+        "name": "flag british indian ocean territory",
         "slug": "flag_british_indian_ocean_territory",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14142,7 +14142,7 @@ emojis = [
       {
         "emoji": "🇮🇶",
         "skin_tone_support": False,
-        "name": "flag Iraq",
+        "name": "flag iraq",
         "slug": "flag_iraq",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14150,7 +14150,7 @@ emojis = [
       {
         "emoji": "🇮🇷",
         "skin_tone_support": False,
-        "name": "flag Iran",
+        "name": "flag iran",
         "slug": "flag_iran",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14158,7 +14158,7 @@ emojis = [
       {
         "emoji": "🇮🇸",
         "skin_tone_support": False,
-        "name": "flag Iceland",
+        "name": "flag iceland",
         "slug": "flag_iceland",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14166,7 +14166,7 @@ emojis = [
       {
         "emoji": "🇮🇹",
         "skin_tone_support": False,
-        "name": "flag Italy",
+        "name": "flag italy",
         "slug": "flag_italy",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -14174,7 +14174,7 @@ emojis = [
       {
         "emoji": "🇯🇪",
         "skin_tone_support": False,
-        "name": "flag Jersey",
+        "name": "flag jersey",
         "slug": "flag_jersey",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14182,7 +14182,7 @@ emojis = [
       {
         "emoji": "🇯🇲",
         "skin_tone_support": False,
-        "name": "flag Jamaica",
+        "name": "flag jamaica",
         "slug": "flag_jamaica",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14190,7 +14190,7 @@ emojis = [
       {
         "emoji": "🇯🇴",
         "skin_tone_support": False,
-        "name": "flag Jordan",
+        "name": "flag jordan",
         "slug": "flag_jordan",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14198,7 +14198,7 @@ emojis = [
       {
         "emoji": "🇯🇵",
         "skin_tone_support": False,
-        "name": "flag Japan",
+        "name": "flag japan",
         "slug": "flag_japan",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -14206,7 +14206,7 @@ emojis = [
       {
         "emoji": "🇰🇪",
         "skin_tone_support": False,
-        "name": "flag Kenya",
+        "name": "flag kenya",
         "slug": "flag_kenya",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14214,7 +14214,7 @@ emojis = [
       {
         "emoji": "🇰🇬",
         "skin_tone_support": False,
-        "name": "flag Kyrgyzstan",
+        "name": "flag kyrgyzstan",
         "slug": "flag_kyrgyzstan",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14222,7 +14222,7 @@ emojis = [
       {
         "emoji": "🇰🇭",
         "skin_tone_support": False,
-        "name": "flag Cambodia",
+        "name": "flag cambodia",
         "slug": "flag_cambodia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14230,7 +14230,7 @@ emojis = [
       {
         "emoji": "🇰🇮",
         "skin_tone_support": False,
-        "name": "flag Kiribati",
+        "name": "flag kiribati",
         "slug": "flag_kiribati",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14238,7 +14238,7 @@ emojis = [
       {
         "emoji": "🇰🇲",
         "skin_tone_support": False,
-        "name": "flag Comoros",
+        "name": "flag comoros",
         "slug": "flag_comoros",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14246,7 +14246,7 @@ emojis = [
       {
         "emoji": "🇰🇳",
         "skin_tone_support": False,
-        "name": "flag St. Kitts & Nevis",
+        "name": "flag st. kitts & nevis",
         "slug": "flag_st_kitts_nevis",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14254,7 +14254,7 @@ emojis = [
       {
         "emoji": "🇰🇵",
         "skin_tone_support": False,
-        "name": "flag North Korea",
+        "name": "flag north korea",
         "slug": "flag_north_korea",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14262,7 +14262,7 @@ emojis = [
       {
         "emoji": "🇰🇷",
         "skin_tone_support": False,
-        "name": "flag South Korea",
+        "name": "flag south korea",
         "slug": "flag_south_korea",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -14270,7 +14270,7 @@ emojis = [
       {
         "emoji": "🇰🇼",
         "skin_tone_support": False,
-        "name": "flag Kuwait",
+        "name": "flag kuwait",
         "slug": "flag_kuwait",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14278,7 +14278,7 @@ emojis = [
       {
         "emoji": "🇰🇾",
         "skin_tone_support": False,
-        "name": "flag Cayman Islands",
+        "name": "flag cayman islands",
         "slug": "flag_cayman_islands",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14286,7 +14286,7 @@ emojis = [
       {
         "emoji": "🇰🇿",
         "skin_tone_support": False,
-        "name": "flag Kazakhstan",
+        "name": "flag kazakhstan",
         "slug": "flag_kazakhstan",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14294,7 +14294,7 @@ emojis = [
       {
         "emoji": "🇱🇦",
         "skin_tone_support": False,
-        "name": "flag Laos",
+        "name": "flag laos",
         "slug": "flag_laos",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14302,7 +14302,7 @@ emojis = [
       {
         "emoji": "🇱🇧",
         "skin_tone_support": False,
-        "name": "flag Lebanon",
+        "name": "flag lebanon",
         "slug": "flag_lebanon",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14310,7 +14310,7 @@ emojis = [
       {
         "emoji": "🇱🇨",
         "skin_tone_support": False,
-        "name": "flag St. Lucia",
+        "name": "flag st. lucia",
         "slug": "flag_st_lucia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14318,7 +14318,7 @@ emojis = [
       {
         "emoji": "🇱🇮",
         "skin_tone_support": False,
-        "name": "flag Liechtenstein",
+        "name": "flag liechtenstein",
         "slug": "flag_liechtenstein",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14326,7 +14326,7 @@ emojis = [
       {
         "emoji": "🇱🇰",
         "skin_tone_support": False,
-        "name": "flag Sri Lanka",
+        "name": "flag sri lanka",
         "slug": "flag_sri_lanka",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14334,7 +14334,7 @@ emojis = [
       {
         "emoji": "🇱🇷",
         "skin_tone_support": False,
-        "name": "flag Liberia",
+        "name": "flag liberia",
         "slug": "flag_liberia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14342,7 +14342,7 @@ emojis = [
       {
         "emoji": "🇱🇸",
         "skin_tone_support": False,
-        "name": "flag Lesotho",
+        "name": "flag lesotho",
         "slug": "flag_lesotho",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14350,7 +14350,7 @@ emojis = [
       {
         "emoji": "🇱🇹",
         "skin_tone_support": False,
-        "name": "flag Lithuania",
+        "name": "flag lithuania",
         "slug": "flag_lithuania",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14358,7 +14358,7 @@ emojis = [
       {
         "emoji": "🇱🇺",
         "skin_tone_support": False,
-        "name": "flag Luxembourg",
+        "name": "flag luxembourg",
         "slug": "flag_luxembourg",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14366,7 +14366,7 @@ emojis = [
       {
         "emoji": "🇱🇻",
         "skin_tone_support": False,
-        "name": "flag Latvia",
+        "name": "flag latvia",
         "slug": "flag_latvia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14374,7 +14374,7 @@ emojis = [
       {
         "emoji": "🇱🇾",
         "skin_tone_support": False,
-        "name": "flag Libya",
+        "name": "flag libya",
         "slug": "flag_libya",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14382,7 +14382,7 @@ emojis = [
       {
         "emoji": "🇲🇦",
         "skin_tone_support": False,
-        "name": "flag Morocco",
+        "name": "flag morocco",
         "slug": "flag_morocco",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14390,7 +14390,7 @@ emojis = [
       {
         "emoji": "🇲🇨",
         "skin_tone_support": False,
-        "name": "flag Monaco",
+        "name": "flag monaco",
         "slug": "flag_monaco",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14398,7 +14398,7 @@ emojis = [
       {
         "emoji": "🇲🇩",
         "skin_tone_support": False,
-        "name": "flag Moldova",
+        "name": "flag moldova",
         "slug": "flag_moldova",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14406,7 +14406,7 @@ emojis = [
       {
         "emoji": "🇲🇪",
         "skin_tone_support": False,
-        "name": "flag Montenegro",
+        "name": "flag montenegro",
         "slug": "flag_montenegro",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14414,7 +14414,7 @@ emojis = [
       {
         "emoji": "🇲🇫",
         "skin_tone_support": False,
-        "name": "flag St. Martin",
+        "name": "flag st. martin",
         "slug": "flag_st_martin",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14422,7 +14422,7 @@ emojis = [
       {
         "emoji": "🇲🇬",
         "skin_tone_support": False,
-        "name": "flag Madagascar",
+        "name": "flag madagascar",
         "slug": "flag_madagascar",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14430,7 +14430,7 @@ emojis = [
       {
         "emoji": "🇲🇭",
         "skin_tone_support": False,
-        "name": "flag Marshall Islands",
+        "name": "flag marshall islands",
         "slug": "flag_marshall_islands",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14438,7 +14438,7 @@ emojis = [
       {
         "emoji": "🇲🇰",
         "skin_tone_support": False,
-        "name": "flag North Macedonia",
+        "name": "flag north macedonia",
         "slug": "flag_north_macedonia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14446,7 +14446,7 @@ emojis = [
       {
         "emoji": "🇲🇱",
         "skin_tone_support": False,
-        "name": "flag Mali",
+        "name": "flag mali",
         "slug": "flag_mali",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14454,7 +14454,7 @@ emojis = [
       {
         "emoji": "🇲🇲",
         "skin_tone_support": False,
-        "name": "flag Myanmar (Burma)",
+        "name": "flag myanmar (burma)",
         "slug": "flag_myanmar",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14462,7 +14462,7 @@ emojis = [
       {
         "emoji": "🇲🇳",
         "skin_tone_support": False,
-        "name": "flag Mongolia",
+        "name": "flag mongolia",
         "slug": "flag_mongolia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14470,7 +14470,7 @@ emojis = [
       {
         "emoji": "🇲🇴",
         "skin_tone_support": False,
-        "name": "flag Macao SAR China",
+        "name": "flag macao sar china",
         "slug": "flag_macao_sar_china",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14478,7 +14478,7 @@ emojis = [
       {
         "emoji": "🇲🇵",
         "skin_tone_support": False,
-        "name": "flag Northern Mariana Islands",
+        "name": "flag northern mariana islands",
         "slug": "flag_northern_mariana_islands",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14486,7 +14486,7 @@ emojis = [
       {
         "emoji": "🇲🇶",
         "skin_tone_support": False,
-        "name": "flag Martinique",
+        "name": "flag martinique",
         "slug": "flag_martinique",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14494,7 +14494,7 @@ emojis = [
       {
         "emoji": "🇲🇷",
         "skin_tone_support": False,
-        "name": "flag Mauritania",
+        "name": "flag mauritania",
         "slug": "flag_mauritania",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14502,7 +14502,7 @@ emojis = [
       {
         "emoji": "🇲🇸",
         "skin_tone_support": False,
-        "name": "flag Montserrat",
+        "name": "flag montserrat",
         "slug": "flag_montserrat",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14510,7 +14510,7 @@ emojis = [
       {
         "emoji": "🇲🇹",
         "skin_tone_support": False,
-        "name": "flag Malta",
+        "name": "flag malta",
         "slug": "flag_malta",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14518,7 +14518,7 @@ emojis = [
       {
         "emoji": "🇲🇺",
         "skin_tone_support": False,
-        "name": "flag Mauritius",
+        "name": "flag mauritius",
         "slug": "flag_mauritius",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14526,7 +14526,7 @@ emojis = [
       {
         "emoji": "🇲🇻",
         "skin_tone_support": False,
-        "name": "flag Maldives",
+        "name": "flag maldives",
         "slug": "flag_maldives",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14534,7 +14534,7 @@ emojis = [
       {
         "emoji": "🇲🇼",
         "skin_tone_support": False,
-        "name": "flag Malawi",
+        "name": "flag malawi",
         "slug": "flag_malawi",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14542,7 +14542,7 @@ emojis = [
       {
         "emoji": "🇲🇽",
         "skin_tone_support": False,
-        "name": "flag Mexico",
+        "name": "flag mexico",
         "slug": "flag_mexico",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14550,7 +14550,7 @@ emojis = [
       {
         "emoji": "🇲🇾",
         "skin_tone_support": False,
-        "name": "flag Malaysia",
+        "name": "flag malaysia",
         "slug": "flag_malaysia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14558,7 +14558,7 @@ emojis = [
       {
         "emoji": "🇲🇿",
         "skin_tone_support": False,
-        "name": "flag Mozambique",
+        "name": "flag mozambique",
         "slug": "flag_mozambique",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14566,7 +14566,7 @@ emojis = [
       {
         "emoji": "🇳🇦",
         "skin_tone_support": False,
-        "name": "flag Namibia",
+        "name": "flag namibia",
         "slug": "flag_namibia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14574,7 +14574,7 @@ emojis = [
       {
         "emoji": "🇳🇨",
         "skin_tone_support": False,
-        "name": "flag New Caledonia",
+        "name": "flag new caledonia",
         "slug": "flag_new_caledonia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14582,7 +14582,7 @@ emojis = [
       {
         "emoji": "🇳🇪",
         "skin_tone_support": False,
-        "name": "flag Niger",
+        "name": "flag niger",
         "slug": "flag_niger",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14590,7 +14590,7 @@ emojis = [
       {
         "emoji": "🇳🇫",
         "skin_tone_support": False,
-        "name": "flag Norfolk Island",
+        "name": "flag norfolk island",
         "slug": "flag_norfolk_island",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14598,7 +14598,7 @@ emojis = [
       {
         "emoji": "🇳🇬",
         "skin_tone_support": False,
-        "name": "flag Nigeria",
+        "name": "flag nigeria",
         "slug": "flag_nigeria",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14606,7 +14606,7 @@ emojis = [
       {
         "emoji": "🇳🇮",
         "skin_tone_support": False,
-        "name": "flag Nicaragua",
+        "name": "flag nicaragua",
         "slug": "flag_nicaragua",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14614,7 +14614,7 @@ emojis = [
       {
         "emoji": "🇳🇱",
         "skin_tone_support": False,
-        "name": "flag Netherlands",
+        "name": "flag netherlands",
         "slug": "flag_netherlands",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14622,7 +14622,7 @@ emojis = [
       {
         "emoji": "🇳🇴",
         "skin_tone_support": False,
-        "name": "flag Norway",
+        "name": "flag norway",
         "slug": "flag_norway",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14630,7 +14630,7 @@ emojis = [
       {
         "emoji": "🇳🇵",
         "skin_tone_support": False,
-        "name": "flag Nepal",
+        "name": "flag nepal",
         "slug": "flag_nepal",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14638,7 +14638,7 @@ emojis = [
       {
         "emoji": "🇳🇷",
         "skin_tone_support": False,
-        "name": "flag Nauru",
+        "name": "flag nauru",
         "slug": "flag_nauru",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14646,7 +14646,7 @@ emojis = [
       {
         "emoji": "🇳🇺",
         "skin_tone_support": False,
-        "name": "flag Niue",
+        "name": "flag niue",
         "slug": "flag_niue",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14654,7 +14654,7 @@ emojis = [
       {
         "emoji": "🇳🇿",
         "skin_tone_support": False,
-        "name": "flag New Zealand",
+        "name": "flag new zealand",
         "slug": "flag_new_zealand",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14662,7 +14662,7 @@ emojis = [
       {
         "emoji": "🇴🇲",
         "skin_tone_support": False,
-        "name": "flag Oman",
+        "name": "flag oman",
         "slug": "flag_oman",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14670,7 +14670,7 @@ emojis = [
       {
         "emoji": "🇵🇦",
         "skin_tone_support": False,
-        "name": "flag Panama",
+        "name": "flag panama",
         "slug": "flag_panama",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14678,7 +14678,7 @@ emojis = [
       {
         "emoji": "🇵🇪",
         "skin_tone_support": False,
-        "name": "flag Peru",
+        "name": "flag peru",
         "slug": "flag_peru",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14686,7 +14686,7 @@ emojis = [
       {
         "emoji": "🇵🇫",
         "skin_tone_support": False,
-        "name": "flag French Polynesia",
+        "name": "flag french polynesia",
         "slug": "flag_french_polynesia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14694,7 +14694,7 @@ emojis = [
       {
         "emoji": "🇵🇬",
         "skin_tone_support": False,
-        "name": "flag Papua New Guinea",
+        "name": "flag papua new guinea",
         "slug": "flag_papua_new_guinea",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14702,7 +14702,7 @@ emojis = [
       {
         "emoji": "🇵🇭",
         "skin_tone_support": False,
-        "name": "flag Philippines",
+        "name": "flag philippines",
         "slug": "flag_philippines",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14710,7 +14710,7 @@ emojis = [
       {
         "emoji": "🇵🇰",
         "skin_tone_support": False,
-        "name": "flag Pakistan",
+        "name": "flag pakistan",
         "slug": "flag_pakistan",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14718,7 +14718,7 @@ emojis = [
       {
         "emoji": "🇵🇱",
         "skin_tone_support": False,
-        "name": "flag Poland",
+        "name": "flag poland",
         "slug": "flag_poland",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14726,7 +14726,7 @@ emojis = [
       {
         "emoji": "🇵🇲",
         "skin_tone_support": False,
-        "name": "flag St. Pierre & Miquelon",
+        "name": "flag st. pierre & miquelon",
         "slug": "flag_st_pierre_miquelon",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14734,7 +14734,7 @@ emojis = [
       {
         "emoji": "🇵🇳",
         "skin_tone_support": False,
-        "name": "flag Pitcairn Islands",
+        "name": "flag pitcairn islands",
         "slug": "flag_pitcairn_islands",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14742,7 +14742,7 @@ emojis = [
       {
         "emoji": "🇵🇷",
         "skin_tone_support": False,
-        "name": "flag Puerto Rico",
+        "name": "flag puerto rico",
         "slug": "flag_puerto_rico",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14750,7 +14750,7 @@ emojis = [
       {
         "emoji": "🇵🇸",
         "skin_tone_support": False,
-        "name": "flag Palestinian Territories",
+        "name": "flag palestinian territories",
         "slug": "flag_palestinian_territories",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14758,7 +14758,7 @@ emojis = [
       {
         "emoji": "🇵🇹",
         "skin_tone_support": False,
-        "name": "flag Portugal",
+        "name": "flag portugal",
         "slug": "flag_portugal",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14766,7 +14766,7 @@ emojis = [
       {
         "emoji": "🇵🇼",
         "skin_tone_support": False,
-        "name": "flag Palau",
+        "name": "flag palau",
         "slug": "flag_palau",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14774,7 +14774,7 @@ emojis = [
       {
         "emoji": "🇵🇾",
         "skin_tone_support": False,
-        "name": "flag Paraguay",
+        "name": "flag paraguay",
         "slug": "flag_paraguay",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14782,7 +14782,7 @@ emojis = [
       {
         "emoji": "🇶🇦",
         "skin_tone_support": False,
-        "name": "flag Qatar",
+        "name": "flag qatar",
         "slug": "flag_qatar",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14790,7 +14790,7 @@ emojis = [
       {
         "emoji": "🇷🇪",
         "skin_tone_support": False,
-        "name": "flag Réunion",
+        "name": "flag réunion",
         "slug": "flag_reunion",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14798,7 +14798,7 @@ emojis = [
       {
         "emoji": "🇷🇴",
         "skin_tone_support": False,
-        "name": "flag Romania",
+        "name": "flag romania",
         "slug": "flag_romania",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14806,7 +14806,7 @@ emojis = [
       {
         "emoji": "🇷🇸",
         "skin_tone_support": False,
-        "name": "flag Serbia",
+        "name": "flag serbia",
         "slug": "flag_serbia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14814,7 +14814,7 @@ emojis = [
       {
         "emoji": "🇷🇺",
         "skin_tone_support": False,
-        "name": "flag Russia",
+        "name": "flag russia",
         "slug": "flag_russia",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -14822,7 +14822,7 @@ emojis = [
       {
         "emoji": "🇷🇼",
         "skin_tone_support": False,
-        "name": "flag Rwanda",
+        "name": "flag rwanda",
         "slug": "flag_rwanda",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14830,7 +14830,7 @@ emojis = [
       {
         "emoji": "🇸🇦",
         "skin_tone_support": False,
-        "name": "flag Saudi Arabia",
+        "name": "flag saudi arabia",
         "slug": "flag_saudi_arabia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14838,7 +14838,7 @@ emojis = [
       {
         "emoji": "🇸🇧",
         "skin_tone_support": False,
-        "name": "flag Solomon Islands",
+        "name": "flag solomon islands",
         "slug": "flag_solomon_islands",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14846,7 +14846,7 @@ emojis = [
       {
         "emoji": "🇸🇨",
         "skin_tone_support": False,
-        "name": "flag Seychelles",
+        "name": "flag seychelles",
         "slug": "flag_seychelles",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14854,7 +14854,7 @@ emojis = [
       {
         "emoji": "🇸🇩",
         "skin_tone_support": False,
-        "name": "flag Sudan",
+        "name": "flag sudan",
         "slug": "flag_sudan",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14862,7 +14862,7 @@ emojis = [
       {
         "emoji": "🇸🇪",
         "skin_tone_support": False,
-        "name": "flag Sweden",
+        "name": "flag sweden",
         "slug": "flag_sweden",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14870,7 +14870,7 @@ emojis = [
       {
         "emoji": "🇸🇬",
         "skin_tone_support": False,
-        "name": "flag Singapore",
+        "name": "flag singapore",
         "slug": "flag_singapore",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14878,7 +14878,7 @@ emojis = [
       {
         "emoji": "🇸🇭",
         "skin_tone_support": False,
-        "name": "flag St. Helena",
+        "name": "flag st. helena",
         "slug": "flag_st_helena",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14886,7 +14886,7 @@ emojis = [
       {
         "emoji": "🇸🇮",
         "skin_tone_support": False,
-        "name": "flag Slovenia",
+        "name": "flag slovenia",
         "slug": "flag_slovenia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14894,7 +14894,7 @@ emojis = [
       {
         "emoji": "🇸🇯",
         "skin_tone_support": False,
-        "name": "flag Svalbard & Jan Mayen",
+        "name": "flag svalbard & jan mayen",
         "slug": "flag_svalbard_jan_mayen",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14902,7 +14902,7 @@ emojis = [
       {
         "emoji": "🇸🇰",
         "skin_tone_support": False,
-        "name": "flag Slovakia",
+        "name": "flag slovakia",
         "slug": "flag_slovakia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14910,7 +14910,7 @@ emojis = [
       {
         "emoji": "🇸🇱",
         "skin_tone_support": False,
-        "name": "flag Sierra Leone",
+        "name": "flag sierra leone",
         "slug": "flag_sierra_leone",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14918,7 +14918,7 @@ emojis = [
       {
         "emoji": "🇸🇲",
         "skin_tone_support": False,
-        "name": "flag San Marino",
+        "name": "flag san marino",
         "slug": "flag_san_marino",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14926,7 +14926,7 @@ emojis = [
       {
         "emoji": "🇸🇳",
         "skin_tone_support": False,
-        "name": "flag Senegal",
+        "name": "flag senegal",
         "slug": "flag_senegal",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14934,7 +14934,7 @@ emojis = [
       {
         "emoji": "🇸🇴",
         "skin_tone_support": False,
-        "name": "flag Somalia",
+        "name": "flag somalia",
         "slug": "flag_somalia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14942,7 +14942,7 @@ emojis = [
       {
         "emoji": "🇸🇷",
         "skin_tone_support": False,
-        "name": "flag Suriname",
+        "name": "flag suriname",
         "slug": "flag_suriname",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14950,7 +14950,7 @@ emojis = [
       {
         "emoji": "🇸🇸",
         "skin_tone_support": False,
-        "name": "flag South Sudan",
+        "name": "flag south sudan",
         "slug": "flag_south_sudan",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14958,7 +14958,7 @@ emojis = [
       {
         "emoji": "🇸🇹",
         "skin_tone_support": False,
-        "name": "flag São Tomé & Príncipe",
+        "name": "flag são tomé & príncipe",
         "slug": "flag_sao_tome_principe",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14966,7 +14966,7 @@ emojis = [
       {
         "emoji": "🇸🇻",
         "skin_tone_support": False,
-        "name": "flag El Salvador",
+        "name": "flag el salvador",
         "slug": "flag_el_salvador",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14974,7 +14974,7 @@ emojis = [
       {
         "emoji": "🇸🇽",
         "skin_tone_support": False,
-        "name": "flag Sint Maarten",
+        "name": "flag sint maarten",
         "slug": "flag_sint_maarten",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14982,7 +14982,7 @@ emojis = [
       {
         "emoji": "🇸🇾",
         "skin_tone_support": False,
-        "name": "flag Syria",
+        "name": "flag syria",
         "slug": "flag_syria",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14990,7 +14990,7 @@ emojis = [
       {
         "emoji": "🇸🇿",
         "skin_tone_support": False,
-        "name": "flag Eswatini",
+        "name": "flag eswatini",
         "slug": "flag_eswatini",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -14998,7 +14998,7 @@ emojis = [
       {
         "emoji": "🇹🇦",
         "skin_tone_support": False,
-        "name": "flag Tristan da Cunha",
+        "name": "flag tristan da cunha",
         "slug": "flag_tristan_da_cunha",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15006,7 +15006,7 @@ emojis = [
       {
         "emoji": "🇹🇨",
         "skin_tone_support": False,
-        "name": "flag Turks & Caicos Islands",
+        "name": "flag turks & caicos islands",
         "slug": "flag_turks_caicos_islands",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15014,7 +15014,7 @@ emojis = [
       {
         "emoji": "🇹🇩",
         "skin_tone_support": False,
-        "name": "flag Chad",
+        "name": "flag chad",
         "slug": "flag_chad",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15022,7 +15022,7 @@ emojis = [
       {
         "emoji": "🇹🇫",
         "skin_tone_support": False,
-        "name": "flag French Southern Territories",
+        "name": "flag french southern territories",
         "slug": "flag_french_southern_territories",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15030,7 +15030,7 @@ emojis = [
       {
         "emoji": "🇹🇬",
         "skin_tone_support": False,
-        "name": "flag Togo",
+        "name": "flag togo",
         "slug": "flag_togo",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15038,7 +15038,7 @@ emojis = [
       {
         "emoji": "🇹🇭",
         "skin_tone_support": False,
-        "name": "flag Thailand",
+        "name": "flag thailand",
         "slug": "flag_thailand",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15046,7 +15046,7 @@ emojis = [
       {
         "emoji": "🇹🇯",
         "skin_tone_support": False,
-        "name": "flag Tajikistan",
+        "name": "flag tajikistan",
         "slug": "flag_tajikistan",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15054,7 +15054,7 @@ emojis = [
       {
         "emoji": "🇹🇰",
         "skin_tone_support": False,
-        "name": "flag Tokelau",
+        "name": "flag tokelau",
         "slug": "flag_tokelau",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15062,7 +15062,7 @@ emojis = [
       {
         "emoji": "🇹🇱",
         "skin_tone_support": False,
-        "name": "flag Timor-Leste",
+        "name": "flag timor-leste",
         "slug": "flag_timor_leste",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15070,7 +15070,7 @@ emojis = [
       {
         "emoji": "🇹🇲",
         "skin_tone_support": False,
-        "name": "flag Turkmenistan",
+        "name": "flag turkmenistan",
         "slug": "flag_turkmenistan",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15078,7 +15078,7 @@ emojis = [
       {
         "emoji": "🇹🇳",
         "skin_tone_support": False,
-        "name": "flag Tunisia",
+        "name": "flag tunisia",
         "slug": "flag_tunisia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15086,7 +15086,7 @@ emojis = [
       {
         "emoji": "🇹🇴",
         "skin_tone_support": False,
-        "name": "flag Tonga",
+        "name": "flag tonga",
         "slug": "flag_tonga",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15094,7 +15094,7 @@ emojis = [
       {
         "emoji": "🇹🇷",
         "skin_tone_support": False,
-        "name": "flag Turkey",
+        "name": "flag turkey",
         "slug": "flag_turkey",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15102,7 +15102,7 @@ emojis = [
       {
         "emoji": "🇹🇹",
         "skin_tone_support": False,
-        "name": "flag Trinidad & Tobago",
+        "name": "flag trinidad & tobago",
         "slug": "flag_trinidad_tobago",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15110,7 +15110,7 @@ emojis = [
       {
         "emoji": "🇹🇻",
         "skin_tone_support": False,
-        "name": "flag Tuvalu",
+        "name": "flag tuvalu",
         "slug": "flag_tuvalu",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15118,7 +15118,7 @@ emojis = [
       {
         "emoji": "🇹🇼",
         "skin_tone_support": False,
-        "name": "flag Taiwan",
+        "name": "flag taiwan",
         "slug": "flag_taiwan",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15126,7 +15126,7 @@ emojis = [
       {
         "emoji": "🇹🇿",
         "skin_tone_support": False,
-        "name": "flag Tanzania",
+        "name": "flag tanzania",
         "slug": "flag_tanzania",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15134,7 +15134,7 @@ emojis = [
       {
         "emoji": "🇺🇦",
         "skin_tone_support": False,
-        "name": "flag Ukraine",
+        "name": "flag ukraine",
         "slug": "flag_ukraine",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15142,7 +15142,7 @@ emojis = [
       {
         "emoji": "🇺🇬",
         "skin_tone_support": False,
-        "name": "flag Uganda",
+        "name": "flag uganda",
         "slug": "flag_uganda",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15150,7 +15150,7 @@ emojis = [
       {
         "emoji": "🇺🇲",
         "skin_tone_support": False,
-        "name": "flag U.S. Outlying Islands",
+        "name": "flag u.s. outlying islands",
         "slug": "flag_u_s_outlying_islands",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15158,7 +15158,7 @@ emojis = [
       {
         "emoji": "🇺🇳",
         "skin_tone_support": False,
-        "name": "flag United Nations",
+        "name": "flag united nations",
         "slug": "flag_united_nations",
         "unicode_version": "4.0",
         "emoji_version": "4.0"
@@ -15166,7 +15166,7 @@ emojis = [
       {
         "emoji": "🇺🇸",
         "skin_tone_support": False,
-        "name": "flag United States",
+        "name": "flag united states",
         "slug": "flag_united_states",
         "unicode_version": "0.6",
         "emoji_version": "0.6"
@@ -15174,7 +15174,7 @@ emojis = [
       {
         "emoji": "🇺🇾",
         "skin_tone_support": False,
-        "name": "flag Uruguay",
+        "name": "flag uruguay",
         "slug": "flag_uruguay",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15182,7 +15182,7 @@ emojis = [
       {
         "emoji": "🇺🇿",
         "skin_tone_support": False,
-        "name": "flag Uzbekistan",
+        "name": "flag uzbekistan",
         "slug": "flag_uzbekistan",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15190,7 +15190,7 @@ emojis = [
       {
         "emoji": "🇻🇦",
         "skin_tone_support": False,
-        "name": "flag Vatican City",
+        "name": "flag vatican city",
         "slug": "flag_vatican_city",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15198,7 +15198,7 @@ emojis = [
       {
         "emoji": "🇻🇨",
         "skin_tone_support": False,
-        "name": "flag St. Vincent & Grenadines",
+        "name": "flag st. vincent & grenadines",
         "slug": "flag_st_vincent_grenadines",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15206,7 +15206,7 @@ emojis = [
       {
         "emoji": "🇻🇪",
         "skin_tone_support": False,
-        "name": "flag Venezuela",
+        "name": "flag venezuela",
         "slug": "flag_venezuela",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15214,7 +15214,7 @@ emojis = [
       {
         "emoji": "🇻🇬",
         "skin_tone_support": False,
-        "name": "flag British Virgin Islands",
+        "name": "flag british virgin islands",
         "slug": "flag_british_virgin_islands",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15222,7 +15222,7 @@ emojis = [
       {
         "emoji": "🇻🇮",
         "skin_tone_support": False,
-        "name": "flag U.S. Virgin Islands",
+        "name": "flag u.s. virgin islands",
         "slug": "flag_u_s_virgin_islands",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15230,7 +15230,7 @@ emojis = [
       {
         "emoji": "🇻🇳",
         "skin_tone_support": False,
-        "name": "flag Vietnam",
+        "name": "flag vietnam",
         "slug": "flag_vietnam",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15238,7 +15238,7 @@ emojis = [
       {
         "emoji": "🇻🇺",
         "skin_tone_support": False,
-        "name": "flag Vanuatu",
+        "name": "flag vanuatu",
         "slug": "flag_vanuatu",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15246,7 +15246,7 @@ emojis = [
       {
         "emoji": "🇼🇫",
         "skin_tone_support": False,
-        "name": "flag Wallis & Futuna",
+        "name": "flag wallis & futuna",
         "slug": "flag_wallis_futuna",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15254,7 +15254,7 @@ emojis = [
       {
         "emoji": "🇼🇸",
         "skin_tone_support": False,
-        "name": "flag Samoa",
+        "name": "flag samoa",
         "slug": "flag_samoa",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15262,7 +15262,7 @@ emojis = [
       {
         "emoji": "🇽🇰",
         "skin_tone_support": False,
-        "name": "flag Kosovo",
+        "name": "flag kosovo",
         "slug": "flag_kosovo",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15270,7 +15270,7 @@ emojis = [
       {
         "emoji": "🇾🇪",
         "skin_tone_support": False,
-        "name": "flag Yemen",
+        "name": "flag yemen",
         "slug": "flag_yemen",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15278,7 +15278,7 @@ emojis = [
       {
         "emoji": "🇾🇹",
         "skin_tone_support": False,
-        "name": "flag Mayotte",
+        "name": "flag mayotte",
         "slug": "flag_mayotte",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15286,7 +15286,7 @@ emojis = [
       {
         "emoji": "🇿🇦",
         "skin_tone_support": False,
-        "name": "flag South Africa",
+        "name": "flag south africa",
         "slug": "flag_south_africa",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15294,7 +15294,7 @@ emojis = [
       {
         "emoji": "🇿🇲",
         "skin_tone_support": False,
-        "name": "flag Zambia",
+        "name": "flag zambia",
         "slug": "flag_zambia",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15302,7 +15302,7 @@ emojis = [
       {
         "emoji": "🇿🇼",
         "skin_tone_support": False,
-        "name": "flag Zimbabwe",
+        "name": "flag zimbabwe",
         "slug": "flag_zimbabwe",
         "unicode_version": "2.0",
         "emoji_version": "2.0"
@@ -15310,7 +15310,7 @@ emojis = [
       {
         "emoji": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
         "skin_tone_support": False,
-        "name": "flag England",
+        "name": "flag england",
         "slug": "flag_england",
         "unicode_version": "5.0",
         "emoji_version": "5.0"
@@ -15318,7 +15318,7 @@ emojis = [
       {
         "emoji": "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
         "skin_tone_support": False,
-        "name": "flag Scotland",
+        "name": "flag scotland",
         "slug": "flag_scotland",
         "unicode_version": "5.0",
         "emoji_version": "5.0"
@@ -15326,7 +15326,7 @@ emojis = [
       {
         "emoji": "🏴󠁧󠁢󠁷󠁬󠁳󠁿",
         "skin_tone_support": False,
-        "name": "flag Wales",
+        "name": "flag wales",
         "slug": "flag_wales",
         "unicode_version": "5.0",
         "emoji_version": "5.0"
@@ -15334,4 +15334,3 @@ emojis = [
     ]
   }
 ]
-

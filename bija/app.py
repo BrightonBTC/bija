@@ -1,11 +1,10 @@
 from flask_socketio import SocketIO
-from engineio.async_drivers import gevent
 from flask import Flask
 from sqlalchemy.orm import scoped_session
 import bija.db as db
 from bija.active_events import ActiveEvents
 from bija.args import args
-from python_nostr.nostr.relay_manager import RelayManager
+from bija.ws.relay_manager import RelayManager
 
 app = Flask(__name__, template_folder='../bija/templates')
 socketio = SocketIO(app)
@@ -14,6 +13,7 @@ app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
 ACTIVE_EVENTS = ActiveEvents()
 RELAY_MANAGER = RelayManager()
+
 
 from bija.routes import *
 

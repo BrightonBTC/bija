@@ -7,10 +7,10 @@ from bija.args import LOGGING_LEVEL
 from bija.db import BijaDB
 from bija.helpers import is_hex_key, get_at_tags, get_hash_tags, get_note_links, bech32_to_hex64
 from bija.settings import SETTINGS
-from python_nostr.nostr.event import EventKind, Event
-from python_nostr.nostr.key import PrivateKey
-from python_nostr.nostr.message_type import ClientMessageType
-from python_nostr.nostr.pow import mine_event
+from bija.ws.event import EventKind, Event
+from bija.ws.key import PrivateKey
+from bija.ws.message_type import ClientMessageType
+from bija.ws.pow import mine_event
 from bija.app import RELAY_MANAGER
 
 DB = BijaDB(app.session)
@@ -44,6 +44,14 @@ class Submit:
         RELAY_MANAGER.publish_message(message)
         logger.info('PUBLISHED')
 
+class SubmitBoost(Submit):
+    def __init__(self, note_id, content):
+        super().__init__()
+        logger.info('SUBMIT boost')
+        self.kind = EventKind.BOOST
+        self.tags.append(['e', note_id])
+        self.content = content
+        self.send()
 
 class SubmitDelete(Submit):
     def __init__(self, ids, reason=""):

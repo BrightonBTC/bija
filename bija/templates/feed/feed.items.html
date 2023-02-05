@@ -11,30 +11,44 @@
     {%- if thread['self'] is not none -%}
         {%- set post = thread['self'] -%}
 
-        {%- if post['deleted'] is none -%}
-        {%- if thread['responder_count'] > 0 -%}
+        {%- if post['deleted'] is none or post is string -%}
+
+        {%- if (thread['responder_count'] > 0 or thread['booster_count'] > 0) -%}
         <div class="response-accounts">
-            {{ thread['responders'] | responders_string(thread['responder_count']) | safe }}
-            {%- if thread['self'] is none -%}
-            on a <a href="/note?id={{thread['id']}}#{{thread['id']}}">thread</a>
+            {%- if thread['booster_count'] > 0 -%}
+                {{ thread['boosters'] | boosters_string(thread['booster_count']) | safe }}
+                {% if thread['responder_count'] > 0 %} ... {% endif %}
+            {%- endif -%}
+            {%- if thread['responder_count'] > 0 -%}
+                {{ thread['responders'] | responders_string(thread['responder_count']) | safe }}
+                {%- if thread['self'] is none -%}
+                on a <a href="/note?id={{thread['id']}}#{{thread['id']}}">thread</a>
+                {%- endif -%}
             {%- endif -%}
         </div>
         {%- endif -%}
-        <div class="{{root_class}}">
-            <div class="thread-marker"></div>
-            <div class="note-image">
-                {{post['nip05'] | nip05_valid(post['nip05_validated']) | safe }}
-                {%- with p=post -%}
-                {%- include 'profile/profile.image.html' -%}
-                {%- endwith -%}
+            {%- if thread['self'] is string -%}
+            <div class="note-container placeholder" data-id="{{thread['self']}}">
+                <div class="note-image"><img src="/static/user.svg" class="user-image"></div>
+                <div class="note-outer"><div class="note"><div class="pad-sm">Event: {{thread['self']}} not yet seen on network</div></div></div>
             </div>
-            <div class="note-outer">
-                {%- set reply_chain = post['thread_root'] | get_thread_root(post['response_to'], post['id']) -%}
-                {%- with note=post -%}
-                {%- include 'note.html' -%}
-                {%- endwith -%}
+            {%- else -%}
+            <div class="{{root_class}}">
+                <div class="thread-marker"></div>
+                <div class="note-image">
+                    {{post['nip05'] | nip05_valid(post['nip05_validated']) | safe }}
+                    {%- with p=post -%}
+                    {%- include 'profile/profile.image.html' -%}
+                    {%- endwith -%}
+                </div>
+                <div class="note-outer">
+                    {%- set reply_chain = post['thread_root'] | get_thread_root(post['response_to'], post['id']) -%}
+                    {%- with note=post -%}
+                    {%- include 'note.html' -%}
+                    {%- endwith -%}
+                </div>
             </div>
-        </div>
+            {%- endif -%}
         {%- else -%}
             {%- with item=post -%}
             {%- include 'deleted.note.html' -%}
