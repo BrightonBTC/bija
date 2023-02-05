@@ -17,7 +17,7 @@ from bija.args import LOGGING_LEVEL
 from bija.db import BijaDB
 from bija.helpers import get_at_tags, is_hex_key, url_linkify, strip_tags, get_invoice, get_hash_tags
 from bija.settings import SETTINGS
-from python_nostr.nostr.key import PrivateKey
+from bija.ws.key import PrivateKey
 
 DB = BijaDB(app.session)
 logger = logging.getLogger(__name__)
@@ -211,7 +211,7 @@ def _jinja2_filter_note(content: str, limit=500):
 
     hashtags.sort(key=len, reverse=True)
     for tag in hashtags:
-        term = tag[1:-1].strip()
+        term = tag[2:-1].strip()
         content = "{} ".format(content).replace(
             tag[:-1],
             "<a href='/topic?tag={}'>{}</a>".format(term, tag[:-1]))

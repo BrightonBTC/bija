@@ -1733,18 +1733,15 @@ function lazyloadIntersectionObserver(lazyloadImages) {
 			if(entry.isIntersecting) {
 				let image = entry.target;
 				image.src = image.dataset.src;
-				image.srcset = image.dataset.srcset;
 				image.classList.remove("lazy-load");
 				imageObserver.unobserve(image);
 			    setTimeout(function(){
 			        if(!image.complete){
 			            if(image.dataset.dflt){
 			                image.src = image.dataset.dflt
-			                image.src = image.dataset.dflt
 			            }
 			            else{
 			                image.src = '/static/blank.png'
-			                image.srcset = '/static/blank.png'
 			            }
 			        }
 			    }, 1000)

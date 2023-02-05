@@ -1,3 +1,4 @@
+import os
 import sys
 from functools import wraps
 
@@ -21,6 +22,7 @@ from bija.search import Search
 from bija.settings import SETTINGS
 from bija.submissions import SubmitDelete, SubmitNote, SubmitProfile, SubmitEncryptedMessage, SubmitLike, \
     SubmitFollowList, SubmitBoost
+from bija.subscription_manager import SUBSCRIPTION_MANAGER
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOGGING_LEVEL)
@@ -67,7 +69,7 @@ def login_required(f):
 def index_page():
     ACTIVE_EVENTS.clear()
     EXECUTOR.submit(RELAY_HANDLER.set_page('home', None))
-    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
+    EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
     pk = SETTINGS.get('pubkey')
     notes = DB.get_feed(time.time(), pk, {'main_feed': True})
     DB.set_all_seen_in_feed(pk)
@@ -102,7 +104,7 @@ def feed():
 def alerts_page():
     ACTIVE_EVENTS.clear()
     EXECUTOR.submit(RELAY_HANDLER.set_page('alerts', None))
-    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
+    EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
     alerts = DB.get_alerts()
     DB.set_alerts_read()
     return render_template("alerts.html", page_id="alerts", title="alerts", alerts=alerts)
@@ -117,7 +119,7 @@ def logout_page():
 @app.route('/login', methods=['GET', 'POST'])
 def login_page():
     EXECUTOR.submit(RELAY_HANDLER.set_page('login', None))
-    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
+    EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
     login_state = get_login_state()
     message = None
     data = None
@@ -209,7 +211,7 @@ class ProfilePage:
         ACTIVE_EVENTS.clear()
         if RELAY_HANDLER.page['page'] not in valid_pages or RELAY_HANDLER.page['identifier'] != self.pubkey:
             set_subscription = True
-            EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
+            EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
         EXECUTOR.submit(RELAY_HANDLER.set_page(self.page, self.pubkey))
 
         self.set_profile()
@@ -360,7 +362,7 @@ def note_page():
     ACTIVE_EVENTS.clear()
     note_id = request.args['id']
     EXECUTOR.submit(RELAY_HANDLER.set_page('note', note_id))
-    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
+    EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
 
     t = NoteThread(note_id)
     EXECUTOR.submit(RELAY_HANDLER.subscribe_thread, note_id, t.note_ids)
@@ -380,7 +382,7 @@ def boosts_page():
     ACTIVE_EVENTS.clear()
     note_id = request.args['id']
     EXECUTOR.submit(RELAY_HANDLER.set_page('boosts', note_id))
-    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
+    EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
 
     t = BoostsThread(note_id)
 
@@ -488,7 +490,7 @@ def settings_page():
         return redirect('/')
     else:
         EXECUTOR.submit(RELAY_HANDLER.set_page('settings', None))
-        EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
+        EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
         settings = SETTINGS.get_list([
             'cloudinary_cloud',
             'cloudinary_upload_preset',
@@ -642,7 +644,7 @@ def validate_nip5():
 def private_messages_page():
     ACTIVE_EVENTS.clear()
     EXECUTOR.submit(RELAY_HANDLER.set_page('messages', None))
-    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
+    EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
 
     messages = DB.get_message_list()
 
@@ -654,7 +656,7 @@ def private_messages_page():
 def private_message_page():
     ACTIVE_EVENTS.clear()
     EXECUTOR.submit(RELAY_HANDLER.set_page('message', request.args['pk']))
-    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
+    EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
     messages = []
     pk = ''
     if 'pk' in request.args and is_hex_key(request.args['pk']):
@@ -706,7 +708,7 @@ def submit_like():
 def search_page():
     ACTIVE_EVENTS.clear()
     EXECUTOR.submit(RELAY_HANDLER.set_page('search', request.args['search_term']))
-    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
+    EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
     search = Search()
     results, goto, message, action = search.get()
     if goto is not None:
@@ -723,7 +725,7 @@ def topic_page():
     ACTIVE_EVENTS.clear()
     topic = request.args['tag']
     EXECUTOR.submit(RELAY_HANDLER.set_page('topic', topic))
-    EXECUTOR.submit(RELAY_HANDLER.close_secondary_subscriptions)
+    EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
     EXECUTOR.submit(RELAY_HANDLER.subscribe_topic, topic)
     pk = SETTINGS.get('pubkey')
 

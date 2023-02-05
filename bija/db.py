@@ -11,6 +11,7 @@ from sqlalchemy.sql.functions import coalesce
 from sqlalchemy.dialects.sqlite import insert as sqlite_upsert
 
 from bija.args import args
+from bija.helpers import is_hex_key
 from bija.models import *
 
 DB_ENGINE = create_engine("sqlite:///{}.sqlite".format(args.db), echo=False, poolclass=SingletonThreadPool, pool_size=10)
@@ -81,20 +82,22 @@ class BijaDB:
         new_unfollows = []
         is_mine = False
         for pk, item in lists.items():
-            following = self.get_following_pubkeys(pk)
-            new = set(item['pks']) - set(following)
-            removed = set(following) - set(item['pks'])
-            for pk2 in new:
-                inserts.append({'pk_1':pk, 'pk_2':pk2})
-            self.session.query(Follower).filter(Follower.pk_1 == pk).filter(Follower.pk_2.in_(removed)).delete()
-            self.session.commit()
+            if is_hex_key(pk):
+                following = self.get_following_pubkeys(pk)
+                new = set(item['pks']) - set(following)
+                removed = set(following) - set(item['pks'])
+                for pk2 in new:
+                    if is_hex_key(pk2):
+                        inserts.append({'pk_1':pk, 'pk_2':pk2})
+                self.session.query(Follower).filter(Follower.pk_1 == pk).filter(Follower.pk_2.in_(removed)).delete()
+                self.session.commit()
 
-            if pk == my_pk:
-                is_mine = True
-            if my_pk in new:
-                new_follows.append(pk)
-            if my_pk in removed:
-                new_unfollows.append(pk)
+                if pk == my_pk:
+                    is_mine = True
+                if my_pk in new:
+                    new_follows.append(pk)
+                if my_pk in removed:
+                    new_unfollows.append(pk)
         if len(inserts) > 0:
             stmt = sqlite_upsert(Follower).values(inserts)
             stmt = stmt.on_conflict_do_nothing(
@@ -126,8 +129,11 @@ class BijaDB:
             self.session.query(Follower).filter(Follower.pk_1==my_pk).filter(Follower.pk_2==their_pk).delete()
         self.session.commit()
 
-    def get_following_pubkeys(self, public_key):
-        keys = self.session.query(Follower).filter_by(pk_1=public_key).all()
+    def get_following_pubkeys(self, public_key, start=None, end=None):
+        if start is not None and end is not None:
+            keys = self.session.query(Follower).filter_by(pk_1=public_key)[start:end]
+        else:
+            keys = self.session.query(Follower).filter_by(pk_1=public_key).all()
         out = []
         for k in keys:
             out.append(k.pk_2)
@@ -841,7 +847,7 @@ class BijaDB:
         self.session.commit()
 
     def get_alerts(self):
-        return self.session.query(Alert).order_by(Alert.seen.asc()).order_by(Alert.ts.desc()).limit(20).all()
+        return self.session.query(Alert).order_by(Alert.seen.asc()).order_by(Alert.ts.desc()).limit(50).all()
 
     def get_unread_alert_count(self):
         return self.session.query(Alert).filter(Alert.seen == 0).count()

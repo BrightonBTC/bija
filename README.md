@@ -13,7 +13,7 @@ If you want to give it a test run you can find early releases for Linux (Windows
 Or, to get it up and running yourself: 
 
 ```
-git clone --recurse-submodules https://github.com/BrightonBTC/bija
+git clone https://github.com/BrightonBTC/bija
 cd bija
 pip install -r ./requirements.txt
 python3 cli.py
@@ -39,12 +39,9 @@ pyinstaller cli.py --onefile -w -F --add-data "bija/templates:bija/templates" --
 
 To setup Bija with docker, first clone the project:
 ```
-git clone --recurse-submodules https://github.com/BrightonBTC/bija
+git clone https://github.com/BrightonBTC/bija
 cd bija
 ```
-
-> **Warning**
-> If you don't clone with --recurse-submodules, you must run git submodules update
 
 Then just run docker-compose up and access Bija through the browser
 

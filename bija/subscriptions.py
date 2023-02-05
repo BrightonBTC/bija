@@ -1,15 +1,14 @@
 import json
 import logging
-import time
 
 from bija.app import app
 from bija.args import LOGGING_LEVEL
 from bija.db import BijaDB
 from bija.helpers import timestamp_minus, TimePeriod
 from bija.settings import SETTINGS
-from python_nostr.nostr.event import EventKind
-from python_nostr.nostr.filter import Filter, Filters
-from python_nostr.nostr.message_type import ClientMessageType
+from bija.ws.event import EventKind
+from bija.ws.filter import Filter, Filters
+from bija.ws.message_type import ClientMessageType
 from bija.app import RELAY_MANAGER
 
 DB = BijaDB(app.session)
@@ -18,19 +17,29 @@ logger.setLevel(LOGGING_LEVEL)
 
 
 class Subscribe:
-    def __init__(self, name):
+    def __init__(self, name, relays=[], batch=0):
         self.name = name
-        logger.info('SUBSCRIBE: {}'.format(name))
+        self.relays = relays
+        self.batch = batch
+        logger.info('SUBSCRIBE: {} | Relays {} | Batch {}'.format(name, relays, batch))
         self.filters = None
 
     def send(self):
         request = [ClientMessageType.REQUEST, self.name]
         request.extend(self.filters.to_json_array())
         logger.info('add subscription to relay manager')
-        RELAY_MANAGER.add_subscription(self.name, self.filters)
+        RELAY_MANAGER.add_subscription(self.name, self.filters, self.batch)
         message = json.dumps(request)
-        logger.info('publish subscription: {}'.format(message))
-        RELAY_MANAGER.publish_message(message)
+
+        if len(self.relays) < 1: # publish to all
+            logger.info('publish subscription: {}'.format(message))
+            RELAY_MANAGER.publish_message(message)
+        else:
+            for r in self.relays:
+                if r in RELAY_MANAGER.relays:
+                    logger.info('publish subscription to {}: {}'.format(r, message))
+                    RELAY_MANAGER.relays[r].publish(message)
+
 
     @staticmethod
     def required_pow(setting: str = 'pow_required'):
@@ -41,8 +50,8 @@ class Subscribe:
 
 
 class SubscribePrimary(Subscribe):
-    def __init__(self, name, pubkey):
-        super().__init__(name)
+    def __init__(self, name, relay, batch, pubkey):
+        super().__init__(name, relay, batch)
         self.pubkey = pubkey
         self.since = 0
         self.set_since()
@@ -104,8 +113,8 @@ class SubscribePrimary(Subscribe):
 
 
 class SubscribeTopic(Subscribe):
-    def __init__(self, name, term):
-        super().__init__(name)
+    def __init__(self, name, relay, batch, term):
+        super().__init__(name, relay, batch)
         self.term = term
         self.build_filters()
         self.send()
@@ -124,8 +133,8 @@ class SubscribeTopic(Subscribe):
 
 
 class SubscribeProfile(Subscribe):
-    def __init__(self, name, pubkey, since, ids):
-        super().__init__(name)
+    def __init__(self, name, relay, batch, pubkey, since, ids):
+        super().__init__(name, relay, batch)
         self.ids = ids
         self.pubkey = pubkey
         self.since = since
@@ -150,8 +159,9 @@ class SubscribeProfile(Subscribe):
 
 
 class SubscribeThread(Subscribe):
-    def __init__(self, name, root):
-        super().__init__(name)
+    def __init__(self, name, relay, batch, root):
+        super().__init__(name, relay, batch)
+        self.batch = batch
         self.root = root
         self.build_filters()
         self.send()
@@ -165,20 +175,38 @@ class SubscribeThread(Subscribe):
         filters.append(Filter(ids=ids, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION]))
         difficulty = self.required_pow()
         if difficulty is not None:
-            pks = DB.get_following_pubkeys(SETTINGS.get('pubkey'))
+            start = int(self.batch * 256)
+            end = start+256
+            pks = DB.get_following_pubkeys(SETTINGS.get('pubkey'), start, end)
             subid = {"ids": [difficulty]}
             filters.append(Filter(tags={'#e': ids, '#p': pks}, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION]))
             filters.append(Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION], subid=subid))
+            # if self.batch == 0:
+            #     SubscribeThreadExtra(ids, difficulty)
         else:
             filters.append(Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION]))  # event responses
-
-
         self.filters = Filters(filters)
 
+# class SubscribeThreadExtra(Subscribe):
+#     def __init__(self, ids, difficulty):
+#         super().__init__('thread-pow-limited')
+#         self.ids = ids
+#         self.difficulty = difficulty
+#         self.build_filters()
+#         self.send()
+#
+#     def build_filters(self):
+#         logger.info('build subscription filters')
+#         filters = [Filter(
+#             tags={'#e': self.ids},
+#             kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION],
+#             subid={"ids": [self.difficulty]})
+#         ]
+#         self.filters = Filters(filters)
 
 class SubscribeFeed(Subscribe):
-    def __init__(self, name, ids):
-        super().__init__(name)
+    def __init__(self, name, relay, batch, ids):
+        super().__init__(name, relay, batch)
         self.ids = ids
         self.build_filters()
         self.send()

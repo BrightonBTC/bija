@@ -1,11 +1,9 @@
 import json
-import os
 import re
 import time
 import urllib
 from enum import IntEnum
 import logging
-import traceback
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
@@ -14,8 +12,8 @@ from urllib.request import Request
 import requests
 from bs4 import BeautifulSoup
 
-from python_nostr.nostr import bech32
-from python_nostr.nostr.bech32 import bech32_encode, bech32_decode, convertbits
+from bija.ws import bech32
+from bija.ws.bech32 import bech32_encode, bech32_decode, convertbits
 
 logger = logging.getLogger(__name__)
 FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
@@ -84,7 +82,7 @@ def get_invoice(content: str):
 
 def url_linkify(content):
     urls = get_urls_in_string(content)
-    for url in urls:
+    for url in set(urls):
         parts = url.split('//')
         if len(parts) < 2:
             parts = ['', url]
@@ -113,8 +111,9 @@ def is_nip05(name: str):
     else:
         test_str = 'test@{}'.format(parts[0])
         parts.insert(0, '_')
+
     regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
-    if re.fullmatch(regex, test_str) is not None:
+    if re.fullmatch(regex, test_str):
         return parts
     else:
         return False
