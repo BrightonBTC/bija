@@ -1744,13 +1744,37 @@ function lazyloadIntersectionObserver(lazyloadImages) {
 			                image.src = '/static/blank.png'
 			            }
 			        }
-			    }, 1000)
+			    }, 2000)
 			}
 		});
 	});
 	lazyloadImages.forEach(function(image) {
 		imageObserver.observe(image);
 	});
+}
+function ogObserver(elems){
+    let ogObserve = new IntersectionObserver(function(entries, observer) {
+		entries.forEach(function(entry) {
+			if(entry.isIntersecting) {
+				let el = entry.target;
+				el.classList.remove("og-container");
+				fetchOG(el, el.dataset.rel)
+				ogObserve.unobserve(el);
+			}
+		});
+	});
+    elems.forEach(function(elem) {
+		ogObserve.observe(elem);
+	});
+}
+function fetchOG(elem, url){
+
+    const cb = function(response, data){
+        const doc = new DOMParser().parseFromString(response, "text/html")
+        const htm = doc.body.firstChild
+        elem.replaceWith(htm)
+    }
+    fetchGet('/fetch_ogs?url='+encodeURIComponent(url), cb, {})
 }
 
 function lazyloadNoIntersectionObserve(lazyloadImages) {
@@ -1778,10 +1802,13 @@ function lazyloadNoIntersectionObserve(lazyloadImages) {
 	window.addEventListener("orientationChange", lazyload);
 }
 
+
 function lazyLoad() {
 	let lazyloadImages = document.querySelectorAll("img.lazy-load");
+	let lazyLoadOGs = document.querySelectorAll(".og-container");
 	if("IntersectionObserver" in window) {
 		lazyloadIntersectionObserver(lazyloadImages);
+		ogObserver(lazyLoadOGs)
 	} else {
 		lazyloadNoIntersectionObserve(lazyloadImages);
 	}

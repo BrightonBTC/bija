@@ -847,7 +847,7 @@ class BijaDB:
         self.session.commit()
 
     def get_alerts(self):
-        return self.session.query(Alert).order_by(Alert.seen.asc()).order_by(Alert.ts.desc()).limit(50).all()
+        return self.session.query(Alert).order_by(Alert.seen.asc()).order_by(Alert.ts.desc()).limit(10).all()
 
     def get_unread_alert_count(self):
         return self.session.query(Alert).filter(Alert.seen == 0).count()
@@ -1001,3 +1001,14 @@ class BijaDB:
         q = q.order_by(Note.seen.asc(), Note.created_at.desc()).limit(50)
 
         return q.all()
+
+    def get_url(self, url):
+        return self.session.query(URL).filter(URL.address == url).first()
+
+    def insert_url(self, address, ts, og):
+        self.session.merge(URL(
+            address=address,
+            ts=ts,
+            og=og
+        ))
+        self.session.commit()

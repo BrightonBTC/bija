@@ -1,3 +1,4 @@
+import math
 import ssl
 
 import validators as validators
@@ -136,9 +137,7 @@ class RelayHandler:
             notice = RELAY_MANAGER.message_pool.get_eose_notice()
             if hasattr(notice, 'url') and hasattr(notice, 'subscription_id'):
                 print('EOSE', notice.url, notice.subscription_id)
-                if notice.subscription_id == 'note-thread':
-                    print('------------------ next thread batch')
-                    SUBSCRIPTION_MANAGER.next_batch(notice.url, notice.subscription_id)
+                SUBSCRIPTION_MANAGER.next_batch(notice.url, notice.subscription_id)
 
         n_queued = RELAY_MANAGER.message_pool.events.qsize()
         if n_queued > 0 or self.notify_empty_queue:
@@ -337,6 +336,7 @@ class RelayHandler:
                 socketio.emit('alert_n', n)
 
     def receive_metadata_event(self, event):
+        print('--------------------- 1')
         meta = MetadataEvent(event)
         if meta.success:
             self.profile_batch['inserts'].append(meta.to_dict())
@@ -512,18 +512,19 @@ class RelayHandler:
 
     def subscribe_thread(self, root_id, ids):
         ACTIVE_EVENTS.add_notes(ids)
-        subscription_id = 'note-thread'
-        SUBSCRIPTION_MANAGER.add_subscription(subscription_id, 2, root=root_id)
+        n_following = DB.get_following(SETTINGS.get('pubkey'), SETTINGS.get('pubkey'), True)
+        n_batches = math.ceil(n_following / 256)
+        SUBSCRIPTION_MANAGER.add_subscription('note-thread', n_batches, root=root_id)
 
     def subscribe_feed(self, ids):
         ACTIVE_EVENTS.add_notes(ids)
-        subscription_id = 'main-feed'
-        SUBSCRIPTION_MANAGER.add_subscription(subscription_id, 1, ids=ids)
+        SUBSCRIPTION_MANAGER.add_subscription('main-feed', 1, ids=ids)
 
     def subscribe_profile(self, pubkey, since, ids):
         ACTIVE_EVENTS.add_notes(ids)
-        subscription_id = 'profile'
-        SUBSCRIPTION_MANAGER.add_subscription(subscription_id, 1, pubkey=pubkey, since=since, ids=ids)
+        n_following = DB.get_following(SETTINGS.get('pubkey'), pubkey, True)
+        n_batches = math.ceil(n_following / 1000)
+        SUBSCRIPTION_MANAGER.add_subscription('profile', n_batches, pubkey=pubkey, since=since, ids=ids)
 
     # create site wide subscription
     def subscribe_primary(self):
@@ -703,18 +704,18 @@ class MetadataEvent:
             s = json.loads(self.event.content)
         except ValueError as e:
             self.success = False
-            return
-        if 'name' in s and s['name'] is not None:
-            self.name = strip_tags(s['name'].strip())
-        if 'display_name' in s and s['display_name'] is not None:
-            self.display_name = strip_tags(s['display_name'].strip())
-        if 'nip05' in s and s['nip05'] is not None and is_nip05(s['nip05']):
-            self.nip05 = s['nip05'].strip()
-        if 'about' in s and s['about'] is not None:
-            self.about = strip_tags(s['about'])
-        if 'picture' in s and s['picture'] is not None and validators.url(s['picture'].strip(), public=True):
-            self.picture = s['picture'].strip()
-        D_TASKS.pool.add(TaskKind.VALIDATE_NIP5, {'pk': self.event.public_key})
+        if self.success:
+            if 'name' in s and s['name'] is not None:
+                self.name = strip_tags(s['name'].strip())
+            if 'display_name' in s and s['display_name'] is not None:
+                self.display_name = strip_tags(s['display_name'].strip())
+            if 'nip05' in s and s['nip05'] is not None and is_nip05(s['nip05']):
+                self.nip05 = s['nip05'].strip()
+            if 'about' in s and s['about'] is not None:
+                self.about = strip_tags(s['about'])
+            if 'picture' in s and s['picture'] is not None and validators.url(s['picture'].strip(), public=True):
+                self.picture = s['picture'].strip()
+            D_TASKS.pool.add(TaskKind.VALIDATE_NIP5, {'pk': self.event.public_key})
 
     def to_dict(self):
         return {
@@ -778,19 +779,20 @@ class NoteEvent:
 
         if len(self.media) < 1 and len(urls) > 0:
             logger.info('note has urls')
-            note = DB.get_note(SETTINGS.get('pubkey'), self.event.id)
-            already_scraped = False
-            scrape_fail_attempts = 0
-            if note is not None:
-                logger.info('note {} already in db'.format(self.event.id))
-                media = json.loads(note['media'])
-                for item in media:
-                    if item[1] == 'og':
-                        already_scraped = True
-                    elif item[1] == 'scrape_failed':
-                        scrape_fail_attempts = int(item[0])
+            # note = DB.get_note(SETTINGS.get('pubkey'), self.event.id)
+            # already_scraped = False
+            # scrape_fail_attempts = 0
+            # if note is not None:
+            #     logger.info('note {} already in db'.format(self.event.id))
+            #     media = json.loads(note['media'])
+            #     for item in media:
+            #         if item[1] == 'og':
+            #             already_scraped = True
+            #         elif item[1] == 'scrape_failed':
+            #             scrape_fail_attempts = int(item[0])
 
-            if (note is None or not already_scraped) and validators.url(urls[0]) and scrape_fail_attempts < 4:
+            # if (note is None or not already_scraped) and validators.url(urls[0]) and scrape_fail_attempts < 4:
+            if validators.url(urls[0]):
                 logger.info('add {} to tasks for scraping'.format(urls[0]))
                 D_TASKS.pool.add(TaskKind.FETCH_OG, {'url': urls[0], 'note_id': self.event.id})
 

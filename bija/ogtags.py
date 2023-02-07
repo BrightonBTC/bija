@@ -1,5 +1,6 @@
 import json
 import logging
+import time
 import urllib
 from urllib import request
 from urllib.error import HTTPError, URLError
@@ -11,7 +12,7 @@ from bs4 import BeautifulSoup
 from bija.app import app
 from bija.args import LOGGING_LEVEL
 from bija.db import BijaDB
-from bija.helpers import request_url_head
+from bija.helpers import request_url_head, timestamp_minus, TimePeriod
 from bija.settings import SETTINGS
 
 DB = BijaDB(app.session)
@@ -28,10 +29,25 @@ class OGTags:
         self.og = {}
         self.note = DB.get_note(SETTINGS.get('pubkey'), self.note_id)
         self.response = None
+        if self.should_fetch():
+            self.fetch()
+            if self.response:
+                self.process()
+            self.insert_url()
 
-        self.fetch()
-        if self.response:
-            self.process()
+    def should_fetch(self):
+        db_entry = DB.get_url(self.url)
+        print('=============== 1')
+        if db_entry is not None and db_entry.ts < timestamp_minus(TimePeriod.WEEK):
+            print('=============== 2')
+            if db_entry.og is not None:
+                print('=============== 3')
+                self.update_note()
+                print('=============== 4')
+            return False
+        else:
+            print('=============== 5')
+            return True
 
     def fetch(self):
         logger.info('fetch for {}'.format(self.url))
@@ -68,10 +84,16 @@ class OGTags:
             if len(self.og) > 0:
                 if 'url' not in self.og:
                     self.og['url'] = self.url
-                self.store()
+                self.update_note()
 
-    def store(self):
-        logger.info('store OG')
-        media = json.loads(self.note['media'])
-        media.append([self.og, 'og'])
-        DB.update_note_media(self.note_id, json.dumps(media))
+
+    def update_note(self):
+        logger.info('update note with url')
+        DB.update_note_media(self.note_id, json.dumps([[self.url, 'website']]))
+
+    def insert_url(self):
+        logger.info('insert url and og data')
+        og = None
+        if len(self.og) > 0:
+            og = json.dumps(self.og)
+        DB.insert_url(self.url, int(time.time()), og)

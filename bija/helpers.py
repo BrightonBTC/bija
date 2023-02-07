@@ -180,7 +180,7 @@ def request_relay_data(url):
 
 def request_url_head(url):
     try:
-        h = requests.head(url, timeout=1)
+        h = requests.head(url, timeout=1, headers={'User-Agent': 'Bija Nostr Client'})
         if h.status_code == 200:
             return h.headers
         return False

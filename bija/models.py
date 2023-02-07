@@ -140,5 +140,5 @@ class Relay(Base):
 class URL(Base):
     __tablename__ = "url"
     address = Column(String, primary_key=True)
-    ts = Column(String)
+    ts = Column(Integer)
     og = Column(String)

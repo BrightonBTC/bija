@@ -478,6 +478,15 @@ def read_more():
     note = DB.get_note(SETTINGS.get('pubkey'), note_id)
     return render_template("note.content.html", note=note)
 
+@app.route('/fetch_ogs', methods=['GET'])
+def fetch_ogs():
+    out={}
+    url = request.args['url']
+    data = DB.get_url(url)
+    if data is not None and data.og is not None:
+        out = json.loads(data.og)
+    return render_template("note.og.html", data=out)
+
 
 @app.route('/settings', methods=['GET', 'POST'])
 @login_required

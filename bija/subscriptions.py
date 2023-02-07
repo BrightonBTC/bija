@@ -150,7 +150,9 @@ class SubscribeProfile(Subscribe):
             Filter(tags={'#p': [self.pubkey]}, kinds=[EventKind.CONTACTS]),
             Filter(ids=self.ids, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION])
         ]
-        followers = DB.get_following_pubkeys(self.pubkey)
+        start = int(self.batch * 1000)
+        end = start + 1000
+        followers = DB.get_following_pubkeys(self.pubkey, start, end)
         if followers is not None and len(followers) > 0:
             contacts_filter = Filter(authors=followers, kinds=[EventKind.SET_METADATA])
             f.append(contacts_filter)
