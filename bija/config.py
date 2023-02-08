@@ -3,7 +3,7 @@ import json
 DEFAULT_RELAYS = [
     'wss://nostr.drss.io',
     'wss://nostr-pub.wellorder.net',
-    'wss://nostr.bitcoiner.social',
+    'wss://offchain.pub',
     'wss://relay.damus.io',
     'wss://sg.qemura.xyz',
     'wss://brb.io'
