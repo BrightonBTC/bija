@@ -23,6 +23,7 @@ class Profile(Base):
     about = Column(String, nullable=True)
     updated_at = Column(Integer, default=0)
     nip05_validated = Column(Boolean, default=False)
+    blocked = Column(Boolean, default=False)
     raw = Column(String)
 
     notes = relationship("Note", back_populates="profile")
@@ -131,10 +132,10 @@ class Relay(Base):
     __tablename__ = "relay"
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True)
-    # fav = Column(Boolean)
-    # send = Column(Boolean)
-    # receive = Column(Boolean)
-    # data = Column(String)
+    fav = Column(Boolean)
+    send = Column(Boolean)
+    receive = Column(Boolean)
+    data = Column(String)
 
 
 class URL(Base):

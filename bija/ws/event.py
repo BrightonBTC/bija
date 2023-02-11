@@ -13,6 +13,7 @@ class EventKind(IntEnum):
     DELETE = 5
     BOOST = 6
     REACTION = 7
+    BLOCK_LIST = 30000
 
 class Event():
     def __init__(

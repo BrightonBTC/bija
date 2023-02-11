@@ -1334,7 +1334,7 @@ p.note-tools {
     padding: var(--spacing-sm);
     font-size: var(--fs-mid1);
     background: var(--bg-clr2);
-    transform: translate(-50%, -100%);
+    transform: translate(-50%, -50%);
     border-radius: var(--rnd);
     display: none;
     z-index: 5;

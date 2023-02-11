@@ -17,18 +17,15 @@ from bija.alerts import *
 from bija.settings import SETTINGS
 from bija.ws.event import EventKind
 from bija.ws.pow import count_leading_zero_bits
-from bija.subscription_manager import SUBSCRIPTION_MANAGER
+from bija.ws.subscription_manager import SUBSCRIPTION_MANAGER
 
 logger = logging.getLogger(__name__)
 FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
 logging.basicConfig(format=FORMAT)
 logger.setLevel(LOGGING_LEVEL)
 
-
 D_TASKS = DeferredTasks()
 DB = BijaDB(app.session)
-
-
 
 
 class RelayHandler:
@@ -80,7 +77,8 @@ class RelayHandler:
         n_relays = 0
         for r in relays:
             n_relays += 1
-            RELAY_MANAGER.add_relay(r.name)
+            s = {}
+            RELAY_MANAGER.add_relay(r.name, subscriptions=s)
         if n_relays > 0:
             RELAY_MANAGER.open_connections({"cert_reqs": ssl.CERT_NONE})
 
@@ -173,11 +171,14 @@ class RelayHandler:
                 if msg.event.kind == EventKind.REACTION:
                     self.receive_reaction_event(msg.event)
 
+                if msg.event.kind == EventKind.BLOCK_LIST:
+                    self.receive_block_list(msg.event)
+
                 self.event_batch.append({
-                    'event_id':msg.event.id,
-                    'public_key':msg.event.public_key,
-                    'kind':int(msg.event.kind),
-                    'ts':int(msg.event.created_at)
+                    'event_id': msg.event.id,
+                    'public_key': msg.event.public_key,
+                    'kind': int(msg.event.kind),
+                    'ts': int(msg.event.created_at)
                 })
         DB.commit()
 
@@ -218,7 +219,6 @@ class RelayHandler:
             logger.info('Insert {} batched direct messages'.format(n))
             self.process_direct_messages()
 
-
         if self.new_on_primary:
             self.new_on_primary = False
             unseen_posts = DB.get_unseen_in_feed(SETTINGS.get('pubkey'))
@@ -239,6 +239,8 @@ class RelayHandler:
         if t % 60 == 0:
             self.get_connection_status()
             i = 0
+            logger.info('Check for subscriptions that need refreshing')
+            SUBSCRIPTION_MANAGER.next_round()
         self.processing = False
 
     def run_loop(self):
@@ -277,8 +279,11 @@ class RelayHandler:
             if e.event.created_at < self.contacts_batch['inserts'][e.event.public_key]['ts']:
                 insert = False
         if insert:
-            self.contacts_batch['inserts'][e.event.public_key] = {'ts':e.event.created_at, 'pks': e.keys}
+            self.contacts_batch['inserts'][e.event.public_key] = {'ts': e.event.created_at, 'pks': e.keys}
             self.contacts_batch['objects'].append(e)
+
+    def receive_block_list(self, event):
+        BlockListEvent(event)
 
     def receive_reaction_event(self, event):
         e = ReactionEvent(event, SETTINGS.get('pubkey'))
@@ -289,13 +294,12 @@ class RelayHandler:
             self.reaction_batch['objects'].append(e)
             self.reaction_batch['ids'].append(e.event.id)
 
-
     def process_reactions(self):
         DB.add_note_reactions(self.reaction_batch['inserts'])
         self.reaction_batch['inserts'].clear()
         self.signal_on_reactions()
         for e in self.reaction_batch['objects']:
-            #self.signal_on_reaction(e)
+            # self.signal_on_reaction(e)
             self.increment_reaction_counts(e)
         self.reaction_batch['ids'].clear()
         self.reaction_batch['objects'].clear()
@@ -320,7 +324,7 @@ class RelayHandler:
                     logger.info('Reaction on active note detected, signal to UI')
                 if e.event.public_key != SETTINGS.get('pubkey'):
                     if note is not None and note.public_key == SETTINGS.get('pubkey'):
-                        has_alerts =True
+                        has_alerts = True
                         logger.info('Get reaction from DB')
                         reaction = DB.get_reaction_by_id(e.event.id)
                         logger.info('Compose reaction alert')
@@ -336,7 +340,6 @@ class RelayHandler:
                 socketio.emit('alert_n', n)
 
     def receive_metadata_event(self, event):
-        print('--------------------- 1')
         meta = MetadataEvent(event)
         if meta.success:
             self.profile_batch['inserts'].append(meta.to_dict())
@@ -369,23 +372,25 @@ class RelayHandler:
             if res is None:
                 if is_json(e.note_content):
                     j = json.loads(e.note_content)
-                    parent_event = Event(j['pubkey'], j['content'], j['created_at'], j['kind'], j['tags'], j['id'], j['sig'])
-                    if parent_event.verify():
-                        self.receive_note_event(parent_event, 'bija')
+                    n = DB.get_note(SETTINGS.get('pubkey'), j['id'])
+                    if n is None:
+                        parent_event = Event(j['pubkey'], j['content'], j['created_at'], j['kind'], j['tags'], j['id'],
+                                             j['sig'])
+                        if parent_event.verify():
+                            self.receive_note_event(parent_event, 'boost')
                 self.add_profile_if_not_exists(e.event.public_key)
                 self.note_batch['inserts'].append(e.to_dict())
                 DB.increment_note_share_count(e.reshare_id)
 
     def receive_note_event(self, event, subscription):
-        if subscription == 'bija':
-            print('NOTE FROM BOOST CONTENT', event.id)
+        if subscription == 'boost':
+            logger.info('NOTE FROM BOOST CONTENT')
         e = NoteEvent(event, SETTINGS.get('pubkey'))
-        print(e)
         res = next((sub for sub in self.note_batch['inserts'] if sub['id'] == e.event.id), None)
         if res is None:
             self.add_profile_if_not_exists(e.event.public_key)
             self.note_batch['inserts'].append(e.to_dict())
-            self.note_batch['objects'].append({'obj':e, 'sub':subscription})
+            self.note_batch['objects'].append({'obj': e, 'sub': subscription})
 
     def process_notes(self):
         DB.insert_notes(self.note_batch['inserts'])
@@ -489,7 +494,7 @@ class RelayHandler:
             self.dm_batch['inserts'].append(e.to_dict())
             self.dm_batch['objects'].append(e)
             self.add_profile_if_not_exists(e.event.public_key)
-            
+
     def process_direct_messages(self):
         DB.insert_direct_messages(self.dm_batch['inserts'])
         self.dm_batch['inserts'].clear()
@@ -528,7 +533,9 @@ class RelayHandler:
 
     # create site wide subscription
     def subscribe_primary(self):
-        SUBSCRIPTION_MANAGER.add_subscription('primary', 1, pubkey=SETTINGS.get('pubkey'))
+        n_following = DB.get_following(SETTINGS.get('pubkey'), SETTINGS.get('pubkey'), True)
+        n_batches = math.ceil(n_following / 1000)
+        SUBSCRIPTION_MANAGER.add_subscription('primary', n_batches, pubkey=SETTINGS.get('pubkey'))
 
     def subscribe_topic(self, term):
         logger.info('Subscribe topic {}'.format(term))
@@ -702,37 +709,51 @@ class MetadataEvent:
     def process_content(self):
         try:
             s = json.loads(self.event.content)
+            print('###############')
+            print(s)
         except ValueError as e:
             self.success = False
         if self.success:
             if 'name' in s and s['name'] is not None:
+                print('name', s['name'])
                 self.name = strip_tags(s['name'].strip())
+                print('name', self.name)
             if 'display_name' in s and s['display_name'] is not None:
+                print('display_name', s['display_name'])
                 self.display_name = strip_tags(s['display_name'].strip())
+                print('display_name', self.display_name)
             if 'nip05' in s and s['nip05'] is not None and is_nip05(s['nip05']):
+                print('nip05', s['nip05'])
                 self.nip05 = s['nip05'].strip()
+                print('nip05', self.nip05)
             if 'about' in s and s['about'] is not None:
+                print('about', s['about'])
                 self.about = strip_tags(s['about'])
+                print('about', self.about)
             if 'picture' in s and s['picture'] is not None and validators.url(s['picture'].strip(), public=True):
+                print('picture', s['picture'])
                 self.picture = s['picture'].strip()
+                print('picture', self.picture)
             D_TASKS.pool.add(TaskKind.VALIDATE_NIP5, {'pk': self.event.public_key})
 
     def to_dict(self):
         return {
-            'public_key':self.event.public_key,
-            'name':self.name,
-            'display_name':self.display_name,
-            'nip05':self.nip05,
-            'pic':self.picture,
-            'about':self.about,
-            'updated_at':self.event.created_at,
-            'raw':json.dumps(self.event.to_json_object())
+            'public_key': self.event.public_key,
+            'name': self.name,
+            'display_name': self.display_name,
+            'nip05': self.nip05,
+            'pic': self.picture,
+            'about': self.about,
+            'updated_at': self.event.created_at,
+            'raw': json.dumps(self.event.to_json_object())
         }
 
 
 class NoteEvent:
-    def __init__(self, event, my_pk):
+    def __init__(self, event, my_pk, from_boost=False):
         logger.info('New note')
+        if from_boost:
+            pass
         self.event = event
         self.content = strip_tags(event.content)
         self.tags = event.tags
@@ -747,7 +768,6 @@ class NoteEvent:
         self.mentions_me = False
 
         self.process_content()
-
 
     def process_content(self):
         logger.info('process note content')
@@ -769,7 +789,8 @@ class NoteEvent:
                 h = request_url_head(url)
                 if h:
                     ct = h.get('content-type')
-                    if ct in ['image/apng', 'image/png', 'image/avif', 'image/gif', 'image/jpeg', 'image/svg+xml', 'image/webp']:
+                    if ct in ['image/apng', 'image/png', 'image/avif', 'image/gif', 'image/jpeg', 'image/svg+xml',
+                              'image/webp']:
                         logger.info('{} is image'.format(url))
                         self.media.append((url, 'image'))
                     elif ct in ["video/webm", "video/ogg", "video/mp4"]:
@@ -842,7 +863,6 @@ class NoteEvent:
             "#[{}]".format(item),
             "#{}".format(tag))
 
-
     def process_tags(self):
         logger.info('process note tags')
         if len(self.tags) > 0:
@@ -888,7 +908,7 @@ class NoteEvent:
             'members': json.dumps(self.members),
             'media': json.dumps(self.media),
             'hashtags': json.dumps(self.hashtags),
-            'raw':json.dumps(self.event.to_json_object())
+            'raw': json.dumps(self.event.to_json_object())
         }
 
 
@@ -907,7 +927,6 @@ class BoostEvent:
             if tag[0] == "e" and len(tag) > 1:
                 self.reshare_id = tag[1]
 
-
     def to_dict(self):
         return {
             'id': self.event.id,
@@ -920,5 +939,19 @@ class BoostEvent:
             'members': json.dumps([]),
             'media': json.dumps([]),
             'hashtags': json.dumps([]),
-            'raw':json.dumps(self.event.to_json_object())
+            'raw': json.dumps(self.event.to_json_object())
         }
+
+class BlockListEvent:
+    def __init__(self, event):
+        logger.info('>>>>>>>>>>>>>>>>>>>>> New blocklist')
+        self.event = event
+        k = bytes.fromhex(SETTINGS.get('privkey'))
+        pk = PrivateKey(k)
+        raw = pk.decrypt_message(event.content, SETTINGS.get('pubkey'))
+        self.list = []
+        try:
+            self.list = json.loads(raw)
+            print(self.list)
+        except ValueError:
+            print("unable to decode json")

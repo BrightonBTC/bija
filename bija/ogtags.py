@@ -37,23 +37,27 @@ class OGTags:
 
     def should_fetch(self):
         db_entry = DB.get_url(self.url)
-        print('=============== 1')
-        if db_entry is not None and db_entry.ts < timestamp_minus(TimePeriod.WEEK):
-            print('=============== 2')
+        print('got url from db', db_entry)
+        if db_entry is not None:
+            print(db_entry.address, db_entry.ts, db_entry.og)
+            print(timestamp_minus(TimePeriod.WEEK))
+        if db_entry is not None and db_entry.ts > timestamp_minus(TimePeriod.WEEK):
+            print(db_entry.ts, timestamp_minus(TimePeriod.WEEK))
             if db_entry.og is not None:
-                print('=============== 3')
                 self.update_note()
-                print('=============== 4')
             return False
         else:
-            print('=============== 5')
             return True
 
     def fetch(self):
         logger.info('fetch for {}'.format(self.url))
         req = Request(self.url, headers={'User-Agent': 'Bija Nostr Client'})
         h = request_url_head(self.url)
-        if h:
+        print('#################')
+        print('request_url_head', h)
+        if h and h.get('content-type'):
+            print('--------')
+            print(h.get('content-type'))
             if h.get('content-type').split(';')[0] == 'text/html':
                 try:
                     with urllib.request.urlopen(req, timeout=2) as response:

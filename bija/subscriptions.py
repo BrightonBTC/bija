@@ -28,24 +28,28 @@ class Subscribe:
         request = [ClientMessageType.REQUEST, self.name]
         request.extend(self.filters.to_json_array())
         logger.info('add subscription to relay manager')
-        RELAY_MANAGER.add_subscription(self.name, self.filters, self.batch)
-        message = json.dumps(request)
+        # RELAY_MANAGER.add_subscription(self.name, self.filters, self.batch)
+        # message = json.dumps(request)
 
-        if len(self.relays) < 1: # publish to all
-            logger.info('publish subscription: {}'.format(message))
-            RELAY_MANAGER.publish_message(message)
-        else:
-            for r in self.relays:
-                if r in RELAY_MANAGER.relays:
-                    logger.info('publish subscription to {}: {}'.format(r, message))
-                    RELAY_MANAGER.relays[r].publish(message)
+        if len(self.relays) < 1:  # publish to all
+            # logger.info('publish subscription: {} | Relays {} | Batch {}'.format(self.name, self.relays, self.batch))
+            # RELAY_MANAGER.publish_message(message)
+            for r in RELAY_MANAGER.relays.keys():
+                self.relays.append(r)
+        for r in self.relays:
+            if r in RELAY_MANAGER.relays:
+                logger.info(
+                    'publish subscription {}  | Relay {} | Batch {}'.format(self.name, r, self.batch))
+                RELAY_MANAGER.relays[r].add_subscription(self.name, self.filters, self.batch)
+                message = json.dumps(request)
+                RELAY_MANAGER.relays[r].publish(message)
 
 
     @staticmethod
     def required_pow(setting: str = 'pow_required'):
         required_pow = SETTINGS.get(setting)
         if required_pow is not None and int(required_pow) > 0:
-            return int(int(required_pow)/4) * "0"
+            return int(int(required_pow) / 4) * "0"
         return None
 
 
@@ -75,12 +79,16 @@ class SubscribePrimary(Subscribe):
                  EventKind.DELETE,
                  EventKind.REACTION]
         profile_filter = Filter(authors=[self.pubkey], kinds=kinds, since=self.since)
+        blocked_filter = Filter(authors=[self.pubkey], kinds=[EventKind.BLOCK_LIST], limit=1)
         kinds = [EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION]
         mentions_filter = Filter(tags={'#p': [self.pubkey]}, kinds=kinds, since=self.since)
         followers_filter = Filter(tags={'#p': [self.pubkey]}, kinds=[EventKind.CONTACTS])
-        messages_filter = Filter(authors=[self.pubkey], kinds=[EventKind.ENCRYPTED_DIRECT_MESSAGE], since=timestamp_minus(TimePeriod.WEEK, 52))
-        f = [profile_filter, mentions_filter, followers_filter, messages_filter]
-        following_pubkeys = DB.get_following_pubkeys(SETTINGS.get('pubkey'))
+        messages_filter = Filter(authors=[self.pubkey], kinds=[EventKind.ENCRYPTED_DIRECT_MESSAGE],
+                                 since=timestamp_minus(TimePeriod.WEEK, 52))
+        f = [profile_filter, mentions_filter, followers_filter, messages_filter, blocked_filter]
+        start = int(self.batch * 1000)
+        end = start + 1000
+        following_pubkeys = DB.get_following_pubkeys(SETTINGS.get('pubkey'), start, end)
 
         if len(following_pubkeys) > 0:
             following_filter = Filter(
@@ -127,7 +135,8 @@ class SubscribeTopic(Subscribe):
             logger.info('calculated difficulty {}'.format(difficulty))
             subid = {"ids": [difficulty]}
         f = [
-            Filter(kinds=[EventKind.TEXT_NOTE, EventKind.BOOST], tags={'#t': [self.term]}, since=timestamp_minus(TimePeriod.WEEK*4), subid=subid)
+            Filter(kinds=[EventKind.TEXT_NOTE, EventKind.BOOST], tags={'#t': [self.term]},
+                   since=timestamp_minus(TimePeriod.WEEK * 4), subid=subid)
         ]
         self.filters = Filters(f)
 
@@ -145,7 +154,8 @@ class SubscribeProfile(Subscribe):
         logger.info('build subscription filters')
         f = [
             Filter(authors=[self.pubkey], kinds=[EventKind.SET_METADATA, EventKind.CONTACTS]),
-            Filter(authors=[self.pubkey], kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.DELETE, EventKind.REACTION],
+            Filter(authors=[self.pubkey],
+                   kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.DELETE, EventKind.REACTION],
                    since=self.since),
             Filter(tags={'#p': [self.pubkey]}, kinds=[EventKind.CONTACTS]),
             Filter(ids=self.ids, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION])
@@ -178,16 +188,20 @@ class SubscribeThread(Subscribe):
         difficulty = self.required_pow()
         if difficulty is not None:
             start = int(self.batch * 256)
-            end = start+256
+            end = start + 256
             pks = DB.get_following_pubkeys(SETTINGS.get('pubkey'), start, end)
             subid = {"ids": [difficulty]}
-            filters.append(Filter(tags={'#e': ids, '#p': pks}, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION]))
-            filters.append(Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION], subid=subid))
+            filters.append(
+                Filter(tags={'#e': ids, '#p': pks}, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION]))
+            filters.append(
+                Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION], subid=subid))
             # if self.batch == 0:
             #     SubscribeThreadExtra(ids, difficulty)
         else:
-            filters.append(Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION]))  # event responses
+            filters.append(Filter(tags={'#e': ids},
+                                  kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION]))  # event responses
         self.filters = Filters(filters)
+
 
 # class SubscribeThreadExtra(Subscribe):
 #     def __init__(self, ids, difficulty):
@@ -216,6 +230,7 @@ class SubscribeFeed(Subscribe):
     def build_filters(self):
         logger.info('build subscription filters')
         self.filters = Filters([
-            Filter(tags={'#e': self.ids}, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION]),  # event responses
+            Filter(tags={'#e': self.ids}, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION]),
+            # event responses
             Filter(ids=self.ids, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION])
         ])

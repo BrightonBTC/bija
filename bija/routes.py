@@ -9,11 +9,11 @@ from flask import request, redirect, make_response, url_for
 from flask_executor import Executor
 
 from bija.app import app, socketio, ACTIVE_EVENTS
-from bija.args import SETUP_PK, SETUP_PW, LOGGING_LEVEL
+from bija.args import SETUP_PK, SETUP_PW
 from bija.config import DEFAULT_RELAYS, default_settings
 from bija.emojis import emojis
 from bija.nip5 import Nip5
-from bija.relay_handler import RelayHandler, MetadataEvent
+from bija.relay_handler import RelayHandler
 from bija.helpers import *
 from bija.jinja_filters import *
 from bija.notes import FeedThread, NoteThread, BoostsThread
@@ -22,7 +22,7 @@ from bija.search import Search
 from bija.settings import SETTINGS
 from bija.submissions import SubmitDelete, SubmitNote, SubmitProfile, SubmitEncryptedMessage, SubmitLike, \
     SubmitFollowList, SubmitBoost
-from bija.subscription_manager import SUBSCRIPTION_MANAGER
+from bija.ws.subscription_manager import SUBSCRIPTION_MANAGER
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOGGING_LEVEL)
