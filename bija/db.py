@@ -40,6 +40,9 @@ class BijaDB:
     def get_relays(self):
         return self.session.query(Relay)
 
+    def get_relay_by_url(self, url):
+        return self.session.query(Relay).filter_by(name=url).first()
+
     def insert_relay(self, url):
         self.session.add(Relay(
             name=url
@@ -99,17 +102,37 @@ class BijaDB:
                 if my_pk in removed:
                     new_unfollows.append(pk)
         if len(inserts) > 0:
-            stmt = sqlite_upsert(Follower).values(inserts)
-            stmt = stmt.on_conflict_do_nothing(
-                index_elements=[Follower.pk_1, Follower.pk_2]
-            )
-            try:
-                self.session.execute(stmt)
-                self.session.commit()
-            except SQLAlchemyError as e:
-                print(str(e.__dict__['orig']))
+
+            chunked_lists = [inserts[i:i + 999] for i in range(0, len(inserts), 999)]
+
+            for l in chunked_lists:
+
+                stmt = sqlite_upsert(Follower).values(l)
+                stmt = stmt.on_conflict_do_nothing(
+                    index_elements=[Follower.pk_1, Follower.pk_2]
+                )
+                try:
+                    self.session.execute(stmt)
+                    self.session.commit()
+                except SQLAlchemyError as e:
+                    print(str(e.__dict__['orig']))
 
         return new_follows, new_unfollows, is_mine
+
+    def update_block_list(self, profiles: list):
+        self.session.query(Profile).filter(Profile.public_key.in_(profiles)).update({'blocked': True})
+        self.session.query(Profile).filter(Profile.blocked==True).filter(Profile.public_key.notin_(profiles)).update({'blocked': False})
+        self.session.commit()
+
+    def get_blocked(self):
+        return self.session.query(Profile).filter(Profile.blocked == True).all()
+
+    def get_blocked_pks(self):
+        return self.session.query(Profile.public_key).filter(Profile.blocked == True).all()
+
+    def is_blocked(self, pubkey):
+        q = self.session.query(Profile.blocked).filter(Profile.public_key==pubkey).first()
+        return q.blocked
 
     def get_last_contacts_upd(self, public_key):
         result = self.session.query(Event.ts) \
@@ -279,6 +302,7 @@ class BijaDB:
                 members=stmt.excluded.members,
                 media=stmt.excluded.media,
                 hashtags=stmt.excluded.hashtags,
+                seen=stmt.excluded.seen,
                 raw=stmt.excluded.raw
             )
         )
@@ -532,6 +556,11 @@ class BijaDB:
             seen=seen,
             raw=raw
         ))
+        self.session.commit()
+
+    def purge_pubkey(self, pk):
+        self.session.query(PrivateMessage).filter(PrivateMessage.public_key == pk).delete()
+        self.session.query(Note).filter(Note.public_key == pk).delete()
         self.session.commit()
 
     def subscribed_to_topic(self, topic):
@@ -834,8 +863,30 @@ class BijaDB:
         except SQLAlchemyError as e:
             print(str(e.__dict__['orig']))
 
+    def insert_event_relay(self, events: list):
+        e = []
+        for event in events:
+            dber = self.get_event_relay(event)
+            if dber is None:
+                relay = self.get_relay_by_url(event['relay'])
+                dbe = self.get_event(event['event_id'])
+                if relay is not None and dbe is not None:
+                    e.append({'event_id':dbe.id, 'relay':relay.id})
+        stmt = sqlite_upsert(EventRelay).values(e)
+        try:
+            self.session.execute(stmt)
+            self.session.commit()
+        except SQLAlchemyError as e:
+            print(str(e.__dict__['orig']))
+
+    def get_event_relay(self, e):
+        return self.session.query(EventRelay.id).filter(EventRelay.event_id == e['event_id']).filter(EventRelay.relay == e['relay']).first()
+
     def get_event(self, event_id):
-        return self.session.query(Event.event_id, Event.kind).filter(Event.event_id == event_id).first()
+        return self.session.query(Event.id, Event.event_id, Event.kind).filter(Event.event_id == event_id).first()
+
+    def latest_event(self):
+        return self.session.query(Event.ts).order_by(Event.ts.desc()).first()
 
     def add_alert(self, kind, ts, data):
 

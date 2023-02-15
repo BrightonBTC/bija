@@ -113,7 +113,7 @@ class SubmitNote(Submit):
             self.pow_difficulty = int(pow_difficulty)
         self.compose()
         self.send()
-        self.store()
+        # self.store()
 
     def compose(self):
         logger.info('compose')
@@ -186,18 +186,18 @@ class SubmitNote(Submit):
             for match in matches:
                 self.tags.append(["t", match[1:].strip()])
 
-    def store(self):
-        logger.info('insert note')
-        DB.insert_note(
-            self.event_id,
-            SETTINGS.get('pubkey'),
-            self.content,
-            self.response_to,
-            self.thread_root,
-            self.reshare,
-            self.created_at,
-            json.dumps(self.members)
-        )
+    # def store(self):
+    #     logger.info('insert note')
+    #     DB.insert_note(
+    #         self.event_id,
+    #         SETTINGS.get('pubkey'),
+    #         self.content,
+    #         self.response_to,
+    #         self.thread_root,
+    #         self.reshare,
+    #         self.created_at,
+    #         json.dumps(self.members)
+    #     )
 
 
 class SubmitFollowList(Submit):
@@ -213,6 +213,26 @@ class SubmitFollowList(Submit):
         pk_list = DB.get_following_pubkeys(SETTINGS.get('pubkey'))
         for pk in pk_list:
             self.tags.append(["p", pk])
+
+class SubmitBlockList(Submit):
+    def __init__(self, l: list):
+        super().__init__()
+        logger.info('SUBMIT block list')
+        self.kind = EventKind.BLOCK_LIST
+        self.tags.append(['d', 'mute'])
+        encrypted = self.encrypt(json.dumps(l), SETTINGS.get('pubkey'))
+        if encrypted:
+            self.content = encrypted
+            self.send()
+
+    def encrypt(self, message, public_key):
+        logger.info('encrypt block list')
+        try:
+            k = bytes.fromhex(SETTINGS.get('privkey'))
+            pk = PrivateKey(k)
+            return pk.encrypt_message(message, public_key)
+        except ValueError:
+            return False
 
 
 class SubmitEncryptedMessage(Submit):

@@ -3,10 +3,15 @@ import json
 DEFAULT_RELAYS = [
     'wss://nostr.drss.io',
     'wss://nostr-pub.wellorder.net',
-    'wss://nostr.bitcoiner.social',
     'wss://relay.damus.io',
     'wss://sg.qemura.xyz',
-    'wss://brb.io'
+    'wss://brb.io',
+    'wss://relay.nostrati.com',
+    'wss://pow.nostrati.com',
+    'wss://relay.snort.social',
+    'wss://eden.nostr.land',
+    'wss://nostr.zebedee.cloud',
+    'wss://offchain.pub'
 ]
 
 default_settings = {

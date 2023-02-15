@@ -13,6 +13,15 @@ class Event(Base):
     ts = Column(Integer)
 
 
+class EventRelay(Base):
+    __tablename__ = "event_relay"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    event_id = Column(Integer, ForeignKey("event.id"))
+    relay = Column(Integer, ForeignKey("relay.id"))
+
+    UniqueConstraint(event_id, relay, name='uix_1', sqlite_on_conflict='IGNORE')
+
+
 class Profile(Base):
     __tablename__ = "profile"
     public_key = Column(String(64), primary_key=True)

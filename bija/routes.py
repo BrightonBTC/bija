@@ -21,7 +21,7 @@ from bija.password import encrypt_key, decrypt_key
 from bija.search import Search
 from bija.settings import SETTINGS
 from bija.submissions import SubmitDelete, SubmitNote, SubmitProfile, SubmitEncryptedMessage, SubmitLike, \
-    SubmitFollowList, SubmitBoost
+    SubmitFollowList, SubmitBoost, SubmitBlockList
 from bija.ws.subscription_manager import SUBSCRIPTION_MANAGER
 
 logger = logging.getLogger(__name__)
@@ -71,13 +71,13 @@ def index_page():
     EXECUTOR.submit(RELAY_HANDLER.set_page('home', None))
     EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
     pk = SETTINGS.get('pubkey')
-    notes = DB.get_feed(time.time(), pk, {'main_feed': True})
+    # notes = DB.get_feed(time.time(), pk, {'main_feed': True})
     DB.set_all_seen_in_feed(pk)
-    t = FeedThread(notes)
-    EXECUTOR.submit(RELAY_HANDLER.subscribe_feed(list(t.ids)))
+    # t = FeedThread(notes)
+    # EXECUTOR.submit(RELAY_HANDLER.subscribe_feed(list(t.ids)))
     profile = DB.get_profile(pk)
     topics = DB.get_topics()
-    return render_template("feed/feed.html", page_id="home", title="Home", threads=t.threads, last=t.last_ts,
+    return render_template("feed/feed.html", page_id="home", title="Home", threads=[], last=0,
                            profile=profile, pubkey=pk, topics=topics)
 
 
@@ -158,9 +158,12 @@ def profile_page():
             "profile/profile.html",
             page_id=data.page_id,
             title="Profile",
-            threads=data.data.threads,
-            last=data.data.last_ts,
-            latest=data.latest_in_feed,
+            # threads=data.data.threads,
+            # last=data.data.last_ts,
+            # latest=data.latest_in_feed,
+            threads=[],
+            last=0,
+            latest=0,
             profile=data.profile,
             is_me=data.is_me,
             am_following=data.am_following,
@@ -206,7 +209,7 @@ class ProfilePage:
         self.subscription_ids = [] # active notes to passed to subscription manager
 
         set_subscription = False
-        valid_pages = ['profile', 'following', 'followers']
+        valid_pages = ['profile', 'following', 'followers', 'blocked']
 
         ACTIVE_EVENTS.clear()
         if RELAY_HANDLER.page['page'] not in valid_pages or RELAY_HANDLER.page['identifier'] != self.pubkey:
@@ -271,14 +274,17 @@ class ProfilePage:
     def get_data(self):
         self.am_following = DB.a_follows_b(SETTINGS.get('pubkey'), self.pubkey)
         if self.page == 'profile':
-            notes = DB.get_feed(int(time.time()), SETTINGS.get('pubkey'), {'profile': self.pubkey})
-            self.data = FeedThread(notes)
-            self.subscription_ids = list(self.data.ids)
-            self.latest_in_feed = DB.get_most_recent_for_pk(self.pubkey) or 0
+            # notes = DB.get_feed(int(time.time()), SETTINGS.get('pubkey'), {'profile': self.pubkey})
+            # self.data = FeedThread(notes)
+            # self.subscription_ids = list(self.data.ids)
+            # self.latest_in_feed = DB.get_most_recent_for_pk(self.pubkey) or 0
+            self.data = {'threads': []}
         elif self.page == 'following':
             self.data = DB.get_following(SETTINGS.get('pubkey'), self.pubkey)
         elif self.page == 'followers':
             self.data = DB.get_followers(SETTINGS.get('pubkey'), self.pubkey)
+        elif self.page == 'blocked':
+            self.data = DB.get_blocked()
 
 
 @app.route('/fetch_archived', methods=['GET'])
@@ -348,7 +354,7 @@ def profile_feed():
             t = FeedThread(notes)
             profile = DB.get_profile(pk)
             EXECUTOR.submit(
-                RELAY_HANDLER.subscribe_profile, request.args['pk'], t.last_ts - TimePeriod.WEEK, list(t.ids)
+                RELAY_HANDLER.subscribe_profile, request.args['pk'], None, list(t.ids)
             )
             return render_template("feed/feed.items.html", threads=t.threads, last=t.last_ts, profile=profile,
                                    pubkey=SETTINGS.get('pubkey'))
@@ -401,6 +407,27 @@ def quote_form():
     note = DB.get_note(SETTINGS.get('pubkey'), note_id)
     profile = DB.get_profile(SETTINGS.get('pubkey'))
     return render_template("quote.form.html", item=note, id=note_id, profile=profile)
+
+@app.route('/confirm_block', methods=['GET'])
+def confirm_block():
+    note_id = request.args['id']
+    note = DB.get_note(SETTINGS.get('pubkey'), note_id)
+    return render_template("block.confirm.html", note=note)
+
+@app.route('/block', methods=['POST'])
+def block():
+    out = []
+    for r in request.json:
+        if r[0] == 'pubkey' and is_hex_key(r[1]):
+            out.append(['p', r[1]])
+            DB.purge_pubkey(r[1])
+    l = DB.get_blocked_pks()
+    for entry in l:
+        out.append(['p', entry.public_key])
+    e = SubmitBlockList(out)
+    event_id = e.event_id
+    return render_template("upd.json", data=json.dumps({'event_id': event_id}))
+
 
 
 @app.route('/confirm_delete', methods=['GET'])

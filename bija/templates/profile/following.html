@@ -12,10 +12,12 @@
             {%- include 'profile/profile.image.html' -%}
         </div>
         <div class="name"><a href="/profile?pk={{p['public_key']}}">{{p['name'] | ident_string(p['display_name'], p['public_key']) | safe }}</a> <br>{{ p['public_key'] | relationship | safe }}</div>
+        {%- if page_id != "blocked" -%}
         {%- if p['following'] == False: -%}
         <button class="follow-btn" data-rel="{{p['public_key']}}" data-state="1" data-upd="0">+</button>
         {%- else: -%}
         {{'following'| svg_icon('icon')|safe}}
+        {%- endif -%}
         {%- endif -%}
     </div>
 {%- endfor -%}

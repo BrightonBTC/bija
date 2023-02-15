@@ -28,12 +28,8 @@ class Subscribe:
         request = [ClientMessageType.REQUEST, self.name]
         request.extend(self.filters.to_json_array())
         logger.info('add subscription to relay manager')
-        # RELAY_MANAGER.add_subscription(self.name, self.filters, self.batch)
-        # message = json.dumps(request)
 
         if len(self.relays) < 1:  # publish to all
-            # logger.info('publish subscription: {} | Relays {} | Batch {}'.format(self.name, self.relays, self.batch))
-            # RELAY_MANAGER.publish_message(message)
             for r in RELAY_MANAGER.relays.keys():
                 self.relays.append(r)
         for r in self.relays:
@@ -63,11 +59,11 @@ class SubscribePrimary(Subscribe):
         self.send()
 
     def set_since(self):
-        latest = DB.latest_in_primary(SETTINGS.get('pubkey'))
-        if latest is not None:
-            self.since = timestamp_minus(TimePeriod.DAY, start=latest)
+        latest_event = DB.latest_event()
+        if latest_event is not None:
+            self.since = timestamp_minus(TimePeriod.HOUR, start=latest_event.ts)
         else:
-            self.since = timestamp_minus(TimePeriod.WEEK)
+            self.since = timestamp_minus(TimePeriod.DAY)
 
     def build_filters(self):
         logger.info('build subscription filters')
@@ -84,7 +80,7 @@ class SubscribePrimary(Subscribe):
         mentions_filter = Filter(tags={'#p': [self.pubkey]}, kinds=kinds, since=self.since)
         followers_filter = Filter(tags={'#p': [self.pubkey]}, kinds=[EventKind.CONTACTS])
         messages_filter = Filter(authors=[self.pubkey], kinds=[EventKind.ENCRYPTED_DIRECT_MESSAGE],
-                                 since=timestamp_minus(TimePeriod.WEEK, 52))
+                                 since=self.since)
         f = [profile_filter, mentions_filter, followers_filter, messages_filter, blocked_filter]
         start = int(self.batch * 1000)
         end = start + 1000
@@ -111,7 +107,7 @@ class SubscribePrimary(Subscribe):
                 t.append(topic.tag)
             topics_filter = Filter(
                 kinds=[EventKind.TEXT_NOTE, EventKind.BOOST],
-                subid={"ids": [difficulty]},
+                ids=[difficulty],
                 tags={"#t": t},
                 since=self.since
             )
@@ -130,13 +126,13 @@ class SubscribeTopic(Subscribe):
     def build_filters(self):
         logger.info('build subscription filters')
         difficulty = self.required_pow()
-        subid = None
+        ids = None
         if difficulty is not None:
             logger.info('calculated difficulty {}'.format(difficulty))
-            subid = {"ids": [difficulty]}
+            ids = [difficulty]
         f = [
             Filter(kinds=[EventKind.TEXT_NOTE, EventKind.BOOST], tags={'#t': [self.term]},
-                   since=timestamp_minus(TimePeriod.WEEK * 4), subid=subid)
+                   since=timestamp_minus(TimePeriod.WEEK * 4), ids=ids)
         ]
         self.filters = Filters(f)
 
@@ -146,20 +142,27 @@ class SubscribeProfile(Subscribe):
         super().__init__(name, relay, batch)
         self.ids = ids
         self.pubkey = pubkey
-        self.since = since
-        self.build_filters()
-        self.send()
+        if not DB.is_blocked(pubkey):
+            self.since = since
+            self.build_filters()
+            self.send()
 
     def build_filters(self):
         logger.info('build subscription filters')
         f = [
             Filter(authors=[self.pubkey], kinds=[EventKind.SET_METADATA, EventKind.CONTACTS]),
-            Filter(authors=[self.pubkey],
-                   kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.DELETE, EventKind.REACTION],
-                   since=self.since),
             Filter(tags={'#p': [self.pubkey]}, kinds=[EventKind.CONTACTS]),
             Filter(ids=self.ids, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION])
         ]
+        if self.since is None:
+            main_filter = Filter(authors=[self.pubkey],
+                   kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.DELETE, EventKind.REACTION],
+                   limit=100)
+        else:
+            main_filter = Filter(authors=[self.pubkey],
+                   kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.DELETE, EventKind.REACTION],
+                   since=self.since)
+        f.append(main_filter)
         start = int(self.batch * 1000)
         end = start + 1000
         followers = DB.get_following_pubkeys(self.pubkey, start, end)
@@ -190,35 +193,15 @@ class SubscribeThread(Subscribe):
             start = int(self.batch * 256)
             end = start + 256
             pks = DB.get_following_pubkeys(SETTINGS.get('pubkey'), start, end)
-            subid = {"ids": [difficulty]}
             filters.append(
                 Filter(tags={'#e': ids, '#p': pks}, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION]))
             filters.append(
-                Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION], subid=subid))
-            # if self.batch == 0:
-            #     SubscribeThreadExtra(ids, difficulty)
+                Filter(tags={'#e': ids}, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION], ids=[difficulty]))
         else:
             filters.append(Filter(tags={'#e': ids},
                                   kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION]))  # event responses
         self.filters = Filters(filters)
 
-
-# class SubscribeThreadExtra(Subscribe):
-#     def __init__(self, ids, difficulty):
-#         super().__init__('thread-pow-limited')
-#         self.ids = ids
-#         self.difficulty = difficulty
-#         self.build_filters()
-#         self.send()
-#
-#     def build_filters(self):
-#         logger.info('build subscription filters')
-#         filters = [Filter(
-#             tags={'#e': self.ids},
-#             kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION],
-#             subid={"ids": [self.difficulty]})
-#         ]
-#         self.filters = Filters(filters)
 
 class SubscribeFeed(Subscribe):
     def __init__(self, name, relay, batch, ids):

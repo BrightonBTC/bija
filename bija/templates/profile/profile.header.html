@@ -75,6 +75,7 @@
         <a href="/profile" data-page="posts">posts</a>
         <a href="/profile?view=following" data-page="following">following <span class="tag">{{n_following}}</span></a>
         <a href="/profile?view=followers" data-page="followers">followers <span class="tag">{{n_followers}}</span></a>
+        <a href="/profile?view=blocked" data-page="blocked">blocked</a>
     {%- else -%}
         <a href="/profile?pk={{profile['public_key']}}" data-page="posts">posts</a>
         <a href="/profile?pk={{profile['public_key']}}&view=following" data-page="following">following <span class="tag">{{n_following}}</span></a>

@@ -56,6 +56,8 @@ class RelayHandler:
 
     missing_profiles_batch = []
 
+    blocked_profiles_batch = []
+
     note_batch = {
         'inserts': [],
         'objects': []
@@ -67,6 +69,9 @@ class RelayHandler:
     }
 
     event_batch = []
+    event_seen_on_batch = []
+
+    unique_events = set()
 
     def __init__(self):
         self.should_run = True
@@ -145,53 +150,53 @@ class RelayHandler:
                 self.notify_empty_queue = False
 
         i = 0
+        self.unique_events = set()
+        blocklist = DB.get_blocked_pks()
         while RELAY_MANAGER.message_pool.has_events() and i < 500:
             i += 1
             msg = RELAY_MANAGER.message_pool.get_event()
-            if DB.get_event(msg.event.id) is None:
-                logger.info('New event: {}'.format(msg.event.kind))
-                if msg.event.kind == EventKind.SET_METADATA:
-                    self.receive_metadata_event(msg.event)
+            if msg.event.public_key not in blocklist:
+                if msg.event.id not in self.unique_events and DB.get_event(msg.event.id) is None:
+                    logger.info('New event: {}'.format(msg.event.kind))
+                    if msg.event.kind == EventKind.SET_METADATA:
+                        self.receive_metadata_event(msg.event)
 
-                if msg.event.kind == EventKind.CONTACTS:
-                    self.receive_contact_list_event(msg.event)
+                    if msg.event.kind == EventKind.CONTACTS:
+                        self.receive_contact_list_event(msg.event)
 
-                if msg.event.kind == EventKind.TEXT_NOTE:
-                    self.receive_note_event(msg.event, msg.subscription_id)
+                    if msg.event.kind == EventKind.TEXT_NOTE:
+                        self.receive_note_event(msg.event, msg.subscription_id)
 
-                if msg.event.kind == EventKind.BOOST:
-                    self.receive_boost_event(msg.event)
+                    if msg.event.kind == EventKind.BOOST:
+                        self.receive_boost_event(msg.event)
 
-                if msg.event.kind == EventKind.ENCRYPTED_DIRECT_MESSAGE:
-                    self.receive_direct_message_event(msg.event)
+                    if msg.event.kind == EventKind.ENCRYPTED_DIRECT_MESSAGE:
+                        self.receive_direct_message_event(msg.event)
 
-                if msg.event.kind == EventKind.DELETE:
-                    self.receive_del_event(msg.event)
+                    if msg.event.kind == EventKind.DELETE:
+                        self.receive_del_event(msg.event)
 
-                if msg.event.kind == EventKind.REACTION:
-                    self.receive_reaction_event(msg.event)
+                    if msg.event.kind == EventKind.REACTION:
+                        self.receive_reaction_event(msg.event)
 
-                if msg.event.kind == EventKind.BLOCK_LIST:
-                    self.receive_block_list(msg.event)
+                    if msg.event.kind == EventKind.BLOCK_LIST:
+                        self.receive_block_list(msg.event)
 
-                self.event_batch.append({
-                    'event_id': msg.event.id,
-                    'public_key': msg.event.public_key,
-                    'kind': int(msg.event.kind),
-                    'ts': int(msg.event.created_at)
-                })
-        DB.commit()
-
-        n = len(self.contacts_batch['inserts'])
-        if n > 0:
-            logger.info('Insert {} batched contact lists'.format(n))
-            self.process_contacts()
-
-        n = len(self.event_batch)
-        if n > 0:
-            logger.info('Insert {} batched events'.format(n))
-            DB.insert_events(self.event_batch)
-            self.event_batch.clear()
+                    self.event_batch.append({
+                        'event_id': msg.event.id,
+                        'public_key': msg.event.public_key,
+                        'kind': int(msg.event.kind),
+                        'ts': int(msg.event.created_at)
+                    })
+                if msg.event.kind in [EventKind.TEXT_NOTE, EventKind.ENCRYPTED_DIRECT_MESSAGE]:
+                    self.unique_events.add(msg.event.id)
+                    self.event_seen_on_batch.append({
+                        'event_id': msg.event.id,
+                        'relay': msg.url
+                    })
+            else:
+                print('BLOCKED')
+        #DB.commit()
 
         n = len(self.profile_batch['inserts'])
         if n > 0:
@@ -204,10 +209,21 @@ class RelayHandler:
             DB.add_profiles_if_not_exists(self.missing_profiles_batch)
             self.missing_profiles_batch.clear()
 
+        n = len(self.blocked_profiles_batch)
+        if n > 0:
+            logger.info('Update blocked profiles')
+            DB.update_block_list(self.blocked_profiles_batch)
+            self.blocked_profiles_batch.clear()
+
         n = len(self.note_batch['inserts'])
         if n > 0:
             logger.info('Insert {} batched notes'.format(n))
             self.process_notes()
+
+        n = len(self.contacts_batch['inserts'])
+        if n > 0:
+            logger.info('Insert {} batched contact lists'.format(n))
+            self.process_contacts()
 
         n = len(self.reaction_batch['inserts'])
         if n > 0:
@@ -218,6 +234,18 @@ class RelayHandler:
         if n > 0:
             logger.info('Insert {} batched direct messages'.format(n))
             self.process_direct_messages()
+
+        n = len(self.event_batch)
+        if n > 0:
+            logger.info('Insert {} batched events'.format(n))
+            DB.insert_events(self.event_batch)
+            self.event_batch.clear()
+
+        n = len(self.event_seen_on_batch)
+        if n > 0:
+            logger.info('Insert {} batched seen on events'.format(n))
+            DB.insert_event_relay(self.event_seen_on_batch)
+            self.event_seen_on_batch.clear()
 
         if self.new_on_primary:
             self.new_on_primary = False
@@ -283,7 +311,12 @@ class RelayHandler:
             self.contacts_batch['objects'].append(e)
 
     def receive_block_list(self, event):
-        BlockListEvent(event)
+        e = BlockListEvent(event)
+        for item in e.list:
+            if len(item) > 1 and item[0] == 'p' and is_hex_key(item[1]):
+                self.add_profile_if_not_exists(item[1])
+                self.blocked_profiles_batch.append(item[1])
+                print(item[1])
 
     def receive_reaction_event(self, event):
         e = ReactionEvent(event, SETTINGS.get('pubkey'))
@@ -372,12 +405,14 @@ class RelayHandler:
             if res is None:
                 if is_json(e.note_content):
                     j = json.loads(e.note_content)
-                    n = DB.get_note(SETTINGS.get('pubkey'), j['id'])
-                    if n is None:
-                        parent_event = Event(j['pubkey'], j['content'], j['created_at'], j['kind'], j['tags'], j['id'],
-                                             j['sig'])
-                        if parent_event.verify():
-                            self.receive_note_event(parent_event, 'boost')
+                    keys = ('id', 'pubkey', 'content', 'created_at', 'kind', 'tags', 'sig')
+                    if set(keys).issubset(j):
+                        n = DB.get_note(SETTINGS.get('pubkey'), j['id'])
+                        if n is None:
+                            parent_event = Event(j['pubkey'], j['content'], j['created_at'], j['kind'], j['tags'], j['id'],
+                                                 j['sig'])
+                            if parent_event.verify():
+                                self.receive_note_event(parent_event, 'boost')
                 self.add_profile_if_not_exists(e.event.public_key)
                 self.note_batch['inserts'].append(e.to_dict())
                 DB.increment_note_share_count(e.reshare_id)
@@ -385,7 +420,7 @@ class RelayHandler:
     def receive_note_event(self, event, subscription):
         if subscription == 'boost':
             logger.info('NOTE FROM BOOST CONTENT')
-        e = NoteEvent(event, SETTINGS.get('pubkey'))
+        e = NoteEvent(event, SETTINGS.get('pubkey'), subscription)
         res = next((sub for sub in self.note_batch['inserts'] if sub['id'] == e.event.id), None)
         if res is None:
             self.add_profile_if_not_exists(e.event.public_key)
@@ -750,11 +785,10 @@ class MetadataEvent:
 
 
 class NoteEvent:
-    def __init__(self, event, my_pk, from_boost=False):
+    def __init__(self, event, my_pk, subscription):
         logger.info('New note')
-        if from_boost:
-            pass
         self.event = event
+        self.subscription = subscription
         self.content = strip_tags(event.content)
         self.tags = event.tags
         self.media = []
@@ -800,19 +834,6 @@ class NoteEvent:
 
         if len(self.media) < 1 and len(urls) > 0:
             logger.info('note has urls')
-            # note = DB.get_note(SETTINGS.get('pubkey'), self.event.id)
-            # already_scraped = False
-            # scrape_fail_attempts = 0
-            # if note is not None:
-            #     logger.info('note {} already in db'.format(self.event.id))
-            #     media = json.loads(note['media'])
-            #     for item in media:
-            #         if item[1] == 'og':
-            #             already_scraped = True
-            #         elif item[1] == 'scrape_failed':
-            #             scrape_fail_attempts = int(item[0])
-
-            # if (note is None or not already_scraped) and validators.url(urls[0]) and scrape_fail_attempts < 4:
             if validators.url(urls[0]):
                 logger.info('add {} to tasks for scraping'.format(urls[0]))
                 D_TASKS.pool.add(TaskKind.FETCH_OG, {'url': urls[0], 'note_id': self.event.id})
@@ -897,6 +918,9 @@ class NoteEvent:
                     self.response_to = parents[1]
 
     def to_dict(self):
+        seen = False
+        if self.subscription == 'profile':
+            seen = True
         return {
             'id': self.event.id,
             'public_key': self.event.public_key,
@@ -908,6 +932,7 @@ class NoteEvent:
             'members': json.dumps(self.members),
             'media': json.dumps(self.media),
             'hashtags': json.dumps(self.hashtags),
+            'seen': seen,
             'raw': json.dumps(self.event.to_json_object())
         }
 
@@ -944,14 +969,15 @@ class BoostEvent:
 
 class BlockListEvent:
     def __init__(self, event):
-        logger.info('>>>>>>>>>>>>>>>>>>>>> New blocklist')
         self.event = event
+        self.list = []
+        self.set_list()
+
+    def set_list(self):
         k = bytes.fromhex(SETTINGS.get('privkey'))
         pk = PrivateKey(k)
-        raw = pk.decrypt_message(event.content, SETTINGS.get('pubkey'))
-        self.list = []
+        raw = pk.decrypt_message(self.event.content, SETTINGS.get('pubkey'))
         try:
             self.list = json.loads(raw)
-            print(self.list)
         except ValueError:
             print("unable to decode json")

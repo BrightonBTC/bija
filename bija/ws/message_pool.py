@@ -32,7 +32,7 @@ class MessagePool:
         self.notices: Queue[NoticeMessage] = Queue()
         self.eose_notices: Queue[EndOfStoredEventsMessage] = Queue()
         self.ok_notices: Queue[OkMessage] = Queue()
-        self._unique_events: set = set()
+        # self._unique_events: set = set()
         self.lock: Lock = Lock()
     
     def add_message(self, message: str, url: str):
@@ -69,11 +69,13 @@ class MessagePool:
             subscription_id = message_json[1]
             e = message_json[2]
             event = Event(e['pubkey'], e['content'], e['created_at'], e['kind'], e['tags'], e['id'], e['sig'])
-            with self.lock:
-                uid = subscription_id+event.id
-                if not uid in self._unique_events:
-                    self.events.put(EventMessage(event, subscription_id, url))
-                    self._unique_events.add(uid)
+            self.events.put(EventMessage(event, subscription_id, url))
+            # with self.lock:
+            #     uid = subscription_id+event.id
+            #     if not uid in self._unique_events:
+            #         self.events.put(EventMessage(event, subscription_id, url))
+            #         self._unique_events.add(uid)
+
         elif message_type == RelayMessageType.NOTICE:
             self.notices.put(NoticeMessage(message_json[1], url))
         elif message_type == RelayMessageType.END_OF_STORED_EVENTS:

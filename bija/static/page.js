@@ -1259,6 +1259,20 @@ class bijaNotes{
                     fetchGet('/get_share?id='+note_id, get_share_cb, {context:this})
                 })
             }
+            else if(tool == 'block'){
+                tool_el.addEventListener('click', (e) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const get_block_cb = function(response, data){
+                        if(response){
+                            popup(response)
+                            lazyLoad()
+                            data.context.setBlockForm()
+                        }
+                    }
+                    fetchGet('/confirm_block?id='+note_id, get_block_cb, {context:this})
+                })
+            }
         }
     }
 
@@ -1304,6 +1318,21 @@ class bijaNotes{
                 }
             }
             fetchFromForm('/delete_note', form, cb, {}, 'json')
+        });
+    }
+
+    setBlockForm(){
+        const form = document.querySelector("#block_form")
+        const btn = form.querySelector("input[type='submit']")
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const cb = function(response, data){
+                if(response['event_id']){
+                   location.reload()
+                }
+            }
+            fetchFromForm('/block', form, cb, {}, 'json')
         });
     }
 
@@ -1356,6 +1385,7 @@ class bijaFeed{
         this.listener = () => this.loader(this);
         window.addEventListener('scroll', this.listener);
         this.pageLoadedEvent = new Event("newContentLoaded");
+        this.requestNextPage(Math.floor(Date.now() / 1000))
     }
 
     loader(o){
