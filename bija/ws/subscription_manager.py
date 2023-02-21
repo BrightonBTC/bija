@@ -4,7 +4,8 @@ import time
 from bija.app import app, RELAY_MANAGER
 from bija.args import LOGGING_LEVEL
 from bija.db import BijaDB
-from bija.subscriptions import SubscribeThread, SubscribePrimary, SubscribeFeed, SubscribeProfile, SubscribeTopic
+from bija.subscriptions import SubscribeThread, SubscribePrimary, SubscribeFeed, SubscribeProfile, SubscribeTopic, \
+    SubscribeMessages, SubscribeFollowerList
 
 DB = BijaDB(app.session)
 logger = logging.getLogger(__name__)
@@ -22,72 +23,42 @@ class SubscriptionManager:
         self.subscribe(name)
 
     def remove_subscription(self, name):
-        self.subscriptions.pop(name)
+        del self.subscriptions[name]
         RELAY_MANAGER.close_subscription(name)
 
     def clear_subscriptions(self):
+        remove_list = []
         for sub in self.subscriptions:
             if sub != 'primary':
-                self.remove_subscription(sub)
+                remove_list.append(sub)
+        for sub in remove_list:
+            self.remove_subscription(sub)
 
     def next_round(self):
 
         for relay in RELAY_MANAGER.relays:
-            print('-------------', relay)
             for s in RELAY_MANAGER.relays[relay].subscriptions:
-                print(RELAY_MANAGER.relays[relay].subscriptions[s].to_json_object())
-                # print(relay, '>>> ', RELAY_MANAGER.relays[relay].subscriptions[s].relay)
                 sub = RELAY_MANAGER.relays[relay].subscriptions[s]
-                print('subs in relay', len(RELAY_MANAGER.relays[relay].subscriptions))
-                # print(sub.id, sub.relay, sub.paused, sub.batch)
                 if sub.paused and sub.paused < int(time.time()) - 30:
-                    print('SUBSCRIBE >>>>>', sub.id, sub.relay, sub.paused, sub.batch)
                     sub.paused = False
                     self.subscribe(s, [relay], 0)
-            print('-------------')
 
     def next_batch(self, relay, name):
-
         if name in self.subscriptions and self.subscriptions[name]['batch_count'] > 1:
-            print('==================')
-            print('NEXT Batched Subscription', relay, name)
             if relay in RELAY_MANAGER.relays and name in RELAY_MANAGER.relays[relay].subscriptions:
 
                 if RELAY_MANAGER.relays[relay].subscriptions[name].batch >= self.subscriptions[name]['batch_count'] - 1:
-                    print('Batch limit reached, setting to 0 and pausing')
                     RELAY_MANAGER.relays[relay].subscriptions[name].batch = 0
                     RELAY_MANAGER.relays[relay].subscriptions[name].paused = time.time()
                 else:
-                    print('Resetting Subscription', name, relay, RELAY_MANAGER.relays[relay].subscriptions[name].batch + 1)
                     self.subscribe(
                         name,
                         [relay],
                         RELAY_MANAGER.relays[relay].subscriptions[name].batch + 1
                     )
-            print('// ==================')
 
-
-            # if relay in RELAY_MANAGER.relays:
-            #     r = RELAY_MANAGER.relays[relay]
-            #     if name in r.subscriptions:
-            #         s = r.subscriptions[name]
-            #         if s.batch >= self.subscriptions[name]['batch_count'] - 1:
-            #             s.batch = 0
-            #             r.subscriptions[name].paused = time.time()
-            #             print('------------- PAUSED', r.subscriptions[name].id, r.subscriptions[name].relay, r.subscriptions[name].paused, r.subscriptions[name].batch)
-            #         else:
-            #             s.batch += 1
-            #             self.subscribe(name, [relay], s.batch)
-
-            # if self.subscriptions[name]['batch_pos'] >= self.subscriptions[name]['batch_count']-1:
-            #     self.subscriptions[name]['batch_pos'] = 0
-            #     self.subscriptions[name]['paused'] = time.time()
-            # else:
-            #     self.subscriptions[name]['batch_pos'] += 1
-            #     self.subscribe(name)
 
     def subscribe(self, name, relay=[], batch=0):
-        print('>>>> SUB', name, relay)
         if name == 'primary':
             SubscribePrimary(
                 name,
@@ -109,7 +80,7 @@ class SubscriptionManager:
                 batch,
                 self.subscriptions[name]['kwargs']['term']
             )
-        elif name == 'profile':
+        elif 'profile:' in name:
             SubscribeProfile(
                 name,
                 relay,
@@ -118,12 +89,28 @@ class SubscriptionManager:
                 self.subscriptions[name]['kwargs']['since'],
                 self.subscriptions[name]['kwargs']['ids']
             )
+        elif 'followers:' in name:
+            SubscribeFollowerList(
+                name,
+                relay,
+                batch,
+                self.subscriptions[name]['kwargs']['pubkey'],
+                self.subscriptions[name]['kwargs']['since']
+            )
         elif name == 'note-thread':
             SubscribeThread(
                 name,
                 relay,
                 batch,
                 self.subscriptions[name]['kwargs']['root']
+            )
+        elif name == 'messages':
+            SubscribeMessages(
+                name,
+                relay,
+                batch,
+                self.subscriptions[name]['kwargs']['pubkey'],
+                self.subscriptions[name]['kwargs']['since']
             )
 
 

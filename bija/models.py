@@ -24,15 +24,18 @@ class EventRelay(Base):
 
 class Profile(Base):
     __tablename__ = "profile"
-    public_key = Column(String(64), primary_key=True)
+    id = Column(Integer, primary_key=True)
+    public_key = Column(String(64), unique=True)
     name = Column(String, nullable=True)
     display_name = Column(String, nullable=True)
     nip05 = Column(String, nullable=True)
     pic = Column(String, nullable=True)
     about = Column(String, nullable=True)
     updated_at = Column(Integer, default=0)
+    followers_upd = Column(Integer)
     nip05_validated = Column(Boolean, default=False)
     blocked = Column(Boolean, default=False)
+    relays = Column(String)
     raw = Column(String)
 
     notes = relationship("Note", back_populates="profile")

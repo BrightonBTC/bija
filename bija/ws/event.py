@@ -14,6 +14,7 @@ class EventKind(IntEnum):
     BOOST = 6
     REACTION = 7
     BLOCK_LIST = 30000
+    RELAY_LIST = 10002
 
 class Event():
     def __init__(

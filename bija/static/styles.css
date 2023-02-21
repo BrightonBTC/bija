@@ -432,12 +432,12 @@ hr{
 .popup{
     background: var(--bg-clr1);
     position: fixed;
-    top: 10%;
+    top: 50%;
     left: 50%;
-    transform: translate(-50%, 0%);
+    transform: translate(-50%, -50%);
     padding: var(--spacing-mid);
     max-width: 95vw;
-    max-height: 80%;
+    max-height: 95vh;
     overflow: auto;
     z-index: 1001;
     border: 1px solid var(--bdr-clr-2);
@@ -445,6 +445,9 @@ hr{
 }
 .popup > * {
     max-width: calc(95vw - var(--spacing-mid)*2 - 20px);
+}
+.popup > img {
+    max-height: calc(95vh - var(--spacing-mid)*2 - 20px);
 }
 
 .user-image{
@@ -1028,6 +1031,7 @@ svg.lightning *{
     padding: 0 var(--spacing-mid);
     position: relative;
     font-size: var(--fs-mid1);
+    animation: fadeIn .3s linear;
 }
 .note-container > *{
     margin: var(--spacing-mid);
@@ -1268,7 +1272,7 @@ svg.lightning *{
 }
 .note-opts .opts-menu{
     font-size: var(--fs-tiny);
-    visibility: hidden;
+    display: none;
     position: absolute;
     width: 100px;
     background: var(--bg-clr1);
@@ -1287,7 +1291,7 @@ svg.lightning *{
     cursor: pointer;
 }
 .note-opts:hover .opts-menu{
-    visibility: visible;
+    display: block;
 }
 
 .nip5{

@@ -67,37 +67,32 @@ class SubscribePrimary(Subscribe):
 
     def build_filters(self):
         logger.info('build subscription filters')
-        kinds = [EventKind.SET_METADATA,
-                 EventKind.TEXT_NOTE, EventKind.BOOST,
+        kinds = [EventKind.TEXT_NOTE, EventKind.BOOST,
                  EventKind.RECOMMEND_RELAY,
-                 EventKind.CONTACTS,
                  EventKind.ENCRYPTED_DIRECT_MESSAGE,
                  EventKind.DELETE,
                  EventKind.REACTION]
         profile_filter = Filter(authors=[self.pubkey], kinds=kinds, since=self.since)
+        contacts_filter = Filter(authors=[self.pubkey], kinds=[EventKind.CONTACTS], limit=1)
         blocked_filter = Filter(authors=[self.pubkey], kinds=[EventKind.BLOCK_LIST], limit=1)
-        kinds = [EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION]
+        md_filter = Filter(authors=[self.pubkey], kinds=[EventKind.SET_METADATA], limit=1)
+        kinds = [EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION, EventKind.ENCRYPTED_DIRECT_MESSAGE]
         mentions_filter = Filter(tags={'#p': [self.pubkey]}, kinds=kinds, since=self.since)
         followers_filter = Filter(tags={'#p': [self.pubkey]}, kinds=[EventKind.CONTACTS])
         messages_filter = Filter(authors=[self.pubkey], kinds=[EventKind.ENCRYPTED_DIRECT_MESSAGE],
                                  since=self.since)
-        f = [profile_filter, mentions_filter, followers_filter, messages_filter, blocked_filter]
-        start = int(self.batch * 1000)
-        end = start + 1000
+        f = [profile_filter, contacts_filter, md_filter, mentions_filter, messages_filter, blocked_filter, followers_filter]
+        start = int(self.batch * 256)
+        end = start + 256
         following_pubkeys = DB.get_following_pubkeys(SETTINGS.get('pubkey'), start, end)
 
         if len(following_pubkeys) > 0:
             following_filter = Filter(
                 authors=following_pubkeys,
-                kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION, EventKind.DELETE],
+                kinds=[EventKind.SET_METADATA, EventKind.CONTACTS, EventKind.ENCRYPTED_DIRECT_MESSAGE, EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION, EventKind.DELETE],
                 since=self.since
             )
-            following_profiles_filter = Filter(
-                authors=following_pubkeys,
-                kinds=[EventKind.SET_METADATA, EventKind.CONTACTS, EventKind.ENCRYPTED_DIRECT_MESSAGE],
-            )
             f.append(following_filter)
-            f.append(following_profiles_filter)
 
         topics = DB.get_topics()
         if len(topics) > 0:
@@ -150,8 +145,9 @@ class SubscribeProfile(Subscribe):
     def build_filters(self):
         logger.info('build subscription filters')
         f = [
+            Filter(authors=[self.pubkey], kinds=[EventKind.RELAY_LIST], limit=1),
             Filter(authors=[self.pubkey], kinds=[EventKind.SET_METADATA, EventKind.CONTACTS]),
-            Filter(tags={'#p': [self.pubkey]}, kinds=[EventKind.CONTACTS]),
+            # Filter(tags={'#p': [self.pubkey]}, kinds=[EventKind.CONTACTS]),
             Filter(ids=self.ids, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION])
         ]
         if self.since is None:
@@ -163,15 +159,30 @@ class SubscribeProfile(Subscribe):
                    kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.DELETE, EventKind.REACTION],
                    since=self.since)
         f.append(main_filter)
-        start = int(self.batch * 1000)
-        end = start + 1000
+        start = int(self.batch * 256)
+        end = start + 256
         followers = DB.get_following_pubkeys(self.pubkey, start, end)
         if followers is not None and len(followers) > 0:
             contacts_filter = Filter(authors=followers, kinds=[EventKind.SET_METADATA])
             f.append(contacts_filter)
-
         self.filters = Filters(f)
 
+class SubscribeFollowerList(Subscribe):
+    def __init__(self, name, relay, batch, pubkey, since):
+        super().__init__(name, relay, batch)
+        self.pubkey = pubkey
+        self.since = since
+        self.build_filters()
+        self.send()
+
+    def build_filters(self):
+        f = [Filter(tags={'#p': [self.pubkey]}, kinds=[EventKind.CONTACTS], since=self.since)]
+        start = int(self.batch * 256)
+        end = start + 256
+        followers = DB.get_follower_pubkeys(self.pubkey, start, end)
+        if followers is not None and len(followers) > 0:
+            f.append(Filter(authors=followers, kinds=[EventKind.CONTACTS], since=self.since))
+        self.filters = Filters(f)
 
 class SubscribeThread(Subscribe):
     def __init__(self, name, relay, batch, root):
@@ -216,4 +227,21 @@ class SubscribeFeed(Subscribe):
             Filter(tags={'#e': self.ids}, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION]),
             # event responses
             Filter(ids=self.ids, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION])
+        ])
+
+
+
+class SubscribeMessages(Subscribe):
+    def __init__(self, name, relay, batch, pubkey, since):
+        super().__init__(name, relay, batch)
+        self.pubkey = pubkey
+        self.since = since
+        self.build_filters()
+        self.send()
+
+    def build_filters(self):
+        logger.info('build subscription filters')
+        self.filters = Filters([
+            Filter(authors=[self.pubkey], kinds=[EventKind.ENCRYPTED_DIRECT_MESSAGE], since=self.since),
+            Filter(tags={'#p': [self.pubkey]}, kinds=[EventKind.ENCRYPTED_DIRECT_MESSAGE], since=self.since)
         ])

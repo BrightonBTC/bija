@@ -15,9 +15,9 @@ DEFAULT_RELAYS = [
 ]
 
 default_settings = {
-    'pow_default': '12',
-    'pow_default_enc': '12',
-    'pow_required': '8',
+    'pow_default': '16',
+    'pow_default_enc': '16',
+    'pow_required': '16',
     'pow_required_enc': '16',
     'theme': 'default',
     'spacing': '8',

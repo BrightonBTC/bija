@@ -74,6 +74,7 @@ class Relay:
 
     def close_subscription(self, id: str) -> None:
         with self.lock:
+            self.publish('["CLOSE", "{}"]'.format(id))
             self.subscriptions.pop(id)
 
     def update_subscription(self, id: str, filters: Filters) -> None:

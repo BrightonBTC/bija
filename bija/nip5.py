@@ -54,16 +54,12 @@ class Nip5:
                     self.response = response
             except requests.exceptions.HTTPError as e:
                 logger.error("Http Error: {}".format(e))
-                pass
             except requests.exceptions.ConnectionError as e:
                 logger.error("Error Connecting:".format(e))
-                pass
             except requests.exceptions.Timeout as e:
                 logger.error("Timeout Error:".format(e))
-                pass
             except requests.exceptions.RequestException as e:
                 logger.error("OOps: Something Else".format(e))
-                pass
 
 
     def process(self):
@@ -79,7 +75,5 @@ class Nip5:
                 self.pk = d['names'][self.name.lower()]
         except ValueError:
             logging.error(traceback.format_exc())
-            pass
         except Exception:
             logging.error(traceback.format_exc())
-            pass

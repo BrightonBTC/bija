@@ -1,5 +1,46 @@
-<ul>
+<div>
+<form id="relay_adder"></form>
+<table>
+    <tr class="sm">
+        <th>Relay</th>
+        <th>Read</th>
+        <th>Write</th>
+        <th>Preferred</th>
+        <th>Remove</th>
+    </tr>
 {%- for relay in relays: -%}
-    <li class="relay" data-url="{{relay.name}}"><span class="led"></span>{{relay.name}} &nbsp; <img src="/static/close.svg" class="del-relay icon"></li>
+    <tr class="relay" data-url="{{relay.name}}">
+        <td><span class="led"></span> {{relay.name}}</td>
+        <td>
+            {%- if relay.receive -%}
+            <input type="checkbox" class="relay_setting" data-setting="receive" checked>
+            {%- else -%}
+            <input type="checkbox" class="relay_setting" data-setting="receive">
+            {%- endif -%}
+        </td>
+        <td>
+            {%- if relay.send -%}
+            <input type="checkbox" class="relay_setting" data-setting="send" checked>
+            {%- else -%}
+            <input type="checkbox" class="relay_setting" data-setting="send">
+            {%- endif -%}
+        </td>
+        <td>
+            {%- if relay.fav -%}
+            <input type="checkbox" class="relay_setting" data-setting="fav" checked>
+            {%- else -%}
+            <input type="checkbox" class="relay_setting" data-setting="fav">
+            {%- endif -%}
+        </td>
+        <td><img src="/static/close.svg" class="del-relay icon"></td>
+    </tr>
 {%- endfor -%}
-</ul>
+    <tr>
+        <td><input type="text" form="relay_adder" name="newrelay" class="newrelay" placeholder="wss://"></td>
+        <td><input type="checkbox" form="relay_adder" name="relay_read"></td>
+        <td><input type="checkbox" form="relay_adder" name="relay_write"></td>
+        <td><input type="checkbox" form="relay_adder" name="relay_fav"></td>
+        <td><input type="submit" form="relay_adder" name="addrelay" id="addrelay" class="right" value="+"></td>
+    </tr>
+</table>
+</div>

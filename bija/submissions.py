@@ -172,9 +172,7 @@ class SubmitNote(Submit):
                 index = len(self.tags) - offset
                 self.content = self.content.replace(match, "#[{}]".format(index))
         for match in note_matches:
-            print('MATCH', match)
             match = match[1:-1]
-            print('MATCH', match)
             self.tags.append(["e", bech32_to_hex64('note', match)])
             index = len(self.tags) - offset
             self.content = self.content.replace(match, "#[{}]".format(index))
@@ -186,18 +184,25 @@ class SubmitNote(Submit):
             for match in matches:
                 self.tags.append(["t", match[1:].strip()])
 
-    # def store(self):
-    #     logger.info('insert note')
-    #     DB.insert_note(
-    #         self.event_id,
-    #         SETTINGS.get('pubkey'),
-    #         self.content,
-    #         self.response_to,
-    #         self.thread_root,
-    #         self.reshare,
-    #         self.created_at,
-    #         json.dumps(self.members)
-    #     )
+
+class SubmitRelayList(Submit):
+    def __init__(self):
+        super().__init__()
+        logger.info('SUBMIT relay list')
+        self.kind = EventKind.RELAY_LIST
+        self.compose()
+        self.send()
+
+    def compose(self):
+        logger.info('compose')
+        relays = DB.get_relays(fav=True)
+        for r in relays:
+            if r.send and r.receive:
+                self.tags.append(["r", r.name])
+            elif r.send:
+                self.tags.append(["r", r.name, "write"])
+            elif r.receive:
+                self.tags.append(["r", r.name, "read"])
 
 
 class SubmitFollowList(Submit):
@@ -220,19 +225,10 @@ class SubmitBlockList(Submit):
         logger.info('SUBMIT block list')
         self.kind = EventKind.BLOCK_LIST
         self.tags.append(['d', 'mute'])
-        encrypted = self.encrypt(json.dumps(l), SETTINGS.get('pubkey'))
+        encrypted = encrypt(json.dumps(l), SETTINGS.get('pubkey'))
         if encrypted:
             self.content = encrypted
             self.send()
-
-    def encrypt(self, message, public_key):
-        logger.info('encrypt block list')
-        try:
-            k = bytes.fromhex(SETTINGS.get('privkey'))
-            pk = PrivateKey(k)
-            return pk.encrypt_message(message, public_key)
-        except ValueError:
-            return False
 
 
 class SubmitEncryptedMessage(Submit):
@@ -256,16 +252,16 @@ class SubmitEncryptedMessage(Submit):
                 pk = v[1]
         if pk is not None and txt is not None:
             self.tags.append(['p', pk])
-            self.content = self.encrypt(txt, pk)
+            self.content = encrypt(txt, pk)
             self.send()
         else:
             self.event_id = False
 
-    def encrypt(self, message, public_key):
-        logger.info('encrypt message')
-        try:
-            k = bytes.fromhex(SETTINGS.get('privkey'))
-            pk = PrivateKey(k)
-            return pk.encrypt_message(message, public_key)
-        except ValueError:
-            return False
+def encrypt(message, public_key):
+    logger.info('encrypt message')
+    try:
+        k = bytes.fromhex(SETTINGS.get('privkey'))
+        pk = PrivateKey(k)
+        return pk.encrypt_message(message, public_key)
+    except ValueError:
+        return False

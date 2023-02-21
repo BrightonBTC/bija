@@ -37,10 +37,10 @@ class Search:
                 self.by_hex()
             elif is_bech32_key('npub', self.term):
                 self.by_npub()
+            elif is_bech32_key('note', self.term):
+                self.by_note()
             elif is_nip05(self.term):
                 self.by_nip05()
-            else:
-                self.message = "Nothing found. Please try again with a valid public key or nip-05 identifier."
         else:
             self.message = "no search term found!"
 
@@ -64,6 +64,13 @@ class Search:
             self.redirect = '/profile?pk={}'.format(b_key)
         else:
             self.message = 'invalid npub'
+
+    def by_note(self):
+        b_key = bech32_to_hex64('note', self.term)
+        if b_key:
+            self.redirect = '/note?id={}'.format(b_key)
+        else:
+            self.message = 'invalid note'
 
     def by_nip05(self):
         profile = DB.get_pk_by_nip05(self.term)

@@ -29,7 +29,7 @@
         <div class="note-media">{{note['media'] | process_media_attachments | safe}}</div>
         {%- if note['reshare'] is not none -%}
             {%- if note['reshare'] is string -%}
-                <div class="note-container placeholder sm" data-id="{{note['reshare']}}">Event not yet seen on network ({{note['reshare']}})</div>
+                <div class="note-container placeholder sm" data-id="{{note['reshare']}}"><div class="lds-ellipsis"><div></div><div></div><div></div><div></div></div></div>
             {%- else -%}
             {%- with item = note['reshare'], is_reshare = true -%}
             {%- include 'thread.item.html' -%}

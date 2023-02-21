@@ -2,7 +2,9 @@
 {%- if item['current'] -%}
 <a id="focussed"></a>
 {%- endif -%}
-{%- if item['deleted'] is none -%}
+{%- if item['deleted'] -%}
+{%- include 'deleted.note.html' -%}
+{%- else -%}
 <div class="note-container {{ item['class'] }}" data-id="{{item['id']}}">
     <div class="thread-marker"></div>
     <div class="note-image">
@@ -15,6 +17,4 @@
     {%- include 'note.html' -%}
     </div>
 </div>
-{%- else -%}
-{%- include 'deleted.note.html' -%}
 {%- endif -%}
