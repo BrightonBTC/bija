@@ -712,18 +712,56 @@ class bijaSettings{
 class bijaThread{
 
     constructor(){
-        this.root = false;
-        this.focussed = false;
-        this.replies = [];
         document.addEventListener("newNote", (event)=>{
             console.log("newNote")
             const el = document.querySelector(".note-container[data-id='"+event.detail.id+"']")
             console.log(el)
             if( (el && el.classList.contains('placeholder')) || !el){
-
                 fetchGet('/thread_item?id='+event.detail.id, this.processNewNoteInThread, {'elem': el, 'context':this})
-
             }
+        });
+        const items = document.querySelectorAll(".note-container")
+        if (items.length > 1){
+            items[0].classList.add('ancestor')
+        }
+        const reply_items = document.querySelectorAll(".note-container.reply")
+        const main_item = document.querySelector(".note-container.main")
+        if (reply_items.length > 0 && main_item){
+            main_item.classList.add('ancestor')
+        }
+        const load_link = document.querySelector(".load_more")
+        if(load_link){
+            this.setLoadMore(load_link)
+        }
+    }
+
+    setLoadMore(load_link){
+
+        load_link.addEventListener('click', (e) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const cb = function(response, data){
+                if(response.length > 0){
+                    const doc = new DOMParser().parseFromString(response, "text/html")
+                    const new_elem = doc.body.firstChild
+                    new_elem.classList.add('ancestor')
+                    load_link.parentNode.insertAdjacentElement('afterend', new_elem);
+                    const root = document.querySelector(".note-container.root")
+                    if(new_elem.dataset.parent){
+                        if(root && new_elem.dataset.parent.length < 1 && new_elem.dataset.root == root.dataset.id){
+                            load_link.parentNode.remove()
+                        }
+                        else{
+                            load_link.dataset.rel = new_elem.dataset.parent
+                        }
+                        document.dispatchEvent(new Event('newContentLoaded'))
+                    }
+                    else{
+                        load_link.parentNode.remove()
+                    }
+                }
+            }
+            fetchGet('/thread_item?id='+encodeURIComponent(load_link.dataset.rel), cb, {})
         });
     }
 
@@ -1877,15 +1915,13 @@ function noteObserver(elems){
 }
 function fetchNote(elem, id){
     const cb = function(response, data){
-        console.log(response)
         if(response.length > 0){
-            elem.classList.remove("placeholder");
             const doc = new DOMParser().parseFromString(response, "text/html")
             const htm = doc.body.firstChild
-            console.log(elem)
-            console.log(htm)
-            elem.replaceWith(htm)
-            lazyLoad()
+            if(!htm.classList.contains('placeholder')){
+                elem.replaceWith(htm)
+                lazyLoad()
+            }
         }
     }
     fetchGet('/thread_item?id='+encodeURIComponent(id), cb, {})

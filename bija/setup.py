@@ -50,14 +50,13 @@ def setup():
             public_key = pk.public_key.hex()
 
             print('-----------------')
-            print("Setup complete. Please backup your keys. Both hex and bech 32, and mnemonic encodings are provided:")
-            print("If your not sure which to use then we recommend backing them all up")
+            print("Setup complete. Please backup your keys. Both hex and bech 32 encodings are provided:")
+            print("If your not sure which to use then we recommend backing them both up")
             print(f"{bcolors.OKGREEN}Share your PUBLIC key with friends{bcolors.ENDC}")
             print(f"{bcolors.OKGREEN}Never share your PRIVATE key with anyone. Keep it safe{bcolors.ENDC}")
             print('-----------------')
             print(f"{bcolors.OKGREEN}Private key:{bcolors.ENDC}")
 
-            print(f"{bcolors.OKBLUE}Mnemonic{bcolors.ENDC} ", "{}{}:{}".format(bcolors.OKCYAN, bip39.encode_bytes(bytes.fromhex(PK)), bcolors.ENDC))
             print(f"{bcolors.OKBLUE}HEX{bcolors.ENDC} ", PK)
             print(f"{bcolors.OKBLUE}Bech32{bcolors.ENDC} ", hex64_to_bech32('nsec', PK))
             print('-----------------')

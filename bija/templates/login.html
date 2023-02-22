@@ -25,10 +25,6 @@
                     <p>Already have a profile you want to use?</p>
                     <p class="sm">Enter your key (either hex or npub format)</p>
                     <input type="text" id="private_key" name="private_key"  placeholder="Private Key (leave blank to create a new one)">
-                    <p>OR enter your mnemonic.</p>
-                    <textarea name="mnemonic" placeholder="24 word mnemonic phrase"></textarea>
-
-
                 </div>
                 <div><input type="button" class="setup right" value="Continue"></div>
             </div>
@@ -71,16 +67,26 @@
                 <p class="bg2 pad-tiny"><span class="tag">npub</span> {{data['npub']}}</p>
 
                 <h3>Private Key:  </h3>
-                <p>Your mnemonic phrase is a representation of your private key. Back it up somewhere safe and never share it with anyone else.</p>
-                <span class="tag">Mnemonic phrase</span>
-                <span class="mnemonic pad-sm">{{data['mnem']}}</span>
-                <p class="sm">* if you prefer other formats for your keys then you can refer to the settings page once logged in</p>
+                <p class="bg2 pad-tiny"><span class="tag">nsec</span> {{data['nsec']}}</p>
 
             </div>
             <div><input type="submit" id="confirm_new_keys" name="confirm_new_keys" class="right" value="I've backed up my mnemonic, continue"></div>
         {%- endif -%}
         </form>
+        <div class="card bg2">
+            <h1>Welcome to Bija!</h1>
+            <p>Please be aware that this is an alpha release of experimental software, is provided as is, and without any implication of warranty or liability.</p>
+            <hr>
+            <p>If you would like to support my work then please consider sending a donation with bitcoin/lightning.</p>
+            <p class="sm"><span class="tag">Lightning Address</span>topliquor87@walletofsatoshi.com</p>
+            <p class="sm"><span class="tag">On Chain</span>bc1qawh3jreepchfw5nmfm9qpxdyla4dx0kynfnv27</p>
+            <hr>
+            <p>Feel free to follow me on Nostr:</p>
+            <p class="sm"><span class="tag">Nip-05</span>CarlosAutonomous@rebelweb.co.uk</p>
+            <p class="sm"><span class="tag">npub</span>npub1qqqqqqqut3z3jeuxu70c85slaqq4f87unr3vymukmnhsdzjahntsfmctgs</p>
+        </div>
     </div>
+
 </div>
 
 </body>

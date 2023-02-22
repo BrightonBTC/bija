@@ -132,7 +132,7 @@ def login_page():
                 login_state = LoginState.NEW_KEYS
                 data = {
                     'npub': hex64_to_bech32("npub", SETTINGS.get('pubkey')),
-                    'mnem': bip39.encode_bytes(bytes.fromhex(SETTINGS.get('privkey')))
+                    'nsec':hex64_to_bech32("nsec", SETTINGS.get('privkey'))
                 }
                 SETTINGS.set('new_keys', None)
             elif has_relays is None:
@@ -376,10 +376,14 @@ def note_page():
     return render_template("thread.html",
                            page_id="note",
                            title="Note",
-                           notes=t.result_set,
+                           #notes=t.notes,
+                           root=t.root,
+                           parent=t.parent,
+                           note=t.note,
+                           replies=t.replies,
                            members=t.profiles,
                            profile=profile,
-                           root=note_id, pubkey=SETTINGS.get('pubkey'))
+                           pubkey=SETTINGS.get('pubkey'))
 
 @app.route('/boosts', methods=['GET'])
 @login_required
@@ -498,7 +502,7 @@ def thread_item():
         profile = DB.get_profile(SETTINGS.get('pubkey'))
         return render_template("thread.item.html", item=note, profile=profile)
     else:
-        return ""
+        return render_template("thread.placeholder.html", id=note_id)
 
 
 @app.route('/read_more', methods=['GET'])
@@ -1112,12 +1116,7 @@ def process_login():
             return False
 
     elif 'load_private_key' in request.form.keys():
-        if len(request.form['mnemonic'].strip()) > 0:
-            if len(request.form['mnemonic'].split()) == 24 and bip39.check_phrase(request.form['mnemonic']):
-                private_key = bip39.decode_phrase(request.form['mnemonic']).hex()
-            else:
-                return False
-        elif len(request.form['private_key'].strip()) < 1:  # generate a new key
+        if len(request.form['private_key'].strip()) < 1:  # generate a new key
             private_key = None
             SETTINGS.set("new_keys", True)
         elif is_hex_key(request.form['private_key'].strip()):

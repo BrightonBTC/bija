@@ -236,13 +236,13 @@ hr{
 }
 
 .bg1{
-    background: var(--bg-clr1);
+    background: var(--bg-clr1) !important;
 }
 .bg2{
-    background: var(--bg-clr2);
+    background: var(--bg-clr2) !important;
 }
 .bg3{
-    background: var(--bg-clr3);
+    background: var(--bg-clr3) !important;
 }
 
 .icon{
@@ -1123,6 +1123,7 @@ svg.lightning *{
     border-style: dotted;
     top: 20px;
     bottom: 50%;
+    min-height: calc(var(--pfp-dim) + var(--spacing-mid));
 }
 .note-container.deleted  .thread-marker{
     display: none;
@@ -1143,6 +1144,9 @@ svg.lightning *{
     font-size: var(--fs-sm);
     flex: 1;
     text-align: center;
+}
+.note-container.connector svg{
+    fill: var(--lnk-clr);
 }
 .note-container.connector .thread-marker{
     border-style: dashed;

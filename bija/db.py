@@ -1098,6 +1098,13 @@ class BijaDB:
             q = q.filter(Note.id.in_(filters['id_list']))
         if 'search' in filters:
             q = q.filter(Note.content.like(f"%{filters['search']}%"))
+        if 'replies' in filters:
+            q = q.filter(
+                or_(
+                    Note.response_to==filters['replies'],
+                    Note.thread_root==filters['replies']
+                )
+            )
         q = q.order_by(Note.seen.asc(), Note.created_at.desc()).limit(50)
         return q.all()
 
