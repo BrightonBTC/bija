@@ -3,16 +3,21 @@ import json
 DEFAULT_RELAYS = [
     'wss://nostr.drss.io',
     'wss://nostr-pub.wellorder.net',
-    'wss://offchain.pub',
     'wss://relay.damus.io',
     'wss://sg.qemura.xyz',
-    'wss://brb.io'
+    'wss://brb.io',
+    'wss://relay.nostrati.com',
+    'wss://pow.nostrati.com',
+    'wss://relay.snort.social',
+    'wss://eden.nostr.land',
+    'wss://nostr.zebedee.cloud',
+    'wss://offchain.pub'
 ]
 
 default_settings = {
-    'pow_default': '12',
-    'pow_default_enc': '12',
-    'pow_required': '8',
+    'pow_default': '16',
+    'pow_default_enc': '16',
+    'pow_required': '16',
     'pow_required_enc': '16',
     'theme': 'default',
     'spacing': '8',

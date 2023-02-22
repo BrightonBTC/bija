@@ -10,7 +10,6 @@ class Filter:
             since: int=None, 
             until: int=None, 
             tags: "dict[str, list[str]]"=None,
-            subid: "dict[str, list[str]]"=None,
             limit: int=None) -> None:
         self.IDs = ids
         self.kinds = kinds
@@ -18,7 +17,6 @@ class Filter:
         self.since = since
         self.until = until
         self.tags = tags
-        self.subid = subid
         self.limit = limit
 
     def matches(self, event: Event) -> bool:
@@ -62,9 +60,6 @@ class Filter:
             res["until"] = self.until
         if self.tags is not None:
             for tag, values in self.tags.items():
-                res[tag] = values
-        if self.subid is not None:
-            for tag, values in self.subid.items():
                 res[tag] = values
         if self.limit is not None:
             res["limit"] = self.limit

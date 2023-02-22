@@ -236,13 +236,13 @@ hr{
 }
 
 .bg1{
-    background: var(--bg-clr1);
+    background: var(--bg-clr1) !important;
 }
 .bg2{
-    background: var(--bg-clr2);
+    background: var(--bg-clr2) !important;
 }
 .bg3{
-    background: var(--bg-clr3);
+    background: var(--bg-clr3) !important;
 }
 
 .icon{
@@ -432,12 +432,12 @@ hr{
 .popup{
     background: var(--bg-clr1);
     position: fixed;
-    top: 10%;
+    top: 50%;
     left: 50%;
-    transform: translate(-50%, 0%);
+    transform: translate(-50%, -50%);
     padding: var(--spacing-mid);
     max-width: 95vw;
-    max-height: 80%;
+    max-height: 95vh;
     overflow: auto;
     z-index: 1001;
     border: 1px solid var(--bdr-clr-2);
@@ -445,6 +445,9 @@ hr{
 }
 .popup > * {
     max-width: calc(95vw - var(--spacing-mid)*2 - 20px);
+}
+.popup > img {
+    max-height: calc(95vh - var(--spacing-mid)*2 - 20px);
 }
 
 .user-image{
@@ -1028,6 +1031,7 @@ svg.lightning *{
     padding: 0 var(--spacing-mid);
     position: relative;
     font-size: var(--fs-mid1);
+    animation: fadeIn .3s linear;
 }
 .note-container > *{
     margin: var(--spacing-mid);
@@ -1119,6 +1123,7 @@ svg.lightning *{
     border-style: dotted;
     top: 20px;
     bottom: 50%;
+    min-height: calc(var(--pfp-dim) + var(--spacing-mid));
 }
 .note-container.deleted  .thread-marker{
     display: none;
@@ -1139,6 +1144,9 @@ svg.lightning *{
     font-size: var(--fs-sm);
     flex: 1;
     text-align: center;
+}
+.note-container.connector svg{
+    fill: var(--lnk-clr);
 }
 .note-container.connector .thread-marker{
     border-style: dashed;
@@ -1268,7 +1276,7 @@ svg.lightning *{
 }
 .note-opts .opts-menu{
     font-size: var(--fs-tiny);
-    visibility: hidden;
+    display: none;
     position: absolute;
     width: 100px;
     background: var(--bg-clr1);
@@ -1287,7 +1295,7 @@ svg.lightning *{
     cursor: pointer;
 }
 .note-opts:hover .opts-menu{
-    visibility: visible;
+    display: block;
 }
 
 .nip5{
@@ -1334,7 +1342,7 @@ p.note-tools {
     padding: var(--spacing-sm);
     font-size: var(--fs-mid1);
     background: var(--bg-clr2);
-    transform: translate(-50%, -100%);
+    transform: translate(-50%, -50%);
     border-radius: var(--rnd);
     display: none;
     z-index: 5;

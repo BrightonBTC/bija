@@ -112,8 +112,9 @@ def is_nip05(name: str):
         test_str = 'test@{}'.format(parts[0])
         parts.insert(0, '_')
 
-    regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
-    if re.fullmatch(regex, test_str):
+    regex = re.compile(r'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}')
+    match = re.fullmatch(regex, test_str)
+    if match is not None:
         return parts
     else:
         return False
@@ -180,7 +181,7 @@ def request_relay_data(url):
 
 def request_url_head(url):
     try:
-        h = requests.head(url, timeout=1)
+        h = requests.head(url, timeout=1, headers={'User-Agent': 'Bija Nostr Client'})
         if h.status_code == 200:
             return h.headers
         return False

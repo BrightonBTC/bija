@@ -5,6 +5,9 @@
 
 {%- block content -%}
 {%- include 'profile/profile.header.html' -%}
+{%- if profile['blocked'] -%}
+<h1>BLOCKED</h1>
+{%- endif -%}
 <h2 class="posts-title">Public posts</h2>
 <div id="profile-posts" data-latest="{{latest}}">
     <div id="feed">

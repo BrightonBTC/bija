@@ -3,6 +3,8 @@ import time
 from threading import Lock
 
 from websocket import WebSocketApp, WebSocketConnectionClosedException, setdefaulttimeout
+
+from bija.args import LOGGING_LEVEL
 from bija.ws.event import Event
 from bija.ws.filter import Filters
 from bija.ws.message_pool import MessagePool
@@ -10,30 +12,33 @@ from bija.ws.message_type import RelayMessageType
 from bija.ws.subscription import Subscription
 
 import logging
+
 logger = logging.getLogger('websocket')
-logger.setLevel(logging.INFO)
+logger.setLevel(LOGGING_LEVEL)
 logger.addHandler(logging.StreamHandler())
 
 setdefaulttimeout(5)
 
+
 class RelayPolicy:
-    def __init__(self, should_read: bool=True, should_write: bool=True) -> None:
+    def __init__(self, should_read: bool = True, should_write: bool = True) -> None:
         self.should_read = should_read
         self.should_write = should_write
 
     def to_json_object(self) -> dict[str, bool]:
-        return { 
-            "read": self.should_read, 
+        return {
+            "read": self.should_read,
             "write": self.should_write
         }
 
+
 class Relay:
     def __init__(
-            self, 
-            url: str, 
-            policy: RelayPolicy, 
+            self,
+            url: str,
+            policy: RelayPolicy,
             message_pool: MessagePool,
-            subscriptions: dict[str, Subscription]={}) -> None:
+            subscriptions: dict[str, Subscription] = {}) -> None:
         self.url = url
         self.policy = policy
         self.message_pool = message_pool
@@ -50,7 +55,7 @@ class Relay:
         )
         self.active = False
 
-    def connect(self, ssl_options: dict=None):
+    def connect(self, ssl_options: dict = None):
         self.ws.run_forever(sslopt=ssl_options, ping_interval=60, ping_timeout=10, ping_payload="2", reconnect=30)
 
     def close(self):
@@ -65,10 +70,11 @@ class Relay:
 
     def add_subscription(self, id, filters: Filters, batch=0):
         with self.lock:
-            self.subscriptions[id] = Subscription(id, filters, batch)
+            self.subscriptions[id] = Subscription(id, filters, self.url, batch)
 
     def close_subscription(self, id: str) -> None:
         with self.lock:
+            self.publish('["CLOSE", "{}"]'.format(id))
             self.subscriptions.pop(id)
 
     def update_subscription(self, id: str, filters: Filters) -> None:
@@ -115,7 +121,7 @@ class Relay:
         if message_type == RelayMessageType.EVENT:
             if not len(message_json) == 3:
                 return False
-            
+
             subscription_id = message_json[1]
             with self.lock:
                 if subscription_id not in self.subscriptions:

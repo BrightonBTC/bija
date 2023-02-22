@@ -13,16 +13,29 @@ class Event(Base):
     ts = Column(Integer)
 
 
+class EventRelay(Base):
+    __tablename__ = "event_relay"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    event_id = Column(Integer, ForeignKey("event.id"))
+    relay = Column(Integer, ForeignKey("relay.id"))
+
+    UniqueConstraint(event_id, relay, name='uix_1', sqlite_on_conflict='IGNORE')
+
+
 class Profile(Base):
     __tablename__ = "profile"
-    public_key = Column(String(64), primary_key=True)
+    id = Column(Integer, primary_key=True)
+    public_key = Column(String(64), unique=True)
     name = Column(String, nullable=True)
     display_name = Column(String, nullable=True)
     nip05 = Column(String, nullable=True)
     pic = Column(String, nullable=True)
     about = Column(String, nullable=True)
     updated_at = Column(Integer, default=0)
+    followers_upd = Column(Integer)
     nip05_validated = Column(Boolean, default=False)
+    blocked = Column(Boolean, default=False)
+    relays = Column(String)
     raw = Column(String)
 
     notes = relationship("Note", back_populates="profile")
@@ -131,7 +144,14 @@ class Relay(Base):
     __tablename__ = "relay"
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True)
-    # weight = Column(Integer)
-    # send = Column(Boolean)
-    # receive = Column(Boolean)
-    # data = Column(String)
+    fav = Column(Boolean)
+    send = Column(Boolean)
+    receive = Column(Boolean)
+    data = Column(String)
+
+
+class URL(Base):
+    __tablename__ = "url"
+    address = Column(String, primary_key=True)
+    ts = Column(Integer)
+    og = Column(String)

@@ -37,14 +37,33 @@ class BijaDB:
         self.session.query(PK).delete()
         self.session.commit()
 
-    def get_relays(self):
-        return self.session.query(Relay)
+    def get_relays(self, fav=None, send=None, receive=None):
+        q = self.session.query(Relay)
+        if fav is not None:
+            q = q.filter(Relay.fav == True)
+        if send is not None:
+            q = q.filter(Relay.send == True)
+        if receive is not None:
+            q = q.filter(Relay.receive == True)
+        return q.all()
 
-    def insert_relay(self, url):
-        self.session.add(Relay(
-            name=url
+    def get_relay_by_url(self, url):
+        return self.session.query(Relay).filter_by(name=url).first()
+
+    def insert_relay(self, url, fav=None, send=True, receive=True, data=""):
+        self.session.merge(Relay(
+            name=url,
+            fav=fav,
+            send=send,
+            receive=receive,
+            data=data
         ))
         self.session.commit()
+
+    def update_relay(self, url, setting, state: bool):
+        if setting in ['send', 'receive', 'fav']:
+            self.session.query(Relay).filter_by(name=url).update({setting: state})
+            self.session.commit()
 
     def remove_relay(self, url):
         self.session.query(Relay).filter_by(name=url).delete()
@@ -55,6 +74,9 @@ class BijaDB:
 
     def get_profile(self, public_key):
         return self.session.query(Profile).filter_by(public_key=public_key).first()
+
+    def get_profile_by_id(self, id):
+        return self.session.query(Profile).filter_by(id=id).first()
 
     def get_pk_by_nip05(self, nip05):
         return self.session.query(Profile.public_key).filter_by(nip05=nip05).first()
@@ -99,17 +121,79 @@ class BijaDB:
                 if my_pk in removed:
                     new_unfollows.append(pk)
         if len(inserts) > 0:
-            stmt = sqlite_upsert(Follower).values(inserts)
-            stmt = stmt.on_conflict_do_nothing(
-                index_elements=[Follower.pk_1, Follower.pk_2]
-            )
-            try:
-                self.session.execute(stmt)
-                self.session.commit()
-            except SQLAlchemyError as e:
-                print(str(e.__dict__['orig']))
+
+            chunked_lists = [inserts[i:i + 999] for i in range(0, len(inserts), 999)]
+
+            for l in chunked_lists:
+
+                stmt = sqlite_upsert(Follower).values(l)
+                stmt = stmt.on_conflict_do_nothing(
+                    index_elements=[Follower.pk_1, Follower.pk_2]
+                )
+                try:
+                    self.session.execute(stmt)
+                    self.session.commit()
+                except SQLAlchemyError as e:
+                    print(str(e.__dict__['orig']))
 
         return new_follows, new_unfollows, is_mine
+
+    def update_followers_list(self, my_pk, followers:list):
+
+        inserts = []
+        new_follows = []
+        new_unfollows = []
+        is_mine = False
+
+        for item in list(followers):
+            if item['action'] == 'del':
+                self.session.query(Follower).filter(Follower.pk_1 == item['pk_1']).filter(Follower.pk_2 == item['pk_2']).delete()
+
+                if item['pk_2'] == my_pk:
+                    new_follows.append(item['pk_1'])
+            elif item['action'] == 'add':
+                inserts.append({'pk_1': item['pk_1'], 'pk_2': item['pk_2']})
+                if item['pk_2'] == my_pk:
+                    new_unfollows.append(item['pk_1'])
+
+            if item['pk_1'] == my_pk:
+                is_mine = True
+
+        self.session.commit()
+
+        if len(inserts) > 0:
+
+            chunked_lists = [inserts[i:i + 999] for i in range(0, len(inserts), 999)]
+
+            for l in chunked_lists:
+
+                stmt = sqlite_upsert(Follower).values(l)
+                stmt = stmt.on_conflict_do_nothing(
+                    index_elements=[Follower.pk_1, Follower.pk_2]
+                )
+                try:
+                    self.session.execute(stmt)
+                    self.session.commit()
+                except SQLAlchemyError as e:
+                    print(str(e.__dict__['orig']))
+
+        return new_follows, new_unfollows, is_mine
+
+    def update_block_list(self, profiles: list):
+        self.session.query(Profile).filter(Profile.public_key.in_(profiles)).update({'blocked': True})
+        self.session.query(Profile).filter(Profile.blocked==True).filter(Profile.public_key.notin_(profiles)).update({'blocked': False})
+        self.session.commit()
+
+    def get_blocked(self):
+        return self.session.query(Profile).filter(Profile.blocked == True).all()
+
+    def get_blocked_pks(self):
+        results = self.session.query(Profile.public_key).filter(Profile.blocked == True).all()
+        return [x.public_key for x in results]
+
+    def is_blocked(self, pubkey):
+        q = self.session.query(Profile.blocked).filter(Profile.public_key==pubkey).first()
+        return q.blocked
 
     def get_last_contacts_upd(self, public_key):
         result = self.session.query(Event.ts) \
@@ -137,6 +221,16 @@ class BijaDB:
         out = []
         for k in keys:
             out.append(k.pk_2)
+        return out
+
+    def get_follower_pubkeys(self, public_key, start=None, end=None):
+        if start is not None and end is not None:
+            keys = self.session.query(Follower).filter_by(pk_2=public_key)[start:end]
+        else:
+            keys = self.session.query(Follower).filter_by(pk_2=public_key).all()
+        out = []
+        for k in keys:
+            out.append(k.pk_1)
         return out
 
     def get_following(self, my_pk, public_key, count=False):
@@ -193,6 +287,17 @@ class BijaDB:
             return profiles.count()
         return profiles.all()
 
+    def get_followers_last_upd(self, public_key):
+        q = self.session.query(Profile.followers_upd).filter(Profile.public_key == public_key).first()
+        if q is not None:
+            return q.followers_upd
+        else:
+            return 0
+
+    def set_followers_last_upd(self, public_key):
+        self.session.query(Profile).filter(Profile.public_key == public_key).update({'followers_upd': int(time.time())})
+        self.session.commit()
+
     def a_follows_b(self, pk_a, pk_b):
         r = self.session.query(Follower).filter(Follower.pk_1==pk_a).filter(Follower.pk_2==pk_b)
         return r.first() is not None
@@ -214,25 +319,28 @@ class BijaDB:
             out.append(dict(p))
         return out
 
-    def update_profiles(self, l:list):
-        stmt = sqlite_upsert(Profile).values(l)
-        stmt = stmt.on_conflict_do_update(
-            index_elements=[Profile.public_key],
-            set_=dict(
-                name=stmt.excluded.name,
-                display_name=stmt.excluded.display_name,
-                nip05=stmt.excluded.nip05,
-                pic=stmt.excluded.pic,
-                about=stmt.excluded.about,
-                updated_at=stmt.excluded.updated_at,
-                raw=stmt.excluded.raw
+    def update_profiles(self, profiles:list):
+        chunked_lists = [profiles[i:i + 999] for i in range(0, len(profiles), 999)]
+
+        for l in chunked_lists:
+            stmt = sqlite_upsert(Profile).values(l)
+            stmt = stmt.on_conflict_do_update(
+                index_elements=[Profile.public_key],
+                set_=dict(
+                    name=stmt.excluded.name,
+                    display_name=stmt.excluded.display_name,
+                    nip05=stmt.excluded.nip05,
+                    pic=stmt.excluded.pic,
+                    about=stmt.excluded.about,
+                    updated_at=stmt.excluded.updated_at,
+                    raw=stmt.excluded.raw
+                )
             )
-        )
-        try:
-            self.session.execute(stmt)
-            self.session.commit()
-        except SQLAlchemyError as e:
-            print(str(e.__dict__['orig']))
+            try:
+                self.session.execute(stmt)
+                self.session.commit()
+            except SQLAlchemyError as e:
+                print(str(e.__dict__['orig']))
 
 
     def upd_profile(self,
@@ -265,28 +373,31 @@ class BijaDB:
         self.session.commit()
 
     def insert_notes(self, notes:list):
+        chunked_lists = [notes[i:i + 999] for i in range(0, len(notes), 999)]
 
-        stmt = sqlite_upsert(Note).values(notes)
-        stmt = stmt.on_conflict_do_update(
-            index_elements=[Note.id],
-            set_=dict(
-                public_key=stmt.excluded.public_key,
-                content=stmt.excluded.content,
-                response_to=stmt.excluded.response_to,
-                thread_root=stmt.excluded.thread_root,
-                reshare=stmt.excluded.reshare,
-                created_at=stmt.excluded.created_at,
-                members=stmt.excluded.members,
-                media=stmt.excluded.media,
-                hashtags=stmt.excluded.hashtags,
-                raw=stmt.excluded.raw
+        for l in chunked_lists:
+            stmt = sqlite_upsert(Note).values(l)
+            stmt = stmt.on_conflict_do_update(
+                index_elements=[Note.id],
+                set_=dict(
+                    public_key=stmt.excluded.public_key,
+                    content=stmt.excluded.content,
+                    response_to=stmt.excluded.response_to,
+                    thread_root=stmt.excluded.thread_root,
+                    reshare=stmt.excluded.reshare,
+                    created_at=stmt.excluded.created_at,
+                    members=stmt.excluded.members,
+                    media=stmt.excluded.media,
+                    hashtags=stmt.excluded.hashtags,
+                    seen=stmt.excluded.seen,
+                    raw=stmt.excluded.raw
+                )
             )
-        )
-        try:
-            self.session.execute(stmt)
-            self.session.commit()
-        except SQLAlchemyError as e:
-            print(str(e.__dict__['orig']))
+            try:
+                self.session.execute(stmt)
+                self.session.commit()
+            except SQLAlchemyError as e:
+                print(str(e.__dict__['orig']))
 
         # a = []
         # for n in notes:
@@ -339,10 +450,6 @@ class BijaDB:
     def is_note(self, note_id):
         return self.session.query(Note.id).filter_by(id=note_id).first()
 
-    # def add_profile_if_not_exists(self, pk):
-    #     self.session.merge(Profile(public_key=pk))
-    #     self.session.commit()
-
     def add_profiles_if_not_exists(self, pks:list):
         results = self.session.query(Profile.public_key).filter(Profile.public_key.in_(pks)).all()
         if results is not None:
@@ -361,25 +468,14 @@ class BijaDB:
 
     def get_note(self, public_key, note_id):
 
-        follower_counts = self.session.query(
-            Follower.pk_1,
-            Follower.pk_2,
-            func.count(Follower.id).label('count')
-        ).group_by(Follower.id).subquery()
 
-        is_follower = coalesce(
-            follower_counts.c.count, 0
-        )
+        sq_following = self.session.query(func.count(Follower.id).label('count'))\
+            .filter(Follower.pk_1 == public_key)\
+            .filter(Follower.pk_2 == Profile.public_key).subquery()
 
-        following_counts = self.session.query(
-            Follower.pk_1,
-            Follower.pk_2,
-            func.count(Follower.id).label('count')
-        ).group_by(Follower.id).subquery()
-
-        am_following = coalesce(
-            following_counts.c.count, 0
-        )
+        sq_follower = self.session.query(func.count(Follower.id).label('count'))\
+            .filter(Follower.pk_2 == public_key)\
+            .filter(Follower.pk_1 == Profile.public_key).subquery()
 
         q = self.session.query(Note.id,
             Note.public_key,
@@ -401,16 +497,12 @@ class BijaDB:
             Profile.pic,
             Profile.nip05,
             Profile.nip05_validated,
-            label('is_follower', is_follower),
-            label('following', am_following)
+            label('is_follower', sq_follower),
+            label('following', sq_following)
         )
         q = q.filter_by(id=note_id)
         q = q.join(Note.profile)
         q = q.outerjoin(ReactionTally, ReactionTally.event_id == Note.id)
-        q = q.outerjoin(follower_counts,
-                        and_(follower_counts.c.pk_2 == public_key, follower_counts.c.pk_1 == Profile.public_key))
-        q = q.outerjoin(following_counts,
-                        and_(following_counts.c.pk_1 == public_key, following_counts.c.pk_2 == Profile.public_key))
 
         return q.first()
 
@@ -419,25 +511,14 @@ class BijaDB:
 
     def get_note_thread(self, public_key, note_id):
 
-        follower_counts = self.session.query(
-            Follower.pk_1,
-            Follower.pk_2,
-            func.count(Follower.id).label('count')
-        ).group_by(Follower.id).subquery()
 
-        is_follower = coalesce(
-            follower_counts.c.count, 0
-        )
+        sq_following = self.session.query(func.count(Follower.id).label('count'))\
+            .filter(Follower.pk_1 == public_key)\
+            .filter(Follower.pk_2 == Profile.public_key).subquery()
 
-        following_counts = self.session.query(
-            Follower.pk_1,
-            Follower.pk_2,
-            func.count(Follower.id).label('count')
-        ).group_by(Follower.id).subquery()
-
-        am_following = coalesce(
-            following_counts.c.count, 0
-        )
+        sq_follower = self.session.query(func.count(Follower.id).label('count'))\
+            .filter(Follower.pk_2 == public_key)\
+            .filter(Follower.pk_1 == Profile.public_key).subquery()
 
         items = self.session.query(Note.id, Note.response_to) \
             .filter(
@@ -465,15 +546,11 @@ class BijaDB:
             Profile.pic,
             Profile.nip05,
             Profile.nip05_validated,
-            label('is_follower', is_follower),
-            label('following', am_following)
+            label('is_follower', sq_follower),
+            label('following', sq_following)
         )
         q = q.join(Note.profile)
         q = q.outerjoin(ReactionTally, ReactionTally.event_id == Note.id)
-        q = q.outerjoin(follower_counts,
-                        and_(follower_counts.c.pk_2 == public_key, follower_counts.c.pk_1 == Profile.public_key))
-        q = q.outerjoin(following_counts,
-                        and_(following_counts.c.pk_1 == public_key, following_counts.c.pk_2 == Profile.public_key))
         q = q.filter(or_(Note.id.in_([i.response_to for i in items]), Note.id.in_([i.id for i in items])))
         q = q.order_by(Note.created_at.asc())
 
@@ -496,24 +573,26 @@ class BijaDB:
             return out
 
     def insert_direct_messages(self, msgs:list):
+        chunked_lists = [msgs[i:i + 999] for i in range(0, len(msgs), 999)]
 
-        stmt = sqlite_upsert(PrivateMessage).values(msgs)
-        stmt = stmt.on_conflict_do_update(
-            index_elements=[PrivateMessage.id],
-            set_=dict(
-                public_key=stmt.excluded.public_key,
-                content=stmt.excluded.content,
-                is_sender=stmt.excluded.is_sender,
-                created_at=stmt.excluded.created_at,
-                seen=stmt.excluded.seen,
-                raw=stmt.excluded.raw
+        for l in chunked_lists:
+            stmt = sqlite_upsert(PrivateMessage).values(l)
+            stmt = stmt.on_conflict_do_update(
+                index_elements=[PrivateMessage.id],
+                set_=dict(
+                    public_key=stmt.excluded.public_key,
+                    content=stmt.excluded.content,
+                    is_sender=stmt.excluded.is_sender,
+                    created_at=stmt.excluded.created_at,
+                    seen=stmt.excluded.seen,
+                    raw=stmt.excluded.raw
+                )
             )
-        )
-        try:
-            self.session.execute(stmt)
-            self.session.commit()
-        except SQLAlchemyError as e:
-            print(str(e.__dict__['orig']))
+            try:
+                self.session.execute(stmt)
+                self.session.commit()
+            except SQLAlchemyError as e:
+                print(str(e.__dict__['orig']))
 
     def insert_private_message(self,
                                msg_id,
@@ -532,6 +611,11 @@ class BijaDB:
             seen=seen,
             raw=raw
         ))
+        self.session.commit()
+
+    def purge_pubkey(self, pk):
+        self.session.query(PrivateMessage).filter(PrivateMessage.public_key == pk).delete()
+        self.session.query(Note).filter(Note.public_key == pk).delete()
         self.session.commit()
 
     def subscribed_to_topic(self, topic):
@@ -732,22 +816,25 @@ class BijaDB:
         self.session.commit()
 
     def add_note_reactions(self, reactions:list):
-        stmt = sqlite_upsert(NoteReaction).values(reactions)
-        stmt = stmt.on_conflict_do_update(
-            index_elements=[NoteReaction.id],
-            set_=dict(
-                public_key=stmt.excluded.public_key,
-                event_id=stmt.excluded.event_id,
-                event_pk=stmt.excluded.event_pk,
-                content=stmt.excluded.content,
-                members=stmt.excluded.members
+        chunked_lists = [reactions[i:i + 999] for i in range(0, len(reactions), 999)]
+
+        for l in chunked_lists:
+            stmt = sqlite_upsert(NoteReaction).values(l)
+            stmt = stmt.on_conflict_do_update(
+                index_elements=[NoteReaction.id],
+                set_=dict(
+                    public_key=stmt.excluded.public_key,
+                    event_id=stmt.excluded.event_id,
+                    event_pk=stmt.excluded.event_pk,
+                    content=stmt.excluded.content,
+                    members=stmt.excluded.members
+                )
             )
-        )
-        try:
-            self.session.execute(stmt)
-            self.session.commit()
-        except SQLAlchemyError as e:
-            print(str(e.__dict__['orig']))
+            try:
+                self.session.execute(stmt)
+                self.session.commit()
+            except SQLAlchemyError as e:
+                print(str(e.__dict__['orig']))
 
         #
         # a = []
@@ -819,23 +906,51 @@ class BijaDB:
         self.session.commit()
 
     def insert_events(self, events:list):
-        stmt = sqlite_upsert(Event).values(events)
-        stmt = stmt.on_conflict_do_update(
-            index_elements=[Event.event_id],
-            set_=dict(
-                public_key=stmt.excluded.public_key,
-                kind=stmt.excluded.kind,
-                ts=stmt.excluded.ts
+        chunked_lists = [events[i:i + 999] for i in range(0, len(events), 999)]
+
+        for l in chunked_lists:
+            stmt = sqlite_upsert(Event).values(l)
+            stmt = stmt.on_conflict_do_update(
+                index_elements=[Event.event_id],
+                set_=dict(
+                    public_key=stmt.excluded.public_key,
+                    kind=stmt.excluded.kind,
+                    ts=stmt.excluded.ts
+                )
             )
-        )
-        try:
-            self.session.execute(stmt)
-            self.session.commit()
-        except SQLAlchemyError as e:
-            print(str(e.__dict__['orig']))
+            try:
+                self.session.execute(stmt)
+                self.session.commit()
+            except SQLAlchemyError as e:
+                print(str(e.__dict__['orig']))
+
+    def insert_event_relay(self, events: list):
+        chunked_lists = [events[i:i + 999] for i in range(0, len(events), 999)]
+
+        for l in chunked_lists:
+            e = []
+            for event in l:
+                dber = self.get_event_relay(event)
+                if dber is None:
+                    relay = self.get_relay_by_url(event['relay'])
+                    dbe = self.get_event(event['event_id'])
+                    if relay is not None and dbe is not None:
+                        e.append({'event_id':dbe.id, 'relay':relay.id})
+            stmt = sqlite_upsert(EventRelay).values(e)
+            try:
+                self.session.execute(stmt)
+                self.session.commit()
+            except SQLAlchemyError as e:
+                print(str(e.__dict__['orig']))
+
+    def get_event_relay(self, e):
+        return self.session.query(EventRelay.id).filter(EventRelay.event_id == e['event_id']).filter(EventRelay.relay == e['relay']).first()
 
     def get_event(self, event_id):
-        return self.session.query(Event.event_id, Event.kind).filter(Event.event_id == event_id).first()
+        return self.session.query(Event.id, Event.event_id, Event.kind).filter(Event.event_id == event_id).first()
+
+    def latest_event(self):
+        return self.session.query(Event.ts).order_by(Event.ts.desc()).first()
 
     def add_alert(self, kind, ts, data):
 
@@ -847,7 +962,7 @@ class BijaDB:
         self.session.commit()
 
     def get_alerts(self):
-        return self.session.query(Alert).order_by(Alert.seen.asc()).order_by(Alert.ts.desc()).limit(50).all()
+        return self.session.query(Alert).order_by(Alert.seen.asc()).order_by(Alert.ts.desc()).limit(10).all()
 
     def get_unread_alert_count(self):
         return self.session.query(Alert).filter(Alert.seen == 0).count()
@@ -935,25 +1050,13 @@ class BijaDB:
 
     def get_feed(self, before, public_key, filters):
 
-        follower_counts = self.session.query(
-            Follower.pk_1,
-            Follower.pk_2,
-            func.count(Follower.id).label('count')
-        ).group_by(Follower.id).subquery()
+        sq_following = self.session.query(func.count(Follower.id).label('count'))\
+            .filter(Follower.pk_1 == public_key)\
+            .filter(Follower.pk_2 == Profile.public_key).subquery()
 
-        is_follower = coalesce(
-            follower_counts.c.count, 0
-        )
-
-        following_counts = self.session.query(
-            Follower.pk_1,
-            Follower.pk_2,
-            func.count(Follower.id).label('count')
-        ).group_by(Follower.id).subquery()
-
-        am_following = coalesce(
-            following_counts.c.count, 0
-        )
+        sq_follower = self.session.query(func.count(Follower.id).label('count'))\
+            .filter(Follower.pk_2 == public_key)\
+            .filter(Follower.pk_1 == Profile.public_key).subquery()
 
         q = self.session.query(
             Note.id,
@@ -976,15 +1079,11 @@ class BijaDB:
             Profile.pic,
             Profile.nip05,
             Profile.nip05_validated,
-            label('is_follower', is_follower),
-            label('following', am_following)
+            label('is_follower', sq_follower),
+            label('following', sq_following)
         )
         q = q.join(Note.profile)
         q = q.outerjoin(ReactionTally, ReactionTally.event_id == Note.id)
-        q = q.outerjoin(follower_counts,
-                                and_(follower_counts.c.pk_2 == public_key, follower_counts.c.pk_1 == Profile.public_key))
-        q = q.outerjoin(following_counts,
-                                and_(following_counts.c.pk_1 == public_key, following_counts.c.pk_2 == Profile.public_key))
         q = q.filter(text("note.created_at<{}".format(before)))
         q = q.filter(text("note.deleted is not 1"))
         if 'main_feed' in filters:
@@ -997,7 +1096,25 @@ class BijaDB:
             q = q.filter(Note.reshare==filters['boost_id'])
         if 'id_list' in filters:
             q = q.filter(Note.id.in_(filters['id_list']))
-
+        if 'search' in filters:
+            q = q.filter(Note.content.like(f"%{filters['search']}%"))
+        if 'replies' in filters:
+            q = q.filter(
+                or_(
+                    Note.response_to==filters['replies'],
+                    Note.thread_root==filters['replies']
+                )
+            )
         q = q.order_by(Note.seen.asc(), Note.created_at.desc()).limit(50)
-
         return q.all()
+
+    def get_url(self, url):
+        return self.session.query(URL).filter(URL.address == url).first()
+
+    def insert_url(self, address, ts, og):
+        self.session.merge(URL(
+            address=address,
+            ts=ts,
+            og=og
+        ))
+        self.session.commit()

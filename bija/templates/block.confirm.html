@@ -1,0 +1,11 @@
+<p>Please confirm that you wish to block this user.</p>
+<hr>
+{%- with profile=note -%}
+{%- include 'profile/profile.brief.html' -%}
+{%- endwith -%}
+<hr>
+<p class="sm">{{note['public_key']}}</p>
+<form id="block_form">
+    <input type="hidden" name="pubkey" value="{{note['public_key']}}">
+    <input type="submit" value="Block" class="block-submit right">
+</form>

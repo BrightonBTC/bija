@@ -7,6 +7,9 @@ function SOCK() {
     socket.on('message', function(data) {
         updateMessageThread(data);
     });
+    socket.on('new_message', function(data) {
+        notifyNewMessage(data);
+    });
     socket.on('unseen_messages_n', function(data) {
         let el_unseen = document.getElementById("n_unseen_messages");
         if(parseInt(data) == 0){
@@ -169,6 +172,17 @@ let updateInteractionCount = function(note_id, cls){
             n = like_el.innerText.trim()
             if(n.length < 1) n = 0;
             like_el.innerText = parseInt(n) + 1
+        }
+    }
+}
+
+let notifyNewMessage = function(){
+    const a_el = document.querySelector('.archive_fetcher .n_fetched')
+    if(a_el){
+        const fetching_archive = a_el.dataset.active == '1'
+        if(fetching_archive){
+            const n = parseInt(a_el.innerText)+1
+            a_el.innerText = n
         }
     }
 }
@@ -491,21 +505,9 @@ class bijaSettings{
         this.setPrivateKeyReveal()
         this.setUpdateConnsClickedEvent()
 
-        this.setRelayRemoveClickedEvents()
+        this.setRelaySettingClickedEvents()
 
         this.setDeleteKeysClicked()
-
-        const relay_btn = document.querySelector("#addrelay");
-        relay_btn.addEventListener("click", (event)=>{
-            event.preventDefault();
-            event.stopPropagation();
-            const form = document.querySelector("#relay_adder")
-
-            const cb = function(response, data){
-                data.context.reloadRelayList()
-            }
-            fetchFromForm('/add_relay', form, cb, {'context': this})
-        });
 
         const cld_btn = document.querySelector("#upd_cloudinary");
         cld_btn.addEventListener("click", (event)=>{
@@ -642,20 +644,48 @@ class bijaSettings{
         });
     }
 
-    setRelayRemoveClickedEvents(){
+    setRelaySettingClickedEvents(){
         const relays = document.querySelectorAll(".relay[data-url]");
         for (const relay of relays) {
-            this.setRelayRemoveClickedEvent(relay)
+            this.setRelaySettingClickedEvent(relay)
         }
+        const relay_btn = document.querySelector("#addrelay");
+        relay_btn.addEventListener("click", (event)=>{
+            event.preventDefault();
+            event.stopPropagation();
+            const form = document.querySelector("#relay_adder")
+
+            const cb = function(response, data){
+                data.context.reloadRelayList()
+            }
+            fetchFromForm('/add_relay', form, cb, {'context': this})
+        });
     }
 
-    setRelayRemoveClickedEvent(elem){
+    setRelaySettingClickedEvent(elem){
+
         elem.querySelector(".del-relay").addEventListener("click", (event)=>{
             const cb = function(response, data){
                 data.context.reloadRelayList()
             }
-            fetchGet('/del_relay?url='+elem.dataset.url, cb, {'context': this})
+            fetchGet('/del_relay?url='+encodeURIComponent(elem.dataset.url), cb, {'context': this})
         });
+        elem.querySelectorAll(".relay_setting").forEach(function(s){
+            s.addEventListener("click", (event)=>{
+                const cb = function(response, data){
+                console.log(response.success)
+                    if(response.success == true){
+                        notify('updated')
+                    }
+                    else{
+                        notify('not updated')
+                    }
+                }
+                const url = encodeURIComponent(elem.dataset.url)
+                const setting = encodeURIComponent(event.srcElement.dataset.setting)
+                fetchGet('/update_relay?url='+url+'&'+setting+'='+event.srcElement.checked, cb, {'context': this}, 'json')
+            });
+        })
     }
 
     setUpdateConnsClickedEvent(){
@@ -673,7 +703,7 @@ class bijaSettings{
             const doc = new DOMParser().parseFromString(response, "text/html")
             document.querySelector('#relays_list').innerHTML = ''
             document.querySelector('#relays_list').append(doc.body.firstChild)
-            data.context.setRelayRemoveClickedEvents()
+            data.context.setRelaySettingClickedEvents()
         }
         fetchGet('/reload_relay_list', cb, {'context': this})
     }
@@ -682,17 +712,56 @@ class bijaSettings{
 class bijaThread{
 
     constructor(){
-        this.root = false;
-        this.focussed = false;
-        this.replies = [];
         document.addEventListener("newNote", (event)=>{
+            console.log("newNote")
             const el = document.querySelector(".note-container[data-id='"+event.detail.id+"']")
-
+            console.log(el)
             if( (el && el.classList.contains('placeholder')) || !el){
-
                 fetchGet('/thread_item?id='+event.detail.id, this.processNewNoteInThread, {'elem': el, 'context':this})
-
             }
+        });
+        const items = document.querySelectorAll(".note-container")
+        if (items.length > 1){
+            items[0].classList.add('ancestor')
+        }
+        const reply_items = document.querySelectorAll(".note-container.reply")
+        const main_item = document.querySelector(".note-container.main")
+        if (reply_items.length > 0 && main_item){
+            main_item.classList.add('ancestor')
+        }
+        const load_link = document.querySelector(".load_more")
+        if(load_link){
+            this.setLoadMore(load_link)
+        }
+    }
+
+    setLoadMore(load_link){
+
+        load_link.addEventListener('click', (e) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const cb = function(response, data){
+                if(response.length > 0){
+                    const doc = new DOMParser().parseFromString(response, "text/html")
+                    const new_elem = doc.body.firstChild
+                    new_elem.classList.add('ancestor')
+                    load_link.parentNode.insertAdjacentElement('afterend', new_elem);
+                    const root = document.querySelector(".note-container.root")
+                    if(new_elem.dataset.parent){
+                        if(root && new_elem.dataset.parent.length < 1 && new_elem.dataset.root == root.dataset.id){
+                            load_link.parentNode.remove()
+                        }
+                        else{
+                            load_link.dataset.rel = new_elem.dataset.parent
+                        }
+                        document.dispatchEvent(new Event('newContentLoaded'))
+                    }
+                    else{
+                        load_link.parentNode.remove()
+                    }
+                }
+            }
+            fetchGet('/thread_item?id='+encodeURIComponent(load_link.dataset.rel), cb, {})
         });
     }
 
@@ -728,6 +797,10 @@ class bijaMessages{
         }
         else if(page=='messages'){
             this.setAllReadBtn()
+        }
+        const archive_fetcher = document.querySelector('#fetch_archived');
+        if(archive_fetcher){
+            this.setArchiveFetcher(archive_fetcher)
         }
     }
 
@@ -777,6 +850,20 @@ class bijaMessages{
         }
         const form = document.querySelector("#new_message_form")
         fetchFromForm('/submit_message', form, cb, {}, 'json')
+    }
+
+    setArchiveFetcher(el){
+        el.addEventListener('change', (e) => {
+            const container =  document.querySelector('.archive_fetcher')
+            const a_el = container.querySelector('.n_fetched')
+            container.querySelector('.loading').style.display = 'flex'
+            a_el.dataset.active = "1"
+            a_el.innerText = '0'
+            const cb = function(response, data){
+
+            }
+            fetchGet('/fetch_archived_msgs?tf='+el.value, cb, {})
+        });
     }
 }
 
@@ -1102,8 +1189,11 @@ class bijaNotes{
         const elems = container.querySelectorAll('img')
         for (const elem of elems) {
             elem.addEventListener("click", (event)=>{
-                const im = elem.parentElement.innerHTML
-                popup(im)
+                const im = document.createElement('img')
+                im.setAttribute('referrerpolicy', 'no-referrer')
+                im.src = elem.dataset.src
+                popup('')
+                document.querySelector('.popup').append(im)
             });
         }
     }
@@ -1259,6 +1349,20 @@ class bijaNotes{
                     fetchGet('/get_share?id='+note_id, get_share_cb, {context:this})
                 })
             }
+            else if(tool == 'block'){
+                tool_el.addEventListener('click', (e) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const get_block_cb = function(response, data){
+                        if(response){
+                            popup(response)
+                            lazyLoad()
+                            data.context.setBlockForm()
+                        }
+                    }
+                    fetchGet('/confirm_block?id='+note_id, get_block_cb, {context:this})
+                })
+            }
         }
     }
 
@@ -1304,6 +1408,21 @@ class bijaNotes{
                 }
             }
             fetchFromForm('/delete_note', form, cb, {}, 'json')
+        });
+    }
+
+    setBlockForm(){
+        const form = document.querySelector("#block_form")
+        const btn = form.querySelector("input[type='submit']")
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const cb = function(response, data){
+                if(response['event_id']){
+                   location.reload()
+                }
+            }
+            fetchFromForm('/block', form, cb, {}, 'json')
         });
     }
 
@@ -1356,6 +1475,7 @@ class bijaFeed{
         this.listener = () => this.loader(this);
         window.addEventListener('scroll', this.listener);
         this.pageLoadedEvent = new Event("newContentLoaded");
+        this.requestNextPage(Math.floor(Date.now() / 1000))
     }
 
     loader(o){
@@ -1393,7 +1513,11 @@ class bijaFeed{
         }
         else if(this.page == 'topic'){
             const topic_elem = document.querySelector(".topic-sub")
-            fetchGet('/topic_feed?before='+ts+'&topic='+topic_elem.dataset.topic, cb, {'context': this})
+            fetchGet('/topic_feed?before='+ts+'&topic='+encodeURIComponent(topic_elem.dataset.topic), cb, {'context': this})
+        }
+        else if(this.page == 'search'){
+            const search_elem = document.querySelector("#search_results")
+            fetchGet('/search_feed?before='+ts+'&search='+encodeURIComponent(search_elem.dataset.search), cb, {'context': this})
         }
     }
 
@@ -1404,7 +1528,6 @@ class bijaFeed{
         const o = this
         setTimeout(function(){
             o.loading = 0;
-			lazyLoad();
         }, 200)
     }
 }
@@ -1744,13 +1867,64 @@ function lazyloadIntersectionObserver(lazyloadImages) {
 			                image.src = '/static/blank.png'
 			            }
 			        }
-			    }, 1000)
+			    }, 3000)
 			}
 		});
 	});
 	lazyloadImages.forEach(function(image) {
 		imageObserver.observe(image);
 	});
+}
+function ogObserver(elems){
+    let ogObserve = new IntersectionObserver(function(entries, observer) {
+		entries.forEach(function(entry) {
+			if(entry.isIntersecting) {
+				let el = entry.target;
+				el.classList.remove("og-container");
+				fetchOG(el, el.dataset.rel)
+				ogObserve.unobserve(el);
+			}
+		});
+	});
+    elems.forEach(function(elem) {
+		ogObserve.observe(elem);
+	});
+}
+function fetchOG(elem, url){
+    const cb = function(response, data){
+        const doc = new DOMParser().parseFromString(response, "text/html")
+        const htm = doc.body.firstChild
+        elem.replaceWith(htm)
+    }
+    fetchGet('/fetch_ogs?url='+encodeURIComponent(url), cb, {})
+}
+
+function noteObserver(elems){
+    let noteObserve = new IntersectionObserver(function(entries, observer) {
+		entries.forEach(function(entry) {
+			if(entry.isIntersecting) {
+				let el = entry.target;
+				fetchNote(el, el.dataset.id)
+				noteObserve.unobserve(el);
+			}
+		});
+	});
+    elems.forEach(function(elem) {
+		noteObserve.observe(elem);
+	});
+}
+function fetchNote(elem, id){
+    const cb = function(response, data){
+        if(response.length > 0){
+            const doc = new DOMParser().parseFromString(response, "text/html")
+            const htm = doc.body.firstChild
+            if(!htm.classList.contains('placeholder')){
+                elem.replaceWith(htm)
+                lazyLoad()
+            }
+        }
+    }
+    fetchGet('/thread_item?id='+encodeURIComponent(id), cb, {})
 }
 
 function lazyloadNoIntersectionObserve(lazyloadImages) {
@@ -1776,12 +1950,18 @@ function lazyloadNoIntersectionObserve(lazyloadImages) {
 	document.addEventListener("scroll", lazyload);
 	window.addEventListener("resize", lazyload);
 	window.addEventListener("orientationChange", lazyload);
+
 }
+
 
 function lazyLoad() {
 	let lazyloadImages = document.querySelectorAll("img.lazy-load");
+	let lazyLoadOGs = document.querySelectorAll(".og-container");
+	let lazyLoadNotes= document.querySelectorAll(".note-container.placeholder");
 	if("IntersectionObserver" in window) {
 		lazyloadIntersectionObserver(lazyloadImages);
+		ogObserver(lazyLoadOGs)
+		noteObserver(lazyLoadNotes)
 	} else {
 		lazyloadNoIntersectionObserve(lazyloadImages);
 	}
@@ -1832,6 +2012,7 @@ window.addEventListener("load", function () {
     }
 
     if (document.querySelector(".main[data-page='search']") != null){
+        new bijaFeed();
         new bijaNotes();
     }
 

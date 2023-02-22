@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 from functools import wraps
 
 import bip39
@@ -9,11 +10,11 @@ from flask import request, redirect, make_response, url_for
 from flask_executor import Executor
 
 from bija.app import app, socketio, ACTIVE_EVENTS
-from bija.args import SETUP_PK, SETUP_PW, LOGGING_LEVEL
+from bija.args import SETUP_PK, SETUP_PW
 from bija.config import DEFAULT_RELAYS, default_settings
 from bija.emojis import emojis
 from bija.nip5 import Nip5
-from bija.relay_handler import RelayHandler, MetadataEvent
+from bija.relay_handler import RelayHandler
 from bija.helpers import *
 from bija.jinja_filters import *
 from bija.notes import FeedThread, NoteThread, BoostsThread
@@ -21,8 +22,8 @@ from bija.password import encrypt_key, decrypt_key
 from bija.search import Search
 from bija.settings import SETTINGS
 from bija.submissions import SubmitDelete, SubmitNote, SubmitProfile, SubmitEncryptedMessage, SubmitLike, \
-    SubmitFollowList, SubmitBoost
-from bija.subscription_manager import SUBSCRIPTION_MANAGER
+    SubmitFollowList, SubmitBoost, SubmitBlockList, SubmitRelayList
+from bija.ws.subscription_manager import SUBSCRIPTION_MANAGER
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOGGING_LEVEL)
@@ -71,13 +72,13 @@ def index_page():
     EXECUTOR.submit(RELAY_HANDLER.set_page('home', None))
     EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
     pk = SETTINGS.get('pubkey')
-    notes = DB.get_feed(time.time(), pk, {'main_feed': True})
-    DB.set_all_seen_in_feed(pk)
-    t = FeedThread(notes)
-    EXECUTOR.submit(RELAY_HANDLER.subscribe_feed(list(t.ids)))
+    # notes = DB.get_feed(time.time(), pk, {'main_feed': True})
+    EXECUTOR.submit(DB.set_all_seen_in_feed(pk))
+    # t = FeedThread(notes)
+    # EXECUTOR.submit(RELAY_HANDLER.subscribe_feed(list(t.ids)))
     profile = DB.get_profile(pk)
     topics = DB.get_topics()
-    return render_template("feed/feed.html", page_id="home", title="Home", threads=t.threads, last=t.last_ts,
+    return render_template("feed/feed.html", page_id="home", title="Home", threads=[], last=0,
                            profile=profile, pubkey=pk, topics=topics)
 
 
@@ -93,6 +94,7 @@ def feed():
         if len(notes) > 0:
             t = FeedThread(notes)
             EXECUTOR.submit(RELAY_HANDLER.subscribe_feed(list(t.ids)))
+            print(t.ids)
             profile = DB.get_profile(pk)
             return render_template("feed/feed.items.html", threads=t.threads, last=t.last_ts, profile=profile, pubkey=pk)
         else:
@@ -130,7 +132,7 @@ def login_page():
                 login_state = LoginState.NEW_KEYS
                 data = {
                     'npub': hex64_to_bech32("npub", SETTINGS.get('pubkey')),
-                    'mnem': bip39.encode_bytes(bytes.fromhex(SETTINGS.get('privkey')))
+                    'nsec':hex64_to_bech32("nsec", SETTINGS.get('privkey'))
                 }
                 SETTINGS.set('new_keys', None)
             elif has_relays is None:
@@ -158,9 +160,9 @@ def profile_page():
             "profile/profile.html",
             page_id=data.page_id,
             title="Profile",
-            threads=data.data.threads,
-            last=data.data.last_ts,
-            latest=data.latest_in_feed,
+            threads=[],
+            last=0,
+            latest=0,
             profile=data.profile,
             is_me=data.is_me,
             am_following=data.am_following,
@@ -206,7 +208,7 @@ class ProfilePage:
         self.subscription_ids = [] # active notes to passed to subscription manager
 
         set_subscription = False
-        valid_pages = ['profile', 'following', 'followers']
+        valid_pages = ['profile', 'following', 'followers', 'blocked']
 
         ACTIVE_EVENTS.clear()
         if RELAY_HANDLER.page['page'] not in valid_pages or RELAY_HANDLER.page['identifier'] != self.pubkey:
@@ -271,14 +273,17 @@ class ProfilePage:
     def get_data(self):
         self.am_following = DB.a_follows_b(SETTINGS.get('pubkey'), self.pubkey)
         if self.page == 'profile':
-            notes = DB.get_feed(int(time.time()), SETTINGS.get('pubkey'), {'profile': self.pubkey})
-            self.data = FeedThread(notes)
-            self.subscription_ids = list(self.data.ids)
-            self.latest_in_feed = DB.get_most_recent_for_pk(self.pubkey) or 0
+            # notes = DB.get_feed(int(time.time()), SETTINGS.get('pubkey'), {'profile': self.pubkey})
+            # self.data = FeedThread(notes)
+            # self.subscription_ids = list(self.data.ids)
+            # self.latest_in_feed = DB.get_most_recent_for_pk(self.pubkey) or 0
+            self.data = {'threads': []}
         elif self.page == 'following':
             self.data = DB.get_following(SETTINGS.get('pubkey'), self.pubkey)
         elif self.page == 'followers':
             self.data = DB.get_followers(SETTINGS.get('pubkey'), self.pubkey)
+        elif self.page == 'blocked':
+            self.data = DB.get_blocked()
 
 
 @app.route('/fetch_archived', methods=['GET'])
@@ -348,7 +353,7 @@ def profile_feed():
             t = FeedThread(notes)
             profile = DB.get_profile(pk)
             EXECUTOR.submit(
-                RELAY_HANDLER.subscribe_profile, request.args['pk'], t.last_ts - TimePeriod.WEEK, list(t.ids)
+                RELAY_HANDLER.subscribe_profile, request.args['pk'], None, list(t.ids)
             )
             return render_template("feed/feed.items.html", threads=t.threads, last=t.last_ts, profile=profile,
                                    pubkey=SETTINGS.get('pubkey'))
@@ -371,10 +376,14 @@ def note_page():
     return render_template("thread.html",
                            page_id="note",
                            title="Note",
-                           notes=t.result_set,
+                           #notes=t.notes,
+                           root=t.root,
+                           parent=t.parent,
+                           note=t.note,
+                           replies=t.replies,
                            members=t.profiles,
                            profile=profile,
-                           root=note_id, pubkey=SETTINGS.get('pubkey'))
+                           pubkey=SETTINGS.get('pubkey'))
 
 @app.route('/boosts', methods=['GET'])
 @login_required
@@ -401,6 +410,27 @@ def quote_form():
     note = DB.get_note(SETTINGS.get('pubkey'), note_id)
     profile = DB.get_profile(SETTINGS.get('pubkey'))
     return render_template("quote.form.html", item=note, id=note_id, profile=profile)
+
+@app.route('/confirm_block', methods=['GET'])
+def confirm_block():
+    note_id = request.args['id']
+    note = DB.get_note(SETTINGS.get('pubkey'), note_id)
+    return render_template("block.confirm.html", note=note)
+
+@app.route('/block', methods=['POST'])
+def block():
+    out = []
+    for r in request.json:
+        if r[0] == 'pubkey' and is_hex_key(r[1]):
+            out.append(['p', r[1]])
+            DB.purge_pubkey(r[1])
+    l = DB.get_blocked_pks()
+    for entry in l:
+        out.append(['p', entry])
+    e = SubmitBlockList(out)
+    event_id = e.event_id
+    return render_template("upd.json", data=json.dumps({'event_id': event_id}))
+
 
 
 @app.route('/confirm_delete', methods=['GET'])
@@ -468,8 +498,11 @@ def quote_submit():
 def thread_item():
     note_id = request.args['id']
     note = DB.get_note(SETTINGS.get('pubkey'), note_id)
-    profile = DB.get_profile(SETTINGS.get('pubkey'))
-    return render_template("thread.item.html", item=note, profile=profile)
+    if note is not None:
+        profile = DB.get_profile(SETTINGS.get('pubkey'))
+        return render_template("thread.item.html", item=note, profile=profile)
+    else:
+        return render_template("thread.placeholder.html", id=note_id)
 
 
 @app.route('/read_more', methods=['GET'])
@@ -477,6 +510,15 @@ def read_more():
     note_id = request.args['id']
     note = DB.get_note(SETTINGS.get('pubkey'), note_id)
     return render_template("note.content.html", note=note)
+
+@app.route('/fetch_ogs', methods=['GET'])
+def fetch_ogs():
+    out={}
+    url = request.args['url']
+    data = DB.get_url(url)
+    if data is not None and data.og is not None:
+        out = json.loads(data.og)
+    return render_template("note.og.html", data=out)
 
 
 @app.route('/settings', methods=['GET', 'POST'])
@@ -611,17 +653,49 @@ def update_profile():
 @app.route('/add_relay', methods=['POST', 'GET'])
 def add_relay():
     success = False
+    url = None
+    send = False
+    receive = False
+    fav = False
+    data = ''
     if request.method == 'POST':
         for item in request.json:
-            ws = item[1].strip()
-            if item[0] == 'newrelay' and is_valid_relay(ws):
-                d = request_relay_data(ws)
-                print(d)
-                success = True
-                DB.insert_relay(ws)
-                EXECUTOR.submit(RELAY_HANDLER.add_relay(ws))
-                EXECUTOR.submit(RELAY_HANDLER.reset)
+            if item[0] == 'newrelay':
+                if is_valid_relay(item[1].strip()):
+                    url = item[1].strip()
+                    data = request_relay_data(url)
+                    success = True
+            if item[0] == 'relay_read':
+                receive = True
+            if item[0] == 'relay_write':
+                send = True
+            if item[0] == 'relay_fav':
+                fav = True
+
+    if url is not None:
+        DB.insert_relay(url, fav, send, receive, data)
+        EXECUTOR.submit(RELAY_HANDLER.add_relay(url))
+        EXECUTOR.submit(RELAY_HANDLER.reset)
+        EXECUTOR.submit(SubmitRelayList())
     return render_template("upd.json", data=json.dumps({'add_relay': success}))
+
+@app.route('/update_relay', methods=['GET'])
+def update_relay():
+    setting = None
+    v = None
+    success = False
+    for arg in request.args:
+        if arg in ['send', 'receive', 'fav']:
+            setting = arg
+            if request.args[arg] == 'true':
+                v = True
+            else:
+                v = False
+    if setting is not None:
+        DB.update_relay(request.args['url'], setting, v)
+        success = True
+        EXECUTOR.submit(SubmitRelayList())
+    return render_template("upd.json", data=json.dumps({'success': success}))
 
 
 @app.route('/reset_relays', methods=['POST', 'GET'])
@@ -650,6 +724,27 @@ def private_messages_page():
 
     return render_template("messages.html", page_id="messages", title="Private Messages", messages=messages)
 
+@app.route('/fetch_archived_msgs', methods=['GET'])
+@login_required
+def fetch_archived_msgs():
+    tf = request.args['tf']
+    timeframe = TimePeriod.DAY
+    tx = 1
+    if tf == 'w':
+        timeframe = TimePeriod.WEEK
+        tx = 1
+    elif tf == 'm':
+        timeframe = TimePeriod.DAY
+        tx = 30
+    elif tf == 'y':
+        timeframe = TimePeriod.WEEK
+        tx = 52
+    elif tf == 'a':
+        timeframe = TimePeriod.WEEK
+        tx = 10000
+    EXECUTOR.submit(RELAY_HANDLER.subscribe_messages(timestamp_minus(timeframe, tx)))
+    return render_template("upd.json", data=json.dumps({'success': 1}))
+
 
 @app.route('/message', methods=['GET'])
 @login_required
@@ -677,7 +772,8 @@ def submit_message():
     event_id = False
     if request.method == 'POST':
         pow_difficulty = SETTINGS.get('pow_default_enc')
-        e = SubmitEncryptedMessage(request.json, pow_difficulty)
+        e = e = SubmitEncryptedMessage(request.json, pow_difficulty)
+        event_id = e.event_id
         event_id = e.event_id
         #event_id = EVENT_HANDLER.submit_message(request.json, pow_difficulty=pow_difficulty)
     return render_template("upd.json", title="Home", data=json.dumps({'event_id': event_id}))
@@ -716,7 +812,24 @@ def search_page():
     if action is not None:
         if action == 'hash':
             EXECUTOR.submit(RELAY_HANDLER.subscribe_topic, request.args['search_term'][1:])
-    return re
+    return render_template("search.html", page_id="search", title="Search", message=message, search=request.args['search_term'], threads=[], last=0)
+
+@app.route('/search_feed', methods=['GET'])
+@login_required
+def search_feed():
+    if request.method == 'GET':
+        if 'before' in request.args:
+            before = int(request.args['before'])
+        else:
+            before = time.time()
+        pk = SETTINGS.get('pubkey')
+        notes = DB.get_feed(before, pk, {'search':request.args['search']})
+        if len(notes) > 0:
+            t = FeedThread(notes)
+            profile = DB.get_profile(pk)
+            return render_template("feed/feed.items.html", threads=t.threads, last=t.last_ts, profile=profile, pubkey=pk)
+        else:
+            return 'END'
 
 
 @app.route('/topic', methods=['GET'])
@@ -729,16 +842,16 @@ def topic_page():
     EXECUTOR.submit(RELAY_HANDLER.subscribe_topic, topic)
     pk = SETTINGS.get('pubkey')
 
-    notes = DB.get_feed(int(time.time()), pk, {'topic':topic})
-    DB.set_all_seen_in_topic(topic)
+    #notes = DB.get_feed(int(time.time()), pk, {'topic':topic})
+    EXECUTOR.submit(DB.set_all_seen_in_topic(topic))
 
-    t = FeedThread(notes)
+    #t = FeedThread(notes)
     profile = DB.get_profile(pk)
 
     subscribed = DB.subscribed_to_topic(topic)
     topics = DB.get_topics()
 
-    return render_template("topic.html", page_id="topic", title="Topic", threads=t.threads, last=t.last_ts,
+    return render_template("topic.html", page_id="topic", title="Topic", threads=[], last=0,
                            profile=profile, pubkey=pk, topic=topic, subscribed=int(subscribed), topics=topics)
 
 @app.route('/topic_feed', methods=['GET'])
@@ -1003,12 +1116,7 @@ def process_login():
             return False
 
     elif 'load_private_key' in request.form.keys():
-        if len(request.form['mnemonic'].strip()) > 0:
-            if len(request.form['mnemonic'].split()) == 24 and bip39.check_phrase(request.form['mnemonic']):
-                private_key = bip39.decode_phrase(request.form['mnemonic']).hex()
-            else:
-                return False
-        elif len(request.form['private_key'].strip()) < 1:  # generate a new key
+        if len(request.form['private_key'].strip()) < 1:  # generate a new key
             private_key = None
             SETTINGS.set("new_keys", True)
         elif is_hex_key(request.form['private_key'].strip()):

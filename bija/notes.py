@@ -5,7 +5,6 @@ import time
 from bija.app import app
 from bija.args import LOGGING_LEVEL
 from bija.db import BijaDB
-from bija.helpers import timestamp_minus
 from bija.settings import SETTINGS
 
 DB = BijaDB(app.session)
@@ -16,13 +15,13 @@ logger.setLevel(LOGGING_LEVEL)
 class FeedThread:
     def __init__(self, notes):
         logger.info('FEED THREAD')
+        self.tm = time.time()
         self.notes = notes
         self.processed_notes = []
         self.threads = []
         self.roots = []
         self.ids = set()
         self.last_ts = int(time.time())
-
         self.get_roots()
         self.construct_threads()
 
@@ -32,10 +31,11 @@ class FeedThread:
         for note in self.notes:
             note = dict(note)
             self.last_ts = note['created_at']
-            if note['reshare'] is not None and len(note['content'].strip()) < 1:
-                roots.append(note['reshare'])
-                note['boost'] = True
+            if note['reshare'] is not None:
                 self.add_id(note['reshare'])
+                if len(note['content'].strip()) < 1:
+                    roots.append(note['reshare'])
+                    note['boost'] = True
             elif note['thread_root'] is not None:
                 roots.append(note['thread_root'])
                 self.add_id(note['thread_root'])
@@ -47,14 +47,12 @@ class FeedThread:
                 self.add_id(note['id'])
             self.processed_notes.append(note)
         self.roots = list(dict.fromkeys(roots))
-
         ids = [n['id'] for n in self.notes]
 
         fids = [x for x in self.roots if x not in ids]
         extra_notes = DB.get_feed(int(time.time()), SETTINGS.get('pubkey'), {'id_list': fids})
         if extra_notes is not None:
             self.processed_notes += extra_notes
-
         for root in self.roots:
             self.threads.append({
                 'self': None,
@@ -70,10 +68,7 @@ class FeedThread:
         for note in self.processed_notes:
             note = dict(note)
             if note['reshare'] is not None and 'boost' not in note:
-                reshare = DB.get_note(SETTINGS.get('pubkey'), note['reshare'])
                 self.add_id(note['reshare'])
-                if reshare is not None:
-                    note['reshare'] = reshare
             thread = next((sub for sub in self.threads if sub['id'] == note['id']), None)
             if thread is not None:
                 thread['self'] = note
@@ -102,6 +97,124 @@ class FeedThread:
             self.ids.add(note_id)
 
 class NoteThread:
+    def __init__(self, note_id):
+        logger.info('NOTE THREAD')
+        self.id = note_id
+        self.is_root = False
+        self.root_id = None
+        self.profiles = []
+        self.note_ids = [self.id]
+        self.public_keys = []
+        self.note = None
+        self.root = None
+        self.parent = None
+        self.replies = []
+
+        self.process()
+
+
+    def process(self):
+        self.note = self.get_note()
+        if not self.is_root:
+            self.determine_root()
+            self.get_root()
+            if self.note is not None and 'response_to' in self.note:
+                self.get_parent()
+
+        self.get_replies()
+
+        self.get_profile_briefs()
+
+
+    def get_note(self):
+        logger.info('get note')
+        n = DB.get_note(SETTINGS.get('pubkey'), self.id)
+        if n is not None:
+            n = dict(n)
+            n['current'] = True
+            if n['thread_root'] is None:
+                self.is_root = True
+                self.root_id = self.id
+                n['class'] = 'main root'
+            else:
+                n['class'] = 'main'
+            n['reshare'] = self.get_reshare(n)
+            self.add_members(n)
+            return n
+        return self.id
+
+    def get_parent(self):
+        logger.info('get parent')
+        p = DB.get_note(SETTINGS.get('pubkey'), self.note['response_to'])
+        if p is not None:
+            p = dict(p)
+            p['reshare'] = self.get_reshare(p)
+            p['class'] = 'ancestor'
+            self.add_members(p)
+            self.note_ids.append(p['id'])
+            self.parent = p
+        else:
+            self.parent = self.note['response_to']
+
+    def get_replies(self):
+        logger.info('get replies')
+        replies = DB.get_feed(int(time.time()), SETTINGS.get('pubkey'), {'replies': self.id})
+        if replies is not None:
+            for note in replies:
+                n = dict(note)
+                if n['response_to'] == self.id or (n['thread_root'] == self.id and n['response_to'] is None):
+                    n['reshare'] = self.get_reshare(n)
+                    n['class'] = 'reply'
+                    self.replies.append(n)
+                    self.add_members(n)
+                    self.note_ids.append(n['id'])
+
+    def get_reshare(self, note):
+        logger.info('get reshare')
+        if note['reshare'] is not None:
+            reshare = DB.get_note(SETTINGS.get('pubkey'), note['reshare'])
+            if reshare is not None:
+                return reshare
+            else:
+                return note['reshare']
+        return None
+
+    def add_public_keys(self, public_keys: list):
+        logger.info('add pub keys')
+        for k in public_keys:
+            if k not in self.public_keys:
+                self.public_keys.append(k)
+
+    def get_profile_briefs(self):
+        logger.info('get profile briefs')
+        self.profiles = DB.get_profile_briefs(self.public_keys)
+
+    def add_members(self, note):
+        logger.info('add members')
+        public_keys = [note['public_key']]
+        public_keys = json.loads(note['members']) + public_keys
+        self.add_public_keys(public_keys)
+
+    def get_root(self):
+        logger.info('get root')
+        n = DB.get_note(SETTINGS.get('pubkey'), self.root_id)
+        if n is not None:
+            n = dict(n)
+            n['class'] = 'root'
+            n['reshare'] = self.get_reshare(n)
+            self.root = n
+            self.add_members(n)
+            self.note_ids.append(n['id'])
+        else:
+            self.root = self.root_id
+
+    def determine_root(self):
+        logger.info('determine root')
+        if self.note is not None and type(self.note) == dict:
+            if self.note['thread_root'] is not None:
+                self.root_id = self.note['thread_root']
+
+class NoteThread2:
     def __init__(self, note_id):
         logger.info('NOTE THREAD')
         self.id = note_id

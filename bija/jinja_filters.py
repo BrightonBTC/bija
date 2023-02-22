@@ -188,6 +188,8 @@ def _jinja2_filter_media(json_string):
             return render_template("note.og.html", data=media[0])
         elif media[1] == 'video':
             return render_template("note.video.html", src=media[0], format=media[2])
+        elif media[1] == "website":
+            return render_template("note.og2.html", url=media[0])
     return ''
 
 
