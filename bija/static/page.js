@@ -754,11 +754,11 @@ class bijaThread{
                         else{
                             load_link.dataset.rel = new_elem.dataset.parent
                         }
-                        document.dispatchEvent(new Event('newContentLoaded'))
                     }
                     else{
                         load_link.parentNode.remove()
                     }
+                    document.dispatchEvent(new Event('newContentLoaded'))
                 }
             }
             fetchGet('/thread_item?id='+encodeURIComponent(load_link.dataset.rel), cb, {})

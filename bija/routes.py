@@ -94,7 +94,6 @@ def feed():
         if len(notes) > 0:
             t = FeedThread(notes)
             EXECUTOR.submit(RELAY_HANDLER.subscribe_feed(list(t.ids)))
-            print(t.ids)
             profile = DB.get_profile(pk)
             return render_template("feed/feed.items.html", threads=t.threads, last=t.last_ts, profile=profile, pubkey=pk)
         else:

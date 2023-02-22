@@ -471,11 +471,11 @@ class BijaDB:
 
         sq_following = self.session.query(func.count(Follower.id).label('count'))\
             .filter(Follower.pk_1 == public_key)\
-            .filter(Follower.pk_2 == Profile.public_key).subquery()
+            .filter(Follower.pk_2 == Profile.public_key).scalar_subquery()
 
         sq_follower = self.session.query(func.count(Follower.id).label('count'))\
             .filter(Follower.pk_2 == public_key)\
-            .filter(Follower.pk_1 == Profile.public_key).subquery()
+            .filter(Follower.pk_1 == Profile.public_key).scalar_subquery()
 
         q = self.session.query(Note.id,
             Note.public_key,
@@ -514,11 +514,11 @@ class BijaDB:
 
         sq_following = self.session.query(func.count(Follower.id).label('count'))\
             .filter(Follower.pk_1 == public_key)\
-            .filter(Follower.pk_2 == Profile.public_key).subquery()
+            .filter(Follower.pk_2 == Profile.public_key).scalar_subquery()
 
         sq_follower = self.session.query(func.count(Follower.id).label('count'))\
             .filter(Follower.pk_2 == public_key)\
-            .filter(Follower.pk_1 == Profile.public_key).subquery()
+            .filter(Follower.pk_1 == Profile.public_key).scalar_subquery()
 
         items = self.session.query(Note.id, Note.response_to) \
             .filter(
@@ -1052,11 +1052,11 @@ class BijaDB:
 
         sq_following = self.session.query(func.count(Follower.id).label('count'))\
             .filter(Follower.pk_1 == public_key)\
-            .filter(Follower.pk_2 == Profile.public_key).subquery()
+            .filter(Follower.pk_2 == Profile.public_key).scalar_subquery()
 
         sq_follower = self.session.query(func.count(Follower.id).label('count'))\
             .filter(Follower.pk_2 == public_key)\
-            .filter(Follower.pk_1 == Profile.public_key).subquery()
+            .filter(Follower.pk_1 == Profile.public_key).scalar_subquery()
 
         q = self.session.query(
             Note.id,
