@@ -36,6 +36,8 @@ class FeedThread:
                 if len(note['content'].strip()) < 1:
                     roots.append(note['reshare'])
                     note['boost'] = True
+                else:
+                    roots.append(note['id'])
             elif note['thread_root'] is not None:
                 roots.append(note['thread_root'])
                 self.add_id(note['thread_root'])

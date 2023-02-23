@@ -50,11 +50,12 @@ class Subscribe:
 
 
 class SubscribePrimary(Subscribe):
-    def __init__(self, name, relay, batch, pubkey):
+    def __init__(self, name, relay, batch, pubkey, since=None):
         super().__init__(name, relay, batch)
         self.pubkey = pubkey
-        self.since = 0
-        self.set_since()
+        self.since = since
+        if since is None:
+            self.set_since()
         self.build_filters()
         self.send()
 
@@ -78,7 +79,7 @@ class SubscribePrimary(Subscribe):
         md_filter = Filter(authors=[self.pubkey], kinds=[EventKind.SET_METADATA], limit=1)
         kinds = [EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION, EventKind.ENCRYPTED_DIRECT_MESSAGE]
         mentions_filter = Filter(tags={'#p': [self.pubkey]}, kinds=kinds, since=self.since)
-        followers_filter = Filter(tags={'#p': [self.pubkey]}, kinds=[EventKind.CONTACTS])
+        followers_filter = Filter(tags={'#p': [self.pubkey]}, kinds=[EventKind.CONTACTS, EventKind.RELAY_LIST])
         messages_filter = Filter(authors=[self.pubkey], kinds=[EventKind.ENCRYPTED_DIRECT_MESSAGE],
                                  since=self.since)
         f = [profile_filter, contacts_filter, md_filter, mentions_filter, messages_filter, blocked_filter, followers_filter]
@@ -112,11 +113,17 @@ class SubscribePrimary(Subscribe):
 
 
 class SubscribeTopic(Subscribe):
-    def __init__(self, name, relay, batch, term):
+    def __init__(self, name, relay, batch, term, since=None):
         super().__init__(name, relay, batch)
         self.term = term
+        self.since = since
+        self.set_since()
         self.build_filters()
         self.send()
+
+    def set_since(self):
+        if self.since is None:
+            self.since = timestamp_minus(TimePeriod.DAY)
 
     def build_filters(self):
         logger.info('build subscription filters')
@@ -215,19 +222,26 @@ class SubscribeThread(Subscribe):
 
 
 class SubscribeFeed(Subscribe):
-    def __init__(self, name, relay, batch, ids):
+    def __init__(self, name, relay, batch, ids, since=None):
         super().__init__(name, relay, batch)
         self.ids = ids
+        self.since = since
         self.build_filters()
         self.send()
 
     def build_filters(self):
         logger.info('build subscription filters')
-        self.filters = Filters([
-            Filter(tags={'#e': self.ids}, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION]),
-            # event responses
-            Filter(ids=self.ids, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION])
-        ])
+        if self.since is None:
+            self.filters = Filters([
+                Filter(tags={'#e': self.ids}, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION]),
+                # event responses
+                Filter(ids=self.ids, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION])
+            ])
+        else:
+            self.filters = Filters([
+                Filter(tags={'#e': self.ids}, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION], since=self.since),
+                Filter(ids=self.ids, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION], since=self.since)
+            ])
 
 
 
