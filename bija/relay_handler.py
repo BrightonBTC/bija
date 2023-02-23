@@ -187,7 +187,7 @@ class RelayHandler:
                             self.receive_block_list(msg.event)
 
                         elif msg.event.kind == EventKind.RELAY_LIST:
-                            pass
+                            print(msg.event)
 
                         if 'followers:' not in msg.subscription_id:
                             self.event_batch.append({
@@ -571,7 +571,7 @@ class RelayHandler:
 
     def subscribe_thread(self, root_id, ids):
         ACTIVE_EVENTS.add_notes(ids)
-        n_following = DB.get_following(SETTINGS.get('pubkey'), SETTINGS.get('pubkey'), True)
+        n_following = DB.get_following(SETTINGS.get('pubkey'), SETTINGS.get('pubkey'), count=True)
         n_batches = math.ceil(n_following / 256)
         SUBSCRIPTION_MANAGER.add_subscription('note-thread', n_batches, root=root_id)
 
@@ -581,11 +581,11 @@ class RelayHandler:
 
     def subscribe_profile(self, pubkey, since, ids):
         ACTIVE_EVENTS.add_notes(ids)
-        n_following = DB.get_following(SETTINGS.get('pubkey'), pubkey, True)
+        n_following = DB.get_following(SETTINGS.get('pubkey'), pubkey, count=True)
         n_batches = math.ceil(n_following / 256)
         p = DB.get_profile(pubkey)
         SUBSCRIPTION_MANAGER.add_subscription('profile:{}'.format(p.id), n_batches, pubkey=pubkey, since=since, ids=ids)
-        n_following = DB.get_followers(SETTINGS.get('pubkey'), pubkey, True)
+        n_following = DB.get_followers(SETTINGS.get('pubkey'), pubkey, count=True)
         n_batches = math.ceil(n_following / 256)
         followers_last_upd = DB.get_followers_last_upd(pubkey)
         DB.set_followers_last_upd(pubkey)
@@ -593,7 +593,7 @@ class RelayHandler:
 
     # create site wide subscription
     def subscribe_primary(self):
-        n_following = DB.get_following(SETTINGS.get('pubkey'), SETTINGS.get('pubkey'), True)
+        n_following = DB.get_following(SETTINGS.get('pubkey'), SETTINGS.get('pubkey'), count=True)
         n_batches = math.ceil(n_following / 256)
         SUBSCRIPTION_MANAGER.add_subscription('primary', n_batches, pubkey=SETTINGS.get('pubkey'))
 

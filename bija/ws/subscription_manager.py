@@ -19,8 +19,8 @@ class SubscriptionManager:
         self.subscriptions = {}
 
     def add_subscription(self, name, batch_count, **kwargs):
-        self.subscriptions[name] = {'batch_count': batch_count, 'kwargs': kwargs, 'paused': False}
-        self.subscribe(name)
+        self.subscriptions[name] = {'batch_count': batch_count, 'kwargs': kwargs, 'relays': {}}
+        self.subscribe(name, [])
 
     def remove_subscription(self, name):
         del self.subscriptions[name]
@@ -41,7 +41,7 @@ class SubscriptionManager:
                 sub = RELAY_MANAGER.relays[relay].subscriptions[s]
                 if sub.paused and sub.paused < int(time.time()) - 30:
                     sub.paused = False
-                    self.subscribe(s, [relay], 0)
+                    self.subscribe(s, [relay], 0, self.get_last_batch_upd(s, relay, 0))
 
     def next_batch(self, relay, name):
         if name in self.subscriptions and self.subscriptions[name]['batch_count'] > 1:
@@ -51,66 +51,94 @@ class SubscriptionManager:
                     RELAY_MANAGER.relays[relay].subscriptions[name].batch = 0
                     RELAY_MANAGER.relays[relay].subscriptions[name].paused = time.time()
                 else:
+                    batch = RELAY_MANAGER.relays[relay].subscriptions[name].batch + 1
                     self.subscribe(
                         name,
                         [relay],
-                        RELAY_MANAGER.relays[relay].subscriptions[name].batch + 1
+                        batch,
+                        self.get_last_batch_upd(name, relay, batch)
                     )
 
+    def get_last_batch_upd(self, sub, relay, batch):
+        if sub in self.subscriptions and relay in self.subscriptions[sub]['relays']:
+            if batch in self.subscriptions[sub]['relays'][relay]:
+                return self.subscriptions[sub]['relays'][relay][batch]
+        return None
 
-    def subscribe(self, name, relay=[], batch=0):
+    def subscribe(self, name, relays, batch=0, ts=None):
+
+        for relay in relays:
+            if relay not in self.subscriptions[name]['relays']:
+                self.subscriptions[name]['relays'][relay] = {}
+            self.subscriptions[name]['relays'][relay][batch] = int(time.time())
+
         if name == 'primary':
             SubscribePrimary(
                 name,
-                relay,
+                relays,
                 batch,
-                self.subscriptions[name]['kwargs']['pubkey']
+                self.subscriptions[name]['kwargs']['pubkey'],
+                ts
             )
         elif name == 'main-feed':
             SubscribeFeed(
                 name,
-                relay,
+                relays,
                 batch,
-                self.subscriptions[name]['kwargs']['ids']
+                self.subscriptions[name]['kwargs']['ids'],
+                ts
             )
         elif name == 'topic':
             SubscribeTopic(
                 name,
-                relay,
+                relays,
                 batch,
-                self.subscriptions[name]['kwargs']['term']
+                self.subscriptions[name]['kwargs']['term'],
+                ts
             )
         elif 'profile:' in name:
+            if ts is not None:
+                since = ts
+            else:
+                since = self.subscriptions[name]['kwargs']['since']
             SubscribeProfile(
                 name,
-                relay,
+                relays,
                 batch,
                 self.subscriptions[name]['kwargs']['pubkey'],
-                self.subscriptions[name]['kwargs']['since'],
+                since,
                 self.subscriptions[name]['kwargs']['ids']
             )
         elif 'followers:' in name:
+            if ts is not None:
+                since = ts
+            else:
+                since = self.subscriptions[name]['kwargs']['since']
             SubscribeFollowerList(
                 name,
-                relay,
+                relays,
                 batch,
                 self.subscriptions[name]['kwargs']['pubkey'],
-                self.subscriptions[name]['kwargs']['since']
+                since
             )
         elif name == 'note-thread':
             SubscribeThread(
                 name,
-                relay,
+                relays,
                 batch,
                 self.subscriptions[name]['kwargs']['root']
             )
         elif name == 'messages':
+            if ts is not None:
+                since = ts
+            else:
+                since = self.subscriptions[name]['kwargs']['since']
             SubscribeMessages(
                 name,
-                relay,
+                relays,
                 batch,
                 self.subscriptions[name]['kwargs']['pubkey'],
-                self.subscriptions[name]['kwargs']['since']
+                since
             )
 
 

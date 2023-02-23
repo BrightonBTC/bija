@@ -94,7 +94,6 @@ def feed():
         if len(notes) > 0:
             t = FeedThread(notes)
             EXECUTOR.submit(RELAY_HANDLER.subscribe_feed(list(t.ids)))
-            print(t.ids)
             profile = DB.get_profile(pk)
             return render_template("feed/feed.items.html", threads=t.threads, last=t.last_ts, profile=profile, pubkey=pk)
         else:
@@ -252,8 +251,8 @@ class ProfilePage:
             self.profile = DB.get_profile(self.pubkey)
 
     def set_contact_counts(self):
-        self.follower_count = DB.get_followers(SETTINGS.get('pubkey'), self.pubkey, True)
-        self.following_count = DB.get_following(SETTINGS.get('pubkey'), self.pubkey, True)
+        self.follower_count = DB.get_followers(SETTINGS.get('pubkey'), self.pubkey, count=True)
+        self.following_count = DB.get_following(SETTINGS.get('pubkey'), self.pubkey, count=True)
 
     def set_meta(self):
         metadata = {}
@@ -285,6 +284,16 @@ class ProfilePage:
         elif self.page == 'blocked':
             self.data = DB.get_blocked()
 
+@app.route('/followers_list_next', methods=['GET'])
+def followers_list_next():
+    data = None
+    if request.args['list'] == 'following':
+        data = DB.get_following(SETTINGS.get('pubkey'), request.args['pk'], page=int(request.args['n']))
+    elif request.args['list'] == 'followers':
+        data = DB.get_followers(SETTINGS.get('pubkey'), request.args['pk'], page=int(request.args['n']))
+    if data is not None and len(data) > 0:
+        return render_template("profile/following.feed.html", profiles=data)
+    return 'END'
 
 @app.route('/fetch_archived', methods=['GET'])
 def fetch_archived():

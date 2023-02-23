@@ -1,10 +1,12 @@
 from flask_socketio import SocketIO
 from flask import Flask
 from sqlalchemy.orm import scoped_session
+from engineio.async_drivers import gevent
 import bija.db as db
 from bija.active_events import ActiveEvents
 from bija.args import args
 from bija.ws.relay_manager import RelayManager
+
 
 app = Flask(__name__, template_folder='../bija/templates')
 socketio = SocketIO(app)

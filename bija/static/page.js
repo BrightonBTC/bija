@@ -754,11 +754,11 @@ class bijaThread{
                         else{
                             load_link.dataset.rel = new_elem.dataset.parent
                         }
-                        document.dispatchEvent(new Event('newContentLoaded'))
                     }
                     else{
                         load_link.parentNode.remove()
                     }
+                    document.dispatchEvent(new Event('newContentLoaded'))
                 }
             }
             fetchGet('/thread_item?id='+encodeURIComponent(load_link.dataset.rel), cb, {})
@@ -887,18 +887,7 @@ class bijaProfile{
     }
 
     setEventListeners(){
-        const btns = document.querySelectorAll(".follow-btn");
-        for (const btn of btns) {
-            btn.addEventListener("click", (event)=>{
-                event.preventDefault();
-                event.stopPropagation();
-                let id = btn.dataset.rel;
-                let state = btn.dataset.state;
-                let upd = btn.dataset.upd;
-                this.setFollowState(id, state, upd);
-                return false;
-            });
-        }
+
         const edit_tog = document.querySelector(".profile-edit-btn");
         if(edit_tog){
             edit_tog.addEventListener("click", (event)=>{
@@ -1532,6 +1521,79 @@ class bijaFeed{
     }
 }
 
+class bijaFollowers{
+    constructor(){
+        const main_el = document.querySelector(".main[data-page]")
+        this.page = main_el.dataset.page
+        this.list_el = document.querySelector(".following-list")
+        this.page_n = parseInt(this.list_el.dataset.page)
+        const profile_el = document.querySelector("#profile")
+        this.pk = profile_el.dataset.pk
+        this.data = {};
+        this.loading = 0;
+        this.listener = () => this.loader(this);
+        window.addEventListener('scroll', this.listener);
+        this.pageLoadedEvent = new Event("followerListLoaded");
+        document.addEventListener('followerListLoaded', ()=>{
+            this.setEventListeners()
+        });
+        this.requestNextPage(Math.floor(Date.now() / 1000))
+        this.setEventListeners()
+    }
+
+    setEventListeners(){
+        const btns = document.querySelectorAll(".follow-btn");
+        for (const btn of btns) {
+            btn.classList.remove('follow-btn')
+            btn.addEventListener("click", (event)=>{
+                event.preventDefault();
+                event.stopPropagation();
+                let id = btn.dataset.rel;
+                let state = btn.dataset.state;
+                let upd = btn.dataset.upd;
+                this.setFollowState(id, state, upd);
+                return false;
+            });
+        }
+    }
+
+    loader(o){
+        if ((window.innerHeight + window.innerHeight + window.scrollY) >= document.body.offsetHeight && o.loading == 0){
+            o.requestNextPage();
+        }
+    }
+
+    setLoadingCompleted(){
+        this.loading = 2; // nothing more to load
+    }
+
+    requestNextPage(ts){
+        this.loading = 1;
+        const cb = function(response, data){
+            if(response == 'END'){
+                data.context.loading = 3
+            }
+            else{
+                data.context.page_n += 1
+                data.context.loadArticles(response, data.context);
+                document.dispatchEvent(data.context.pageLoadedEvent);
+            }
+            lazyLoad()
+        }
+        fetchGet('/followers_list_next?n='+this.page_n+'&list='+encodeURIComponent(this.page)+'&pk='+encodeURIComponent(this.pk), cb, {'context': this})
+    }
+
+    loadArticles(response, context){
+        const doc = new DOMParser().parseFromString(response, "text/html")
+        const htm = doc.body.firstChild
+        context.list_el.append(htm);
+        const o = this
+        setTimeout(function(){
+            o.loading = 0;
+        }, 200)
+    }
+}
+
 class bijaTopic{
 
     constructor(){
@@ -1997,9 +2059,11 @@ window.addEventListener("load", function () {
     }
     if (document.querySelector(".main[data-page='following']") != null){
         new bijaProfile();
+        new bijaFollowers();
     }
     if (document.querySelector(".main[data-page='followers']") != null){
         new bijaProfile();
+        new bijaFollowers();
     }
     if (document.querySelector(".main[data-page='messages_from']") != null){
         new bijaMessages();
