@@ -1017,22 +1017,6 @@ class bijaProfile{
             notify('Something went wrong updating your profile. Check for any errors and try again.')
         }
     }
-
-    setFollowState(id, state, upd){
-        const cb = function(response, data){
-            if(data.upd == '1'){
-                document.querySelector(".profile-tools").innerHTML = response
-            }
-            else{
-                const c_btn = document.querySelector(".follow-btn[data-rel='"+data.id+"']")
-                const doc = new DOMParser().parseFromString(response, "text/html")
-                const svg = doc.body.firstChild
-                c_btn.replaceWith(svg)
-            }
-        }
-        fetchGet('/follow?id='+id+"&state="+state+"&upd="+upd, cb, {'upd':upd,'id':id})
-    }
-
 }
 
 class bijaNotes{
@@ -1521,6 +1505,49 @@ class bijaFeed{
     }
 }
 
+class bijaProfileBriefs{
+    constructor(){
+        document.addEventListener('newContentLoaded', ()=>{
+            this.setEventListeners()
+        });
+        this.setEventListeners()
+    }
+    setEventListeners(){
+        const btns = document.querySelectorAll(".follow-btn");
+        for (const btn of btns) {
+            btn.classList.remove('follow-btn')
+            btn.addEventListener("click", (event)=>{
+                event.preventDefault();
+                event.stopPropagation();
+                let id = btn.dataset.rel;
+                let state = btn.dataset.state;
+                let upd = btn.dataset.upd;
+                this.setFollowState(btn, state, upd);
+                return false;
+            });
+        }
+    }
+
+    setFollowState(btn, state, upd){
+        const cb = function(response, data){
+            if(data.upd == '1'){
+                document.querySelector(".profile-tools").innerHTML = response
+            }
+            else{
+                if(data.state == 1){
+                    data.btn.innerText = 'unfollow'
+                    data.btn.dataset.state = 0
+                }
+                else{
+                    data.btn.innerText = 'follow'
+                    data.btn.dataset.state = 1
+                }
+            }
+        }
+        fetchGet('/follow?id='+btn.dataset.rel+"&state="+state+"&upd="+upd, cb, {'upd':upd,'btn':btn,'state':state})
+    }
+}
+
 class bijaFollowers{
     constructor(){
         const main_el = document.querySelector(".main[data-page]")
@@ -1533,28 +1560,8 @@ class bijaFollowers{
         this.loading = 0;
         this.listener = () => this.loader(this);
         window.addEventListener('scroll', this.listener);
-        this.pageLoadedEvent = new Event("followerListLoaded");
-        document.addEventListener('followerListLoaded', ()=>{
-            this.setEventListeners()
-        });
+        this.pageLoadedEvent = new Event("newContentLoaded");
         this.requestNextPage(Math.floor(Date.now() / 1000))
-        this.setEventListeners()
-    }
-
-    setEventListeners(){
-        const btns = document.querySelectorAll(".follow-btn");
-        for (const btn of btns) {
-            btn.classList.remove('follow-btn')
-            btn.addEventListener("click", (event)=>{
-                event.preventDefault();
-                event.stopPropagation();
-                let id = btn.dataset.rel;
-                let state = btn.dataset.state;
-                let upd = btn.dataset.upd;
-                this.setFollowState(id, state, upd);
-                return false;
-            });
-        }
     }
 
     loader(o){
@@ -2084,6 +2091,7 @@ window.addEventListener("load", function () {
         new bijaNotes();
     }
     new Emojis();
+    new bijaProfileBriefs();
 
     SOCK();
 

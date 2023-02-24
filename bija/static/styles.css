@@ -272,7 +272,7 @@ hr{
 }
 
 .profile-name svg {
-    margin: 0 var(--spacing-tiny);
+    margin: 0 var(--spacing-mid);
 }
 
 .rnd{
@@ -554,7 +554,6 @@ input.post-submit {
     font-weight: 100;
     color: var(--txt-clr2);
     font-style: italic;
-    font-size: var(--fs-sm);
 }
 .long-name .uname .display_name {
     text-overflow: ellipsis;
@@ -778,32 +777,6 @@ input.post-submit {
     color: var(--mnu-clr-hvr);
 }
 
-.following-item{
-    display: flex;
-    padding: var(--spacing-mid);
-    margin: 0 var(--spacing-sm);
-    border-bottom: 1px solid var(--bdr-clr-1);
-    color: var(--txt-clr);
-    align-items: center;
-}
-.following-item a{
-    color: var(--txt-clr);
-}
-.following-item:hover{
-    background: var(--bg-clr1);
-}
-
-.following-list .pic{
-    flex-basis: var(--pfp-dim-lg);
-}
-.following-list .pic img{
-    width:var(--pfp-dim-lg);
-    height: var(--pfp-dim-lg);
-}
-.following-list .name{
-    flex: 1;
-    padding: var(--spacing-mid);
-}
 #profile form{
     display: none;
     padding: var(--spacing-lg);
@@ -1239,6 +1212,7 @@ svg.lightning *{
     display: flex;
     justify-content: space-between;
     align-items: center;
+    font-size: 1rem;
 }
 .note h3 .profile-name {
     flex: 3;
@@ -1613,7 +1587,8 @@ ul#search_tips li {
 }
 .profile-brief.card {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
+    padding: var(--spacing-mid);
 }
 .profile-brief .profile-image {
     flex: 0 0 30px;
@@ -1625,13 +1600,7 @@ ul#search_tips li {
 .profile-brief a.name{
     color: var(--txt-clr);
 }
-.profile-brief .uname{
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    width: 150px;
-    display: inline-block;
-}
+
 .edit-tags{
     cursor: pointer;
     display: none;

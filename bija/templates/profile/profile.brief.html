@@ -1,8 +1,4 @@
-{%- if profile['about'] is not none -%}
-    {%- set about=profile['about'] -%}
-{%- else -%}
-    {%- set about='' -%}
-{%- endif -%}
+
 
 <div class="profile-brief card pad-mid">
 
@@ -12,5 +8,13 @@
     </div>
     <div class="profile-details profile-item">
         <a class="name" href="/profile?pk={{profile['public_key']}}">{{profile['name'] | ident_string(profile['display_name'], profile['public_key']) | safe }}</a>
+        <br>{{ p['public_key'] | relationship | safe }}
+        {%- if page_id != "blocked" -%}
+            {%- if profile['following'] == 1: -%}
+            <button class="follow-btn" data-rel="{{profile['public_key']}}" data-state="0" data-upd="0">unfollow</button>
+            {%- else: -%}
+            <button class="follow-btn" data-rel="{{profile['public_key']}}" data-state="1" data-upd="0">follow</button>
+            {%- endif -%}
+        {%- endif -%}
     </div>
 </div>
