@@ -348,6 +348,11 @@ def mark_read():
     DB.set_all_messages_read()
     return render_template("upd.json", title="Home", data=json.dumps({'success':1}))
 
+@app.route('/empty_junk', methods=['GET'])
+def empty_junk():
+    DB.empty_junk()
+    return render_template("upd.json", title="Home", data=json.dumps({'success':1}))
+
 
 @app.route('/profile_feed', methods=['GET'])
 def profile_feed():
@@ -728,10 +733,19 @@ def private_messages_page():
     ACTIVE_EVENTS.clear()
     EXECUTOR.submit(RELAY_HANDLER.set_page('messages', None))
     EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
+    inbox = True
+    if 'junk' in request.args and request.args['junk'] == '1':
+        inbox = False # junk folder
+    messages = DB.get_message_list(inbox)
+    n_junk = DB.get_junk_count()
 
-    messages = DB.get_message_list()
-
-    return render_template("messages.html", page_id="messages", title="Private Messages", messages=messages)
+    return render_template("messages.html",
+                           page_id="messages",
+                           title="Private Messages",
+                           messages=messages,
+                           n_junk=n_junk,
+                           inbox=inbox,
+                           privkey=SETTINGS.get('privkey'))
 
 @app.route('/fetch_archived_msgs', methods=['GET'])
 @login_required

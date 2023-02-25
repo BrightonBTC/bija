@@ -186,6 +186,7 @@ input[type=submit]:hover, input[type=button]:hover, button:hover {
 hr{
     border: 0;
     border-bottom: 1px solid var(--bdr-clr-2);
+    width:100%;
 }
 
 /* global header */
@@ -985,7 +986,21 @@ svg.lightning *{
 }
 .msg-profile-name{
     font-size: var(--fs-mid);
-    margin-bottom: 8px;
+}
+.msg-profile-last-message{
+    padding: 0 var(--spacing);
+}
+.msg-preview{
+    font-size: var(--fs-sm);
+    background: var(--bg-clr2);
+    border-radius: var(--rnd-mid);
+    padding: var(--spacing);
+    margin-bottom: var(--spacing);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 600px;
+    display:block;
 }
 #message-poster{
     position: sticky;

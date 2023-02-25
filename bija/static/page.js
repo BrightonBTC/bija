@@ -795,8 +795,13 @@ class bijaMessages{
             this.setSubmitMessage()
             this.setCfgLoader()
         }
-        else if(page=='messages'){
-            this.setAllReadBtn()
+        const mark_read_btn = document.querySelector('#mark_all_read');
+        if(mark_read_btn){
+            this.setAllReadBtn(mark_read_btn)
+        }
+        const empty_junk_btn = document.querySelector('#empty_junk');
+        if(empty_junk_btn){
+            this.setEmptyJunkBtn(empty_junk_btn)
         }
         const archive_fetcher = document.querySelector('#fetch_archived');
         if(archive_fetcher){
@@ -804,12 +809,23 @@ class bijaMessages{
         }
     }
 
-    setAllReadBtn(){
+    setAllReadBtn(btn){
         const cb = function(response, data){
             location.reload()
         }
-        document.querySelector('#mark_all_read').addEventListener("click", (event)=>{
+        btn.addEventListener("click", (event)=>{
+            event.preventDefault();
             fetchGet('/mark_read', cb, {})
+        });
+    }
+
+    setEmptyJunkBtn(btn){
+        const cb = function(response, data){
+            //location.reload()
+        }
+        btn.addEventListener("click", (event)=>{
+            event.preventDefault();
+            fetchGet('/empty_junk', cb, {})
         });
     }
 

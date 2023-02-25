@@ -374,6 +374,7 @@ class DirectMessageEvent:
             "is_sender": self.is_sender,
             "created_at": self.event.created_at,
             "seen": seen,
+            "passed": self.passed,
             "raw": json.dumps(self.event.to_json_object())
         }
 

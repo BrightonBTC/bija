@@ -194,3 +194,4 @@ def request_url_head(url):
     except Exception as e:
         logging.error(e)
         return False
+

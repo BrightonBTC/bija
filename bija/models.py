@@ -77,6 +77,7 @@ class PrivateMessage(Base):
     is_sender = Column(Boolean)  # true = public_key is sender, false I'm sender
     created_at = Column(Integer)
     seen = Column(Boolean, default=False)
+    passed = Column(Boolean, default=False)
     raw = Column(String)
 
 class Topic(Base):

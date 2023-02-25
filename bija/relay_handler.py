@@ -540,7 +540,7 @@ class RelayHandler:
 
     def receive_direct_message_event(self, event):
         e = DirectMessageEvent(event, SETTINGS.get('pubkey'))
-        if e.pubkey is not None and e.is_sender is not None and e.passed:
+        if e.pubkey is not None and e.is_sender is not None:
             self.dm_batch['inserts'].append(e.to_dict())
             self.dm_batch['objects'].append(e)
             self.add_profile_if_not_exists(e.event.public_key)
