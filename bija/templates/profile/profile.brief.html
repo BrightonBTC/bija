@@ -8,13 +8,16 @@
     </div>
     <div class="profile-details profile-item">
         <a class="name" href="/profile?pk={{profile['public_key']}}">{{profile['name'] | ident_string(profile['display_name'], profile['public_key']) | safe }}</a>
-        <br>{{ p['public_key'] | relationship | safe }}
+        <br>{{ p['public_key'] | relationship | safe }}<br>
         {%- if page_id != "blocked" -%}
             {%- if profile['following'] == 1: -%}
-            <button class="follow-btn" data-rel="{{profile['public_key']}}" data-state="0" data-upd="0">unfollow</button>
+            <button class="follow-btn btn muted" data-rel="{{profile['public_key']}}" data-state="0" data-upd="0">{{'unfollow'| svg_icon('icon')|safe}} unfollow</button>
             {%- else: -%}
-            <button class="follow-btn" data-rel="{{profile['public_key']}}" data-state="1" data-upd="0">follow</button>
+            <button class="follow-btn" data-rel="{{profile['public_key']}}" data-state="1" data-upd="0">{{'follow'| svg_icon('icon')|safe}} follow</button>
             {%- endif -%}
+            <button class="block-btn btn muted" data-rel="{{profile['public_key']}}">{{'block'| svg_icon('icon warn')|safe}} block</button>
+        {%- else: -%}
+            [ BLOCKED ]
         {%- endif -%}
     </div>
 </div>

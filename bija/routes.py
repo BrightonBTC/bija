@@ -427,9 +427,17 @@ def quote_form():
 
 @app.route('/confirm_block', methods=['GET'])
 def confirm_block():
-    note_id = request.args['id']
-    note = DB.get_note(SETTINGS.get('pubkey'), note_id)
-    return render_template("block.confirm.html", note=note)
+    profile = None
+    if 'note' in request.args:
+        note_id = request.args['note']
+        profile = DB.get_note(SETTINGS.get('pubkey'), note_id)
+    elif 'pk' in request.args:
+        pk = request.args['pk']
+        profile = DB.get_profile(pk)
+    if profile is not None:
+        return render_template("block.confirm.html", profile=profile)
+    else:
+        return 'Something went wrong'
 
 @app.route('/block', methods=['POST'])
 def block():
@@ -438,6 +446,19 @@ def block():
         if r[0] == 'pubkey' and is_hex_key(r[1]):
             out.append(['p', r[1]])
             DB.purge_pubkey(r[1])
+    l = DB.get_blocked_pks()
+    for entry in l:
+        out.append(['p', entry])
+    e = SubmitBlockList(out)
+    event_id = e.event_id
+    return render_template("upd.json", data=json.dumps({'event_id': event_id}))
+
+@app.route('/unblock', methods=['POST'])
+def unblock():
+    out = []
+    for r in request.json:
+        if r[0] == 'pubkey' and is_hex_key(r[1]):
+            DB.unblock(r[1])
     l = DB.get_blocked_pks()
     for entry in l:
         out.append(['p', entry])
@@ -782,7 +803,7 @@ def private_message_page():
         pk = request.args['pk']
 
     profile = DB.get_profile(SETTINGS.get('pubkey'))
-    them = DB.get_profile(pk)
+    them = DB.get_profile_detailed(SETTINGS.get('pubkey'), pk)
 
     messages.reverse()
 

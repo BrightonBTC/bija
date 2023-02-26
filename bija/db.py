@@ -75,6 +75,20 @@ class BijaDB:
     def get_profile(self, public_key):
         return self.session.query(Profile).filter_by(public_key=public_key).first()
 
+    def get_profile_detailed(self, my_pk, public_key):
+        sq_following = self.session.query(func.count(Follower.id).label('count')) \
+            .filter(Follower.pk_1 == my_pk) \
+            .filter(Follower.pk_2 == Profile.public_key).scalar_subquery()
+        return self.session.query(
+            Profile.public_key,
+            Profile.name,
+            Profile.display_name,
+            Profile.pic,
+            Profile.nip05,
+            Profile.nip05_validated,
+            Profile.blocked,
+            label('following', sq_following)).filter_by(public_key=public_key).first()
+
     def get_profile_by_id(self, id):
         return self.session.query(Profile).filter_by(id=id).first()
 
@@ -157,6 +171,9 @@ class BijaDB:
                     new_unfollows.append(item['pk_1'])
 
             if item['pk_1'] == my_pk:
+                print('===================================================================================')
+                print(item['pk_1'], item['pk_2'])
+                print('===================================================================================')
                 is_mine = True
 
         self.session.commit()
@@ -182,6 +199,10 @@ class BijaDB:
     def update_block_list(self, profiles: list):
         self.session.query(Profile).filter(Profile.public_key.in_(profiles)).update({'blocked': True})
         self.session.query(Profile).filter(Profile.blocked==True).filter(Profile.public_key.notin_(profiles)).update({'blocked': False})
+        self.session.commit()
+
+    def unblock(self, pubkey: str):
+        self.session.query(Profile).filter(Profile.public_key == pubkey).update({'blocked': False})
         self.session.commit()
 
     def get_blocked(self):

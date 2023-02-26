@@ -60,6 +60,7 @@
     --warning: red;
     --verified: gold;
     --liked: #4ec74c;
+    --muted: #3b3b4a;
 
     --alert-bg: #19dfff;
 }
@@ -287,6 +288,13 @@ hr{
 .break-word{
     white-space: break-spaces;
     overflow-wrap: break-word;
+}
+
+.btn.warn{
+    background: var(--warning);
+}
+.btn.muted{
+    background: var(--muted);
 }
 
 /* Global UI */
@@ -724,7 +732,9 @@ input.post-submit {
     border-radius: var(--rnd);
     font-size: var(--fs-sm);
 }
-
+.profile-details button{
+    margin: var(--spacing-sm);
+}
 .profile-details h1{
     font-weight: 800;
     font-size: var(--fs-xl);
@@ -1614,6 +1624,9 @@ ul#search_tips li {
 }
 .profile-brief a.name{
     color: var(--txt-clr);
+}
+.following-list{
+    margin: 0 var(--spacing-mid);
 }
 
 .edit-tags{

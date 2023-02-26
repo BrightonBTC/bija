@@ -821,7 +821,7 @@ class bijaMessages{
 
     setEmptyJunkBtn(btn){
         const cb = function(response, data){
-            //location.reload()
+            location.reload()
         }
         btn.addEventListener("click", (event)=>{
             event.preventDefault();
@@ -900,6 +900,11 @@ class bijaProfile{
         if(nav_el){
             nav_el.classList.add('actv')
         }
+        const unblock = main_el.querySelector('.unblock_form')
+        if(unblock){
+            this.setUnblockForm(unblock)
+        }
+
     }
 
     setEventListeners(){
@@ -963,6 +968,18 @@ class bijaProfile{
         if(archive_fetcher){
             this.setArchiveFetcher(archive_fetcher)
         }
+    }
+
+    setUnblockForm(form){
+        const btn = form.querySelector("button")
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const cb = function(response, data){
+                //location.reload()
+            }
+            fetchFromForm('/unblock', form, cb, {}, 'json')
+        });
     }
 
     setArchiveFetcher(el){
@@ -1349,7 +1366,7 @@ class bijaNotes{
                             data.context.setBlockForm()
                         }
                     }
-                    fetchGet('/confirm_block?id='+note_id, get_block_cb, {context:this})
+                    fetchGet('/confirm_block?note='+note_id, get_block_cb, {context:this})
                 })
             }
         }
@@ -1542,6 +1559,36 @@ class bijaProfileBriefs{
                 return false;
             });
         }
+        const block_btns = document.querySelectorAll(".block-btn");
+        for (const btn of block_btns) {
+            btn.addEventListener('click', (e) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const get_block_cb = function(response, data){
+                    if(response){
+                        popup(response)
+                        lazyLoad()
+                        data.context.setBlockForm()
+                    }
+                }
+                fetchGet('/confirm_block?pk='+btn.dataset.rel, get_block_cb, {context:this})
+            })
+        }
+    }
+
+    setBlockForm(){
+        const form = document.querySelector("#block_form")
+        const btn = form.querySelector("input[type='submit']")
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const cb = function(response, data){
+                if(response['event_id']){
+                   location.reload()
+                }
+            }
+            fetchFromForm('/block', form, cb, {}, 'json')
+        });
     }
 
     setFollowState(btn, state, upd){
