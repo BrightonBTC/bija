@@ -79,12 +79,9 @@ class RelayHandler:
 
     def open_connections(self):
         relays = DB.get_relays()
-        n_relays = 0
         for r in relays:
-            n_relays += 1
-            s = {}
-            RELAY_MANAGER.add_relay(r.name, subscriptions=s)
-        if n_relays > 0:
+            RELAY_MANAGER.add_relay(r.name, r.send, r.receive)
+        if len(relays) > 0:
             RELAY_MANAGER.open_connections({"cert_reqs": ssl.CERT_NONE})
 
     # close existing connections, reopen, and start primary subscription
