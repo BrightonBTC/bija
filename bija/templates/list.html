@@ -1,0 +1,21 @@
+{%- extends "base.html" -%}
+{%- block css -%}
+{%- include 'css.html' -%}
+{%- endblock css -%}
+
+{%- block content -%}
+
+<h2 class="posts-title">{{title}}</h2>
+<div class="center"><button id="members_show" data-rel="{{id}}">{{n_members}} Members {{'edit'| svg_icon('icon-sm')|safe}}</button></div>
+<div id="feed">
+{%- include 'feed/feed.items.html' -%}
+</div>
+{%- endblock content -%}
+
+{%- block right_content -%}
+<div>
+    <div class="card">
+        {%- include 'lists.list.html' -%}
+    </div>
+</div>
+{%- endblock right_content -%}

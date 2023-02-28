@@ -291,6 +291,10 @@ hr{
     overflow-wrap: break-word;
 }
 
+.center{
+    text-align: center;
+}
+
 .btn.warn{
     background: var(--warning);
 }
@@ -1513,6 +1517,18 @@ p.note-tools {
 }
 .ln_invoice.qr_show .invoice{
     display: none;
+}
+/* ---------- */
+
+/* Lists */
+
+.lists a{
+    padding: var(--spacing-tiny);
+}
+.lists a.actv{
+    background: var(--bg-clr2);
+    border-radius: var(--rnd);
+    color: var(--lnk-clr);
 }
 
 /* ---------- */

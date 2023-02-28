@@ -1388,6 +1388,19 @@ class bijaNotes{
                     fetchGet('/confirm_block?note='+note_id, get_block_cb, {context:this})
                 })
             }
+            else if(tool == 'list'){
+                tool_el.addEventListener('click', (e) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const get_list_cb = function(response, data){
+                        if(response){
+                            popup(response)
+                            data.context.setListAdderForm()
+                        }
+                    }
+                    fetchGet('/list_adder?note='+note_id, get_list_cb, {context:this})
+                })
+            }
         }
     }
 
@@ -1419,6 +1432,23 @@ class bijaNotes{
         }
         const p = document.querySelector('.popup')
         p.append(container)
+    }
+
+    setListAdderForm(){
+        const form = document.querySelector("#list_adder")
+        const btn = form.querySelector("input[type='submit']")
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const cb = function(response, data){
+                console.log(response['success'])
+                if(response['success']){
+                    notify('Added to list')
+                    popup_close()
+                }
+            }
+            fetchFromForm('/add_to_list', form, cb, {}, 'json')
+        });
     }
 
     setDeleteForm(){
@@ -1707,6 +1737,38 @@ class bijaTopic{
     }
 }
 
+class bijaLists{
+
+    constructor(){
+        const mem_el = document.querySelector("#members_show")
+        mem_el.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const cb = function(response, data){
+                popup(response)
+                lazyLoad()
+                data.context.setMembersForm()
+            }
+            fetchGet('/list_members?id='+mem_el.dataset.rel, cb, {'context':this})
+        });
+    }
+    setMembersForm(){
+        const form = document.querySelector("#list_members")
+        const btn = form.querySelector("input[type='submit']")
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const cb = function(response, data){
+                if(response['success']){
+                   location.reload()
+                }
+            }
+            fetchFromForm('/remove_from_list', form, cb, {}, 'json')
+        });
+    }
+
+}
+
 class Emojis{
     target_el = null
     active = false
@@ -1874,14 +1936,7 @@ function defaultImage(img){
 }
 
 function popup(htm){
-    const existing = document.querySelector('.popup')
-    const existing_ol = document.querySelector('.popup-overlay')
-    if(existing){
-        existing.remove()
-    }
-    if(existing_ol){
-        existing_ol.remove()
-    }
+    popup_close()
     overlay = document.createElement('div')
     overlay.classList.add('popup-overlay')
     the_popup = document.createElement('div')
@@ -1895,6 +1950,18 @@ function popup(htm){
     document.body.append(overlay)
     document.body.append(the_popup)
     document.querySelector('.main').classList.add('blur')
+}
+
+function popup_close(){
+    const p = document.querySelector('.popup')
+    const po = document.querySelector('.popup-overlay')
+    if(p){
+        p.remove()
+    }
+    if(po){
+        po.remove()
+    }
+    document.querySelector('.main').classList.remove('blur')
 }
 
 function fetchGet(url, cb, cb_data = {}, response_type='text'){
@@ -2167,6 +2234,12 @@ window.addEventListener("load", function () {
     if (document.querySelector(".main[data-page='search']") != null){
         new bijaFeed();
         new bijaNotes();
+    }
+
+    if (document.querySelector(".main[data-page='list']") != null){
+        new bijaFeed();
+        new bijaNotes();
+        new bijaLists();
     }
 
     if (document.querySelector(".main[data-page='boosts']") != null){

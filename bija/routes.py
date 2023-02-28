@@ -22,7 +22,7 @@ from bija.password import encrypt_key, decrypt_key
 from bija.search import Search
 from bija.settings import SETTINGS
 from bija.submissions import SubmitDelete, SubmitNote, SubmitProfile, SubmitEncryptedMessage, SubmitLike, \
-    SubmitFollowList, SubmitBoost, SubmitBlockList, SubmitRelayList
+    SubmitFollowList, SubmitBoost, SubmitBlockList, SubmitRelayList, SubmitPersonList
 from bija.ws.subscription_manager import SUBSCRIPTION_MANAGER
 
 logger = logging.getLogger(__name__)
@@ -890,6 +890,112 @@ def topics_page():
     EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
     topics = DB.get_topics()
     return render_template("topics.html", page_id="topics", title="Topics", topics=topics)
+
+@app.route('/lists')
+@login_required
+def lists_page():
+    ACTIVE_EVENTS.clear()
+    EXECUTOR.submit(RELAY_HANDLER.set_page('lists', None))
+    EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
+    lists = DB.get_lists(SETTINGS.get('pubkey'))
+    return render_template("lists.html", page_id="lists", title="Lists", lists=lists)
+
+@app.route('/list/<list_name>/<pk>', methods=['GET'])
+@login_required
+def list_page(list_name, pk=None):
+    ACTIVE_EVENTS.clear()
+    if pk is None:
+        pk = SETTINGS.get('pubkey')
+    if list_name is not None:
+        l = DB.get_list(pk, list_name)
+        if l is not None:
+            pks = json.loads(l.list)
+            pks = [x[1] for x in pks]
+            print(pks)
+            EXECUTOR.submit(RELAY_HANDLER.set_page('list', l.id))
+            EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
+            notes = DB.get_feed(int(time.time()), SETTINGS.get('pubkey'), {'pubkeys': pks})
+            t = FeedThread(notes)
+            lists = DB.get_lists(SETTINGS.get('pubkey'))
+            return render_template(
+                "list.html",
+                page_id="list",
+                title="List: {}".format(l.name),
+                id=l.id,
+                n_members=len(pks),
+                threads=t.threads,
+                last=t.last_ts,
+                lists=lists
+            )
+
+@app.route('/list_adder', methods=['GET'])
+@login_required
+def list_adder():
+    lists = DB.get_lists(SETTINGS.get('pubkey'))
+    profile = None
+    if 'note' in request.args:
+        note_id = request.args['note']
+        profile = DB.get_note(SETTINGS.get('pubkey'), note_id)
+    elif 'pk' in request.args:
+        pk = request.args['pk']
+        profile = DB.get_profile(pk)
+    return render_template("list.add.html", profile=profile, lists=lists)
+
+@app.route('/add_to_list', methods=['POST'])
+@login_required
+def add_to_list():
+    out = []
+    name = None
+    success = False
+    for item in request.json:
+        print(request.json)
+        if item[0] == 'pk':
+            out.append(['p', item[1]])
+        elif item[0] == 'new' and len(item[1].strip()) > 0:
+            name = item[1]
+        elif item[0] == 'list':
+            name = item[1]
+    if name is not None and len(out) > 0:
+        success = True
+        l = DB.get_list(SETTINGS.get('pubkey'), name)
+        if l is not None:
+            out = out+json.loads(l.list)
+        SubmitPersonList(name, out)
+    return render_template("upd.json", data=json.dumps({'success': success}))
+
+@app.route('/remove_from_list', methods=['POST'])
+@login_required
+def remove_from_list():
+    to_delete = []
+    out = []
+    list_id = None
+    success = False
+    for item in request.json:
+        if item[0] == 'list_id':
+            list_id = int(item[1])
+        elif item[0] == 'member':
+            to_delete.append(item[1])
+    if list_id is not None and len(to_delete) > 0:
+        l = DB.get_list_by_id(list_id)
+        if l is not None:
+            success = True
+            for item in json.loads(l.list):
+                if item[1] not in to_delete:
+                    out.append(item)
+        SubmitPersonList(l.name, out)
+
+
+    return render_template("upd.json", data=json.dumps({'success': success}))
+
+
+
+@app.route('/list_members', methods=['GET'])
+@login_required
+def list_members():
+    if 'id' in request.args:
+        profiles = DB.get_list_members(request.args['id'])
+        return render_template("list.members.html", profiles=profiles, id=request.args['id'])
+    return '404'
 
 @app.route('/topic', methods=['GET'])
 @login_required

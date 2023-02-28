@@ -73,7 +73,8 @@ class SubscribePrimary(Subscribe):
                  EventKind.RECOMMEND_RELAY,
                  EventKind.ENCRYPTED_DIRECT_MESSAGE,
                  EventKind.DELETE,
-                 EventKind.REACTION]
+                 EventKind.REACTION,
+                 EventKind.PERSON_LIST]
         profile_filter = Filter(authors=[self.pubkey], kinds=kinds, since=self.since)
         contacts_filter = Filter(authors=[self.pubkey], kinds=[EventKind.CONTACTS], limit=1)
         blocked_filter = Filter(authors=[self.pubkey], kinds=[EventKind.BLOCK_LIST], limit=1)

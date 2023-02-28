@@ -647,6 +647,30 @@ class BijaDB:
     def get_topics(self):
         return self.session.query(Topic.tag).all()
 
+    def save_list(self, name, public_key, content):
+        self.session.merge(List(
+            name=name,
+            public_key=public_key,
+            list=content
+        ))
+        self.session.commit()
+
+    def get_lists(self, pubkey):
+        return self.session.query(List).filter(List.public_key == pubkey).order_by(List.id.desc()).all()
+
+    def get_list(self, pubkey, name):
+        return self.session.query(List).filter(List.public_key == pubkey).filter(List.name == name).first()
+
+    def get_list_by_id(self, list_id):
+        return self.session.query(List).filter(List.id == list_id).first()
+
+    def get_list_members(self, list_id):
+        l = self.get_list_by_id(list_id)
+        if l is not None:
+            pks = json.loads(l.list)
+            pks = [x[1] for x in pks]
+            return self.session.query(Profile).filter(Profile.public_key.in_(pks)).all()
+
     def empty_topics(self):
         self.session.query(Topic).delete()
 
@@ -1129,6 +1153,8 @@ class BijaDB:
             q = q.filter(Note.id.in_(filters['id_list']))
         if 'search' in filters:
             q = q.filter(Note.content.like(f"%{filters['search']}%"))
+        if 'pubkeys' in filters:
+            q = q.filter(Profile.public_key.in_(filters['pubkeys']))
         if 'replies' in filters:
             q = q.filter(
                 or_(

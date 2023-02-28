@@ -229,6 +229,18 @@ class SubmitBlockList(Submit):
             self.content = encrypted
             self.send()
 
+class SubmitPersonList(Submit):
+    def __init__(self, name, l: list):
+        super().__init__()
+        logger.info('SUBMIT block list')
+        l = list(set(tuple(x) for x in l))
+        self.tags.append(['d', name])
+        self.kind = EventKind.PERSON_LIST
+        encrypted = encrypt(json.dumps(l), SETTINGS.get('pubkey'))
+        if encrypted:
+            self.content = encrypted
+            self.send()
+
 
 class SubmitEncryptedMessage(Submit):
     def __init__(self, data, pow_difficulty=None):
