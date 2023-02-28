@@ -184,7 +184,7 @@ class SubscribeFollowerList(Subscribe):
         self.send()
 
     def build_filters(self):
-        f = []
+        f = [Filter(tags={'#p': [self.pubkey]}, kinds=[EventKind.CONTACTS], since=self.since)]
         start = int(self.batch * 256)
         end = start + 256
         followers = DB.get_follower_pubkeys(self.pubkey, start, end)

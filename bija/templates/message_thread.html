@@ -19,5 +19,8 @@
 
 {%- block right_content -%}
 {%- set profile=them -%}
-{%- include 'profile/profile.brief.html' -%}
+<div>{%- include 'profile/profile.brief.html' -%}</div>
+{%- if not inbox -%}
+<button class="move_to_inbox" data-rel="{{them.public_key}}">Move to inbox</button>
+{%- endif -%}
 {%- endblock right_content -%}

@@ -4,6 +4,7 @@
 {%- endblock css -%}
 
 {%- block content -%}
+<h2 class="posts-title">Thread:</h2>
 <div id="thread-items">
 {%- if root is not none -%}
     {%- if root is string -%}
@@ -67,12 +68,15 @@
 
 {%- block right_content -%}
 <h3 class="pad-tiny">in this thread</h3>
-<ul class="thread-members">
-{%- for p in members: -%}
-    <li class="pad-mid">
-    {%- include 'profile/profile.image.html' -%}
-    <a href="/profile?pk={{p['public_key']}}" class="profile-name">{{p['name'] | ident_string(p['display_name'], p['public_key']) | safe }}</a>
-    </li>
-{%- endfor -%}
-</ul>
+<div>
+    <ul class="thread-members">
+    {%- for p in members: -%}
+        <li class="pad-mid">
+        {%- include 'profile/profile.image.html' -%}
+        <a href="/profile?pk={{p['public_key']}}" class="profile-name">{{p['name'] | ident_string(p['display_name'], p['public_key']) | safe }}</a>
+        </li>
+    {%- endfor -%}
+    </ul>
+</div>
+
 {%- endblock right_content -%}

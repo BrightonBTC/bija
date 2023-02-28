@@ -508,15 +508,15 @@ class RelayHandler:
             logger.info('Contact list is newer than last upd: {}'.format(event.created_at))
             pk = SETTINGS.get('pubkey')
             if 'followers' in subscription:
-                e = FollowerListEvent(event, pk, subscription)
+                e = FollowerListEvent(event, subscription)
                 if e.target_pk is not None:
                     self.followers_batch.append({
-                        'pk_1': e.pubkey,
+                        'pk_1': e.event.public_key,
                         'pk_2': e.target_pk,
                         'action': e.action
                     })
             else:
-                e = ContactListEvent(event, pk)
+                e = ContactListEvent(event)
                 self.add_to_contacts_batch(e)
             self.add_profile_if_not_exists(event.public_key)
 

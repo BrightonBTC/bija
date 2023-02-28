@@ -207,7 +207,7 @@ class ProfilePage:
         self.subscription_ids = [] # active notes to passed to subscription manager
 
         set_subscription = False
-        valid_pages = ['profile', 'following', 'followers', 'blocked']
+        valid_pages = ['profile', 'following', 'followers', 'muted']
 
         ACTIVE_EVENTS.clear()
         if RELAY_HANDLER.page['page'] not in valid_pages or RELAY_HANDLER.page['identifier'] != self.pubkey:
@@ -281,7 +281,7 @@ class ProfilePage:
             self.data = DB.get_following(SETTINGS.get('pubkey'), self.pubkey)
         elif self.page == 'followers':
             self.data = DB.get_followers(SETTINGS.get('pubkey'), self.pubkey)
-        elif self.page == 'blocked':
+        elif self.page == 'muted':
             self.data = DB.get_blocked()
 
 @app.route('/followers_list_next', methods=['GET'])
@@ -760,6 +760,7 @@ def private_messages_page():
     messages = DB.get_message_list(inbox)
     n_junk = DB.get_junk_count()
 
+
     return render_template("messages.html",
                            page_id="messages",
                            title="Private Messages",
@@ -807,19 +808,25 @@ def private_message_page():
 
     messages.reverse()
 
-    return render_template("message_thread.html", page_id="messages_from", title="Messages From", messages=messages,
-                           me=profile, them=them, privkey=SETTINGS.get('privkey'))
+    inbox = DB.inbox_allowed(pk)
 
+    return render_template("message_thread.html", page_id="messages_from", title="Messages From", messages=messages,
+                           me=profile, them=them, privkey=SETTINGS.get('privkey'), inbox=inbox)
+
+
+@app.route('/move_to_inbox', methods=['POST', 'GET'])
+def move_to_inbox():
+    if 'pk' in request.args and is_hex_key(request.args['pk']):
+        DB.move_to_inbox(request.args['pk'])
+    return render_template("upd.json", title="Home", data=json.dumps({'success': 1}))
 
 @app.route('/submit_message', methods=['POST', 'GET'])
 def submit_message():
     event_id = False
     if request.method == 'POST':
         pow_difficulty = SETTINGS.get('pow_default_enc')
-        e = e = SubmitEncryptedMessage(request.json, pow_difficulty)
+        e = SubmitEncryptedMessage(request.json, pow_difficulty)
         event_id = e.event_id
-        event_id = e.event_id
-        #event_id = EVENT_HANDLER.submit_message(request.json, pow_difficulty=pow_difficulty)
     return render_template("upd.json", title="Home", data=json.dumps({'event_id': event_id}))
 
 
@@ -830,7 +837,7 @@ def submit_like():
         note = DB.get_note(SETTINGS.get('pubkey'), note_id)
         if note.liked is False:
             DB.set_note_liked(note_id)
-            e = SubmitLike(note_id)
+            SubmitLike(note_id)
             return render_template('svg/liked.svg', class_name='icon liked')
         else:
             DB.set_note_liked(note_id, False)
@@ -839,7 +846,7 @@ def submit_like():
                 ids = []
                 for event in like_events:
                     ids.append(event.id)
-                e = SubmitDelete(ids, 'removing like')
+                SubmitDelete(ids, 'removing like')
                 return render_template('svg/like.svg', class_name='icon')
 
 
@@ -875,6 +882,14 @@ def search_feed():
         else:
             return 'END'
 
+@app.route('/topics')
+@login_required
+def topics_page():
+    ACTIVE_EVENTS.clear()
+    EXECUTOR.submit(RELAY_HANDLER.set_page('topics', None))
+    EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
+    topics = DB.get_topics()
+    return render_template("topics.html", page_id="topics", title="Topics", topics=topics)
 
 @app.route('/topic', methods=['GET'])
 @login_required

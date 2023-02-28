@@ -259,50 +259,55 @@ let updateMessageThread = function(data){
 
 class bijaSearch{
     constructor(){
-        this.input_el = document.querySelector('input[name="search_term"]');
-        this.hint_el = document.querySelector('#search_hints')
-        this.tips_el = document.querySelector('#search_tips')
-        this.setEventListeners()
+        const els = document.querySelectorAll('.search_bar')
+        els.forEach(elem => {
+            this.setEventListeners(elem)
+        })
     }
 
-    setEventListeners(){
-        this.input_el.addEventListener("keyup", (event)=>{
-            this.hint_el.innerHTML = ''
-            const val = this.input_el.value
+    setEventListeners(elem){
+        const input_el = elem.querySelector('input[name="search_term"]');
+        const hint_el = elem.querySelector('.search_hints')
+        const tips_el = elem.querySelector('.search_tips')
+        input_el.addEventListener("keyup", (event)=>{
+            hint_el.innerHTML = ''
+            const val = input_el.value
             if(val.length > 0){
-                this.tips_el.style.display = 'none'
+                tips_el.style.display = 'none'
             }
             else{
-                this.tips_el.style.display = 'block'
+                tips_el.style.display = 'block'
             }
             if (val.substring(0, 1) == '@' && val.length > 1){
-                this.searchByName(val.substring(1))
+                this.searchByName(val.substring(1), hint_el, input_el)
             }
         })
-        this.setSearchTips()
-        this.input_el.addEventListener("focus", (event)=>{
-            if(this.input_el.value.length == 0){
-                this.tips_el.style.display = 'block'
+        this.setSearchTips(tips_el, input_el)
+        input_el.addEventListener("focus", (event)=>{
+            if(input_el.value.length == 0){
+                tips_el.style.display = 'block'
             }
         })
-        this.input_el.addEventListener("blur", (event)=>{
-            this.tips_el.style.display = 'none'
+        input_el.addEventListener("blur", (event)=>{
+            tips_el.style.display = 'none'
         })
     }
 
-    searchByName(name){
+    searchByName(name, hint_el, input_el){
         const cb = function(response, data){
             if(response['result']){
-                data.context.showNameHints(response['result'], data.search, data.context)
+                data.context.showNameHints(response['result'], data)
             }
         }
         fetchGet('/search_name?name='+name, cb, {
             'context':this,
-            'search':name
+            'search':name,
+            'hint_el':hint_el,
+            'input_el':input_el
         }, 'json')
     }
 
-    showNameHints(results, search_str, context){
+    showNameHints(results, data){
         if(results.length > 0){
             const ul = document.createElement('ul')
             ul.classList.add('hint-list')
@@ -313,17 +318,17 @@ class bijaSearch{
                 }
                 li.innerText = name['name']
                 li.addEventListener("click", (event)=>{
-                    context.input_el.value = context.input_el.value.replace('@'+search_str, '@'+name['name'])
-                    context.input_el.parentElement.submit();
+                    data.input_el.value = data.input_el.value.replace('@'+data.search, '@'+name['name'])
+                    data.input_el.parentElement.submit();
                 });
                 ul.append(li)
             }
-            context.hint_el.append(ul)
+            data.hint_el.append(ul)
         }
     }
     
-    setSearchTips() {
-        const tips_elems = this.tips_el.querySelectorAll('li')
+    setSearchTips(tips_el, input_el) {
+        const tips_elems = tips_el.querySelectorAll('li')
         tips_elems.forEach(elem => {
             elem.addEventListener('mousedown', (event) => {
                 event.preventDefault()
@@ -332,12 +337,12 @@ class bijaSearch{
                 let fill_content = elem.getAttribute('data-fill')
                 console.log(fill_content)
                 if (fill_content.length > 0) {
-                    this.input_el.value = fill_content
+                    input_el.value = fill_content
                 } else {
-                    this.input_el.value = ''
+                    input_el.value = ''
                 }
-                this.input_el.blur()
-                this.input_el.focus()
+                input_el.blur()
+                input_el.focus()
             })
         })
     }
@@ -807,6 +812,10 @@ class bijaMessages{
         if(archive_fetcher){
             this.setArchiveFetcher(archive_fetcher)
         }
+        const move_to_inbox = document.querySelector('.move_to_inbox');
+        if(move_to_inbox){
+            this.setMoveToInbox(move_to_inbox)
+        }
     }
 
     setAllReadBtn(btn){
@@ -826,6 +835,16 @@ class bijaMessages{
         btn.addEventListener("click", (event)=>{
             event.preventDefault();
             fetchGet('/empty_junk', cb, {})
+        });
+    }
+
+    setMoveToInbox(btn){
+        const cb = function(response, data){
+            location.reload()
+        }
+        btn.addEventListener("click", (event)=>{
+            event.preventDefault();
+            fetchGet('/move_to_inbox?pk='+btn.dataset.rel, cb, {})
         });
     }
 
@@ -2187,5 +2206,20 @@ window.addEventListener("load", function () {
             }, {})
         });
     }
+    const navtog = document.querySelector('.nav-toggle')
+    if(navtog){
+        const menu_el = document.querySelector('.left-column')
+        navtog.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (menu_el.classList.contains('show')){
+                menu_el.classList.remove('show')
+            }
+            else{
+                menu_el.classList.add('show')
+            }
+        });
+    }
+
     lazyLoad();
 });

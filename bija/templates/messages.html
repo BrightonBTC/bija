@@ -54,8 +54,10 @@
 {%- endblock content -%}
 
 {%- block right_content -%}
-<ul class="card">
-    <li><a href="/messages">Inbox</a></li>
-    <li><a href="/messages?junk=1">Junk <span class="tag">{{n_junk}}</span></a></li>
-</ul>
+<div>
+    <ul class="card">
+        <li><a href="/messages">Inbox</a></li>
+        <li><a href="/messages?junk=1">Junk {%- if n_junk > 0 -%}<span class="tag">{{n_junk}}</span>{%- endif -%}</a></li>
+    </ul>
+</div>
 {%- endblock right_content -%}

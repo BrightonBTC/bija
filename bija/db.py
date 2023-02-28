@@ -171,9 +171,6 @@ class BijaDB:
                     new_unfollows.append(item['pk_1'])
 
             if item['pk_1'] == my_pk:
-                print('===================================================================================')
-                print(item['pk_1'], item['pk_2'])
-                print('===================================================================================')
                 is_mine = True
 
         self.session.commit()
@@ -616,6 +613,17 @@ class BijaDB:
                 self.session.commit()
             except SQLAlchemyError as e:
                 print(str(e.__dict__['orig']))
+
+    def inbox_allowed(self, pk):
+        q = self.session.query(PrivateMessage.id).filter(PrivateMessage.public_key == pk).filter(PrivateMessage.passed == True).first()
+        if q is not None:
+            return True
+        else:
+            return False
+
+    def move_to_inbox(self, pk):
+        self.session.query(PrivateMessage).filter(PrivateMessage.public_key == pk).update({'passed': True})
+        self.session.commit()
 
     def purge_pubkey(self, pk):
         self.session.query(PrivateMessage).filter(PrivateMessage.public_key == pk).delete()
