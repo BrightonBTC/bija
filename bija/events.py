@@ -176,7 +176,6 @@ class NoteEvent:
             'raw': json.dumps(self.event.to_json_object())
         }
 
-
 class BoostEvent:
     def __init__(self, event):
         logger.info('New boost')
@@ -219,6 +218,33 @@ class BlockListEvent:
             self.list = json.loads(raw)
         except ValueError:
             print("unable to decode json")
+
+class PersonListEvent:
+    def __init__(self, event):
+        self.event = event
+        self.list = []
+        self.name = None
+        self.set_list()
+        self.get_name()
+        if self.name is not None and len(self.list) > 0:
+            self.save()
+
+    def set_list(self):
+        k = bytes.fromhex(SETTINGS.get('privkey'))
+        pk = PrivateKey(k)
+        raw = pk.decrypt_message(self.event.content, SETTINGS.get('pubkey'))
+        try:
+            self.list = json.loads(raw)
+        except ValueError:
+            print("unable to decode json")
+
+    def get_name(self):
+        for tag in self.event.tags:
+            if tag[0] == "d":
+                self.name = tag[1]
+
+    def save(self):
+        DB.save_list(self.name, self.event.public_key, json.dumps(self.list))
 
 class ReactionEvent:
     def __init__(self, event, my_pubkey):
@@ -265,7 +291,6 @@ class ReactionEvent:
         if self.event.public_key == self.pubkey:
             DB.set_note_liked(self.event_id)
 
-
 class DeleteEvent:
     def __init__(self, event):
         self.event = event
@@ -280,11 +305,9 @@ class DeleteEvent:
                 if e is not None and e.kind == EventKind.TEXT_NOTE:
                     DB.set_note_deleted(tag[1], self.event.content)
 
-
 class ContactListEvent:
-    def __init__(self, event, pubkey: str):
+    def __init__(self, event):
         self.event = event
-        self.pubkey = pubkey
         self.keys = []
         self.compile_keys()
 
@@ -293,11 +316,9 @@ class ContactListEvent:
             if p[0] == "p":
                 self.keys.append(p[1])
 
-
 class FollowerListEvent:
-    def __init__(self, event, pubkey: str, subscription: str):
+    def __init__(self, event, subscription: str):
         self.event = event
-        self.pubkey = pubkey
         self.subscription = subscription
         self.action = 'del'
         self.target_pk = None
@@ -317,7 +338,6 @@ class FollowerListEvent:
             if p is not None:
                 self.target_pk = p.public_key
 
-
 class DirectMessageEvent:
     def __init__(self, event, my_pubkey):
         self.my_pubkey = my_pubkey
@@ -332,6 +352,8 @@ class DirectMessageEvent:
         if self.is_sender == 1:
             f = DB.a_follows_b(SETTINGS.get('pubkey'), self.pubkey)
             if f:
+                self.passed = True
+            elif DB.inbox_allowed(self.pubkey):
                 self.passed = True
             else:
                 req_pow = SETTINGS.get('pow_required_enc')
@@ -374,6 +396,7 @@ class DirectMessageEvent:
             "is_sender": self.is_sender,
             "created_at": self.event.created_at,
             "seen": seen,
+            "passed": self.passed,
             "raw": json.dumps(self.event.to_json_object())
         }
 

@@ -30,10 +30,11 @@ class Subscribe:
         logger.info('add subscription to relay manager')
 
         if len(self.relays) < 1:  # publish to all
-            for r in RELAY_MANAGER.relays.keys():
-                self.relays.append(r)
+            for r in RELAY_MANAGER.relays.values():
+                if r.policy.should_read:
+                    self.relays.append(r.url)
         for r in self.relays:
-            if r in RELAY_MANAGER.relays:
+            if r in RELAY_MANAGER.relays.keys():
                 logger.info(
                     'publish subscription {}  | Relay {} | Batch {}'.format(self.name, r, self.batch))
                 RELAY_MANAGER.relays[r].add_subscription(self.name, self.filters, self.batch)
@@ -72,7 +73,8 @@ class SubscribePrimary(Subscribe):
                  EventKind.RECOMMEND_RELAY,
                  EventKind.ENCRYPTED_DIRECT_MESSAGE,
                  EventKind.DELETE,
-                 EventKind.REACTION]
+                 EventKind.REACTION,
+                 EventKind.PERSON_LIST]
         profile_filter = Filter(authors=[self.pubkey], kinds=kinds, since=self.since)
         contacts_filter = Filter(authors=[self.pubkey], kinds=[EventKind.CONTACTS], limit=1)
         blocked_filter = Filter(authors=[self.pubkey], kinds=[EventKind.BLOCK_LIST], limit=1)

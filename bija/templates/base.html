@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href='/static/styles.css' />
   {%- block css -%}
   {%- endblock css -%}
@@ -13,34 +14,61 @@
 </head>
 
 <body>
-
-<div class="main" data-page="{{page_id}}" data-settings="{{1|settings_json}}">
-  <div class="topnav nav-{{page_id}} rnd">
-    <a href="/" class="home-link">{{'home'| svg_icon('main_nav')|safe}}<span class="title desktop-only">feed</span><span id="n_unseen_posts" class="unseen"></span></a>
-    <a href="/profile" class="profile-link">{{'profile'| svg_icon('main_nav')|safe}}<span class="title desktop-only">profile</span></a>
-    <a href="/messages" class="messages-link">{{'messages'| svg_icon('main_nav')|safe}}<span class="title desktop-only">messages</span><span id="n_unseen_messages" class="unseen"></span></a>
-    <a href="/alerts" class="alerts-link">{{'notif'| svg_icon('main_nav')|safe}}<span class="title desktop-only">alerts</span><span id="n_alerts" class="unseen"></span></a>
-    <a href="/settings" class="settings-link">{{'settings'| svg_icon('main_nav')|safe}}<span class="title desktop-only">settings</span></a>
-    <a href="#" class="logout">{{'logout'| svg_icon('icon-lg')|safe}}<span class="title">log out</span></a>
-    <span class="conn-status right rnd pad-sm desktop-only"></span>
+<div class="topnav">
+  <div class="logo">
+    <a href="/"><img src="/static/bija.png"></a>
   </div>
+  <div class="top_search">
+    <form id="search_top" class="search_bar" action="/search" method="get" autocomplete="off">
+      <input type="text" name="search_term" placeholder="Search">
+        <div class="name-hints search_hints"></div>
+        <ul class="search_tips">
+          <li data-fill="@"><span class="sm">Search for a person:</span><br>@name/@pubkey</li>
+          <li data-fill=""><span class="sm">Or by a Nip-05 identity:</span><br>handle@mysite.web</li>
+          <li data-fill="#"><span class="sm">Search by topic:</span><br>#hashtag</li>
+        </ul>
+    </form>
+  </div>
+  <div class="nav-toggle">
+    {{'menu'| svg_icon('icon-lg')|safe}}
+  </div>
+</div>
+<div class="main" data-page="{{page_id}}" data-settings="{{1|settings_json}}">
 
-  <div class="row pad-lg">
-    <div class="left-column" id="main-content">
+  <div class="row">
+    <div class="left-column">
+      <ul class="sidenav nav-{{page_id}} ">
+        <li class="wide-only logo"><a href="/"><img src="/static/bija.png"></a></li>
+        <li><a href="/" class="home-link">{{'home'| svg_icon('main_nav fill')|safe}}<span class="title wide-only">feed</span><span id="n_unseen_posts" class="unseen"></span></a></li>
+        <li><a href="/profile" class="profile-link">{{'profile'| svg_icon('main_nav fill')|safe}}<span class="title wide-only">profile</span></a></li>
+        <li><a href="/messages" class="messages-link">{{'messages'| svg_icon('main_nav fill')|safe}}<span class="title wide-only">messages</span><span id="n_unseen_messages" class="unseen"></span></a></li>
+        <li><a href="/topics" class="topics-link">{{'hashtag'| svg_icon('main_nav stroke')|safe}}<span class="title wide-only">topics</span></a></li>
+        <li><a href="/lists" class="topics-link">{{'lists'| svg_icon('main_nav stroke')|safe}}<span class="title wide-only">lists</span></a></li>
+        <li><a href="/bookmarks" class="topics-link">{{'bookmarks'| svg_icon('main_nav fill')|safe}}<span class="title wide-only">bookmarks</span></a></li>
+        <li><a href="/alerts" class="alerts-link">{{'notif'| svg_icon('main_nav fill')|safe}}<span class="title wide-only">alerts</span><span id="n_alerts" class="unseen"></span></a></li>
+        <li><a href="/settings" class="settings-link">{{'settings'| svg_icon('main_nav fill')|safe}}<span class="title wide-only">settings</span></a></li>
+        <li><a href="#" class="logout">{{'logout'| svg_icon('main_nav stroke')|safe}}<span class="title wide-only">shutdown</span></a></li>
+      </ul>
+      <span class="conn-status rnd pad-sm desktop-only wide-only"></span>
+      {%- block left_content -%}
+      {%- endblock left_content -%}
+    </div>
+    <div class="center-column" id="main-content">
       {%- block content -%}
       {%- endblock content -%}
     </div>
     <div class="right-column desktop-only">
-        <form id="search" action="/search" method="get" autocomplete="off">
-          <input type="text" name="search_term" placeholder="Search">
-            <div id="search_hints" class="name-hints"></div>
-            <ul id="search_tips">
-              <li data-fill="@"><span class="sm">Search for a person:</span><br>@name/@pubkey</li>
-              <li data-fill=""><span class="sm">Or by a Nip-05 identity:</span><br>handle@mysite.web</li>
-              <li data-fill="#"><span class="sm">Search by topic:</span><br>#hashtag</li>
-            </ul>
-        </form>
+
         <div id="right_content">
+          <form id="search" class="search_bar" action="/search" method="get" autocomplete="off">
+            <input type="text" name="search_term" placeholder="Search">
+              <div class="search_hints name-hints"></div>
+              <ul class="search_tips">
+                <li data-fill="@"><span class="sm">Search for a person:</span><br>@name/@pubkey</li>
+                <li data-fill=""><span class="sm">Or by a Nip-05 identity:</span><br>handle@mysite.web</li>
+                <li data-fill="#"><span class="sm">Search by topic:</span><br>#hashtag</li>
+              </ul>
+          </form>
         {%- block right_content -%}
         {%- endblock right_content -%}
         </div>

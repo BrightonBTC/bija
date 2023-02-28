@@ -15,7 +15,8 @@ import arrow
 from bija.app import app
 from bija.args import LOGGING_LEVEL
 from bija.db import BijaDB
-from bija.helpers import get_at_tags, is_hex_key, url_linkify, strip_tags, get_invoice, get_hash_tags
+from bija.helpers import get_at_tags, is_hex_key, url_linkify, strip_tags, get_invoice, get_hash_tags, is_bech32_key, \
+    bech32_to_hex64
 from bija.settings import SETTINGS
 from bija.ws.key import PrivateKey
 
@@ -80,9 +81,9 @@ def _jinja2_filter_decr(content, pubkey, privkey):
         pk = PrivateKey(k)
         message = pk.decrypt_message(content, pubkey)
         if pubkey == SETTINGS.get('pubkey') and message[:19] == "::BIJA_CFG_BACKUP::":
-            return "BIJA CONFIG BACKUP. <form class='cfg_loader'><input type='hidden' value='{}' name='cfg'><button>Click to reload settings</button></form>".format(message[19:])
+            return "==================== BIJA CONFIG BACKUP. ====================<form class='cfg_loader'><input type='hidden' value='{}' name='cfg'><button>Click to reload settings</button></form>".format(message[19:])
         else:
-            return message
+            return strip_tags(message)
     except ValueError:
         return 'could not decrypt!'
 
@@ -117,7 +118,7 @@ def _jinja2_filter_ident(name, display_name, pk, long=True):
 
 @app.template_filter('relationship')
 def _jinja2_filter_relate(pk):
-    htm = '<span class="tag">{}</span>'
+    htm = '<span class="tag relationship">{}</span>'
     if pk == SETTINGS.get('pubkey'):
         return ''
     follows_me = DB.a_follows_b(pk, SETTINGS.get('pubkey'))
@@ -220,15 +221,24 @@ def _jinja2_filter_note(content: str, limit=500):
 
     tags = get_at_tags(content)
     for tag in tags:
-        pk = tag[1:]
+        pubkey = tag[1:]
+        if is_bech32_key('npub', pubkey):
+            pk = bech32_to_hex64('npub', pubkey)
+        else:
+            pk = pubkey
         if is_hex_key(pk):
+            print('/////////////////////////////////////////////////////////// 1')
             name = '{}&#8230;{}'.format(pk[:3], pk[-5:])
             profile = DB.get_profile(pk)
+            print('/////////////////////////////////////////////////////////// 2')
             if profile is not None and profile.name is not None and len(profile.name) > 0:
+                print('/////////////////////////////////////////////////////////// 3')
                 name = profile.name
             content = content.replace(
-                "@{}".format(pk),
+                "@{}".format(pubkey),
                 "<a class='uname' href='/profile?pk={}'>@{}</a>".format(pk, name))
+
+    print(content)
     return content
 
 

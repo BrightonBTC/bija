@@ -1,0 +1,26 @@
+
+<form id="list_members">
+    <table>
+        {%- for profile in profiles: -%}
+        <tr>
+            <td>
+                <input type="checkbox" name="member" value="{{profile['public_key']}}">
+            </td>
+            <td>
+                <div class="profile-brief card pad-mid">
+                    <div class="profile-image profile-item">
+                        {%- set p=profile -%}
+                        {%- include 'profile/profile.image.html' -%}
+                    </div>
+                    <div class="profile-details profile-item">
+                        <a class="name" href="/profile?pk={{profile['public_key']}}">{{profile['name'] | ident_string(profile['display_name'], profile['public_key']) | safe }}</a>
+                        <br>{{ p['public_key'] | relationship | safe }}
+                    </div>
+                </div>
+            </td>
+        </tr>
+        {%- endfor -%}
+    </table>
+    <input type="hidden" name="list_id" value="{{id}}">
+    <input type="submit" value="Remove selected and save">
+</form>

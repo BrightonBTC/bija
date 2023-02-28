@@ -22,7 +22,7 @@ from bija.password import encrypt_key, decrypt_key
 from bija.search import Search
 from bija.settings import SETTINGS
 from bija.submissions import SubmitDelete, SubmitNote, SubmitProfile, SubmitEncryptedMessage, SubmitLike, \
-    SubmitFollowList, SubmitBoost, SubmitBlockList, SubmitRelayList
+    SubmitFollowList, SubmitBoost, SubmitBlockList, SubmitRelayList, SubmitPersonList
 from bija.ws.subscription_manager import SUBSCRIPTION_MANAGER
 
 logger = logging.getLogger(__name__)
@@ -207,7 +207,7 @@ class ProfilePage:
         self.subscription_ids = [] # active notes to passed to subscription manager
 
         set_subscription = False
-        valid_pages = ['profile', 'following', 'followers', 'blocked']
+        valid_pages = ['profile', 'following', 'followers', 'muted']
 
         ACTIVE_EVENTS.clear()
         if RELAY_HANDLER.page['page'] not in valid_pages or RELAY_HANDLER.page['identifier'] != self.pubkey:
@@ -281,7 +281,7 @@ class ProfilePage:
             self.data = DB.get_following(SETTINGS.get('pubkey'), self.pubkey)
         elif self.page == 'followers':
             self.data = DB.get_followers(SETTINGS.get('pubkey'), self.pubkey)
-        elif self.page == 'blocked':
+        elif self.page == 'muted':
             self.data = DB.get_blocked()
 
 @app.route('/followers_list_next', methods=['GET'])
@@ -346,6 +346,11 @@ def get_share():
 @app.route('/mark_read', methods=['GET'])
 def mark_read():
     DB.set_all_messages_read()
+    return render_template("upd.json", title="Home", data=json.dumps({'success':1}))
+
+@app.route('/empty_junk', methods=['GET'])
+def empty_junk():
+    DB.empty_junk()
     return render_template("upd.json", title="Home", data=json.dumps({'success':1}))
 
 
@@ -422,9 +427,17 @@ def quote_form():
 
 @app.route('/confirm_block', methods=['GET'])
 def confirm_block():
-    note_id = request.args['id']
-    note = DB.get_note(SETTINGS.get('pubkey'), note_id)
-    return render_template("block.confirm.html", note=note)
+    profile = None
+    if 'note' in request.args:
+        note_id = request.args['note']
+        profile = DB.get_note(SETTINGS.get('pubkey'), note_id)
+    elif 'pk' in request.args:
+        pk = request.args['pk']
+        profile = DB.get_profile(pk)
+    if profile is not None:
+        return render_template("block.confirm.html", profile=profile)
+    else:
+        return 'Something went wrong'
 
 @app.route('/block', methods=['POST'])
 def block():
@@ -433,6 +446,19 @@ def block():
         if r[0] == 'pubkey' and is_hex_key(r[1]):
             out.append(['p', r[1]])
             DB.purge_pubkey(r[1])
+    l = DB.get_blocked_pks()
+    for entry in l:
+        out.append(['p', entry])
+    e = SubmitBlockList(out)
+    event_id = e.event_id
+    return render_template("upd.json", data=json.dumps({'event_id': event_id}))
+
+@app.route('/unblock', methods=['POST'])
+def unblock():
+    out = []
+    for r in request.json:
+        if r[0] == 'pubkey' and is_hex_key(r[1]):
+            DB.unblock(r[1])
     l = DB.get_blocked_pks()
     for entry in l:
         out.append(['p', entry])
@@ -728,10 +754,20 @@ def private_messages_page():
     ACTIVE_EVENTS.clear()
     EXECUTOR.submit(RELAY_HANDLER.set_page('messages', None))
     EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
+    inbox = True
+    if 'junk' in request.args and request.args['junk'] == '1':
+        inbox = False # junk folder
+    messages = DB.get_message_list(inbox)
+    n_junk = DB.get_junk_count()
 
-    messages = DB.get_message_list()
 
-    return render_template("messages.html", page_id="messages", title="Private Messages", messages=messages)
+    return render_template("messages.html",
+                           page_id="messages",
+                           title="Private Messages",
+                           messages=messages,
+                           n_junk=n_junk,
+                           inbox=inbox,
+                           privkey=SETTINGS.get('privkey'))
 
 @app.route('/fetch_archived_msgs', methods=['GET'])
 @login_required
@@ -768,23 +804,29 @@ def private_message_page():
         pk = request.args['pk']
 
     profile = DB.get_profile(SETTINGS.get('pubkey'))
-    them = DB.get_profile(pk)
+    them = DB.get_profile_detailed(SETTINGS.get('pubkey'), pk)
 
     messages.reverse()
 
-    return render_template("message_thread.html", page_id="messages_from", title="Messages From", messages=messages,
-                           me=profile, them=them, privkey=SETTINGS.get('privkey'))
+    inbox = DB.inbox_allowed(pk)
 
+    return render_template("message_thread.html", page_id="messages_from", title="Messages From", messages=messages,
+                           me=profile, them=them, privkey=SETTINGS.get('privkey'), inbox=inbox)
+
+
+@app.route('/move_to_inbox', methods=['POST', 'GET'])
+def move_to_inbox():
+    if 'pk' in request.args and is_hex_key(request.args['pk']):
+        DB.move_to_inbox(request.args['pk'])
+    return render_template("upd.json", title="Home", data=json.dumps({'success': 1}))
 
 @app.route('/submit_message', methods=['POST', 'GET'])
 def submit_message():
     event_id = False
     if request.method == 'POST':
         pow_difficulty = SETTINGS.get('pow_default_enc')
-        e = e = SubmitEncryptedMessage(request.json, pow_difficulty)
+        e = SubmitEncryptedMessage(request.json, pow_difficulty)
         event_id = e.event_id
-        event_id = e.event_id
-        #event_id = EVENT_HANDLER.submit_message(request.json, pow_difficulty=pow_difficulty)
     return render_template("upd.json", title="Home", data=json.dumps({'event_id': event_id}))
 
 
@@ -795,7 +837,7 @@ def submit_like():
         note = DB.get_note(SETTINGS.get('pubkey'), note_id)
         if note.liked is False:
             DB.set_note_liked(note_id)
-            e = SubmitLike(note_id)
+            SubmitLike(note_id)
             return render_template('svg/liked.svg', class_name='icon liked')
         else:
             DB.set_note_liked(note_id, False)
@@ -804,7 +846,7 @@ def submit_like():
                 ids = []
                 for event in like_events:
                     ids.append(event.id)
-                e = SubmitDelete(ids, 'removing like')
+                SubmitDelete(ids, 'removing like')
                 return render_template('svg/like.svg', class_name='icon')
 
 
@@ -840,6 +882,120 @@ def search_feed():
         else:
             return 'END'
 
+@app.route('/topics')
+@login_required
+def topics_page():
+    ACTIVE_EVENTS.clear()
+    EXECUTOR.submit(RELAY_HANDLER.set_page('topics', None))
+    EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
+    topics = DB.get_topics()
+    return render_template("topics.html", page_id="topics", title="Topics", topics=topics)
+
+@app.route('/lists')
+@login_required
+def lists_page():
+    ACTIVE_EVENTS.clear()
+    EXECUTOR.submit(RELAY_HANDLER.set_page('lists', None))
+    EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
+    lists = DB.get_lists(SETTINGS.get('pubkey'))
+    return render_template("lists.html", page_id="lists", title="Lists", lists=lists)
+
+@app.route('/list/<list_name>/<pk>', methods=['GET'])
+@login_required
+def list_page(list_name, pk=None):
+    ACTIVE_EVENTS.clear()
+    if pk is None:
+        pk = SETTINGS.get('pubkey')
+    if list_name is not None:
+        l = DB.get_list(pk, list_name)
+        if l is not None:
+            pks = json.loads(l.list)
+            pks = [x[1] for x in pks]
+            print(pks)
+            EXECUTOR.submit(RELAY_HANDLER.set_page('list', l.id))
+            EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
+            notes = DB.get_feed(int(time.time()), SETTINGS.get('pubkey'), {'pubkeys': pks})
+            t = FeedThread(notes)
+            lists = DB.get_lists(SETTINGS.get('pubkey'))
+            return render_template(
+                "list.html",
+                page_id="list",
+                title="List: {}".format(l.name),
+                id=l.id,
+                n_members=len(pks),
+                threads=t.threads,
+                last=t.last_ts,
+                lists=lists
+            )
+
+@app.route('/list_adder', methods=['GET'])
+@login_required
+def list_adder():
+    lists = DB.get_lists(SETTINGS.get('pubkey'))
+    profile = None
+    if 'note' in request.args:
+        note_id = request.args['note']
+        profile = DB.get_note(SETTINGS.get('pubkey'), note_id)
+    elif 'pk' in request.args:
+        pk = request.args['pk']
+        profile = DB.get_profile(pk)
+    return render_template("list.add.html", profile=profile, lists=lists)
+
+@app.route('/add_to_list', methods=['POST'])
+@login_required
+def add_to_list():
+    out = []
+    name = None
+    success = False
+    for item in request.json:
+        print(request.json)
+        if item[0] == 'pk':
+            out.append(['p', item[1]])
+        elif item[0] == 'new' and len(item[1].strip()) > 0:
+            name = item[1]
+        elif item[0] == 'list':
+            name = item[1]
+    if name is not None and len(out) > 0:
+        success = True
+        l = DB.get_list(SETTINGS.get('pubkey'), name)
+        if l is not None:
+            out = out+json.loads(l.list)
+        SubmitPersonList(name, out)
+    return render_template("upd.json", data=json.dumps({'success': success}))
+
+@app.route('/remove_from_list', methods=['POST'])
+@login_required
+def remove_from_list():
+    to_delete = []
+    out = []
+    list_id = None
+    success = False
+    for item in request.json:
+        if item[0] == 'list_id':
+            list_id = int(item[1])
+        elif item[0] == 'member':
+            to_delete.append(item[1])
+    if list_id is not None and len(to_delete) > 0:
+        l = DB.get_list_by_id(list_id)
+        if l is not None:
+            success = True
+            for item in json.loads(l.list):
+                if item[1] not in to_delete:
+                    out.append(item)
+        SubmitPersonList(l.name, out)
+
+
+    return render_template("upd.json", data=json.dumps({'success': success}))
+
+
+
+@app.route('/list_members', methods=['GET'])
+@login_required
+def list_members():
+    if 'id' in request.args:
+        profiles = DB.get_list_members(request.args['id'])
+        return render_template("list.members.html", profiles=profiles, id=request.args['id'])
+    return '404'
 
 @app.route('/topic', methods=['GET'])
 @login_required
@@ -1015,7 +1171,7 @@ def follow():
     if upd == "1":
         return render_template("profile/profile.tools.html", profile=profile, is_me=is_me, am_following=int(request.args['state']))
     else:
-        return render_template("svg/following.svg", class_name="icon")
+        return render_template("upd.json", data=json.dumps({'success': 1}))
 
 
 @app.route('/fetch_raw', methods=['GET'])

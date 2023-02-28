@@ -62,15 +62,17 @@ class Relay:
         self.ws.close()
 
     def publish(self, message: str):
-        try:
-            self.ws.send(message)
-        except WebSocketConnectionClosedException:
-            self.active = False
-            logger.exception("failed to send message to {}".format(self.url))
+        if self.policy.should_write:
+            try:
+                self.ws.send(message)
+            except WebSocketConnectionClosedException:
+                self.active = False
+                logger.exception("failed to send message to {}".format(self.url))
 
     def add_subscription(self, id, filters: Filters, batch=0):
-        with self.lock:
-            self.subscriptions[id] = Subscription(id, filters, self.url, batch)
+        if self.policy.should_read:
+            with self.lock:
+                self.subscriptions[id] = Subscription(id, filters, self.url, batch)
 
     def close_subscription(self, id: str) -> None:
         with self.lock:

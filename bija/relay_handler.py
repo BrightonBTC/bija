@@ -6,7 +6,7 @@ from flask import render_template
 from bija.app import socketio, ACTIVE_EVENTS
 from bija.deferred_tasks import TaskKind, DeferredTasks
 from bija.events import BlockListEvent, BoostEvent, NoteEvent, ContactListEvent, FollowerListEvent, DirectMessageEvent, \
-    MetadataEvent, ReactionEvent, DeleteEvent
+    MetadataEvent, ReactionEvent, DeleteEvent, PersonListEvent
 from bija.helpers import is_json
 from bija.nip5 import Nip5
 from bija.ogtags import OGTags
@@ -79,12 +79,9 @@ class RelayHandler:
 
     def open_connections(self):
         relays = DB.get_relays()
-        n_relays = 0
         for r in relays:
-            n_relays += 1
-            s = {}
-            RELAY_MANAGER.add_relay(r.name, subscriptions=s)
-        if n_relays > 0:
+            RELAY_MANAGER.add_relay(r.name, r.send, r.receive)
+        if len(relays) > 0:
             RELAY_MANAGER.open_connections({"cert_reqs": ssl.CERT_NONE})
 
     # close existing connections, reopen, and start primary subscription
@@ -188,6 +185,9 @@ class RelayHandler:
 
                         elif msg.event.kind == EventKind.RELAY_LIST:
                             print(msg.event)
+
+                        elif msg.event.kind == EventKind.PERSON_LIST:
+                            self.receive_person_list(msg.event)
 
                         if 'followers:' not in msg.subscription_id:
                             self.event_batch.append({
@@ -329,6 +329,9 @@ class RelayHandler:
             if len(item) > 1 and item[0] == 'p' and is_hex_key(item[1]):
                 self.add_profile_if_not_exists(item[1])
                 self.blocked_profiles_batch.append(item[1])
+
+    def receive_person_list(self, event):
+        e = PersonListEvent(event)
 
     def receive_reaction_event(self, event):
         e = ReactionEvent(event, SETTINGS.get('pubkey'))
@@ -511,15 +514,15 @@ class RelayHandler:
             logger.info('Contact list is newer than last upd: {}'.format(event.created_at))
             pk = SETTINGS.get('pubkey')
             if 'followers' in subscription:
-                e = FollowerListEvent(event, pk, subscription)
+                e = FollowerListEvent(event, subscription)
                 if e.target_pk is not None:
                     self.followers_batch.append({
-                        'pk_1': e.pubkey,
+                        'pk_1': e.event.public_key,
                         'pk_2': e.target_pk,
                         'action': e.action
                     })
             else:
-                e = ContactListEvent(event, pk)
+                e = ContactListEvent(event)
                 self.add_to_contacts_batch(e)
             self.add_profile_if_not_exists(event.public_key)
 
@@ -540,7 +543,7 @@ class RelayHandler:
 
     def receive_direct_message_event(self, event):
         e = DirectMessageEvent(event, SETTINGS.get('pubkey'))
-        if e.pubkey is not None and e.is_sender is not None and e.passed:
+        if e.pubkey is not None and e.is_sender is not None:
             self.dm_batch['inserts'].append(e.to_dict())
             self.dm_batch['objects'].append(e)
             self.add_profile_if_not_exists(e.event.public_key)

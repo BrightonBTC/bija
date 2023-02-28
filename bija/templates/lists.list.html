@@ -1,0 +1,8 @@
+<ul class="lists">
+    {%- for item in lists -%}
+    {%- if id == item.id -%}
+    {%- set class = 'actv' -%}
+    {%- endif -%}
+    <li><a href="{{ url_for('list_page', list_name=item.name, pk=item.public_key) }}" class="{{class}}">{{item.name}}</a></li>
+    {%- endfor -%}
+</ul>

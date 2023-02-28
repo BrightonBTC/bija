@@ -259,50 +259,55 @@ let updateMessageThread = function(data){
 
 class bijaSearch{
     constructor(){
-        this.input_el = document.querySelector('input[name="search_term"]');
-        this.hint_el = document.querySelector('#search_hints')
-        this.tips_el = document.querySelector('#search_tips')
-        this.setEventListeners()
+        const els = document.querySelectorAll('.search_bar')
+        els.forEach(elem => {
+            this.setEventListeners(elem)
+        })
     }
 
-    setEventListeners(){
-        this.input_el.addEventListener("keyup", (event)=>{
-            this.hint_el.innerHTML = ''
-            const val = this.input_el.value
+    setEventListeners(elem){
+        const input_el = elem.querySelector('input[name="search_term"]');
+        const hint_el = elem.querySelector('.search_hints')
+        const tips_el = elem.querySelector('.search_tips')
+        input_el.addEventListener("keyup", (event)=>{
+            hint_el.innerHTML = ''
+            const val = input_el.value
             if(val.length > 0){
-                this.tips_el.style.display = 'none'
+                tips_el.style.display = 'none'
             }
             else{
-                this.tips_el.style.display = 'block'
+                tips_el.style.display = 'block'
             }
             if (val.substring(0, 1) == '@' && val.length > 1){
-                this.searchByName(val.substring(1))
+                this.searchByName(val.substring(1), hint_el, input_el)
             }
         })
-        this.setSearchTips()
-        this.input_el.addEventListener("focus", (event)=>{
-            if(this.input_el.value.length == 0){
-                this.tips_el.style.display = 'block'
+        this.setSearchTips(tips_el, input_el)
+        input_el.addEventListener("focus", (event)=>{
+            if(input_el.value.length == 0){
+                tips_el.style.display = 'block'
             }
         })
-        this.input_el.addEventListener("blur", (event)=>{
-            this.tips_el.style.display = 'none'
+        input_el.addEventListener("blur", (event)=>{
+            tips_el.style.display = 'none'
         })
     }
 
-    searchByName(name){
+    searchByName(name, hint_el, input_el){
         const cb = function(response, data){
             if(response['result']){
-                data.context.showNameHints(response['result'], data.search, data.context)
+                data.context.showNameHints(response['result'], data)
             }
         }
         fetchGet('/search_name?name='+name, cb, {
             'context':this,
-            'search':name
+            'search':name,
+            'hint_el':hint_el,
+            'input_el':input_el
         }, 'json')
     }
 
-    showNameHints(results, search_str, context){
+    showNameHints(results, data){
         if(results.length > 0){
             const ul = document.createElement('ul')
             ul.classList.add('hint-list')
@@ -313,17 +318,17 @@ class bijaSearch{
                 }
                 li.innerText = name['name']
                 li.addEventListener("click", (event)=>{
-                    context.input_el.value = context.input_el.value.replace('@'+search_str, '@'+name['name'])
-                    context.input_el.parentElement.submit();
+                    data.input_el.value = data.input_el.value.replace('@'+data.search, '@'+name['name'])
+                    data.input_el.parentElement.submit();
                 });
                 ul.append(li)
             }
-            context.hint_el.append(ul)
+            data.hint_el.append(ul)
         }
     }
     
-    setSearchTips() {
-        const tips_elems = this.tips_el.querySelectorAll('li')
+    setSearchTips(tips_el, input_el) {
+        const tips_elems = tips_el.querySelectorAll('li')
         tips_elems.forEach(elem => {
             elem.addEventListener('mousedown', (event) => {
                 event.preventDefault()
@@ -332,12 +337,12 @@ class bijaSearch{
                 let fill_content = elem.getAttribute('data-fill')
                 console.log(fill_content)
                 if (fill_content.length > 0) {
-                    this.input_el.value = fill_content
+                    input_el.value = fill_content
                 } else {
-                    this.input_el.value = ''
+                    input_el.value = ''
                 }
-                this.input_el.blur()
-                this.input_el.focus()
+                input_el.blur()
+                input_el.focus()
             })
         })
     }
@@ -795,21 +800,51 @@ class bijaMessages{
             this.setSubmitMessage()
             this.setCfgLoader()
         }
-        else if(page=='messages'){
-            this.setAllReadBtn()
+        const mark_read_btn = document.querySelector('#mark_all_read');
+        if(mark_read_btn){
+            this.setAllReadBtn(mark_read_btn)
+        }
+        const empty_junk_btn = document.querySelector('#empty_junk');
+        if(empty_junk_btn){
+            this.setEmptyJunkBtn(empty_junk_btn)
         }
         const archive_fetcher = document.querySelector('#fetch_archived');
         if(archive_fetcher){
             this.setArchiveFetcher(archive_fetcher)
         }
+        const move_to_inbox = document.querySelector('.move_to_inbox');
+        if(move_to_inbox){
+            this.setMoveToInbox(move_to_inbox)
+        }
     }
 
-    setAllReadBtn(){
+    setAllReadBtn(btn){
         const cb = function(response, data){
             location.reload()
         }
-        document.querySelector('#mark_all_read').addEventListener("click", (event)=>{
+        btn.addEventListener("click", (event)=>{
+            event.preventDefault();
             fetchGet('/mark_read', cb, {})
+        });
+    }
+
+    setEmptyJunkBtn(btn){
+        const cb = function(response, data){
+            location.reload()
+        }
+        btn.addEventListener("click", (event)=>{
+            event.preventDefault();
+            fetchGet('/empty_junk', cb, {})
+        });
+    }
+
+    setMoveToInbox(btn){
+        const cb = function(response, data){
+            location.reload()
+        }
+        btn.addEventListener("click", (event)=>{
+            event.preventDefault();
+            fetchGet('/move_to_inbox?pk='+btn.dataset.rel, cb, {})
         });
     }
 
@@ -884,6 +919,11 @@ class bijaProfile{
         if(nav_el){
             nav_el.classList.add('actv')
         }
+        const unblock = main_el.querySelector('.unblock_form')
+        if(unblock){
+            this.setUnblockForm(unblock)
+        }
+
     }
 
     setEventListeners(){
@@ -947,6 +987,18 @@ class bijaProfile{
         if(archive_fetcher){
             this.setArchiveFetcher(archive_fetcher)
         }
+    }
+
+    setUnblockForm(form){
+        const btn = form.querySelector("button")
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const cb = function(response, data){
+                //location.reload()
+            }
+            fetchFromForm('/unblock', form, cb, {}, 'json')
+        });
     }
 
     setArchiveFetcher(el){
@@ -1017,22 +1069,6 @@ class bijaProfile{
             notify('Something went wrong updating your profile. Check for any errors and try again.')
         }
     }
-
-    setFollowState(id, state, upd){
-        const cb = function(response, data){
-            if(data.upd == '1'){
-                document.querySelector(".profile-tools").innerHTML = response
-            }
-            else{
-                const c_btn = document.querySelector(".follow-btn[data-rel='"+data.id+"']")
-                const doc = new DOMParser().parseFromString(response, "text/html")
-                const svg = doc.body.firstChild
-                c_btn.replaceWith(svg)
-            }
-        }
-        fetchGet('/follow?id='+id+"&state="+state+"&upd="+upd, cb, {'upd':upd,'id':id})
-    }
-
 }
 
 class bijaNotes{
@@ -1349,7 +1385,20 @@ class bijaNotes{
                             data.context.setBlockForm()
                         }
                     }
-                    fetchGet('/confirm_block?id='+note_id, get_block_cb, {context:this})
+                    fetchGet('/confirm_block?note='+note_id, get_block_cb, {context:this})
+                })
+            }
+            else if(tool == 'list'){
+                tool_el.addEventListener('click', (e) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const get_list_cb = function(response, data){
+                        if(response){
+                            popup(response)
+                            data.context.setListAdderForm()
+                        }
+                    }
+                    fetchGet('/list_adder?note='+note_id, get_list_cb, {context:this})
                 })
             }
         }
@@ -1383,6 +1432,23 @@ class bijaNotes{
         }
         const p = document.querySelector('.popup')
         p.append(container)
+    }
+
+    setListAdderForm(){
+        const form = document.querySelector("#list_adder")
+        const btn = form.querySelector("input[type='submit']")
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const cb = function(response, data){
+                console.log(response['success'])
+                if(response['success']){
+                    notify('Added to list')
+                    popup_close()
+                }
+            }
+            fetchFromForm('/add_to_list', form, cb, {}, 'json')
+        });
     }
 
     setDeleteForm(){
@@ -1521,6 +1587,79 @@ class bijaFeed{
     }
 }
 
+class bijaProfileBriefs{
+    constructor(){
+        document.addEventListener('newContentLoaded', ()=>{
+            this.setEventListeners()
+        });
+        this.setEventListeners()
+    }
+    setEventListeners(){
+        const btns = document.querySelectorAll(".follow-btn");
+        for (const btn of btns) {
+            btn.classList.remove('follow-btn')
+            btn.addEventListener("click", (event)=>{
+                event.preventDefault();
+                event.stopPropagation();
+                let id = btn.dataset.rel;
+                let state = btn.dataset.state;
+                let upd = btn.dataset.upd;
+                this.setFollowState(btn, state, upd);
+                return false;
+            });
+        }
+        const block_btns = document.querySelectorAll(".block-btn");
+        for (const btn of block_btns) {
+            btn.addEventListener('click', (e) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const get_block_cb = function(response, data){
+                    if(response){
+                        popup(response)
+                        lazyLoad()
+                        data.context.setBlockForm()
+                    }
+                }
+                fetchGet('/confirm_block?pk='+btn.dataset.rel, get_block_cb, {context:this})
+            })
+        }
+    }
+
+    setBlockForm(){
+        const form = document.querySelector("#block_form")
+        const btn = form.querySelector("input[type='submit']")
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const cb = function(response, data){
+                if(response['event_id']){
+                   location.reload()
+                }
+            }
+            fetchFromForm('/block', form, cb, {}, 'json')
+        });
+    }
+
+    setFollowState(btn, state, upd){
+        const cb = function(response, data){
+            if(data.upd == '1'){
+                document.querySelector(".profile-tools").innerHTML = response
+            }
+            else{
+                if(data.state == 1){
+                    data.btn.innerText = 'unfollow'
+                    data.btn.dataset.state = 0
+                }
+                else{
+                    data.btn.innerText = 'follow'
+                    data.btn.dataset.state = 1
+                }
+            }
+        }
+        fetchGet('/follow?id='+btn.dataset.rel+"&state="+state+"&upd="+upd, cb, {'upd':upd,'btn':btn,'state':state})
+    }
+}
+
 class bijaFollowers{
     constructor(){
         const main_el = document.querySelector(".main[data-page]")
@@ -1533,28 +1672,8 @@ class bijaFollowers{
         this.loading = 0;
         this.listener = () => this.loader(this);
         window.addEventListener('scroll', this.listener);
-        this.pageLoadedEvent = new Event("followerListLoaded");
-        document.addEventListener('followerListLoaded', ()=>{
-            this.setEventListeners()
-        });
+        this.pageLoadedEvent = new Event("newContentLoaded");
         this.requestNextPage(Math.floor(Date.now() / 1000))
-        this.setEventListeners()
-    }
-
-    setEventListeners(){
-        const btns = document.querySelectorAll(".follow-btn");
-        for (const btn of btns) {
-            btn.classList.remove('follow-btn')
-            btn.addEventListener("click", (event)=>{
-                event.preventDefault();
-                event.stopPropagation();
-                let id = btn.dataset.rel;
-                let state = btn.dataset.state;
-                let upd = btn.dataset.upd;
-                this.setFollowState(id, state, upd);
-                return false;
-            });
-        }
     }
 
     loader(o){
@@ -1616,6 +1735,38 @@ class bijaTopic{
             t_btn.style.display = 'block'
         });
     }
+}
+
+class bijaLists{
+
+    constructor(){
+        const mem_el = document.querySelector("#members_show")
+        mem_el.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const cb = function(response, data){
+                popup(response)
+                lazyLoad()
+                data.context.setMembersForm()
+            }
+            fetchGet('/list_members?id='+mem_el.dataset.rel, cb, {'context':this})
+        });
+    }
+    setMembersForm(){
+        const form = document.querySelector("#list_members")
+        const btn = form.querySelector("input[type='submit']")
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const cb = function(response, data){
+                if(response['success']){
+                   location.reload()
+                }
+            }
+            fetchFromForm('/remove_from_list', form, cb, {}, 'json')
+        });
+    }
+
 }
 
 class Emojis{
@@ -1785,14 +1936,7 @@ function defaultImage(img){
 }
 
 function popup(htm){
-    const existing = document.querySelector('.popup')
-    const existing_ol = document.querySelector('.popup-overlay')
-    if(existing){
-        existing.remove()
-    }
-    if(existing_ol){
-        existing_ol.remove()
-    }
+    popup_close()
     overlay = document.createElement('div')
     overlay.classList.add('popup-overlay')
     the_popup = document.createElement('div')
@@ -1806,6 +1950,18 @@ function popup(htm){
     document.body.append(overlay)
     document.body.append(the_popup)
     document.querySelector('.main').classList.add('blur')
+}
+
+function popup_close(){
+    const p = document.querySelector('.popup')
+    const po = document.querySelector('.popup-overlay')
+    if(p){
+        p.remove()
+    }
+    if(po){
+        po.remove()
+    }
+    document.querySelector('.main').classList.remove('blur')
 }
 
 function fetchGet(url, cb, cb_data = {}, response_type='text'){
@@ -2080,10 +2236,17 @@ window.addEventListener("load", function () {
         new bijaNotes();
     }
 
+    if (document.querySelector(".main[data-page='list']") != null){
+        new bijaFeed();
+        new bijaNotes();
+        new bijaLists();
+    }
+
     if (document.querySelector(".main[data-page='boosts']") != null){
         new bijaNotes();
     }
     new Emojis();
+    new bijaProfileBriefs();
 
     SOCK();
 
@@ -2116,5 +2279,20 @@ window.addEventListener("load", function () {
             }, {})
         });
     }
+    const navtog = document.querySelector('.nav-toggle')
+    if(navtog){
+        const menu_el = document.querySelector('.left-column')
+        navtog.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (menu_el.classList.contains('show')){
+                menu_el.classList.remove('show')
+            }
+            else{
+                menu_el.classList.add('show')
+            }
+        });
+    }
+
     lazyLoad();
 });

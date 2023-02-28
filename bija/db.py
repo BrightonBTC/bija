@@ -75,6 +75,20 @@ class BijaDB:
     def get_profile(self, public_key):
         return self.session.query(Profile).filter_by(public_key=public_key).first()
 
+    def get_profile_detailed(self, my_pk, public_key):
+        sq_following = self.session.query(func.count(Follower.id).label('count')) \
+            .filter(Follower.pk_1 == my_pk) \
+            .filter(Follower.pk_2 == Profile.public_key).scalar_subquery()
+        return self.session.query(
+            Profile.public_key,
+            Profile.name,
+            Profile.display_name,
+            Profile.pic,
+            Profile.nip05,
+            Profile.nip05_validated,
+            Profile.blocked,
+            label('following', sq_following)).filter_by(public_key=public_key).first()
+
     def get_profile_by_id(self, id):
         return self.session.query(Profile).filter_by(id=id).first()
 
@@ -182,6 +196,10 @@ class BijaDB:
     def update_block_list(self, profiles: list):
         self.session.query(Profile).filter(Profile.public_key.in_(profiles)).update({'blocked': True})
         self.session.query(Profile).filter(Profile.blocked==True).filter(Profile.public_key.notin_(profiles)).update({'blocked': False})
+        self.session.commit()
+
+    def unblock(self, pubkey: str):
+        self.session.query(Profile).filter(Profile.public_key == pubkey).update({'blocked': False})
         self.session.commit()
 
     def get_blocked(self):
@@ -576,7 +594,6 @@ class BijaDB:
 
     def insert_direct_messages(self, msgs:list):
         chunked_lists = [msgs[i:i + 999] for i in range(0, len(msgs), 999)]
-
         for l in chunked_lists:
             stmt = sqlite_upsert(PrivateMessage).values(l)
             stmt = stmt.on_conflict_do_update(
@@ -587,6 +604,7 @@ class BijaDB:
                     is_sender=stmt.excluded.is_sender,
                     created_at=stmt.excluded.created_at,
                     seen=stmt.excluded.seen,
+                    passed=stmt.excluded.passed,
                     raw=stmt.excluded.raw
                 )
             )
@@ -596,23 +614,15 @@ class BijaDB:
             except SQLAlchemyError as e:
                 print(str(e.__dict__['orig']))
 
-    def insert_private_message(self,
-                               msg_id,
-                               public_key,
-                               content,
-                               is_sender,
-                               created_at,
-                               seen,
-                               raw):
-        self.session.merge(PrivateMessage(
-            id=msg_id,
-            public_key=public_key,
-            content=content,
-            is_sender=is_sender,
-            created_at=created_at,
-            seen=seen,
-            raw=raw
-        ))
+    def inbox_allowed(self, pk):
+        q = self.session.query(PrivateMessage.id).filter(PrivateMessage.public_key == pk).filter(PrivateMessage.passed == True).first()
+        if q is not None:
+            return True
+        else:
+            return False
+
+    def move_to_inbox(self, pk):
+        self.session.query(PrivateMessage).filter(PrivateMessage.public_key == pk).update({'passed': True})
         self.session.commit()
 
     def purge_pubkey(self, pk):
@@ -637,6 +647,30 @@ class BijaDB:
     def get_topics(self):
         return self.session.query(Topic.tag).all()
 
+    def save_list(self, name, public_key, content):
+        self.session.merge(List(
+            name=name,
+            public_key=public_key,
+            list=content
+        ))
+        self.session.commit()
+
+    def get_lists(self, pubkey):
+        return self.session.query(List).filter(List.public_key == pubkey).order_by(List.id.desc()).all()
+
+    def get_list(self, pubkey, name):
+        return self.session.query(List).filter(List.public_key == pubkey).filter(List.name == name).first()
+
+    def get_list_by_id(self, list_id):
+        return self.session.query(List).filter(List.id == list_id).first()
+
+    def get_list_members(self, list_id):
+        l = self.get_list_by_id(list_id)
+        if l is not None:
+            pks = json.loads(l.list)
+            pks = [x[1] for x in pks]
+            return self.session.query(Profile).filter(Profile.public_key.in_(pks)).all()
+
     def empty_topics(self):
         self.session.query(Topic).delete()
 
@@ -654,13 +688,14 @@ class BijaDB:
 
     def get_unseen_message_count(self):
         return self.session.query(PrivateMessage) \
-            .filter(text("seen=0")).count()
+            .filter(text("seen=0 AND passed=1")).count()
 
     def get_unseen_messages(self, public_key):
         out = []
         filter_string = """profile.public_key = private_message.public_key
          AND private_message.public_key='{}'
-         AND seen=0""".format(public_key)
+         AND seen=0
+         AND passed=1""".format(public_key)
         result = self.session.query(
             PrivateMessage.id,
             PrivateMessage.public_key,
@@ -772,16 +807,22 @@ class BijaDB:
             )
         ).first()
 
-    def get_message_list(self):
-        return DB_ENGINE.execute(text("""SELECT 
-                max(PM2.created_at) AS last_message, 
-                profile.public_key AS public_key, 
-                profile.name AS name, 
-                profile.pic AS pic, 
-                PM2.is_sender AS is_sender, 
-                (select count(id) from private_message PM where PM.seen=0 AND PM.public_key=PM2.public_key) AS n 
-                FROM private_message PM2 JOIN profile ON profile.public_key = PM2.public_key GROUP BY PM2.public_key 
-                ORDER BY PM2.created_at DESC"""))
+    def get_message_list(self, passed=True):
+        PM2 = aliased(PrivateMessage)
+        n_unseen = self.session.query(func.count(PM2.id).label('count')) \
+            .filter(PM2.seen == False) \
+            .filter(PM2.public_key == PrivateMessage.public_key).scalar_subquery()
+        return self.session.query(
+            Profile.public_key,
+            Profile.name,
+            Profile.display_name,
+            Profile.pic,
+            func.max(PrivateMessage.created_at).label('last_message'),
+            PrivateMessage.is_sender,
+            PrivateMessage.content,
+            label('n', n_unseen))\
+            .outerjoin(Profile, Profile.public_key == PrivateMessage.public_key).filter(PrivateMessage.passed == passed)\
+            .group_by(PrivateMessage.public_key).order_by(PrivateMessage.created_at.desc())
 
     def get_message_thread(self, public_key):
         self.set_message_thread_read(public_key)
@@ -803,6 +844,18 @@ class BijaDB:
 
     def set_all_messages_read(self):
         self.session.query(PrivateMessage).update({'seen': True})
+        self.session.commit()
+
+    def get_junk_count(self):
+        return self.session.query(PrivateMessage).filter(PrivateMessage.passed == 0).count()
+
+    def empty_junk(self):
+        ids = []
+        q = self.session.query(Event.id).join(PrivateMessage, PrivateMessage.id == Event.event_id).filter(PrivateMessage.passed == 0).all()
+        for row in q:
+            ids.append(row.id)
+        q = self.session.query(EventRelay).filter(EventRelay.event_id.in_(ids)).delete()
+        q = self.session.query(PrivateMessage).filter(PrivateMessage.passed == 0).delete()
         self.session.commit()
 
     def add_note_reaction(self, eid, public_key, event_id, event_pk, content, members, raw):
@@ -1100,6 +1153,8 @@ class BijaDB:
             q = q.filter(Note.id.in_(filters['id_list']))
         if 'search' in filters:
             q = q.filter(Note.content.like(f"%{filters['search']}%"))
+        if 'pubkeys' in filters:
+            q = q.filter(Profile.public_key.in_(filters['pubkeys']))
         if 'replies' in filters:
             q = q.filter(
                 or_(

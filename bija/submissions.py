@@ -224,7 +224,18 @@ class SubmitBlockList(Submit):
         super().__init__()
         logger.info('SUBMIT block list')
         self.kind = EventKind.BLOCK_LIST
-        self.tags.append(['d', 'mute'])
+        encrypted = encrypt(json.dumps(l), SETTINGS.get('pubkey'))
+        if encrypted:
+            self.content = encrypted
+            self.send()
+
+class SubmitPersonList(Submit):
+    def __init__(self, name, l: list):
+        super().__init__()
+        logger.info('SUBMIT block list')
+        l = list(set(tuple(x) for x in l))
+        self.tags.append(['d', name])
+        self.kind = EventKind.PERSON_LIST
         encrypted = encrypt(json.dumps(l), SETTINGS.get('pubkey'))
         if encrypted:
             self.content = encrypted
