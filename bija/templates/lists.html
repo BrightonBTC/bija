@@ -3,8 +3,13 @@
 {%- include 'css.html' -%}
 {%- endblock css -%}
 
+{%- block header -%}
+<h1 class="main-title">
+    <span>{{'lists'| svg_icon('main_title_icon stroke')|safe}} Lists:</span>
+</h1>
+{%- endblock header -%}
+
 {%- block content -%}
-<h2 class="posts-title">Lists</h2>
 <div class="card">
     {%- include 'lists.list.html' -%}
 </div>

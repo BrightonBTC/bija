@@ -1,0 +1,31 @@
+{%- extends "base.html" -%}
+{%- block css -%}
+{%- include 'css.html' -%}
+{%- endblock css -%}
+
+{%- block header -%}
+
+{%- include 'profile/profile.title.html' -%}
+{%- endblock header -%}
+
+{%- block content -%}
+<div class="pad-lg">
+    <div class="profile-icons">
+        {{'share'| svg_icon('icon-lg share-profile')|safe}}
+        {%- if has_ln -%}
+            {{'lightning'| svg_icon('icon-lg lightning ')|safe}}
+        {%- endif -%}
+        <a href="{{ url_for('private_message_page', folder='inbox', pk=profile['public_key']) }}">{{'messages'| svg_icon('icon-lg')|safe}}</a>
+    </div>
+    <div>
+        {%- include 'profile/profile.menu.html' -%}
+    </div>
+    <div>
+        {%- include 'profile/profile.relationship.html' -%}
+    </div>
+    <div>
+        {%- include 'profile/profile.about.html' -%}
+    </div>
+</div>
+{%- endblock content -%}
+

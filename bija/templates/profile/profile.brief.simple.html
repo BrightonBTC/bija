@@ -1,19 +1,10 @@
-<p>Please confirm that you wish to block this user.</p>
-<hr>
 <div class="profile-brief card pad-mid">
-
     <div class="profile-image profile-item">
         {%- set p=profile -%}
         {%- include 'profile/profile.image.html' -%}
     </div>
     <div class="profile-details profile-item">
         <a class="name" href="{{ url_for('profile_page', pk=profile['public_key']) }}">{{profile['name'] | ident_string(profile['display_name'], profile['public_key']) | safe }}</a>
-        <br>{{ p['public_key'] | relationship | safe }}
+        <br>{{ profile['public_key'] | relationship | safe }}
     </div>
 </div>
-<hr>
-<p class="sm">{{profile['public_key']}}</p>
-<form id="block_form">
-    <input type="hidden" name="pubkey" value="{{profile['public_key']}}">
-    <input type="submit" value="Block" class="block-submit right">
-</form>

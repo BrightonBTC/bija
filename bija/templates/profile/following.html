@@ -3,9 +3,21 @@
 {%- include 'css.html' -%}
 {%- endblock css -%}
 
+{%- block header -%}
+{%- include 'profile/profile.title.html' -%}
+{%- endblock header -%}
+
 {%- block content -%}
-{%- include 'profile/profile.header.html' -%}
-<div class="following-list" data-page="1">
-{%- include 'profile/following.feed.html' -%}
+<h2 class="posts-title">{{page_id}}:</h2>
+<div id="profile-posts" data-latest="{{latest}}" data-updated_ts="{{updated_at}}" data-pk="{{profile['public_key']}}">
+    <div class="following-list" data-page="1">
+    {%- include 'profile/following.feed.html' -%}
+    </div>
 </div>
 {%- endblock content -%}
+
+{%- block right_content -%}
+<div>
+{%- include 'profile/profile.menu.html' -%}
+</div>
+{%- endblock right_content -%}

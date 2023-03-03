@@ -1,7 +1,7 @@
 
 <div class="note" data-dt="{{note['created_at']}}" data-processed="0" data-id="{{note['id']}}">
     <h3>
-        <a href="/profile?pk={{note['public_key']}}" class="profile-name">
+        <a href="{{ url_for('profile_page', pk=note['public_key']) }}" class="profile-name">
             {{note['name'] | ident_string(note['display_name'], note['public_key']) | safe }}
             {%- if note['following'] is not none and note['following']==1 -%}
             {{'following'| svg_icon('icon')|safe}}

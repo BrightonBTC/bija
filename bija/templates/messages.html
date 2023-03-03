@@ -3,15 +3,25 @@
 {%- include 'css.html' -%}
 {%- endblock css -%}
 
-{%- block content -%}
-{%- if inbox  -%}
-    <h1>{{'messages'| svg_icon('icon-lg')|safe}} Inbox <button id="mark_all_read" class="right">Mark all read</button></h1>
-{%- else -%}
-    <h1>{{'messages'| svg_icon('icon-lg')|safe}} Junk <button id="empty_junk" class="right">Empty</button></h1>
-{%- endif -%}
-    <hr>
-{%- for message in messages: -%}
+{%- block header -%}
+<h1 class="main-title">
+    {%- if inbox  -%}
+        <span>{{'messages'| svg_icon('main_title_icon fill')|safe}} Inbox</span> <button id="mark_all_read" class="right">Mark all read</button>
+    {%- else -%}
+        <span>{{'messages'| svg_icon('main_title_icon fill')|safe}} Junk</span> <button id="empty_junk" class="right">Empty</button>
+    {%- endif -%}
+</h1>
+{%- endblock header -%}
 
+{%- block content -%}
+
+{%- if inbox -%}
+    {%- set folder = 'inbox' -%}
+{%- else -%}
+    {%- set folder = 'junk' -%}
+{%- endif -%}
+
+{%- for message in messages: -%}
 
 {%- if message.is_sender==1 -%}
     {%- set sender="right-arrow"| svg_icon('icon-sm') -%}
@@ -30,7 +40,7 @@
     </div>
     <div class="msg-profile">
         <div class="msg-profile-name">{{message['name'] | ident_string(message['display_name'], message['public_key']) | safe }}</div>
-        <a class="msg-preview" href="/message?pk={{message.public_key}}">{{message.content|decr(message.public_key, privkey)| truncate(60, False, '...')}} </a>
+        <a class="msg-preview" href="{{ url_for('private_message_page', folder=folder, pk=message.public_key) }}">{{message.content|decr(message.public_key, privkey)| truncate(60, False, '...')}} </a>
         <div class="msg-profile-last-message sm right"> {{sender|safe}} {{message.last_message|dt}} </div>
     </div>
 
@@ -56,8 +66,8 @@
 {%- block right_content -%}
 <div>
     <ul class="card">
-        <li><a href="/messages">Inbox</a></li>
-        <li><a href="/messages?junk=1">Junk {%- if n_junk > 0 -%}<span class="tag">{{n_junk}}</span>{%- endif -%}</a></li>
+        <li><a href="{{ url_for('private_messages_page') }}">Inbox</a></li>
+        <li><a href="{{ url_for('private_messages_page', page='junk') }}">Junk {%- if n_junk > 0 -%}<span class="tag">{{n_junk}}</span>{%- endif -%}</a></li>
     </ul>
 </div>
 {%- endblock right_content -%}

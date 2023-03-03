@@ -73,7 +73,7 @@
     {%- for p in members: -%}
         <li class="pad-mid">
         {%- include 'profile/profile.image.html' -%}
-        <a href="/profile?pk={{p['public_key']}}" class="profile-name">{{p['name'] | ident_string(p['display_name'], p['public_key']) | safe }}</a>
+        <a href="{{ url_for('profile_page', pk=p['public_key']) }}" class="profile-name">{{p['name'] | ident_string(p['display_name'], p['public_key']) | safe }}</a>
         </li>
     {%- endfor -%}
     </ul>

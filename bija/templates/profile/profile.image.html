@@ -1,4 +1,4 @@
-<a href="/profile?pk={{p['public_key']}}">
+<a href="{{ url_for('profile_page', pk=p['public_key']) }}">
 {%- if p['pic'] is not none and p['pic']|length > 0 -%}
 <img src="/static/user.svg"
 	 referrerpolicy="no-referrer"

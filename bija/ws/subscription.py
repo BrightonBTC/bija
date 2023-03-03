@@ -9,10 +9,13 @@ class Subscription:
         self.batch = batch
         self.paused = False
 
+    def pause(self, b):
+        self.paused = b
+
     def to_json_object(self):
         return {
             "id": self.id,
-            # "filters": self.filters.to_json_array(),
+            "filters": self.filters.to_json_array(),
             "relay": self.relay,
             "batch": self.batch,
             "paused": self.paused

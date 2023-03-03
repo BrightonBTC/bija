@@ -3,6 +3,13 @@
 {%- include 'css.html' -%}
 {%- endblock css -%}
 
+{%- block header -%}
+<h1 class="main-title">
+    <span>{{'hashtag'| svg_icon('main_title_icon stroke')|safe}} Topics:</span>
+    <a href="#" class="topic-sub rnd-sm" data-state="{{subscribed}}" data-topic="{{topic}}">{{btn_text}}</a>
+</h1>
+{%- endblock header -%}
+
 {%- block content -%}
 {%- include 'topic.list.html' -%}
 {%- endblock content -%}

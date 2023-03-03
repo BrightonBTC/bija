@@ -7,7 +7,7 @@
         {%- include 'profile/profile.image.html' -%}
     </div>
     <div class="profile-details profile-item">
-        <a class="name" href="/profile?pk={{profile['public_key']}}">{{profile['name'] | ident_string(profile['display_name'], profile['public_key']) | safe }}</a>
+        <a class="name" href="{{ url_for('profile_page', pk=profile['public_key']) }}">{{profile['name'] | ident_string(profile['display_name'], profile['public_key']) | safe }}</a>
         <br>{{ p['public_key'] | relationship | safe }}<br>
         {%- if page_id != "blocked" -%}
             {%- if profile['following'] == 1: -%}

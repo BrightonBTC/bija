@@ -3,10 +3,14 @@
 {%- include 'css.html' -%}
 {%- endblock css -%}
 
-{%- block content -%}
+{%- block header -%}
+<h1 class="main-title">
+    <span>{{'lists'| svg_icon('main_title_icon stroke')|safe}} {{title}}</span>
+    <button id="members_show" data-rel="{{list.name}}" data-pk="{{list.public_key}}">{{n_members}} Members {{'edit'| svg_icon('icon-sm')|safe}}</button>
+</h1>
+{%- endblock header -%}
 
-<h2 class="posts-title">{{title}}</h2>
-<div class="center"><button id="members_show" data-rel="{{id}}">{{n_members}} Members {{'edit'| svg_icon('icon-sm')|safe}}</button></div>
+{%- block content -%}
 <div id="feed">
 {%- include 'feed/feed.items.html' -%}
 </div>

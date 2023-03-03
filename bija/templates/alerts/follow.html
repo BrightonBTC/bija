@@ -3,7 +3,7 @@
 {%- else -%}
     {%- set pic="/identicon?id="+data.profile.public_key -%}
 {%- endif -%}
-<a href="/profile?pk={{data['public_key']}}">
+<a href="{{ url_for('profile_page', pk=data['public_key']) }}">
     <div class="alert-image">
         <img class="user-image" src="{{pic}}">
     </div>

@@ -35,13 +35,16 @@ class SubscriptionManager:
             self.remove_subscription(sub)
 
     def next_round(self):
-
+        print('-------- NEXT ROUND')
         for relay in RELAY_MANAGER.relays:
             for s in RELAY_MANAGER.relays[relay].subscriptions:
                 sub = RELAY_MANAGER.relays[relay].subscriptions[s]
+                print('-------- SUB', relay, s)
                 if sub.paused and sub.paused < int(time.time()) - 30:
-                    sub.paused = False
+                    sub.pause(False)
                     self.subscribe(s, [relay], 0, self.get_last_batch_upd(s, relay, 0))
+                    print('-------- NEXT ROUND', relay, s)
+                    print('-------- ', sub.paused, RELAY_MANAGER.relays[relay].subscriptions[s].paused)
 
     def next_batch(self, relay, name):
         if name in self.subscriptions and self.subscriptions[name]['batch_count'] > 1:
@@ -49,7 +52,8 @@ class SubscriptionManager:
 
                 if RELAY_MANAGER.relays[relay].subscriptions[name].batch >= self.subscriptions[name]['batch_count'] - 1:
                     RELAY_MANAGER.relays[relay].subscriptions[name].batch = 0
-                    RELAY_MANAGER.relays[relay].subscriptions[name].paused = time.time()
+                    RELAY_MANAGER.relays[relay].subscriptions[name].pause(time.time())
+                    print('-------- PAUSE SUB', relay, name)
                 else:
                     batch = RELAY_MANAGER.relays[relay].subscriptions[name].batch + 1
                     self.subscribe(
@@ -58,6 +62,7 @@ class SubscriptionManager:
                         batch,
                         self.get_last_batch_upd(name, relay, batch)
                     )
+                    print('-------- DO SUB', relay, name)
 
     def get_last_batch_upd(self, sub, relay, batch):
         if sub in self.subscriptions and relay in self.subscriptions[sub]['relays']:

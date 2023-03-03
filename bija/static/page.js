@@ -217,7 +217,7 @@ let notifyNewProfilePosts = function(ts){
 }
 let updateProfile = function(profile){
     document.querySelector(".profile-about").innerHTML = profile.about
-    document.querySelector("#profile").dataset.updated_ts = profile.updated_at
+    document.querySelector("#profile-posts").dataset.updated_ts = profile.updated_at
     const name_els = document.querySelectorAll(".uname[data-pk='"+profile.public_key+"']");
     for (const name_el of name_els) {
 
@@ -295,36 +295,12 @@ class bijaSearch{
 
     searchByName(name, hint_el, input_el){
         const cb = function(response, data){
-            if(response['result']){
-                data.context.showNameHints(response['result'], data)
-            }
+              data.hint_el.innerHTML = response
+              lazyLoad()
         }
         fetchGet('/search_name?name='+name, cb, {
-            'context':this,
-            'search':name,
-            'hint_el':hint_el,
-            'input_el':input_el
-        }, 'json')
-    }
-
-    showNameHints(results, data){
-        if(results.length > 0){
-            const ul = document.createElement('ul')
-            ul.classList.add('hint-list')
-            for(const name of results) {
-                let li = document.createElement('li')
-                if(!name['name'] || name['name'].length < 1){
-                    name['name'] = name['public_key']
-                }
-                li.innerText = name['name']
-                li.addEventListener("click", (event)=>{
-                    data.input_el.value = data.input_el.value.replace('@'+data.search, '@'+name['name'])
-                    data.input_el.parentElement.submit();
-                });
-                ul.append(li)
-            }
-            data.hint_el.append(ul)
-        }
+            'hint_el':hint_el
+        })
     }
     
     setSearchTips(tips_el, input_el) {
@@ -418,42 +394,52 @@ class bijaNoteTools{
                 }
                 if(name){
                     const cb = function(response, data){
-                        if(response['result']){
-                            data.context.showNameHints(data.hint_elem, data.reply_elem, response['result'], data.search)
-                        }
+                        data.hint_elem.innerHTML = response
+                        lazyLoad()
+                        data.context.showNameHints(data.context, data.hint_elem, data.reply_elem, data.search)
                     }
-                    fetchGet('/search_name?name='+name, cb, {
+                    fetchGet('/hints_list?name='+name, cb, {
                         'context':this,
                         'hint_elem':this.auto_filler,
                         'reply_elem':reply_el,
                         'search':name
-                    }, 'json')
+                    })
                 }
             }
 
         });
     }
 
-    showNameHints(hint_elem, reply_elem, results, search_str){
-        if(results.length > 0){
-            const ul = document.createElement('ul')
-            ul.classList.add('hint-list')
-            for(const name of results) {
-                let li = document.createElement('li')
-                if(!name['name'] || name['name'].length < 1){
-                    name['name'] = name['public_key']
-                }
-                li.innerText = name['name']
-                li.addEventListener("click", (event)=>{
-                    reply_elem.value = reply_elem.value.replace('@'+search_str, '@'+name['name'])
-                    reply_elem.selectionStart=reply_elem.value.length;
-                    reply_elem.focus();
-                    hint_elem.innerHTML = ''
-                });
-                ul.append(li)
-            }
-            hint_elem.append(ul)
+    showNameHints(context, hint_elem, reply_elem, search_str){
+        const name_els = context.auto_filler.querySelectorAll('li')
+        for(const li of name_els){
+            li.addEventListener("click", (event)=>{
+                const name = li.dataset.name
+                reply_elem.value = reply_elem.value.replace('@'+search_str, '@'+name)
+                reply_elem.selectionStart=reply_elem.value.length;
+                reply_elem.focus();
+                hint_elem.innerHTML = ''
+            });
         }
+//        if(results.length > 0){
+//            const ul = document.createElement('ul')
+//            ul.classList.add('hint-list')
+//            for(const name of results) {
+//                let li = document.createElement('li')
+//                if(!name['name'] || name['name'].length < 1){
+//                    name['name'] = name['public_key']
+//                }
+//                li.innerText = name['name']
+//                li.addEventListener("click", (event)=>{
+//                    reply_elem.value = reply_elem.value.replace('@'+search_str, '@'+name['name'])
+//                    reply_elem.selectionStart=reply_elem.value.length;
+//                    reply_elem.focus();
+//                    hint_elem.innerHTML = ''
+//                });
+//                ul.append(li)
+//            }
+//            hint_elem.append(ul)
+//        }
     }
 }
 
@@ -906,12 +892,20 @@ class bijaProfile{
 
     constructor(){
 
-        const profile_el = document.querySelector('#profile')
+        const profile_el = document.querySelector('#profile-posts')
         this.public_key = profile_el.dataset.pk
-
-        this.setEventListeners()
         const main_el = document.querySelector('.main')
         let page = main_el.dataset.page
+        this.page = page
+        this.uploads_enabled = false
+        if(main_el && main_el.dataset.settings){
+            const settings = JSON.parse(main_el.dataset.settings)
+            if(settings['cloudinary_cloud'] !== undefined){
+                this.uploads_enabled = true
+            }
+        }
+
+        this.setEventListeners()
         if(['profile', 'profile-me'].includes(page)){
             page = 'posts'
         }
@@ -928,12 +922,16 @@ class bijaProfile{
 
     setEventListeners(){
 
+        if(this.page == 'profile-me'){
+            this.setBannerUploader()
+        }
+
         const edit_tog = document.querySelector(".profile-edit-btn");
         if(edit_tog){
             edit_tog.addEventListener("click", (event)=>{
                 event.preventDefault();
                 event.stopPropagation();
-                const pel = document.querySelector("#profile");
+                const pel = document.querySelector("#profile_updater");
                 if(pel.classList.contains('editing')){
                     pel.classList.remove('editing')
                 }
@@ -950,28 +948,24 @@ class bijaProfile{
                 fetchFromForm('/upd_profile', form, this.updateProfile, {}, 'json')
             });
 
-            const main_el = document.querySelector('.main')
-            if(main_el && main_el.dataset.settings){
-                const settings = JSON.parse(main_el.dataset.settings)
-                if(settings['cloudinary_cloud'] !== undefined){
-                    const form = document.querySelector("#profile_updater");
-                    const im_up = document.querySelector(".profile-img-up");
-                    im_up.addEventListener('change', (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        uploadToCloud(form, function(data, elem){
-                            const d = JSON.parse(data)
-                            elem.querySelector('#pim').value = d.secure_url
-                            elem.querySelector('.user-image').src = d.secure_url
-                        })
-                    });
-                }
-                else{
-                    document.querySelector(".profile-img-up").disabled = true;
-                }
+            if(this.uploads_enabled){
+                const form = document.querySelector("#profile_updater");
+                const im_up = document.querySelector(".profile-img-up");
+                im_up.addEventListener('change', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    uploadToCloud(form, function(data, elem){
+                        const d = JSON.parse(data)
+                        elem.querySelector('#pim').value = d.secure_url
+                        elem.querySelector('.pim').src = d.secure_url
+                    })
+                });
+            }
+            else{
+                document.querySelector(".profile-img-up").disabled = true;
             }
         }
-        const invalid_nip5 = document.querySelector('#profile .warn')
+        const invalid_nip5 = document.querySelector('.profile-top .warn')
         if(invalid_nip5){
             this.setNip5Validator()
         }
@@ -987,6 +981,45 @@ class bijaProfile{
         if(archive_fetcher){
             this.setArchiveFetcher(archive_fetcher)
         }
+    }
+
+    setBannerUploader(){
+        const btn = document.querySelector('.profile-banner .edit-btn')
+        const form = document.querySelector('#banner_up')
+        const im = document.querySelector('.profile-banner img')
+        const im_up = document.querySelector(".banner-img-up");
+        btn.addEventListener("click", (event)=>{
+            if(form.classList.contains('editing')){
+                form.classList.remove('editing')
+            }
+            else{
+                form.classList.add('editing')
+            }
+        });
+        if(this.uploads_enabled){
+            im_up.style.visibility = 'visible'
+            im_up.addEventListener('change', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                uploadToCloud(form, function(data, elem){
+                    const d = JSON.parse(data)
+                    elem.querySelector('#bim').value = d.secure_url
+                    im.src = d.secure_url
+                })
+            });
+        }
+        else{
+            im_up.disabled = true;
+        }
+        const cb = function(response, data){
+            notify('updated')
+            form.classList.remove('editing')
+        }
+        form.querySelector('input[type="submit"]').addEventListener("click", (event)=>{
+            event.preventDefault();
+            event.stopPropagation();
+            fetchFromForm('/banner_update', form, cb, {})
+        });
     }
 
     setUnblockForm(form){
@@ -1038,7 +1071,7 @@ class bijaProfile{
     }
 
     setNip5Validator(){
-        const pel = document.querySelector('#profile')
+        const pel = document.querySelector('#profile-posts')
         const btn = document.createElement('button')
         btn.innerText = 'Revalidate Nip-05'
         const cb = function(response, data){
@@ -1052,7 +1085,7 @@ class bijaProfile{
         btn.addEventListener('click', (e) => {
             fetchGet('/validate_nip5?pk='+pel.dataset.pk, cb, {}, 'json')
         });
-        const name_el = pel.querySelector('.profile-name')
+        const name_el = pel.querySelector('.profile-top .profile-name')
         name_el.append(btn)
     }
 
@@ -1427,7 +1460,7 @@ class bijaNotes{
                 response[i].name = response[i].public_key.substring(0, 21)+"..."
             }
 
-            li.innerHTML = '<span>'+response[i].content+'</span><a href="/profile?pk='+response[i].public_key+'">'+response[i].name+'</a>';
+            li.innerHTML = '<span>'+response[i].content+'</span><a href="/profile/'+encodeURIComponent(response[i].public_key)+'">'+response[i].name+'</a>';
             container.append(li)
         }
         const p = document.querySelector('.popup')
@@ -1563,7 +1596,7 @@ class bijaFeed{
             fetchGet('/feed?before='+ts, cb, {'context': this})
         }
         else if(['profile', 'profile-me'].includes(this.page)){
-            const profile_elem = document.querySelector("#profile")
+            const profile_elem = document.querySelector("#profile-posts")
             fetchGet('/profile_feed?before='+ts+'&pk='+profile_elem.dataset.pk, cb, {'context': this})
         }
         else if(this.page == 'topic'){
@@ -1573,6 +1606,10 @@ class bijaFeed{
         else if(this.page == 'search'){
             const search_elem = document.querySelector("#search_results")
             fetchGet('/search_feed?before='+ts+'&search='+encodeURIComponent(search_elem.dataset.search), cb, {'context': this})
+        }
+        else if(this.page == 'list'){
+            const list_btn = document.querySelector("#members_show")
+            fetchGet('/list_feed?before='+ts+'&name='+encodeURIComponent(list_btn.dataset.rel)+'&pk='+encodeURIComponent(list_btn.dataset.pk), cb, {'context': this})
         }
     }
 
@@ -1666,7 +1703,7 @@ class bijaFollowers{
         this.page = main_el.dataset.page
         this.list_el = document.querySelector(".following-list")
         this.page_n = parseInt(this.list_el.dataset.page)
-        const profile_el = document.querySelector("#profile")
+        const profile_el = document.querySelector("#profile-posts")
         this.pk = profile_el.dataset.pk
         this.data = {};
         this.loading = 0;
@@ -1749,7 +1786,7 @@ class bijaLists{
                 lazyLoad()
                 data.context.setMembersForm()
             }
-            fetchGet('/list_members?id='+mem_el.dataset.rel, cb, {'context':this})
+            fetchGet('/list_members?name='+encodeURIComponent(mem_el.dataset.rel)+'&pk='+encodeURIComponent(mem_el.dataset.pk), cb, {'context':this})
         });
     }
     setMembersForm(){
@@ -1857,7 +1894,7 @@ function getUpdaterURL(page){
     params['page'] = page
     switch(page){
         case 'profile':
-            const profile_elem = document.querySelector("#profile")
+            const profile_elem = document.querySelector("#profile-posts")
             if(profile_elem){
                 const pk = profile_elem.dataset.pk
                 const updated_ts = profile_elem.dataset.updated_ts
@@ -1882,7 +1919,7 @@ function handleUpdaterResponse(page, d){
             if("profile" in d){
                 profile = d.profile
                 document.querySelector(".profile-about").innerText = profile.about
-                document.querySelector("#profile").dataset.updated_ts = profile.updated_at
+                document.querySelector("#profile-posts").dataset.updated_ts = profile.updated_at
                 const name_els = document.querySelectorAll(".profile-name");
                 for (const name_el of name_els) {
                     name_el.innerText = profile.name

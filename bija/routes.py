@@ -147,12 +147,14 @@ def login_page():
                            page_id="login", title="Login",
                            stage=login_state, message=message, data=data, LoginState=LoginState)
 
-
-@app.route('/profile', methods=['GET'])
+@app.route('/profile/')
+@app.route('/profile/<pk>/')
+@app.route('/profile/<pk>/<view>')
 @login_required
-def profile_page():
+def profile_page(pk=None, view=None):
+    print(pk, view)
 
-    data = ProfilePage()
+    data = ProfilePage(pk, view)
 
     if data.page == 'profile':
         return render_template(
@@ -162,6 +164,22 @@ def profile_page():
             threads=[],
             last=0,
             latest=0,
+            profile=data.profile,
+            is_me=data.is_me,
+            am_following=data.am_following,
+            meta=data.meta,
+            pubkey=SETTINGS.get('pubkey'),
+            website=data.website,
+            banner=data.banner,
+            has_ln=data.has_ln,
+            n_following=data.following_count,
+            n_followers=data.follower_count
+        )
+    elif data.page == 'details':
+        return render_template(
+            "profile/profile.details.html",
+            page_id=data.page_id,
+            title="Profile details",
             profile=data.profile,
             is_me=data.is_me,
             am_following=data.am_following,
@@ -190,7 +208,7 @@ def profile_page():
 
 class ProfilePage:
 
-    def __init__(self):
+    def __init__(self, pk, view):
         self.page = 'profile'
         self.is_me = False
         self.am_following = False
@@ -198,8 +216,9 @@ class ProfilePage:
         self.following_count = 0
         self.has_ln = False
         self.website = None
-        self.pubkey = self.set_pubkey()
-        self.page_id = self.set_page_id()
+        self.banner = None
+        self.pubkey = self.set_pubkey(pk)
+        self.page_id = self.set_page_id(view)
         self.profile = None
         self.meta = None
         self.data = None
@@ -207,8 +226,7 @@ class ProfilePage:
         self.subscription_ids = [] # active notes to passed to subscription manager
 
         set_subscription = False
-        valid_pages = ['profile', 'following', 'followers', 'muted']
-
+        valid_pages = ['profile', 'following', 'followers', 'muted', 'details']
         ACTIVE_EVENTS.clear()
         if RELAY_HANDLER.page['page'] not in valid_pages or RELAY_HANDLER.page['identifier'] != self.pubkey:
             set_subscription = True
@@ -228,17 +246,17 @@ class ProfilePage:
                 self.subscription_ids
             )
 
-    def set_pubkey(self):
-        if 'pk' in request.args and is_hex_key(request.args['pk']) and request.args['pk'] != SETTINGS.get('pubkey'):
-            return request.args['pk']
+    def set_pubkey(self, pk):
+        if pk is not None and is_hex_key(pk) and pk != SETTINGS.get('pubkey'):
+            return pk
         else:
             self.is_me = True
             return SETTINGS.get('pubkey')
 
-    def set_page_id(self):
-        if 'view' in request.args:
-            self.page = request.args['view']
-            return request.args['view']
+    def set_page_id(self, view):
+        if view is not None:
+            self.page = view
+            return view
         elif self.pubkey == SETTINGS.get('pubkey'):
             return 'profile-me'
         else:
@@ -267,15 +285,14 @@ class ProfilePage:
                 elif item == 'website' and len(val) > 0 and validators.url(val):
                     self.website = val
                     metadata[item] = val
+                elif item == 'banner' and len(val) > 0 and validators.url(val):
+                    self.banner = val
+                    metadata[item] = val
         self.meta = metadata
 
     def get_data(self):
         self.am_following = DB.a_follows_b(SETTINGS.get('pubkey'), self.pubkey)
         if self.page == 'profile':
-            # notes = DB.get_feed(int(time.time()), SETTINGS.get('pubkey'), {'profile': self.pubkey})
-            # self.data = FeedThread(notes)
-            # self.subscription_ids = list(self.data.ids)
-            # self.latest_in_feed = DB.get_most_recent_for_pk(self.pubkey) or 0
             self.data = {'threads': []}
         elif self.page == 'following':
             self.data = DB.get_following(SETTINGS.get('pubkey'), self.pubkey)
@@ -669,7 +686,7 @@ def update_profile():
     if request.method == 'POST':
         profile = {}
         for item in request.json:
-            valid_vals = ['name', 'display_name', 'about', 'picture', 'nip05', 'website', 'lud06', 'lud16']
+            valid_vals = ['name', 'display_name', 'about', 'picture', 'banner', 'nip05', 'website', 'lud06', 'lud16']
             if item[0] in valid_vals and len(item[1].strip()) > 0:
                 profile[item[0]] = item[1].strip()
         if 'nip05' in profile and len(profile['nip05']) > 0:
@@ -684,6 +701,24 @@ def update_profile():
             out['success'] = e.event_id
     return render_template("upd.json", data=json.dumps(out))
 
+@app.route('/banner_update', methods=['POST'])
+def banner_update():
+    out = {'success': False}
+    banner = None
+    if request.method == 'POST':
+        profile = DB.get_profile(SETTINGS.get('pubkey'))
+        raw = json.loads(profile.raw)
+        meta = json.loads(raw['content'])
+        for item in request.json:
+            if item[0] == 'banner':
+                banner = item[1].strip()
+        if banner is not None:
+            meta['banner'] = banner
+            print(meta)
+
+            e = SubmitProfile(meta)
+            out['success'] = e.event_id
+    return render_template("upd.json", data=json.dumps(out))
 
 @app.route('/add_relay', methods=['POST', 'GET'])
 def add_relay():
@@ -748,14 +783,15 @@ def validate_nip5():
     return render_template("upd.json", data=json.dumps({'valid': match}))
 
 
-@app.route('/messages', methods=['GET'])
+@app.route('/messages')
+@app.route('/messages/<page>')
 @login_required
-def private_messages_page():
+def private_messages_page(page=None):
     ACTIVE_EVENTS.clear()
     EXECUTOR.submit(RELAY_HANDLER.set_page('messages', None))
     EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
     inbox = True
-    if 'junk' in request.args and request.args['junk'] == '1':
+    if page is not None and page == 'junk':
         inbox = False # junk folder
     messages = DB.get_message_list(inbox)
     n_junk = DB.get_junk_count()
@@ -791,27 +827,29 @@ def fetch_archived_msgs():
     return render_template("upd.json", data=json.dumps({'success': 1}))
 
 
-@app.route('/message', methods=['GET'])
+@app.route('/message/<folder>/<pk>')
 @login_required
-def private_message_page():
+def private_message_page(folder, pk):
     ACTIVE_EVENTS.clear()
-    EXECUTOR.submit(RELAY_HANDLER.set_page('message', request.args['pk']))
+    EXECUTOR.submit(RELAY_HANDLER.set_page('message', pk))
     EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
-    messages = []
-    pk = ''
-    if 'pk' in request.args and is_hex_key(request.args['pk']):
-        messages = DB.get_message_thread(request.args['pk'])
-        pk = request.args['pk']
+    #messages = []
+    if is_hex_key(pk):
+        inbox = True
+        if folder == 'junk':
+            inbox = False
+        messages = DB.get_message_thread(pk, inbox)
 
-    profile = DB.get_profile(SETTINGS.get('pubkey'))
-    them = DB.get_profile_detailed(SETTINGS.get('pubkey'), pk)
+        profile = DB.get_profile(SETTINGS.get('pubkey'))
+        them = DB.get_profile_detailed(SETTINGS.get('pubkey'), pk)
 
-    messages.reverse()
+        messages.reverse()
 
-    inbox = DB.inbox_allowed(pk)
+        #inbox = DB.inbox_allowed(pk)
 
-    return render_template("message_thread.html", page_id="messages_from", title="Messages From", messages=messages,
-                           me=profile, them=them, privkey=SETTINGS.get('privkey'), inbox=inbox)
+        return render_template("message_thread.html", page_id="messages_from", title="Messages From", messages=messages,
+                               me=profile, them=them, privkey=SETTINGS.get('privkey'), inbox=inbox)
+    return ''
 
 
 @app.route('/move_to_inbox', methods=['POST', 'GET'])
@@ -911,22 +949,43 @@ def list_page(list_name, pk=None):
         if l is not None:
             pks = json.loads(l.list)
             pks = [x[1] for x in pks]
-            print(pks)
             EXECUTOR.submit(RELAY_HANDLER.set_page('list', l.id))
             EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
             notes = DB.get_feed(int(time.time()), SETTINGS.get('pubkey'), {'pubkeys': pks})
             t = FeedThread(notes)
+            EXECUTOR.submit(RELAY_HANDLER.subscribe_feed(list(t.ids)))
             lists = DB.get_lists(SETTINGS.get('pubkey'))
             return render_template(
                 "list.html",
                 page_id="list",
                 title="List: {}".format(l.name),
-                id=l.id,
+                list=l,
                 n_members=len(pks),
                 threads=t.threads,
                 last=t.last_ts,
                 lists=lists
             )
+
+@app.route('/list_feed', methods=['GET'])
+def list_feed():
+    if request.method == 'GET':
+        if 'before' in request.args:
+            before = int(request.args['before'])
+        else:
+            before = time.time()
+        l = DB.get_list(request.args['pk'], request.args['name'])
+        if l is not None:
+            pks = json.loads(l.list)
+            pks = [x[1] for x in pks]
+            pk = SETTINGS.get('pubkey')
+            notes = DB.get_feed(before, pk, {'pubkeys': pks})
+            if len(notes) > 0:
+                t = FeedThread(notes)
+                EXECUTOR.submit(RELAY_HANDLER.subscribe_feed(list(t.ids)))
+                profile = DB.get_profile(pk)
+                return render_template("feed/feed.items.html", threads=t.threads, last=t.last_ts, profile=profile, pubkey=pk)
+            else:
+                return 'END'
 
 @app.route('/list_adder', methods=['GET'])
 @login_required
@@ -992,8 +1051,8 @@ def remove_from_list():
 @app.route('/list_members', methods=['GET'])
 @login_required
 def list_members():
-    if 'id' in request.args:
-        profiles = DB.get_list_members(request.args['id'])
+    if 'name' in request.args:
+        profiles = DB.get_list_members(request.args['name'], request.args['pk'])
         return render_template("list.members.html", profiles=profiles, id=request.args['id'])
     return '404'
 
@@ -1049,12 +1108,17 @@ def subscribe_topic():
 
 @app.route('/search_name', methods=['GET'])
 def search_name():
-    out = {}
-    matches = DB.search_profile_name(request.args['name'])
-    if matches is not None:
-        out = [dict(row) for row in matches]
-    return render_template("upd.json", data=json.dumps({'result': out}))
+    profiles = DB.search_profile_name(request.args['name'])
+    if profiles is not None:
+        return render_template("profile/simple.list.html", profiles=profiles)
+    return 'No results'
 
+@app.route('/hints_list', methods=['GET'])
+def hints_list():
+    profiles = DB.search_profile_name(request.args['name'])
+    if profiles is not None:
+        return render_template("profile/hints.list.html", profiles=profiles)
+    return 'No results'
 
 @app.route('/get_privkey', methods=['GET', 'POST'])
 def get_privkey():

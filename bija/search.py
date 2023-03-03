@@ -1,7 +1,7 @@
 import logging
 import time
 
-from flask import request
+from flask import request, url_for
 
 from bija.app import app
 from bija.args import LOGGING_LEVEL
@@ -53,15 +53,15 @@ class Search:
     def by_at(self):
         pk = DB.get_profile_by_name_or_pk(self.term[1:])
         if pk is not None:
-            self.redirect = '/profile?pk={}'.format(pk.public_key)
+            self.redirect = url_for('profile_page', pk=pk.public_key)
 
     def by_hex(self):
-        self.redirect = '/profile?pk={}'.format(self.term)
+        self.redirect = url_for('profile_page', pk=self.term)
 
     def by_npub(self):
         b_key = bech32_to_hex64('npub', self.term)
         if b_key:
-            self.redirect = '/profile?pk={}'.format(b_key)
+            self.redirect = url_for('profile_page', pk=b_key)
         else:
             self.message = 'invalid npub'
 
@@ -75,11 +75,11 @@ class Search:
     def by_nip05(self):
         profile = DB.get_pk_by_nip05(self.term)
         if profile is not None:
-            self.redirect = '/profile?pk={}'.format(profile.public_key)
+            self.redirect = url_for('profile_page', pk=profile.public_key)
         else:
             nip5 = Nip5(self.term)
             if nip5.pk is not None:
-                self.redirect = '/profile?pk={}'.format(nip5.pk)
+                self.redirect = url_for('profile_page', pk=nip5.pk)
             else:
                 self.message = "Nip-05 identifier could not be located"
 

@@ -3,16 +3,19 @@
 {%- include 'css.html' -%}
 {%- endblock css -%}
 
-{%- block content -%}
-{%- if subscribed == 1 -%}
-    {%- set btn_text = 'unsubscribe' -%}
-{%- else -%}
-    {%- set btn_text = 'subscribe' -%}
-{%- endif-%}
-<h2 class="posts-title topic-title">Recent activity in topic
-    <span>#{{topic}}</span>
+{%- block header -%}
+<h1 class="main-title">
+    {%- if subscribed == 1 -%}
+        {%- set btn_text = 'unsubscribe' -%}
+    {%- else -%}
+        {%- set btn_text = 'subscribe' -%}
+    {%- endif-%}
+    <span>{{'hashtag'| svg_icon('main_title_icon stroke')|safe}} Recent activity in: #{{topic}}</span>
     <a href="#" class="topic-sub rnd-sm" data-state="{{subscribed}}" data-topic="{{topic}}">{{btn_text}}</a>
-</h2>
+</h1>
+{%- endblock header -%}
+
+{%- block content -%}
 <a href="#" id="new_topic_posts_btn" class="sm">Load new posts</a>
 <div id="feed">
 {%- include 'feed/feed.items.html' -%}

@@ -664,8 +664,8 @@ class BijaDB:
     def get_list_by_id(self, list_id):
         return self.session.query(List).filter(List.id == list_id).first()
 
-    def get_list_members(self, list_id):
-        l = self.get_list_by_id(list_id)
+    def get_list_members(self, name, pubkey):
+        l = self.get_list(pubkey, name)
         if l is not None:
             pks = json.loads(l.list)
             pks = [x[1] for x in pks]
@@ -792,7 +792,7 @@ class BijaDB:
         self.session.commit()
 
     def search_profile_name(self, name_str):
-        return self.session.query(Profile.name, Profile.nip05, Profile.public_key, Profile.pic).filter(
+        return self.session.query(Profile.name, Profile.display_name, Profile.nip05, Profile.public_key, Profile.pic).filter(
             or_(
                 Profile.name.like(f"{name_str}%"),
                 Profile.public_key.like(f"{name_str}%")
@@ -824,7 +824,7 @@ class BijaDB:
             .outerjoin(Profile, Profile.public_key == PrivateMessage.public_key).filter(PrivateMessage.passed == passed)\
             .group_by(PrivateMessage.public_key).order_by(PrivateMessage.created_at.desc())
 
-    def get_message_thread(self, public_key):
+    def get_message_thread(self, public_key, inbox:bool):
         self.set_message_thread_read(public_key)
         filter_text = "profile.public_key = private_message.public_key AND private_message.public_key='{}'"
         return self.session.query(
@@ -834,7 +834,7 @@ class BijaDB:
             PrivateMessage.public_key,
             Profile.name,
             Profile.display_name,
-            Profile.pic).join(Profile) \
+            Profile.pic).join(Profile).filter(PrivateMessage.passed == inbox) \
             .filter(text(filter_text.format(public_key))) \
             .order_by(PrivateMessage.created_at.desc()).limit(100).all()
 

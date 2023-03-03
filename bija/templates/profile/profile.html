@@ -3,13 +3,46 @@
 {%- include 'css.html' -%}
 {%- endblock css -%}
 
+{%- block header -%}
+<div class="profile-banner">
+    {%- if is_me and page_id == 'profile-me' -%}
+        <button class="edit-btn">{{'edit'| svg_icon('icon-sm')|safe}}</button>
+        <form id="banner_up">
+            <label for="bim" class="sm">Banner Image URL</label>
+            <div class="bim-up">
+                <label class="note-image"><input type="file" class="banner-img-up"></label>
+                <input type="text" id="bim" name="banner" value="{{meta['banner'] or ''}}">
+            </div>
+            <input type="submit" value="save">
+        </form>
+    {%- endif -%}
+    <img src="{{banner or url_for('static', filename='default-banner.jpg')}}" referrerpolicy="no-referrer">
+</div>
+{%- include 'profile/profile.title.html' -%}
+{%- endblock header -%}
+
 {%- block content -%}
-{%- include 'profile/profile.header.html' -%}
+<div class="mobile-only center">
+    <a href="{{ url_for('profile_page', pk=profile['public_key'], view='details') }}" class="mobile-only profile-about-link">About</a>
+</div>
+{%- if is_me and page_id == 'profile-me' -%}
+<button class="profile-edit-btn">edit profile{{'edit'| svg_icon('icon-sm')|safe}}</button>
+{%- include 'profile/profile.form.html' -%}
+{%- include 'note.form.html' -%}
+{%- endif -%}
 {%- if profile['blocked'] -%}
 <form class="card unblock_form"><h1>[ BLOCKED ] <input type="hidden" name="pubkey" value="{{profile['public_key']}}"> <button class="unblock muted btn">unblock</button></h1></form>
 {%- endif -%}
-<h2 class="posts-title">Public posts</h2>
-<div id="profile-posts" data-latest="{{latest}}">
+
+<h2 class="posts-title">Recent posts:</h2>
+
+{%- if profile['updated_at'] is not none -%}
+    {%- set updated_at=profile['updated_at'] -%}
+{%- else -%}
+    {%- set updated_at='0' -%}
+{%- endif -%}
+
+<div id="profile-posts" data-latest="{{latest}}" data-updated_ts="{{updated_at}}" data-pk="{{profile['public_key']}}">
     <div id="feed">
     {%- include 'feed/feed.items.html' -%}
     </div>
@@ -32,7 +65,14 @@
 {%- endblock content -%}
 
 {%- block right_content -%}
-{%- if is_me: -%}
-{%- include 'note.form.html' -%}
-{%- endif -%}
+<div>
+    {%- include 'profile/profile.menu.html' -%}
+</div>
+<div>
+    {%- include 'profile/profile.relationship.html' -%}
+</div>
+<div>
+    {%- include 'profile/profile.about.html' -%}
+</div>
+
 {%- endblock right_content -%}

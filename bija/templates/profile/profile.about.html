@@ -1,0 +1,15 @@
+
+{%- if profile['about'] is not none -%}
+    {%- set about=profile['about'] -%}
+{%- else -%}
+    {%- set about='' -%}
+{%- endif -%}
+
+<div class="profile-about">
+    <pre>{{about| linkify| process_note_content | safe}}</pre>
+    {%- if website is not none -%}
+    <div class="profile-meta">
+        {{'web'| svg_icon('icon-sm')|safe}}<span class="sm pad-sm"><a href="{{ website }}">{{ website }}</a></span>
+    </div>
+    {%- endif -%}
+</div>

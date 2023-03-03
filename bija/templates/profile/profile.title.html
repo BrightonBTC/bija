@@ -1,0 +1,25 @@
+<h1 class="main-title">
+    <div class="profile-top">
+        <div class="profile-image profile-item">
+            {%- with p=profile -%}
+            {%- include 'profile/profile.image.html' -%}
+            {%- endwith -%}
+        </div>
+        <div class="profile-name">
+            {{profile['name'] | ident_string(profile['display_name'], profile['public_key']) | safe }}
+            {%- if profile['nip05'] is not none -%}
+            <div>
+                <span class="tag nip05">{{profile['nip05'] | nip05_valid(profile['nip05_validated']) | safe }} {{profile['nip05']}}</span>
+            </div>
+            {%- endif -%}
+        </div>
+
+        <div class="profile-icons mobile-hidden">
+            {{'share'| svg_icon('icon-lg share-profile')|safe}}
+            {%- if has_ln -%}
+                {{'lightning'| svg_icon('icon-lg lightning ')|safe}}
+            {%- endif -%}
+            <a href="{{ url_for('private_message_page', folder='inbox', pk=profile['public_key']) }}">{{'messages'| svg_icon('icon-lg')|safe}}</a>
+        </div>
+    </div>
+</h1>

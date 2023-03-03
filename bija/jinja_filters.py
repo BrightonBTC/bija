@@ -9,7 +9,7 @@ import qrcode
 from bija.alerts import AlertKind
 from lightning.lnaddr import lndecode
 
-from flask import render_template
+from flask import render_template, url_for
 import arrow
 
 from bija.app import app
@@ -139,14 +139,19 @@ def _jinja2_filter_responders(the_dict, n):
         names.append([pk, _jinja2_filter_ident(name, '', pk, long=False)])
 
     if n == 1:
-        html = '<a href="/profile?pk={}">{}</a> commented '
-        return html.format(names[0][0], names[0][1])
+        url = url_for('profile_page', pk=names[0][0])
+        html = '<a href="{}">{}</a> commented '
+        return html.format(url, names[0][1])
     elif n == 2:
-        html = '<a href="/profile?pk={}">{}</a> and <a href="/profile?pk={}">{}</a> commented '
-        return html.format(names[0][0], names[0][1], names[1][0], names[1][1])
+        url1 = url_for('profile_page', pk=names[0][0])
+        url2 = url_for('profile_page', pk=names[1][0])
+        html = '<a href="{}">{}</a> and <a href="{}">{}</a> commented '
+        return html.format(url1, names[0][1], url2, names[1][1])
     else:
-        html = '<a href="/profile?pk={}">{}</a>, <a href="/profile?pk={}">{}</a> and {} others commented '
-        return html.format(names[0][0], names[0][1], names[1][0], names[1][1], n - 2)
+        url1 = url_for('profile_page', pk=names[0][0])
+        url2 = url_for('profile_page', pk=names[1][0])
+        html = '<a href="{}">{}</a>, <a href="{}">{}</a> and {} others commented '
+        return html.format(url1, names[0][1], url2, names[1][1], n - 2)
 
 @app.template_filter('boosters_string')
 def _jinja2_filter_boosters(the_dict, n):
@@ -155,14 +160,19 @@ def _jinja2_filter_boosters(the_dict, n):
         names.append([pk, _jinja2_filter_ident(name, '', pk, long=False)])
     icon = _jinja2_filter_svg('reshare', 'icon-sm')
     if n == 1:
-        html = '{} boosted by <a href="/profile?pk={}">{}</a> '
-        return html.format(icon, names[0][0], names[0][1])
+        url = url_for('profile_page', pk=names[0][0])
+        html = '{} boosted by <a href="{}">{}</a> '
+        return html.format(icon, url, names[0][1])
     elif n == 2:
-        html = '{} boosted by <a href="/profile?pk={}">{}</a> and <a href="/profile?pk={}">{}</a> '
-        return html.format(icon, names[0][0], names[0][1], names[1][0], names[1][1])
+        url1 = url_for('profile_page', pk=names[0][0])
+        url2 = url_for('profile_page', pk=names[1][0])
+        html = '{} boosted by <a href="{}">{}</a> and <a href="{}">{}</a> '
+        return html.format(icon, url1, names[0][1], url2, names[1][1])
     else:
-        html = '{} boosted by <a href="/profile?pk={}">{}</a>, <a href="/profile?pk={}">{}</a> and {} others'
-        return html.format(icon, names[0][0], names[0][1], names[1][0], names[1][1], n - 2)
+        url1 = url_for('profile_page', pk=names[0][0])
+        url2 = url_for('profile_page', pk=names[1][0])
+        html = '{} boosted by <a href="{}">{}</a>, <a href="{}">{}</a> and {} others'
+        return html.format(icon, url1, names[0][1], url2, names[1][1], n - 2)
 
 @app.template_filter('process_media_attachments')
 def _jinja2_filter_media(json_string):
@@ -227,16 +237,13 @@ def _jinja2_filter_note(content: str, limit=500):
         else:
             pk = pubkey
         if is_hex_key(pk):
-            print('/////////////////////////////////////////////////////////// 1')
             name = '{}&#8230;{}'.format(pk[:3], pk[-5:])
             profile = DB.get_profile(pk)
-            print('/////////////////////////////////////////////////////////// 2')
             if profile is not None and profile.name is not None and len(profile.name) > 0:
-                print('/////////////////////////////////////////////////////////// 3')
                 name = profile.name
             content = content.replace(
                 "@{}".format(pubkey),
-                "<a class='uname' href='/profile?pk={}'>@{}</a>".format(pk, name))
+                "<a class='uname' href='{}'>@{}</a>".format(url_for('profile_page', pk=pk), name))
 
     print(content)
     return content

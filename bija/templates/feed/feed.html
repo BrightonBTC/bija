@@ -3,9 +3,14 @@
 {%- include 'css.html' -%}
 {%- endblock css -%}
 
+{%- block header -%}
+<h1 class="main-title">
+    <span>{{'home'| svg_icon('main_title_icon fill')|safe}} Recent activity in your network</span>
+</h1>
+{%- endblock header -%}
+
 {%- block content -%}
 
-<h2 class="posts-title">Recent activity in your network</h2>
 <div id="feed">
 {%- include 'feed/feed.items.html' -%}
 </div>

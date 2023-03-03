@@ -3,6 +3,10 @@
 {%- include 'css.html' -%}
 {%- endblock css -%}
 
+{%- block header -%}
+<h1 class="main-title"><span>{{'notif'| svg_icon('main_title_icon fill')|safe}} Alerts:</span></h1>
+{%- endblock header -%}
+
 {%- block content -%}
 
 <ul class="alerts">

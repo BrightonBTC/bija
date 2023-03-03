@@ -1,0 +1,29 @@
+<ul>
+    {%- for profile in profiles: -%}
+    <li class="profile-brief card pad-mid" data-name="{{profile['name']}}">
+        <div class="profile-image profile-item">
+            {%- if profile['pic'] is not none and profile['pic']|length > 0 -%}
+            <img src="/static/user.svg"
+                 referrerpolicy="no-referrer"
+                 data-src="{{profile['pic']}}"
+                 data-srcset="{{profile['pic']}}"
+                 data-rel="{{profile['public_key']}}"
+                 data-dflt="/identicon?id={{profile['public_key']}}"
+                 class="lazy-load user-image"
+                 onerror="defaultImage(this);"/>
+            {%- else -%}
+            <img src="/static/user.svg"
+                 referrerpolicy="no-referrer"
+                 data-src="/identicon?id={{profile['public_key']}}"
+                 data-srcset="/identicon?id={{profile['public_key']}}"
+                 data-rel="{{profile['public_key']}}"
+                 class="lazy-load user-image"/>
+            {%- endif -%}
+        </div>
+        <div class="profile-details profile-item">
+            {{profile['name'] | ident_string(profile['display_name'], profile['public_key']) | safe }}
+            <br>{{ profile['public_key'] | relationship | safe }}
+        </div>
+    </li>
+    {%- endfor -%}
+</ul>

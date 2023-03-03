@@ -1,0 +1,13 @@
+<div class="profile-relationship">
+    <div>
+        {{ profile['public_key'] | relationship | safe }}
+    </div>
+    <div>
+        {%- if am_following-%}
+            <button class="follow-btn btn muted" data-rel="{{profile['public_key']}}" data-state="0" data-upd="0">{{'unfollow'| svg_icon('icon')|safe}} unfollow</button>
+        {%- else -%}
+            <button class="follow-btn" data-rel="{{profile['public_key']}}" data-state="1" data-upd="0">{{'follow'| svg_icon('icon')|safe}} follow</button>
+        {%- endif -%}
+        <button class="block-btn btn muted" data-rel="{{profile['public_key']}}">{{'block'| svg_icon('icon warn')|safe}} block</button>
+    </div>
+</div>

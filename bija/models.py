@@ -88,7 +88,7 @@ class List(Base):
     list = Column(String)
     following = Column(Boolean)
 
-    UniqueConstraint(public_key, name, name='uix_1', sqlite_on_conflict='IGNORE')
+    UniqueConstraint(public_key, name, name='uix_1', sqlite_on_conflict='REPLACE')
 
 class Topic(Base):
     __tablename__ = "topic"
