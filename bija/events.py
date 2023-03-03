@@ -62,13 +62,14 @@ class NoteEvent:
                 h = request_url_head(url)
                 if h:
                     ct = h.get('content-type')
-                    if ct in ['image/apng', 'image/png', 'image/avif', 'image/gif', 'image/jpeg', 'image/svg+xml',
+                    ct_parts = ct.split(';')
+                    if ct_parts[0] in ['image/apng', 'image/png', 'image/avif', 'image/gif', 'image/jpeg', 'image/svg+xml',
                               'image/webp']:
                         logger.info('{} is image'.format(url))
                         self.media.append((url, 'image'))
-                    elif ct in ["video/webm", "video/ogg", "video/mp4"]:
+                    elif ct_parts[0]  in ["video/webm", "video/ogg", "video/mp4"]:
                         logger.info('{} is vid'.format(url))
-                        ext = ct.split('/')
+                        ext = ct_parts[0] .split('/')
                         self.media.append((url, 'video', ext[1]))
 
         if len(self.media) < 1 and len(urls) > 0:
@@ -450,5 +451,3 @@ class MetadataEvent:
             'updated_at': self.event.created_at,
             'raw': json.dumps(self.event.to_json_object())
         }
-
-
