@@ -671,6 +671,21 @@ class BijaDB:
             pks = [x[1] for x in pks]
             return self.session.query(Profile).filter(Profile.public_key.in_(pks)).all()
 
+    def save_bookmark_list(self, name, public_key, content):
+        self.session.merge(BookmarkList(
+            name=name,
+            public_key=public_key,
+            list=content
+        ))
+        self.session.commit()
+
+    def get_bookmark_list(self, pubkey, name):
+        return self.session.query(BookmarkList).filter(BookmarkList.public_key == pubkey).filter(BookmarkList.name == name).first()
+
+    def get_bookmark_lists(self, pubkey):
+        return self.session.query(BookmarkList).filter(BookmarkList.public_key == pubkey).order_by(BookmarkList.id.desc()).all()
+
+
     def empty_topics(self):
         self.session.query(Topic).delete()
 

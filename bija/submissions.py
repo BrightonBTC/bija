@@ -232,10 +232,23 @@ class SubmitBlockList(Submit):
 class SubmitPersonList(Submit):
     def __init__(self, name, l: list):
         super().__init__()
-        logger.info('SUBMIT block list')
+        logger.info('SUBMIT person list')
         l = list(set(tuple(x) for x in l))
         self.tags.append(['d', name])
         self.kind = EventKind.PERSON_LIST
+        encrypted = encrypt(json.dumps(l), SETTINGS.get('pubkey'))
+        if encrypted:
+            self.content = encrypted
+            self.send()
+
+
+class SubmitBookmarkList(Submit):
+    def __init__(self, name, l: list):
+        super().__init__()
+        logger.info('SUBMIT bookmark list')
+        l = list(set(tuple(x) for x in l))
+        self.tags.append(['d', name])
+        self.kind = EventKind.BOOKMARK_LIST
         encrypted = encrypt(json.dumps(l), SETTINGS.get('pubkey'))
         if encrypted:
             self.content = encrypted

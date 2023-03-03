@@ -1,0 +1,11 @@
+<ul class="bookmark_lists">
+    {%- for item in lists -%}
+    {%- if list is not none and list.name == item.name -%}
+    {%- set class = 'actv' -%}
+    {%- endif -%}
+    <li>
+        {{'folder'| svg_icon('icon')|safe}}
+        <a href="{{ url_for('bookmark_list_page', list_name=item.name, pk=item.public_key) }}" class="{{class}}">{{item.name}}</a>
+    </li>
+    {%- endfor -%}
+</ul>

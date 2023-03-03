@@ -6,7 +6,7 @@ from flask import render_template
 from bija.app import socketio, ACTIVE_EVENTS
 from bija.deferred_tasks import TaskKind, DeferredTasks
 from bija.events import BlockListEvent, BoostEvent, NoteEvent, ContactListEvent, FollowerListEvent, DirectMessageEvent, \
-    MetadataEvent, ReactionEvent, DeleteEvent, PersonListEvent
+    MetadataEvent, ReactionEvent, DeleteEvent, PersonListEvent, BookmarkListEvent
 from bija.helpers import is_json
 from bija.nip5 import Nip5
 from bija.ogtags import OGTags
@@ -189,6 +189,9 @@ class RelayHandler:
                         elif msg.event.kind == EventKind.PERSON_LIST:
                             self.receive_person_list(msg.event)
 
+                        elif msg.event.kind == EventKind.BOOKMARK_LIST:
+                            self.receive_bookmark_list(msg.event)
+
                         if 'followers:' not in msg.subscription_id:
                             self.event_batch.append({
                                 'event_id': msg.event.id,
@@ -332,6 +335,9 @@ class RelayHandler:
 
     def receive_person_list(self, event):
         e = PersonListEvent(event)
+
+    def receive_bookmark_list(self, event):
+        e = BookmarkListEvent(event)
 
     def receive_reaction_event(self, event):
         e = ReactionEvent(event, SETTINGS.get('pubkey'))

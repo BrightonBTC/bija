@@ -22,7 +22,7 @@ from bija.password import encrypt_key, decrypt_key
 from bija.search import Search
 from bija.settings import SETTINGS
 from bija.submissions import SubmitDelete, SubmitNote, SubmitProfile, SubmitEncryptedMessage, SubmitLike, \
-    SubmitFollowList, SubmitBoost, SubmitBlockList, SubmitRelayList, SubmitPersonList
+    SubmitFollowList, SubmitBoost, SubmitBlockList, SubmitRelayList, SubmitPersonList, SubmitBookmarkList
 from bija.ws.subscription_manager import SUBSCRIPTION_MANAGER
 
 logger = logging.getLogger(__name__)
@@ -936,7 +936,7 @@ def lists_page():
     EXECUTOR.submit(RELAY_HANDLER.set_page('lists', None))
     EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
     lists = DB.get_lists(SETTINGS.get('pubkey'))
-    return render_template("lists.html", page_id="lists", title="Lists", lists=lists)
+    return render_template("lists.html", page_id="lists", title="Lists", lists=lists, list=None)
 
 @app.route('/list/<list_name>/<pk>', methods=['GET'])
 @login_required
@@ -1055,6 +1055,95 @@ def list_members():
         profiles = DB.get_list_members(request.args['name'], request.args['pk'])
         return render_template("list.members.html", profiles=profiles, id=request.args['id'])
     return '404'
+
+@app.route('/bookmark_adder', methods=['GET'])
+@login_required
+def bookmark_adder():
+    lists = DB.get_bookmark_lists(SETTINGS.get('pubkey'))
+    if 'note' in request.args:
+        note_id = request.args['note']
+        note = DB.get_note(SETTINGS.get('pubkey'), note_id)
+        return render_template("bookmark.add.html", note=note, lists=lists)
+    return '404'
+
+@app.route('/add_to_bookmarks', methods=['POST'])
+@login_required
+def add_to_bookmarks():
+    out = []
+    name = None
+    success = False
+    for item in request.json:
+        if item[0] == 'note_id':
+            out.append(['e', item[1]])
+        elif item[0] == 'new' and len(item[1].strip()) > 0:
+            name = item[1]
+        elif item[0] == 'list':
+            name = item[1]
+    if name is not None and len(out) > 0:
+        success = True
+        l = DB.get_list(SETTINGS.get('pubkey'), name)
+        if l is not None:
+            out = out+json.loads(l.list)
+        SubmitBookmarkList(name, out)
+    return render_template("upd.json", data=json.dumps({'success': success}))
+
+
+@app.route('/bookmarks')
+@login_required
+def bookmark_lists_page():
+    ACTIVE_EVENTS.clear()
+    EXECUTOR.submit(RELAY_HANDLER.set_page('bookmark_lists', None))
+    EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
+    lists = DB.get_bookmark_lists(SETTINGS.get('pubkey'))
+    return render_template("bookmarks_lists.html", page_id="bookmark_lists", title="Bookmarks", lists=lists, list=None)
+
+@app.route('/bookmarks/<list_name>/<pk>', methods=['GET'])
+@login_required
+def bookmark_list_page(list_name, pk=None):
+    ACTIVE_EVENTS.clear()
+    if pk is None:
+        pk = SETTINGS.get('pubkey')
+    if list_name is not None:
+        l = DB.get_bookmark_list(pk, list_name)
+        if l is not None:
+            ids = json.loads(l.list)
+            ids = [x[1] for x in ids]
+            EXECUTOR.submit(RELAY_HANDLER.set_page('list', l.id))
+            EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
+            notes = DB.get_feed(int(time.time()), SETTINGS.get('pubkey'), {'id_list': ids})
+            t = FeedThread(notes)
+            EXECUTOR.submit(RELAY_HANDLER.subscribe_feed(list(t.ids)))
+            lists = DB.get_bookmark_lists(SETTINGS.get('pubkey'))
+            return render_template(
+                "bookmarks.html",
+                page_id="bookmarks",
+                title="Bookmark List: {}".format(l.name),
+                list=l,
+                threads=t.threads,
+                last=t.last_ts,
+                lists=lists
+            )
+
+@app.route('/bookmark_list_feed', methods=['GET'])
+def bookmark_list_feed():
+    if request.method == 'GET':
+        if 'before' in request.args:
+            before = int(request.args['before'])
+        else:
+            before = time.time()
+        l = DB.get_bookmark_list(request.args['pk'], request.args['name'])
+        if l is not None:
+            ids = json.loads(l.list)
+            ids = [x[1] for x in ids]
+            pk = SETTINGS.get('pubkey')
+            notes = DB.get_feed(before, pk, {'id_list': ids})
+            if len(notes) > 0:
+                t = FeedThread(notes)
+                EXECUTOR.submit(RELAY_HANDLER.subscribe_feed(list(t.ids)))
+                profile = DB.get_profile(pk)
+                return render_template("feed/feed.items.html", threads=t.threads, last=t.last_ts, profile=profile, pubkey=pk)
+            else:
+                return 'END'
 
 @app.route('/topic', methods=['GET'])
 @login_required

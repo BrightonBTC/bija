@@ -1,0 +1,24 @@
+{%- extends "base.html" -%}
+{%- block css -%}
+{%- include 'css.html' -%}
+{%- endblock css -%}
+
+{%- block header -%}
+<h1 class="main-title">
+    <span>{{'lists'| svg_icon('main_title_icon stroke')|safe}} {{title}}</span>
+</h1>
+{%- endblock header -%}
+
+{%- block content -%}
+<div id="feed" data-rel="{{list.name}}" data-pk="{{list.public_key}}">
+{%- include 'feed/feed.items.html' -%}
+</div>
+{%- endblock content -%}
+
+{%- block right_content -%}
+<div>
+    <div class="card">
+        {%- include 'bookmarks.list.html' -%}
+    </div>
+</div>
+{%- endblock right_content -%}

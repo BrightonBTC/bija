@@ -5,12 +5,12 @@
 
 {%- block header -%}
 <h1 class="main-title">
-    <span>{{'hashtag'| svg_icon('main_title_icon stroke')|safe}} Topics:</span>
+    <span>{{'bookmarks'| svg_icon('main_title_icon fill')|safe}} Bookmark lists:</span>
 </h1>
 {%- endblock header -%}
 
 {%- block content -%}
 <div class="card">
-{%- include 'topic.list.html' -%}
+    {%- include 'bookmarks.list.html' -%}
 </div>
 {%- endblock content -%}

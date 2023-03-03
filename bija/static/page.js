@@ -1434,6 +1434,19 @@ class bijaNotes{
                     fetchGet('/list_adder?note='+note_id, get_list_cb, {context:this})
                 })
             }
+            else if(tool == 'bookmark'){
+                tool_el.addEventListener('click', (e) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const get_bookmark_cb = function(response, data){
+                        if(response){
+                            popup(response)
+                            data.context.setBookmarkAdderForm()
+                        }
+                    }
+                    fetchGet('/bookmark_adder?note='+note_id, get_bookmark_cb, {context:this})
+                })
+            }
         }
     }
 
@@ -1481,6 +1494,23 @@ class bijaNotes{
                 }
             }
             fetchFromForm('/add_to_list', form, cb, {}, 'json')
+        });
+    }
+
+    setBookmarkAdderForm(){
+        const form = document.querySelector("#list_adder")
+        const btn = form.querySelector("input[type='submit']")
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const cb = function(response, data){
+                console.log(response['success'])
+                if(response['success']){
+                    notify('Bookmarked')
+                    popup_close()
+                }
+            }
+            fetchFromForm('/add_to_bookmarks', form, cb, {}, 'json')
         });
     }
 
@@ -1610,6 +1640,10 @@ class bijaFeed{
         else if(this.page == 'list'){
             const list_btn = document.querySelector("#members_show")
             fetchGet('/list_feed?before='+ts+'&name='+encodeURIComponent(list_btn.dataset.rel)+'&pk='+encodeURIComponent(list_btn.dataset.pk), cb, {'context': this})
+        }
+        else if(this.page == 'bookmarks'){
+            const bookmarks_btn = document.querySelector("#feed")
+            fetchGet('/bookmark_list_feed?before='+ts+'&name='+encodeURIComponent(bookmarks_btn.dataset.rel)+'&pk='+encodeURIComponent(bookmarks_btn.dataset.pk), cb, {'context': this})
         }
     }
 

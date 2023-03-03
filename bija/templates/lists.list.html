@@ -1,6 +1,6 @@
 <ul class="lists">
     {%- for item in lists -%}
-    {%- if id == item.id -%}
+    {%- if list is not none and list.name == item.name -%}
     {%- set class = 'actv' -%}
     {%- endif -%}
     <li><a href="{{ url_for('list_page', list_name=item.name, pk=item.public_key) }}" class="{{class}}">{{item.name}}</a></li>

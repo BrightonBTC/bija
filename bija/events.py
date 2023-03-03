@@ -247,6 +247,33 @@ class PersonListEvent:
     def save(self):
         DB.save_list(self.name, self.event.public_key, json.dumps(self.list))
 
+class BookmarkListEvent:
+    def __init__(self, event):
+        self.event = event
+        self.list = []
+        self.name = None
+        self.set_list()
+        self.get_name()
+        if self.name is not None and len(self.list) > 0:
+            self.save()
+
+    def set_list(self):
+        k = bytes.fromhex(SETTINGS.get('privkey'))
+        pk = PrivateKey(k)
+        raw = pk.decrypt_message(self.event.content, SETTINGS.get('pubkey'))
+        try:
+            self.list = json.loads(raw)
+        except ValueError:
+            print("unable to decode json")
+
+    def get_name(self):
+        for tag in self.event.tags:
+            if tag[0] == "d":
+                self.name = tag[1]
+
+    def save(self):
+        DB.save_bookmark_list(self.name, self.event.public_key, json.dumps(self.list))
+
 class ReactionEvent:
     def __init__(self, event, my_pubkey):
         logger.info('REACTION EVENT {}'.format(event.id))

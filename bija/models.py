@@ -90,6 +90,16 @@ class List(Base):
 
     UniqueConstraint(public_key, name, name='uix_1', sqlite_on_conflict='REPLACE')
 
+class BookmarkList(Base):
+    __tablename__ = "bookmark_list"
+    id = Column(Integer, primary_key=True)
+    public_key = Column(String(64), ForeignKey("profile.public_key"))
+    name = Column(String)
+    list = Column(String)
+    following = Column(Boolean)
+
+    UniqueConstraint(public_key, name, name='uix_1', sqlite_on_conflict='REPLACE')
+
 class Topic(Base):
     __tablename__ = "topic"
     id = Column(Integer, primary_key=True)
