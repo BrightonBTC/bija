@@ -567,7 +567,7 @@ class RelayHandler:
             if len(messages) > 0:
                 profile = DB.get_profile(SETTINGS.get('pubkey'))
                 DB.set_message_thread_read(e.pubkey)
-                out = render_template("message_thread.items.html",
+                out = render_template("messages/message_thread.items.html",
                                       me=profile, messages=messages, privkey=SETTINGS.get('privkey'))
                 socketio.emit('message', out)
         elif self.page['page'] == 'messages':

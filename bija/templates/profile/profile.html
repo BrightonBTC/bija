@@ -28,7 +28,7 @@
 {%- if is_me and page_id == 'profile-me' -%}
 <button class="profile-edit-btn">edit profile{{'edit'| svg_icon('icon-sm')|safe}}</button>
 {%- include 'profile/profile.form.html' -%}
-{%- include 'note.form.html' -%}
+{%- include 'notes/note.form.html' -%}
 {%- endif -%}
 {%- if profile['blocked'] -%}
 <form class="card unblock_form"><h1>[ BLOCKED ] <input type="hidden" name="pubkey" value="{{profile['public_key']}}"> <button class="unblock muted btn">unblock</button></h1></form>

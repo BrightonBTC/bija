@@ -24,11 +24,11 @@
             <div class="note-outer">
             {%- set reply_chain = item['thread_root'] | get_thread_root(item['response_to'], item['id']) -%}
             {%- set note=item -%}
-            {%- include 'note.html' -%}
+            {%- include 'notes/note.html' -%}
             </div>
         </div>
         {%- else -%}
-        {%- include 'deleted.note.html' -%}
+        {%- include 'notes/deleted.note.html' -%}
         {%- endif -%}
     {%- endif -%}
 {%- endfor -%}

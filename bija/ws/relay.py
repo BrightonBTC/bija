@@ -13,7 +13,7 @@ from bija.ws.subscription import Subscription
 
 import logging
 
-logger = logging.getLogger('websocket')
+logger = logging.getLogger(__name__)
 logger.setLevel(LOGGING_LEVEL)
 logger.addHandler(logging.StreamHandler())
 

@@ -9,11 +9,11 @@
 {%- if root is not none -%}
     {%- if root is string -%}
         {%- with id=root -%}
-        {%- include 'thread.placeholder.html' -%}
+        {%- include 'threads/thread.placeholder.html' -%}
         {%- endwith -%}
     {%- else -%}
         {%- with item=root -%}
-        {%- include 'thread.item.html' -%}
+        {%- include 'threads/thread.item.html' -%}
         {%- endwith -%}
     {%- endif -%}
 {%- endif -%}
@@ -21,7 +21,7 @@
 {%- if parent is not none -%}
     {%- if parent is string -%}
         {%- with id=parent -%}
-        {%- include 'thread.placeholder.html' -%}
+        {%- include 'threads/thread.placeholder.html' -%}
         {%- endwith -%}
     {%- else -%}
         {%- if parent['response_to'] is not none -%}
@@ -32,7 +32,7 @@
         </div>
         {%- endif -%}
         {%- with item=parent -%}
-        {%- include 'thread.item.html' -%}
+        {%- include 'threads/thread.item.html' -%}
         {%- endwith -%}
     {%- endif -%}
 {%- endif -%}
@@ -40,11 +40,11 @@
 {%- if note is not none -%}
     {%- if note is string -%}
         {%- with id=note -%}
-        {%- include 'thread.placeholder.html' -%}
+        {%- include 'threads/thread.placeholder.html' -%}
         {%- endwith -%}
     {%- else -%}
         {%- with item=note -%}
-        {%- include 'thread.item.html' -%}
+        {%- include 'threads/thread.item.html' -%}
         {%- endwith -%}
     {%- endif -%}
 {%- endif -%}
@@ -52,10 +52,10 @@
 {%- for item in replies: -%}
     {%- if item is string -%}
         {%- with id=item -%}
-        {%- include 'thread.placeholder.html' -%}
+        {%- include 'threads/thread.placeholder.html' -%}
         {%- endwith -%}
     {%- else -%}
-        {%- include 'thread.item.html' -%}
+        {%- include 'threads/thread.item.html' -%}
     {%- endif -%}
 
 {%- endfor -%}

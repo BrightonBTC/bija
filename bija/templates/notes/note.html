@@ -34,12 +34,12 @@
                 <div class="note-container placeholder sm" data-id="{{note['reshare']}}"><div class="lds-ellipsis"><div></div><div></div><div></div><div></div></div></div>
             {%- else -%}
             {%- with item = note['reshare'], is_reshare = true -%}
-            {%- include 'thread.item.html' -%}
+            {%- include 'threads/thread.item.html' -%}
             {%- endwith -%}
             {%- endif -%}
         {%- endif -%}
     </div>
     {%- if not is_reshare -%}
-    {%- include 'note.reply_form.html' -%}
+    {%- include 'notes/note.reply_form.html' -%}
     {%- endif -%}
 </div>

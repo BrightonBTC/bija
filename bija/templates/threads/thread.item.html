@@ -3,7 +3,7 @@
 <a id="focussed"></a>
 {%- endif -%}
 {%- if item['deleted'] -%}
-{%- include 'deleted.note.html' -%}
+{%- include 'notes/deleted.note.html' -%}
 {%- else -%}
 <div class="note-container {{ item['class'] }}" data-id="{{item['id']}}" data-root="{{item['thread_root'] or ''}}" data-parent="{{item['response_to'] or ''}}">
     <div class="thread-marker"></div>
@@ -14,7 +14,7 @@
     </div>
     <div class="note-outer">
     {%- set note=item -%}
-    {%- include 'note.html' -%}
+    {%- include 'notes/note.html' -%}
     </div>
 </div>
 {%- endif -%}

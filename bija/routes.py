@@ -108,7 +108,7 @@ def alerts_page():
     EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
     alerts = DB.get_alerts()
     DB.set_alerts_read()
-    return render_template("alerts.html", page_id="alerts", title="alerts", alerts=alerts)
+    return render_template("alerts/alerts.html", page_id="alerts", title="alerts", alerts=alerts)
 
 
 @app.route('/logout', methods=['GET'])
@@ -152,7 +152,6 @@ def login_page():
 @app.route('/profile/<pk>/<view>')
 @login_required
 def profile_page(pk=None, view=None):
-    print(pk, view)
 
     data = ProfilePage(pk, view)
 
@@ -404,7 +403,7 @@ def note_page():
     EXECUTOR.submit(RELAY_HANDLER.subscribe_thread, note_id, t.note_ids)
 
     profile = DB.get_profile(SETTINGS.get('pubkey'))
-    return render_template("thread.html",
+    return render_template("threads/thread.html",
                            page_id="note",
                            title="Note",
                            #notes=t.notes,
@@ -552,16 +551,16 @@ def thread_item():
     note = DB.get_note(SETTINGS.get('pubkey'), note_id)
     if note is not None:
         profile = DB.get_profile(SETTINGS.get('pubkey'))
-        return render_template("thread.item.html", item=note, profile=profile)
+        return render_template("threads/thread.item.html", item=note, profile=profile)
     else:
-        return render_template("thread.placeholder.html", id=note_id)
+        return render_template("threads/thread.placeholder.html", id=note_id)
 
 
 @app.route('/read_more', methods=['GET'])
 def read_more():
     note_id = request.args['id']
     note = DB.get_note(SETTINGS.get('pubkey'), note_id)
-    return render_template("note.content.html", note=note)
+    return render_template("notes/note.content.html", note=note)
 
 @app.route('/fetch_ogs', methods=['GET'])
 def fetch_ogs():
@@ -570,7 +569,7 @@ def fetch_ogs():
     data = DB.get_url(url)
     if data is not None and data.og is not None:
         out = json.loads(data.og)
-    return render_template("note.og.html", data=out)
+    return render_template("notes/note.og.html", data=out)
 
 
 @app.route('/settings', methods=['GET', 'POST'])
@@ -714,7 +713,6 @@ def banner_update():
                 banner = item[1].strip()
         if banner is not None:
             meta['banner'] = banner
-            print(meta)
 
             e = SubmitProfile(meta)
             out['success'] = e.event_id
@@ -797,7 +795,7 @@ def private_messages_page(page=None):
     n_junk = DB.get_junk_count()
 
 
-    return render_template("messages.html",
+    return render_template("messages/messages.html",
                            page_id="messages",
                            title="Private Messages",
                            messages=messages,
@@ -847,7 +845,7 @@ def private_message_page(folder, pk):
 
         #inbox = DB.inbox_allowed(pk)
 
-        return render_template("message_thread.html", page_id="messages_from", title="Messages From", messages=messages,
+        return render_template("messages/message_thread.html", page_id="messages_from", title="Messages From", messages=messages,
                                me=profile, them=them, privkey=SETTINGS.get('privkey'), inbox=inbox)
     return ''
 
@@ -927,7 +925,7 @@ def topics_page():
     EXECUTOR.submit(RELAY_HANDLER.set_page('topics', None))
     EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
     topics = DB.get_topics()
-    return render_template("topics.html", page_id="topics", title="Topics", topics=topics)
+    return render_template("topics/topics.html", page_id="topics", title="Topics", topics=topics)
 
 @app.route('/lists')
 @login_required
@@ -936,7 +934,7 @@ def lists_page():
     EXECUTOR.submit(RELAY_HANDLER.set_page('lists', None))
     EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
     lists = DB.get_lists(SETTINGS.get('pubkey'))
-    return render_template("lists.html", page_id="lists", title="Lists", lists=lists, list=None)
+    return render_template("lists/lists.html", page_id="lists", title="Lists", lists=lists, list=None)
 
 @app.route('/list/<list_name>/<pk>', methods=['GET'])
 @login_required
@@ -956,7 +954,7 @@ def list_page(list_name, pk=None):
             EXECUTOR.submit(RELAY_HANDLER.subscribe_feed(list(t.ids)))
             lists = DB.get_lists(SETTINGS.get('pubkey'))
             return render_template(
-                "list.html",
+                "lists/list.html",
                 page_id="list",
                 title="List: {}".format(l.name),
                 list=l,
@@ -998,7 +996,7 @@ def list_adder():
     elif 'pk' in request.args:
         pk = request.args['pk']
         profile = DB.get_profile(pk)
-    return render_template("list.add.html", profile=profile, lists=lists)
+    return render_template("lists/list.add.html", profile=profile, lists=lists)
 
 @app.route('/add_to_list', methods=['POST'])
 @login_required
@@ -1053,7 +1051,7 @@ def remove_from_list():
 def list_members():
     if 'name' in request.args:
         profiles = DB.get_list_members(request.args['name'], request.args['pk'])
-        return render_template("list.members.html", profiles=profiles, id=request.args['id'])
+        return render_template("lists/list.members.html", profiles=profiles, id=request.args['id'])
     return '404'
 
 @app.route('/bookmark_adder', methods=['GET'])
@@ -1063,7 +1061,7 @@ def bookmark_adder():
     if 'note' in request.args:
         note_id = request.args['note']
         note = DB.get_note(SETTINGS.get('pubkey'), note_id)
-        return render_template("bookmark.add.html", note=note, lists=lists)
+        return render_template("bookmarks/bookmark.add.html", note=note, lists=lists)
     return '404'
 
 @app.route('/add_to_bookmarks', methods=['POST'])
@@ -1095,7 +1093,7 @@ def bookmark_lists_page():
     EXECUTOR.submit(RELAY_HANDLER.set_page('bookmark_lists', None))
     EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
     lists = DB.get_bookmark_lists(SETTINGS.get('pubkey'))
-    return render_template("bookmarks_lists.html", page_id="bookmark_lists", title="Bookmarks", lists=lists, list=None)
+    return render_template("bookmarks/bookmarks_lists.html", page_id="bookmark_lists", title="Bookmarks", lists=lists, list=None)
 
 @app.route('/bookmarks/<list_name>/<pk>', methods=['GET'])
 @login_required
@@ -1115,7 +1113,7 @@ def bookmark_list_page(list_name, pk=None):
             EXECUTOR.submit(RELAY_HANDLER.subscribe_feed(list(t.ids)))
             lists = DB.get_bookmark_lists(SETTINGS.get('pubkey'))
             return render_template(
-                "bookmarks.html",
+                "bookmarks/bookmarks.html",
                 page_id="bookmarks",
                 title="Bookmark List: {}".format(l.name),
                 list=l,
@@ -1164,7 +1162,7 @@ def topic_page():
     subscribed = DB.subscribed_to_topic(topic)
     topics = DB.get_topics()
 
-    return render_template("topic.html", page_id="topic", title="Topic", threads=[], last=0,
+    return render_template("topics/topic.html", page_id="topic", title="Topic", threads=[], last=0,
                            profile=profile, pubkey=pk, topic=topic, subscribed=int(subscribed), topics=topics)
 
 @app.route('/topic_feed', methods=['GET'])

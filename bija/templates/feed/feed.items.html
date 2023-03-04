@@ -44,14 +44,14 @@
                 <div class="note-outer">
                     {%- set reply_chain = post['thread_root'] | get_thread_root(post['response_to'], post['id']) -%}
                     {%- with note=post -%}
-                    {%- include 'note.html' -%}
+                    {%- include 'notes/note.html' -%}
                     {%- endwith -%}
                 </div>
             </div>
             {%- endif -%}
         {%- else -%}
             {%- with item=post -%}
-            {%- include 'deleted.note.html' -%}
+            {%- include 'notes/deleted.note.html' -%}
             {%- endwith -%}
         {%- endif -%}
     {%- endif -%}
@@ -87,7 +87,7 @@
             <div class="note-outer">
             {%- set reply_chain = post['thread_root'] | get_thread_root(post['response_to'], post['id']) -%}
             {%- with note=post -%}
-            {%- include 'note.html' -%}
+            {%- include 'notes/note.html' -%}
             {%- endwith -%}
             </div>
         </div>
@@ -99,7 +99,7 @@
         </div>
         {%- else -%}
         {%- with item=post -%}
-        {%- include 'deleted.note.html' -%}
+        {%- include 'notes/deleted.note.html' -%}
         {%- endwith -%}
         {%- endif -%}
     {%- endif -%}
