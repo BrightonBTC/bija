@@ -1085,7 +1085,7 @@ class bijaProfile{
         btn.addEventListener('click', (e) => {
             fetchGet('/validate_nip5?pk='+pel.dataset.pk, cb, {}, 'json')
         });
-        const name_el = pel.querySelector('.profile-top .profile-name')
+        const name_el = document.querySelector('.profile-top .profile-name')
         name_el.append(btn)
     }
 
