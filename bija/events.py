@@ -62,15 +62,16 @@ class NoteEvent:
                 h = request_url_head(url)
                 if h:
                     ct = h.get('content-type')
-                    ct_parts = ct.split(';')
-                    if ct_parts[0] in ['image/apng', 'image/png', 'image/avif', 'image/gif', 'image/jpeg', 'image/svg+xml',
-                              'image/webp']:
-                        logger.info('{} is image'.format(url))
-                        self.media.append((url, 'image'))
-                    elif ct_parts[0]  in ["video/webm", "video/ogg", "video/mp4"]:
-                        logger.info('{} is vid'.format(url))
-                        ext = ct_parts[0] .split('/')
-                        self.media.append((url, 'video', ext[1]))
+                    if ct:
+                        ct_parts = ct.split(';')
+                        if ct_parts[0] in ['image/apng', 'image/png', 'image/avif', 'image/gif', 'image/jpeg', 'image/svg+xml',
+                                  'image/webp']:
+                            logger.info('{} is image'.format(url))
+                            self.media.append((url, 'image'))
+                        elif ct_parts[0]  in ["video/webm", "video/ogg", "video/mp4"]:
+                            logger.info('{} is vid'.format(url))
+                            ext = ct_parts[0] .split('/')
+                            self.media.append((url, 'video', ext[1]))
 
         if len(self.media) < 1 and len(urls) > 0:
             logger.info('note has urls')
