@@ -93,7 +93,7 @@ class SubscribePrimary(Subscribe):
         if len(following_pubkeys) > 0:
             following_filter = Filter(
                 authors=following_pubkeys,
-                kinds=[EventKind.SET_METADATA, EventKind.CONTACTS, EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION, EventKind.DELETE],
+                kinds=[EventKind.SET_METADATA, EventKind.CONTACTS, EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.DELETE],
                 since=self.since
             )
             f.append(following_filter)
