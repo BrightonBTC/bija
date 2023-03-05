@@ -81,6 +81,7 @@ body {
   color: var(--txt-clr);
   margin:0;
   font-weight: normal;
+  overflow-y: scroll;
 }
 
 h1, h2, h3, h4, h5, h6, p, ol, ul {
@@ -1131,6 +1132,13 @@ svg.lightning *{
 /* ---------- */
 
 /* Thread page */
+.thread-head-im{
+    flex-basis: var(--pfp-dim-sm);
+}
+.thread-title{
+    flex: 1;
+    padding-left: var(--spacing-mid);
+}
 .note-container{
     display: flex;
     padding: 0 var(--spacing-mid);
@@ -1143,7 +1151,6 @@ svg.lightning *{
 }
 .note-container.root {
     font-size: 120%;
-    filter: saturate(1.1);
 }
 .note-container.root .note {
     border: 2px solid var(--bg-clr3);

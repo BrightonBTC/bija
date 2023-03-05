@@ -391,11 +391,11 @@ def profile_feed():
             return 'END'
 
 
-@app.route('/note', methods=['GET'])
+@app.route('/note/<note_id>', methods=['GET'])
 @login_required
-def note_page():
+def note_page(note_id):
     ACTIVE_EVENTS.clear()
-    note_id = request.args['id']
+    #note_id = request.args['id']
     EXECUTOR.submit(RELAY_HANDLER.set_page('note', note_id))
     EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
 
@@ -1025,15 +1025,15 @@ def add_to_list():
 def remove_from_list():
     to_delete = []
     out = []
-    list_id = None
+    list_name = None
     success = False
     for item in request.json:
-        if item[0] == 'list_id':
-            list_id = int(item[1])
+        if item[0] == 'list_name':
+            list_name = item[1]
         elif item[0] == 'member':
             to_delete.append(item[1])
-    if list_id is not None and len(to_delete) > 0:
-        l = DB.get_list_by_id(list_id)
+    if list_name is not None and len(to_delete) > 0:
+        l = DB.get_list(SETTINGS.get('pubkey'), list_name)
         if l is not None:
             success = True
             for item in json.loads(l.list):
@@ -1051,7 +1051,7 @@ def remove_from_list():
 def list_members():
     if 'name' in request.args:
         profiles = DB.get_list_members(request.args['name'], request.args['pk'])
-        return render_template("lists/list.members.html", profiles=profiles, id=request.args['id'])
+        return render_template("lists/list.members.html", profiles=profiles, name=request.args['name'])
     return '404'
 
 @app.route('/bookmark_adder', methods=['GET'])
@@ -1143,11 +1143,11 @@ def bookmark_list_feed():
             else:
                 return 'END'
 
-@app.route('/topic', methods=['GET'])
+@app.route('/topic/<topic>', methods=['GET'])
 @login_required
-def topic_page():
+def topic_page(topic):
     ACTIVE_EVENTS.clear()
-    topic = request.args['tag']
+    #topic = request.args['tag']
     EXECUTOR.submit(RELAY_HANDLER.set_page('topic', topic))
     EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
     EXECUTOR.submit(RELAY_HANDLER.subscribe_topic, topic)
@@ -1347,7 +1347,7 @@ def timestamp_upd():
     results = {}
     for ts in t:
         dt = arrow.get(int(ts))
-        results[ts] = dt.humanize()
+        results[ts] = dt.humanize(only_distance=True)
     return render_template("upd.json", data=json.dumps({'data': results}))
 
 

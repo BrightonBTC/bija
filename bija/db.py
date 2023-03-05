@@ -793,9 +793,8 @@ class BijaDB:
         self.session.commit()
 
     def set_all_seen_in_topic(self, topic):
-        notes = self.session.query(Note).filter(Note.hashtags.like(f"%\"{topic}\"%"))
-        for note in notes:
-            note.seen = True
+        q = self.session.query(Note).filter(Note.hashtags.like(f"%\"{topic}\"%")).filter(Note.seen == False).all()
+        self.session.query(Note).filter(Note.id.in_([x.id for x in q])).update({'seen': True})
         self.session.commit()
 
     def set_note_seen(self, note_id):
@@ -1177,7 +1176,9 @@ class BijaDB:
                     Note.thread_root==filters['replies']
                 )
             )
-        q = q.order_by(Note.seen.asc(), Note.created_at.desc()).limit(50)
+        q = q.order_by(Note.seen.asc(), Note.created_at.desc())
+        if 'replies' not in filters:
+            q = q.limit(50)
         return q.all()
 
     def get_url(self, url):

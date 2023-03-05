@@ -2,6 +2,7 @@ import json
 import logging
 
 import validators as validators
+from flask import url_for
 
 from bija.app import app
 from bija.args import LOGGING_LEVEL
@@ -115,9 +116,10 @@ class NoteEvent:
             self.reshare = event_id
             self.content = self.content.replace("#[{}]".format(item), "")
         else:
+            note_url = url_for('note_page', note_id=event_id)
             self.content = self.content.replace(
                 "#[{}]".format(item),
-                "<a href='/note?id={}#{}'>event:{}&#8230;</a>".format(event_id, event_id, event_id[:21]))
+                "<a href='{}#focussed'>event:{}&#8230;</a>".format(note_url, event_id[:21]))
 
     def process_t_tag(self, item):
         logger.info('process note t tag')

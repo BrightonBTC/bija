@@ -115,7 +115,7 @@ class NoteThread:
 
 
     def process(self):
-        self.note = self.get_note()
+        self.get_note()
         if not self.is_root:
             self.determine_root()
             self.get_root()
@@ -137,12 +137,16 @@ class NoteThread:
                 self.is_root = True
                 self.root_id = self.id
                 n['class'] = 'main root'
+                n['reshare'] = self.get_reshare(n)
+                self.root = n
             else:
                 n['class'] = 'main'
-            n['reshare'] = self.get_reshare(n)
+                n['reshare'] = self.get_reshare(n)
+                self.note = n
             self.add_members(n)
-            return n
-        return self.id
+        else:
+            self.note = self.id
+
 
     def get_parent(self):
         logger.info('get parent')
@@ -162,13 +166,18 @@ class NoteThread:
         replies = DB.get_feed(int(time.time()), SETTINGS.get('pubkey'), {'replies': self.id})
         if replies is not None:
             for note in replies:
+                print('id', note.id)
+                print('=========================', note.id)
                 n = dict(note)
+                print(n['thread_root'], n['response_to'])
                 if n['response_to'] == self.id or (n['thread_root'] == self.id and n['response_to'] is None):
+                    print('ADDED')
                     n['reshare'] = self.get_reshare(n)
                     n['class'] = 'reply'
                     self.replies.append(n)
                     self.add_members(n)
                     self.note_ids.append(n['id'])
+                print('// =========================', note.id)
 
     def get_reshare(self, note):
         logger.info('get reshare')

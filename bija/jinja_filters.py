@@ -71,7 +71,7 @@ def _jinja2_filter_theme(b):
 @app.template_filter('dt')
 def _jinja2_filter_datetime(ts):
     t = arrow.get(int(ts))
-    return t.humanize()
+    return t.humanize(only_distance=True)
 
 
 @app.template_filter('decr')
@@ -86,6 +86,11 @@ def _jinja2_filter_decr(content, pubkey, privkey):
             return strip_tags(message)
     except ValueError:
         return 'could not decrypt!'
+
+
+@app.template_filter('strip_tags')
+def _jinja2_filter_decr(content:str):
+    return strip_tags(content)
 
 @app.template_filter('nip05_valid')
 def _jinja2_filter_nip5(nip5, validated):
@@ -227,7 +232,7 @@ def _jinja2_filter_note(content: str, limit=500):
         term = tag[2:-1].strip()
         content = "{} ".format(content).replace(
             tag[:-1],
-            "<a href='/topic?tag={}'>{}</a>".format(term, tag[:-1]))
+            "<a href='{}'>{}</a>".format(url_for('topic_page', topic=term.lower()), tag[:-1]))
 
     tags = get_at_tags(content)
     for tag in tags:

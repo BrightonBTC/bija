@@ -48,7 +48,7 @@ class Search:
         # self.message = 'Searching network for {}'.format(self.term)
         # self.results = DB.get_search_feed(int(time.time()), self.term)
         # self.action = 'hash'
-        self.redirect = '/topic?tag={}'.format(self.term[1:])
+        self.redirect = url_for('topic_page', topic=self.term[1:])
 
     def by_at(self):
         pk = DB.get_profile_by_name_or_pk(self.term[1:])
@@ -68,7 +68,7 @@ class Search:
     def by_note(self):
         b_key = bech32_to_hex64('note', self.term)
         if b_key:
-            self.redirect = '/note?id={}'.format(b_key)
+            self.redirect = url_for('note_page', note_id=b_key)
         else:
             self.message = 'invalid note'
 

@@ -6,6 +6,6 @@
     {%- else -%}
         {%- set class = '' -%}
     {%- endif -%}
-    <li class="{{class}}" data-tag="{{item.tag}}"><a href="/topic?tag={{item.tag}}">#{{item.tag}} <span class="unseen_n"></span></a></li>
+    <li class="{{class}}" data-tag="{{item.tag}}"><a href="{{ url_for('topic_page', topic=item.tag) }}">#{{item.tag}} <span class="unseen_n"></span></a></li>
     {%- endfor -%}
 </ul>

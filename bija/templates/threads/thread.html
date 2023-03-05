@@ -3,8 +3,31 @@
 {%- include 'css.html' -%}
 {%- endblock css -%}
 
+{%- block header -%}
+<h1 class="main-title">
+    {%- if root is not none -%}
+        {%- if root is string -%}
+            <span class="thread-head-im">
+                {{'profile'| svg_icon('icon fill')|safe}}
+            </span>
+            <span class="thread-title">
+                Thread: {{ root }}
+            </span>
+        {%- else -%}
+            {%- with p=root -%}
+            <span class="thread-head-im">
+                {%- include 'profile/profile.image.html' -%}
+            </span>
+            {%- endwith -%}
+            <span class="thread-title">
+                Thread: {{ root['content']|strip_tags|truncate(50, False, '...', 0) }}
+            </span>
+        {%- endif -%}
+    {%- endif -%}
+</h1>
+{%- endblock header -%}
+
 {%- block content -%}
-<h2 class="posts-title">Thread:</h2>
 <div id="thread-items">
 {%- if root is not none -%}
     {%- if root is string -%}

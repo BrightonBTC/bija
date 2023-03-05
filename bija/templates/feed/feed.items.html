@@ -22,7 +22,7 @@
             {%- if thread['responder_count'] > 0 -%}
                 {{ thread['responders'] | responders_string(thread['responder_count']) | safe }}
                 {%- if thread['self'] is none -%}
-                on a <a href="/note?id={{thread['id']}}#{{thread['id']}}">thread</a>
+                on a <a href="{{ url_for('note_page', note_id=thread['id']) }}#focussed">thread</a>
                 {%- endif -%}
             {%- endif -%}
         </div>
@@ -63,7 +63,7 @@
             <div class="note-container connector">
                 <div class="thread-marker"></div>
                 <div class="note-image"></div>
-                <a href="{{ url_for('note_page', id=post['id']) }}#focussed">View thread</a>
+                <a href="{{ url_for('note_page', note_id=post['id']) }}#focussed">View thread</a>
             </div>
         {%- endif -%}
 
@@ -72,7 +72,7 @@
         <div class="response-accounts">
             {{ thread['responders'] | responders_string(thread['responder_count']) | safe }}
             {%- if thread['self'] is none -%}
-            on a <a href="{{ url_for('note_page', id=thread['id']) }}#focussed">thread</a>
+            on a <a href="{{ url_for('note_page', note_id=thread['id']) }}#focussed">thread</a>
             {%- endif -%}
         </div>
         {%- endif -%}
@@ -94,7 +94,7 @@
         <div class="note-container connector">
             <div class="note-image"></div>
             {%- if post['replies'] -%}
-                <a href="{{ url_for('note_page', id=post['id']) }}#focussed">View replies</a>
+                <a href="{{ url_for('note_page', note_id=post['id']) }}#focussed">View replies</a>
             {%- endif -%}
         </div>
         {%- else -%}
