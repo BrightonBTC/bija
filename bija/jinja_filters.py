@@ -330,12 +330,3 @@ def _jinja2_filter_linkify(content):
     return url_linkify(content)
 
 
-@app.template_filter('settings_json')
-def _jinja2_settings_json(content):
-    settings = ['cloudinary_cloud', 'cloudinary_upload_preset']
-    out = {}
-    for k in settings:
-        v = SETTINGS.get(k)
-        if v is not None:
-            out[k] = v
-    return json.dumps(out)

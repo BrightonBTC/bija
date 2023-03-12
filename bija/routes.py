@@ -79,7 +79,7 @@ def index_page():
     profile = DB.get_profile(pk)
     topics = DB.get_topics()
     return render_template("feed/feed.html", page_id="home", title="Home", threads=[], last=0,
-                           profile=profile, pubkey=pk, topics=topics)
+                           profile=profile, pubkey=pk, topics=topics, settings_json=settings_json())
 
 
 @app.route('/feed', methods=['GET'])
@@ -108,7 +108,7 @@ def alerts_page():
     EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
     alerts = DB.get_alerts()
     DB.set_alerts_read()
-    return render_template("alerts/alerts.html", page_id="alerts", title="alerts", alerts=alerts)
+    return render_template("alerts/alerts.html", page_id="alerts", title="alerts", alerts=alerts, settings_json=settings_json())
 
 
 @app.route('/logout', methods=['GET'])
@@ -172,7 +172,7 @@ def profile_page(pk=None, view=None):
             banner=data.banner,
             has_ln=data.has_ln,
             n_following=data.following_count,
-            n_followers=data.follower_count
+            n_followers=data.follower_count, settings_json=settings_json()
         )
     elif data.page == 'details':
         return render_template(
@@ -413,7 +413,7 @@ def note_page(note_id):
                            replies=t.replies,
                            members=t.profiles,
                            profile=profile,
-                           pubkey=SETTINGS.get('pubkey'))
+                           pubkey=SETTINGS.get('pubkey'), settings_json=settings_json())
 
 @app.route('/boosts', methods=['GET'])
 @login_required
@@ -431,7 +431,7 @@ def boosts_page():
                            title="Boosts",
                            notes=t.boosts,
                            profile=profile,
-                           root=note_id, pubkey=SETTINGS.get('pubkey'))
+                           root=note_id, pubkey=SETTINGS.get('pubkey'), settings_json=settings_json())
 
 
 @app.route('/quote_form', methods=['GET'])
@@ -585,6 +585,8 @@ def settings_page():
         EXECUTOR.submit(RELAY_HANDLER.set_page('settings', None))
         EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
         settings = SETTINGS.get_list([
+            'uploads_provider',
+            'ibb_key',
             'cloudinary_cloud',
             'cloudinary_upload_preset',
             'pow_default',
@@ -630,6 +632,19 @@ def update_settings():
     config_backup()
     return render_template("upd.json", data=json.dumps({'success': 1}))
 
+def settings_json():
+    out = {}
+    cloud = SETTINGS.get('uploads_provider')
+    if cloud == 'cloudinary':
+        settings = ['cloudinary_cloud', 'cloudinary_upload_preset']
+        for k in settings:
+            v = SETTINGS.get(k)
+            if v is not None:
+                out[k] = v
+    elif cloud == 'ibb':
+        out['ibb_key'] = SETTINGS.get('ibb_key')
+
+    return json.dumps(out)
 
 @app.route('/default_styles', methods=['GET'])
 def default_styles():
@@ -801,7 +816,7 @@ def private_messages_page(page=None):
                            messages=messages,
                            n_junk=n_junk,
                            inbox=inbox,
-                           privkey=SETTINGS.get('privkey'))
+                           privkey=SETTINGS.get('privkey'), settings_json=settings_json())
 
 @app.route('/fetch_archived_msgs', methods=['GET'])
 @login_required
@@ -846,7 +861,7 @@ def private_message_page(folder, pk):
         #inbox = DB.inbox_allowed(pk)
 
         return render_template("messages/message_thread.html", page_id="messages_from", title="Messages From", messages=messages,
-                               me=profile, them=them, privkey=SETTINGS.get('privkey'), inbox=inbox)
+                               me=profile, them=them, privkey=SETTINGS.get('privkey'), inbox=inbox, settings_json=settings_json())
     return ''
 
 
@@ -899,7 +914,7 @@ def search_page():
     if action is not None:
         if action == 'hash':
             EXECUTOR.submit(RELAY_HANDLER.subscribe_topic, request.args['search_term'][1:])
-    return render_template("search.html", page_id="search", title="Search", message=message, search=request.args['search_term'], threads=[], last=0)
+    return render_template("search.html", page_id="search", title="Search", message=message, search=request.args['search_term'], threads=[], last=0, settings_json=settings_json())
 
 @app.route('/search_feed', methods=['GET'])
 @login_required
@@ -925,7 +940,7 @@ def topics_page():
     EXECUTOR.submit(RELAY_HANDLER.set_page('topics', None))
     EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
     topics = DB.get_topics()
-    return render_template("topics/topics.html", page_id="topics", title="Topics", topics=topics)
+    return render_template("topics/topics.html", page_id="topics", title="Topics", topics=topics, settings_json=settings_json())
 
 @app.route('/lists')
 @login_required
@@ -934,7 +949,7 @@ def lists_page():
     EXECUTOR.submit(RELAY_HANDLER.set_page('lists', None))
     EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
     lists = DB.get_lists(SETTINGS.get('pubkey'))
-    return render_template("lists/lists.html", page_id="lists", title="Lists", lists=lists, list=None)
+    return render_template("lists/lists.html", page_id="lists", title="Lists", lists=lists, list=None, settings_json=settings_json())
 
 @app.route('/list/<list_name>/<pk>', methods=['GET'])
 @login_required
@@ -949,9 +964,9 @@ def list_page(list_name, pk=None):
             pks = [x[1] for x in pks]
             EXECUTOR.submit(RELAY_HANDLER.set_page('list', l.id))
             EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
-            notes = DB.get_feed(int(time.time()), SETTINGS.get('pubkey'), {'pubkeys': pks})
-            t = FeedThread(notes)
-            EXECUTOR.submit(RELAY_HANDLER.subscribe_feed(list(t.ids)))
+            # notes = DB.get_feed(int(time.time()), SETTINGS.get('pubkey'), {'pubkeys': pks})
+            # t = FeedThread(notes)
+            # EXECUTOR.submit(RELAY_HANDLER.subscribe_feed(list(t.ids)))
             lists = DB.get_lists(SETTINGS.get('pubkey'))
             return render_template(
                 "lists/list.html",
@@ -959,9 +974,9 @@ def list_page(list_name, pk=None):
                 title="List: {}".format(l.name),
                 list=l,
                 n_members=len(pks),
-                threads=t.threads,
-                last=t.last_ts,
-                lists=lists
+                threads=[],
+                last=0,
+                lists=lists, settings_json=settings_json()
             )
 
 @app.route('/list_feed', methods=['GET'])
@@ -1079,12 +1094,27 @@ def add_to_bookmarks():
             name = item[1]
     if name is not None and len(out) > 0:
         success = True
-        l = DB.get_list(SETTINGS.get('pubkey'), name)
+        l = DB.get_bookmark_list(SETTINGS.get('pubkey'), name)
         if l is not None:
-            out = out+json.loads(l.list)
+            out = json.loads(l.list)+out
         SubmitBookmarkList(name, out)
     return render_template("upd.json", data=json.dumps({'success': success}))
 
+@app.route('/save_bookmark_list', methods=['POST'])
+@login_required
+def save_bookmark_list():
+    name = None
+    items = []
+    success = 'failed to update'
+    for item in request.json:
+        if item[0] == 'bookmarks':
+            items = json.loads(item[1])
+        elif item[0] == 'list':
+            name = item[1]
+    if name is not None:
+        SubmitBookmarkList(name, items)
+        success = 'bookmarks updated'
+    return render_template("upd.json", data=json.dumps({'message': success}))
 
 @app.route('/bookmarks')
 @login_required
@@ -1093,7 +1123,7 @@ def bookmark_lists_page():
     EXECUTOR.submit(RELAY_HANDLER.set_page('bookmark_lists', None))
     EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
     lists = DB.get_bookmark_lists(SETTINGS.get('pubkey'))
-    return render_template("bookmarks/bookmarks_lists.html", page_id="bookmark_lists", title="Bookmarks", lists=lists, list=None)
+    return render_template("bookmarks/bookmarks_lists.html", page_id="bookmark_lists", title="Bookmarks", lists=lists, list=None, settings_json=settings_json())
 
 @app.route('/bookmarks/<list_name>/<pk>', methods=['GET'])
 @login_required
@@ -1108,40 +1138,47 @@ def bookmark_list_page(list_name, pk=None):
             ids = [x[1] for x in ids]
             EXECUTOR.submit(RELAY_HANDLER.set_page('list', l.id))
             EXECUTOR.submit(SUBSCRIPTION_MANAGER.clear_subscriptions)
-            notes = DB.get_feed(int(time.time()), SETTINGS.get('pubkey'), {'id_list': ids})
-            t = FeedThread(notes)
-            EXECUTOR.submit(RELAY_HANDLER.subscribe_feed(list(t.ids)))
+            notes = DB.get_feed(int(time.time()), SETTINGS.get('pubkey'), {'id_list': ids, 'order': None})
+            def get_note_order(item):
+                return ids.index(item.id)
+            notes = sorted(notes, key=get_note_order)
+            EXECUTOR.submit(RELAY_HANDLER.subscribe_feed(list(ids)))
             lists = DB.get_bookmark_lists(SETTINGS.get('pubkey'))
+
             return render_template(
                 "bookmarks/bookmarks.html",
                 page_id="bookmarks",
                 title="Bookmark List: {}".format(l.name),
                 list=l,
-                threads=t.threads,
-                last=t.last_ts,
-                lists=lists
+                notes=notes,
+                lists=lists, settings_json=settings_json()
             )
 
-@app.route('/bookmark_list_feed', methods=['GET'])
-def bookmark_list_feed():
-    if request.method == 'GET':
-        if 'before' in request.args:
-            before = int(request.args['before'])
-        else:
-            before = time.time()
-        l = DB.get_bookmark_list(request.args['pk'], request.args['name'])
-        if l is not None:
-            ids = json.loads(l.list)
-            ids = [x[1] for x in ids]
-            pk = SETTINGS.get('pubkey')
-            notes = DB.get_feed(before, pk, {'id_list': ids})
-            if len(notes) > 0:
-                t = FeedThread(notes)
-                EXECUTOR.submit(RELAY_HANDLER.subscribe_feed(list(t.ids)))
-                profile = DB.get_profile(pk)
-                return render_template("feed/feed.items.html", threads=t.threads, last=t.last_ts, profile=profile, pubkey=pk)
-            else:
-                return 'END'
+# @app.route('/bookmark_list_feed', methods=['GET'])
+# def bookmark_list_feed():
+#     if request.method == 'GET':
+#         if 'before' in request.args:
+#             before = int(request.args['before'])
+#         else:
+#             before = time.time()
+#         l = DB.get_bookmark_list(request.args['pk'], request.args['name'])
+#         if l is not None:
+#             ids = json.loads(l.list)
+#             ids = [x[1] for x in ids]
+#             pk = SETTINGS.get('pubkey')
+#             notes = DB.get_feed(before, pk, {'id_list': ids, 'limit': None})
+#             if len(notes) > 0:
+#                 t = FeedThread(notes)
+#                 EXECUTOR.submit(RELAY_HANDLER.subscribe_feed(list(t.ids)))
+#                 profile = DB.get_profile(pk)
+#                 return render_template("feed/feed.items.html", threads=t.threads, last=t.last_ts, profile=profile, pubkey=pk)
+#             else:
+#                 return 'END'
+
+@app.route('/bookmark_edit_panel', methods=['GET'])
+@login_required
+def bookmark_edit_panel():
+    return render_template("bookmarks/edit.panel.html")
 
 @app.route('/topic/<topic>', methods=['GET'])
 @login_required
@@ -1163,7 +1200,7 @@ def topic_page(topic):
     topics = DB.get_topics()
 
     return render_template("topics/topic.html", page_id="topic", title="Topic", threads=[], last=0,
-                           profile=profile, pubkey=pk, topic=topic, subscribed=int(subscribed), topics=topics)
+                           profile=profile, pubkey=pk, topic=topic, subscribed=int(subscribed), topics=topics, settings_json=settings_json())
 
 @app.route('/topic_feed', methods=['GET'])
 def topic_feed():

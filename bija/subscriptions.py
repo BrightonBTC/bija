@@ -156,7 +156,7 @@ class SubscribeProfile(Subscribe):
         logger.info('build subscription filters')
         f = [
             Filter(authors=[self.pubkey], kinds=[EventKind.RELAY_LIST], limit=1),
-            Filter(authors=[self.pubkey], kinds=[EventKind.SET_METADATA, EventKind.CONTACTS]),
+            Filter(authors=[self.pubkey], kinds=[EventKind.SET_METADATA, EventKind.CONTACTS, EventKind.BADGES]),
             # Filter(tags={'#p': [self.pubkey]}, kinds=[EventKind.CONTACTS]),
             Filter(ids=self.ids, kinds=[EventKind.TEXT_NOTE, EventKind.BOOST, EventKind.REACTION])
         ]

@@ -163,21 +163,16 @@ class NoteThread:
 
     def get_replies(self):
         logger.info('get replies')
-        replies = DB.get_feed(int(time.time()), SETTINGS.get('pubkey'), {'replies': self.id})
+        replies = DB.get_feed(int(time.time()), SETTINGS.get('pubkey'), {'replies': self.id, 'limit':None})
         if replies is not None:
             for note in replies:
-                print('id', note.id)
-                print('=========================', note.id)
                 n = dict(note)
-                print(n['thread_root'], n['response_to'])
                 if n['response_to'] == self.id or (n['thread_root'] == self.id and n['response_to'] is None):
-                    print('ADDED')
                     n['reshare'] = self.get_reshare(n)
                     n['class'] = 'reply'
-                    self.replies.append(n)
+                    self.replies.insert(0, n)
                     self.add_members(n)
                     self.note_ids.append(n['id'])
-                print('// =========================', note.id)
 
     def get_reshare(self, note):
         logger.info('get reshare')

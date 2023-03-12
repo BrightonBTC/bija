@@ -1,0 +1,28 @@
+<div class="feed-block">
+{%- for item in notes: -%}
+    {%- if item is string -%}
+        <div class="note-container placeholder" data-id="{{item}}">
+            <div class="note-image"><img src="/static/user.svg" class="user-image"></div>
+            <div class="note-outer"><div class="note"><div class="pad-sm">Event: {{item}} not yet seen on network</div></div></div>
+        </div>
+    {%- else -%}
+        {%- if item['deleted'] is none -%}
+        <div class="note-container {{ item['class'] }}">
+            <div class="thread-marker"></div>
+            <div class="note-image">
+                {{item['nip05'] | nip05_valid(item['nip05_validated']) | safe }}
+                {%- set p=item -%}
+                {%- include 'profile/profile.image.html' -%}
+            </div>
+            <div class="note-outer">
+            {%- set reply_chain = item['thread_root'] | get_thread_root(item['response_to'], item['id']) -%}
+            {%- set note=item -%}
+            {%- include 'notes/note.html' -%}
+            </div>
+        </div>
+        {%- else -%}
+        {%- include 'notes/deleted.note.html' -%}
+        {%- endif -%}
+    {%- endif -%}
+{%- endfor -%}
+</div>

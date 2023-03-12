@@ -57,7 +57,7 @@
     --pfp-dim-lg: calc(var(--pfp-dim)*1.3);
     --pfp-dim-xl: calc(var(--pfp-dim)*2.2);
 
-    --warning: red;
+    --warning: #d0340a;
     --verified: gold;
     --liked: #4ec74c;
     --muted: #3b3b4a;
@@ -238,6 +238,7 @@ h1.main-title{
     z-index: 6000;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
 }
 h1.main-title > span {
     display: flex;
@@ -389,7 +390,7 @@ ul.sidenav {
 .sidenav .title {
     font-size: var(--fs-sm);
 }
-.sidenav.nav-home .home-link, .sidenav.nav-profile-me .profile-link, .sidenav.nav-messages .messages-link, .sidenav.nav-messages_from .messages-link, .sidenav.nav-alerts .alerts-link, .sidenav.nav-settings .settings-link{
+.sidenav li.actv {
     color: var(--lnk-clr);
     font-weight: 600;
     background: var(--bg-clr1);
@@ -722,7 +723,12 @@ input.post-submit {
     width: calc(var(--pfp-dim)*2.2);
     height: calc(var(--pfp-dim)*2.2);
 }
-
+.cloud{
+    display: none;
+}
+.cloud.show{
+    display: block;
+}
 
 
 
@@ -1158,13 +1164,11 @@ svg.lightning *{
 
 .note-container.main .note {
     font-size: var(--fs-mid2);
-    filter: saturate(1.3);
     border-radius: var(--rnd-lg);
     background: var(--bg-clr3);
 }
 .note-container.main .note .note-container .note{
     font-size: var(--fs-mid1);
-    filter: saturate(0.8);
 }
 
 .note-container.ancestor{
@@ -1310,6 +1314,7 @@ svg.lightning *{
     display: grid;
     grid-template-columns: auto;
     gap: var(--spacing);
+    position: relative;
 }
 .note .image-attachment.col2{
     grid-template-columns: auto auto;
@@ -1320,6 +1325,23 @@ svg.lightning *{
 .note .image-attachment.col5{
     grid-template-columns: auto auto auto auto auto;
     gap: var(--spacing-sm);
+}
+.note .image-attachment .reload-im{
+    position: absolute;
+    font-size: var(--fs);
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    vertical-align: middle;
+    display: flex;
+    cursor: pointer;
+}
+.note .image-attachment .reload-im span{
+    margin: auto;
+}
+.note .image-attachment .reload-im span span{
+    font-size: var(--fs-sm);
 }
 
 .note-media img{
@@ -1628,6 +1650,34 @@ p.note-tools {
 
 /* ---------- */
 
+/* Bookmarks */
+
+h1.main-title > .bookmarks_edit_bar.bookmarks_edit_bar{
+    flex: 100%;
+    gap: var(--spacing-mid);
+    justify-content: flex-end;
+    display:none;
+}
+h1.main-title > .bookmarks_edit_bar.bookmarks_edit_bar.show{
+    display: flex;
+}
+.bookmarks_edit_bar .cancel{
+    background: var(--warning);
+}
+.edit_bookmarks.hide{
+    display:none;
+}
+.bookmark_edit_panel{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.bookmark_edit_panel .del{
+    background:var(--warning);
+}
+
+/* ---------- */
+
 /* Alerts */
 .alert-content{
     padding: var(--spacing-mid2) 0;
@@ -1677,11 +1727,12 @@ p.note-tools {
 /* Right column */
 #right_content {
     position: fixed;
-    top: var(--spacing-mid);
+    top: 0;
     bottom: var(--spacing-mid);
     overflow: auto;
     z-index: 100;
     width: inherit;
+    background: var(--bg-clr1);
 }
 #right_content > * {
     padding: var(--spacing-mid);
@@ -1697,6 +1748,7 @@ p.note-tools {
 }
 #search {
     margin-bottom: var(--spacing-mid);
+    background: var(--bg-clr3);
 }
 #search input{
     margin: 0;

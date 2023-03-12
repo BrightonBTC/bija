@@ -183,8 +183,8 @@ class RelayHandler:
                         elif msg.event.kind == EventKind.BLOCK_LIST:
                             self.receive_block_list(msg.event)
 
-                        elif msg.event.kind == EventKind.RELAY_LIST:
-                            print(msg.event)
+                        elif msg.event.kind in [EventKind.RELAY_LIST, EventKind.BADGE_AWARD, EventKind.BADGE_DEF, EventKind.BADGES]:
+                            print(msg.event.kind)
 
                         elif msg.event.kind == EventKind.PERSON_LIST:
                             self.receive_person_list(msg.event)

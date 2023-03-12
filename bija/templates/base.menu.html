@@ -1,0 +1,20 @@
+<ul class="sidenav nav-{{page_id}} ">
+    <li class="wide-only logo"><a href="/"><img src="/static/bija.png"></a></li>
+    {% set cls = "actv" if page_id == "home" else "" %}
+    <li class="{{ cls }}"><a href="/" class="home-link">{{'home'| svg_icon('main_nav fill')|safe}}<span class="title wide-only">feed</span><span id="n_unseen_posts" class="unseen"></span></a></li>
+    {% set cls = "actv" if page_id == "profile-me" else "" %}
+    <li class="{{ cls }}"><a href="{{ url_for('profile_page') }}" class="profile-link">{{'profile'| svg_icon('main_nav fill')|safe}}<span class="title wide-only">profile</span></a></li>
+    {% set cls = "actv" if page_id in ["messages", "messages_from"] else "" %}
+    <li class="{{ cls }}"><a href="{{ url_for('private_messages_page') }}" class="messages-link">{{'messages'| svg_icon('main_nav fill')|safe}}<span class="title wide-only">messages</span><span id="n_unseen_messages" class="unseen"></span></a></li>
+    {% set cls = "actv" if page_id in ["topics", "topic"] else "" %}
+    <li class="{{ cls }}"><a href="/topics" class="topics-link">{{'hashtag'| svg_icon('main_nav stroke')|safe}}<span class="title wide-only">topics</span></a></li>
+    {% set cls = "actv" if page_id in ["lists", "list"] else "" %}
+    <li class="{{ cls }}"><a href="/lists" class="lists-link">{{'lists'| svg_icon('main_nav stroke')|safe}}<span class="title wide-only">lists</span></a></li>
+    {% set cls = "actv" if page_id in ["bookmarks", "bookmark_lists"] else "" %}
+    <li class="{{ cls }}"><a href="/bookmarks" class="bookmarks-link">{{'bookmarks'| svg_icon('main_nav fill')|safe}}<span class="title wide-only">bookmarks</span></a></li>
+    {% set cls = "actv" if page_id == "alerts" else "" %}
+    <li class="{{ cls }}"><a href="/alerts" class="alerts-link">{{'notif'| svg_icon('main_nav fill')|safe}}<span class="title wide-only">alerts</span><span id="n_alerts" class="unseen"></span></a></li>
+    {% set cls = "actv" if page_id == "settings" else "" %}
+    <li class="{{ cls }}"><a href="/settings" class="settings-link">{{'settings'| svg_icon('main_nav fill')|safe}}<span class="title wide-only">settings</span></a></li>
+    <li><a href="#" class="logout">{{'logout'| svg_icon('main_nav stroke')|safe}}<span class="title wide-only">shutdown</span></a></li>
+</ul>

@@ -39,21 +39,24 @@ class SubscriptionManager:
         for relay in RELAY_MANAGER.relays:
             for s in RELAY_MANAGER.relays[relay].subscriptions:
                 sub = RELAY_MANAGER.relays[relay].subscriptions[s]
-                print('-------- SUB', relay, s)
+                print('>>>>>>>>>> SUB', relay, s, sub.paused, sub.batch)
                 if sub.paused and sub.paused < int(time.time()) - 30:
+                    print('-------- SUBSCRIBE', relay, s)
                     sub.pause(False)
                     self.subscribe(s, [relay], 0, self.get_last_batch_upd(s, relay, 0))
-                    print('-------- NEXT ROUND', relay, s)
-                    print('-------- ', sub.paused, RELAY_MANAGER.relays[relay].subscriptions[s].paused)
+                elif sub.ts < int(time.time()) - 180:
+                    print('-------- REFRESH STALE', relay, s)
+                    self.next_batch(relay, s)
 
     def next_batch(self, relay, name):
+        print('-------- NEXT BATCH', relay, name)
         if name in self.subscriptions and self.subscriptions[name]['batch_count'] > 1:
             if relay in RELAY_MANAGER.relays and name in RELAY_MANAGER.relays[relay].subscriptions:
 
                 if RELAY_MANAGER.relays[relay].subscriptions[name].batch >= self.subscriptions[name]['batch_count'] - 1:
                     RELAY_MANAGER.relays[relay].subscriptions[name].batch = 0
                     RELAY_MANAGER.relays[relay].subscriptions[name].pause(time.time())
-                    print('-------- PAUSE SUB', relay, name)
+                    print('>>>>>>>>>>>>>> PAUSE SUB', relay, name)
                 else:
                     batch = RELAY_MANAGER.relays[relay].subscriptions[name].batch + 1
                     self.subscribe(
@@ -62,7 +65,7 @@ class SubscriptionManager:
                         batch,
                         self.get_last_batch_upd(name, relay, batch)
                     )
-                    print('-------- DO SUB', relay, name)
+                    print('>>>>>>>>>>>>>> DO SUB', relay, name)
 
     def get_last_batch_upd(self, sub, relay, batch):
         if sub in self.subscriptions and relay in self.subscriptions[sub]['relays']:

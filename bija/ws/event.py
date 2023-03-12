@@ -17,6 +17,9 @@ class EventKind(IntEnum):
     RELAY_LIST = 10002
     PERSON_LIST = 30000
     BOOKMARK_LIST = 30001
+    BADGE_DEF = 30009
+    BADGE_AWARD = 8
+    BADGES = 30008
 
 class Event():
     def __init__(

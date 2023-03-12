@@ -1,6 +1,6 @@
 <h2 class="posts-title">Add to list</h2>
 <form id="list_adder">
-    <ul class="lists">
+    <ul>
         {%- for item in lists -%}
         <li><input type="radio" name="list" value="{{item.name}}">{{item.name}}</li>
         {%- endfor -%}

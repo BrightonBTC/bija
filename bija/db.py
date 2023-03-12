@@ -1176,9 +1176,16 @@ class BijaDB:
                     Note.thread_root==filters['replies']
                 )
             )
-        q = q.order_by(Note.seen.asc(), Note.created_at.desc())
-        if 'replies' not in filters:
-            q = q.limit(50)
+        if 'order' in filters:
+            if filters['order'] == 'asc':
+                q = q.order_by(Note.seen.asc(), Note.created_at.asc())
+        else:
+            q = q.order_by(Note.seen.asc(), Note.created_at.desc())
+        limit = 50
+        if 'limit' in filters:
+            limit = filters['limit']
+        if limit is not None:
+            q = q.limit(limit)
         return q.all()
 
     def get_url(self, url):

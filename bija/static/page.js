@@ -421,25 +421,7 @@ class bijaNoteTools{
                 hint_elem.innerHTML = ''
             });
         }
-//        if(results.length > 0){
-//            const ul = document.createElement('ul')
-//            ul.classList.add('hint-list')
-//            for(const name of results) {
-//                let li = document.createElement('li')
-//                if(!name['name'] || name['name'].length < 1){
-//                    name['name'] = name['public_key']
-//                }
-//                li.innerText = name['name']
-//                li.addEventListener("click", (event)=>{
-//                    reply_elem.value = reply_elem.value.replace('@'+search_str, '@'+name['name'])
-//                    reply_elem.selectionStart=reply_elem.value.length;
-//                    reply_elem.focus();
-//                    hint_elem.innerHTML = ''
-//                });
-//                ul.append(li)
-//            }
-//            hint_elem.append(ul)
-//        }
+
     }
 }
 
@@ -500,6 +482,12 @@ class bijaSettings{
 
         this.setDeleteKeysClicked()
 
+        const uploads_select = document.querySelector(".uploads_provider");
+        uploads_select.addEventListener("change", (event)=>{
+            this.cloudSelect(uploads_select.value)
+        });
+        this.cloudSelect(uploads_select.value)
+
         const cld_btn = document.querySelector("#upd_cloudinary");
         cld_btn.addEventListener("click", (event)=>{
             event.preventDefault();
@@ -534,6 +522,17 @@ class bijaSettings{
             fetchFromForm('/update_settings', theme_form, theme_cb, {}, 'json')
         });
         this.setThemeSliders()
+    }
+
+    cloudSelect(v){
+        const cloud_sections = document.querySelectorAll(".cloud");
+        for(const c of cloud_sections){
+            c.classList.remove('show')
+        }
+        const selected_cloud = document.querySelector(".cloud[data-cloud='"+v+"']");
+        if(selected_cloud){
+            selected_cloud.classList.add('show')
+        }
     }
 
     setThemeSliders(){
@@ -1185,6 +1184,11 @@ class bijaNotes{
                 const upload_form = note.querySelector('.reply-form')
                 setCloudUploads(upload_form)
             }
+            else if(settings['ibb_key'] !== undefined){
+                const upload_form = note.querySelector('.reply-form')
+                setIBBUploads(upload_form)
+            }
+
             const emoji_link = note.querySelector(".emojis");
             if(emoji_link){
                 emoji_link.addEventListener('click', (e) => {
@@ -1835,7 +1839,87 @@ class bijaLists{
             fetchFromForm('/remove_from_list', form, cb, {}, 'json')
         });
     }
+}
 
+class bijaBookmarks{
+    constructor(){
+        this.setEditable()
+    }
+    setEditable(){
+        const btn = document.querySelector(".edit_bookmarks")
+        const edit_bar = document.querySelector(".bookmarks_edit_bar")
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            edit_bar.classList.add('show')
+            btn.classList.add('hide')
+            const notes = document.querySelectorAll(".note-container:not(.note .note-container, .edit-set)")
+            for (const note of notes) {
+                this.setNoteEditColumn(note)
+            }
+        });
+        const form = document.querySelector(".bookmarks_edit_bar")
+        const save_btn = form.querySelector(".bookmarks_edit_bar .save")
+        const cancel_btn = form.querySelector(".bookmarks_edit_bar .cancel")
+        const bookmarks_input = form.querySelector(".bookmarks_edit_bar .bookmarks_input")
+        save_btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const notes = document.querySelectorAll(".note-container:not(.note .note-container, .edit-set)")
+            let a = []
+            for (const note of notes) {
+                a.push(['e', note.querySelector('.note').dataset.id])
+            }
+            bookmarks_input.value = JSON.stringify(a)
+            const cb = function(response, data){
+                notify(response.message)
+            }
+            fetchFromForm('/save_bookmark_list', form, cb, {}, 'json');
+        });
+        cancel_btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            location.reload();
+        });
+    }
+    setNoteEditColumn(note){
+        const cb = function(response, data){
+            const doc = new DOMParser().parseFromString(response, "text/html")
+            const htm = doc.body.firstChild
+            data.note.append(htm)
+            data.context.setEditButtons(data.note)
+        }
+        fetchGet('/bookmark_edit_panel', cb, {'note':note, 'context':this})
+    }
+    setEditButtons(note){
+        const up = note.querySelector('.up-one')
+        const down = note.querySelector('.down-one')
+        const top = note.querySelector('.to-top')
+        const bottom = note.querySelector('.to-bottom')
+        const del = note.querySelector('.del')
+
+        top.addEventListener('click', (e) => {
+            e.preventDefault();
+            note.parentNode.insertAdjacentElement('afterbegin', note);
+        });
+        bottom.addEventListener('click', (e) => {
+            e.preventDefault();
+            note.parentNode.insertAdjacentElement('beforeend', note);
+        });
+        up.addEventListener('click', (e) => {
+            e.preventDefault();
+            if(note.previousElementSibling){
+                note.previousElementSibling.before(note)
+            }
+        });
+        down.addEventListener('click', (e) => {
+            e.preventDefault();
+            if(note.nextElementSibling){
+                note.nextElementSibling.after(note)
+            }
+        });
+        del.addEventListener('click', (e) => {
+            e.preventDefault();
+            note.remove()
+        });
+    }
 }
 
 class Emojis{
@@ -2070,6 +2154,27 @@ function uploadToCloud(form_el, cb){
     }
 }
 
+function uploadToIBB(form_el, cb){
+    const main_el = document.querySelector('.main')
+    const settings = JSON.parse(main_el.dataset.settings)
+
+    const files = form_el.querySelector("[type=file]").files;
+    const cloudFormData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+        let file = files[i];
+        cloudFormData.append("image", file);
+        const cloud_url = 'https://api.imgbb.com/1/upload?key='+settings['ibb_key']
+        fetch(cloud_url, {
+            method: "POST",
+            body: cloudFormData
+        }).then((response) => {
+            return response.text();
+        }).then((data) => {
+            cb(data, form_el)
+        });
+    }
+}
+
 function fetchFromForm(url, form_el, cb, cb_data = {}, response_type='text'){
     const formData = new FormData(form_el);
     const data = [...formData.entries()];
@@ -2099,6 +2204,46 @@ function clipboard(str){
 function match_mentions(str){
     var pattern = /\B@[a-z0-9_-]+/gi;
     return str.match(pattern);
+}
+
+function setIBBUploads(form){
+    if(form){
+        const toolbar = form.querySelector('.toolbar')
+        const label = document.createElement('label')
+        toolbar.append(label)
+        const input = document.createElement('input')
+        input.setAttribute('type', 'file')
+        input.setAttribute('name', 'image')
+        input.setAttribute('multiple', true)
+        label.append(input)
+        const icon = document.createElement('img')
+        icon.src = '/static/img.svg'
+        icon.classList.add('icon-lg')
+        label.append(icon)
+
+        const hidden_input = document.createElement('input')
+        hidden_input.setAttribute('type', 'hidden')
+        hidden_input.setAttribute('name', 'uploads')
+        form.append(hidden_input)
+        input.style.display = 'none';
+        input.addEventListener('change', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            uploadToIBB(form, function(data, elem){
+                const d = JSON.parse(data)
+                console.log(d)
+                console.log(d.data.thumb)
+                console.log(d.data.thumb.url)
+                if(d && d.success==true){
+                    const im = document.createElement('img')
+                    im.src = d.data.thumb.url
+                    elem.querySelector('.media_uploads').append(im)
+                    const uploads_input = elem.querySelector('[name="uploads"]')
+                    uploads_input.value += ' '+d.data.url
+                }
+            })
+        });
+    }
 }
 
 function setCloudUploads(form){
@@ -2147,10 +2292,23 @@ function lazyloadIntersectionObserver(lazyloadImages) {
 				imageObserver.unobserve(image);
 			    setTimeout(function(){
 			        if(!image.complete){
+			            const reloader = function(){
+			                const new_elem = document.createElement('div')
+			                new_elem.innerHTML = '<span>took too long to load<br><span>(Click to try again)</span></span>'
+			                new_elem.classList.add('reload-im')
+			                image.parentNode.insertAdjacentElement('afterend', new_elem);
+			                new_elem.addEventListener('click', (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                image.src = image.dataset.src;
+                                new_elem.remove()
+                            });
+			            }
 			            if(image.dataset.dflt){
 			                image.src = image.dataset.dflt
 			            }
 			            else{
+			                reloader()
 			                image.src = '/static/blank.png'
 			            }
 			        }
@@ -2159,6 +2317,7 @@ function lazyloadIntersectionObserver(lazyloadImages) {
 		});
 	});
 	lazyloadImages.forEach(function(image) {
+	    image.classList.add('obs-set')
 		imageObserver.observe(image);
 	});
 }
@@ -2242,7 +2401,7 @@ function lazyloadNoIntersectionObserve(lazyloadImages) {
 
 
 function lazyLoad() {
-	let lazyloadImages = document.querySelectorAll("img.lazy-load");
+	let lazyloadImages = document.querySelectorAll("img.lazy-load:not(.obs-set)");
 	let lazyLoadOGs = document.querySelectorAll(".og-container");
 	let lazyLoadNotes= document.querySelectorAll(".note-container.placeholder");
 	if("IntersectionObserver" in window) {
@@ -2311,6 +2470,12 @@ window.addEventListener("load", function () {
         new bijaLists();
     }
 
+    if (document.querySelector(".main[data-page='bookmarks']") != null){
+//        new bijaFeed();
+        new bijaNotes();
+        new bijaBookmarks();
+    }
+
     if (document.querySelector(".main[data-page='boosts']") != null){
         new bijaNotes();
     }
@@ -2332,9 +2497,12 @@ window.addEventListener("load", function () {
     const main_el = document.querySelector('.main')
     if(main_el && main_el.dataset.settings){
         const settings = JSON.parse(main_el.dataset.settings)
+        const upload_form = document.querySelector('#new_post_form')
         if(settings['cloudinary_cloud'] !== undefined){
-            const upload_form = document.querySelector('#new_post_form')
             setCloudUploads(upload_form)
+        }
+        else if(settings['ibb_key'] !== undefined){
+            setIBBUploads(upload_form)
         }
     }
 

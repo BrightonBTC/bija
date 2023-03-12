@@ -7,7 +7,6 @@
   {%- block css -%}
   {%- endblock css -%}
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
-
   <script src="/static/page.js"></script>
   <title>{{ title }}</title>
   <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
@@ -33,22 +32,11 @@
     {{'menu'| svg_icon('icon-lg')|safe}}
   </div>
 </div>
-<div class="main page-{{page_id}}" data-page="{{page_id}}" data-settings="{{1|settings_json}}">
+<div class="main page-{{page_id}}" data-page="{{page_id}}" data-settings="{{settings_json}}">
 
   <div class="row">
     <div class="left-column">
-      <ul class="sidenav nav-{{page_id}} ">
-        <li class="wide-only logo"><a href="/"><img src="/static/bija.png"></a></li>
-        <li><a href="/" class="home-link">{{'home'| svg_icon('main_nav fill')|safe}}<span class="title wide-only">feed</span><span id="n_unseen_posts" class="unseen"></span></a></li>
-        <li><a href="{{ url_for('profile_page') }}" class="profile-link">{{'profile'| svg_icon('main_nav fill')|safe}}<span class="title wide-only">profile</span></a></li>
-        <li><a href="{{ url_for('private_messages_page') }}" class="messages-link">{{'messages'| svg_icon('main_nav fill')|safe}}<span class="title wide-only">messages</span><span id="n_unseen_messages" class="unseen"></span></a></li>
-        <li><a href="/topics" class="topics-link">{{'hashtag'| svg_icon('main_nav stroke')|safe}}<span class="title wide-only">topics</span></a></li>
-        <li><a href="/lists" class="topics-link">{{'lists'| svg_icon('main_nav stroke')|safe}}<span class="title wide-only">lists</span></a></li>
-        <li><a href="/bookmarks" class="topics-link">{{'bookmarks'| svg_icon('main_nav fill')|safe}}<span class="title wide-only">bookmarks</span></a></li>
-        <li><a href="/alerts" class="alerts-link">{{'notif'| svg_icon('main_nav fill')|safe}}<span class="title wide-only">alerts</span><span id="n_alerts" class="unseen"></span></a></li>
-        <li><a href="/settings" class="settings-link">{{'settings'| svg_icon('main_nav fill')|safe}}<span class="title wide-only">settings</span></a></li>
-        <li><a href="#" class="logout">{{'logout'| svg_icon('main_nav stroke')|safe}}<span class="title wide-only">shutdown</span></a></li>
-      </ul>
+      {%- include 'base.menu.html' -%}
       <span class="conn-status rnd pad-sm desktop-only wide-only"></span>
       {%- block left_content -%}
       {%- endblock left_content -%}

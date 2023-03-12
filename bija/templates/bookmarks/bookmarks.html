@@ -6,12 +6,19 @@
 {%- block header -%}
 <h1 class="main-title">
     <span>{{'lists'| svg_icon('main_title_icon stroke')|safe}} {{title}}</span>
+    <a href="#" class="edit_bookmarks">{{'edit'| svg_icon('icon-sm right')|safe}}</a>
+    <form class="bookmarks_edit_bar">
+        <input type="hidden" name="list" value="{{list.name}}">
+        <input type="hidden" name="bookmarks" class="bookmarks_input">
+        <button class="save">Save</button>
+        <button class="cancel">Cancel</button>
+    </form>
 </h1>
 {%- endblock header -%}
 
 {%- block content -%}
 <div id="feed" data-rel="{{list.name}}" data-pk="{{list.public_key}}">
-{%- include 'feed/feed.items.html' -%}
+{%- include 'bookmarks/bookmarks.feed.html' -%}
 </div>
 {%- endblock content -%}
 

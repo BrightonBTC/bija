@@ -14,7 +14,7 @@
     <h3>Theme</h3>
     <form id="theme_form">
         <p>
-            <select name="theme">
+        <select name="theme">
             {%- for t in themes: -%}
                 {%- if t.theme == theme -%}
                 <option selected>{{t.theme}}</option>
@@ -129,12 +129,44 @@
 </div>
 
 <div class="card">
-    <h3>Cloudinary</h3>
-    <p>Add media uploads to your posts by adding a cloudinary account.</p>
-    <p>You'll need the name of your cloud and the name of an upload preset (create one in the Uploads section of your Cloudinary settings)</p>
+    <h3>Media uploads</h3>
+
+    <p>Choose a service provider for media uploads:</p>
 <form id="cloudinary_cfg">
-    <input type="text" name="cloudinary_cloud" placeholder="cloud name" value="{{settings['cloudinary_cloud'] or ''}}">
-    <input type="text" name="cloudinary_upload_preset" placeholder="upload preset" value="{{settings['cloudinary_upload_preset'] or ''}}">
+    <select name="uploads_provider" class="uploads_provider">
+        <option value="default">None</option>
+        {%- if settings.uploads_provider == 'ibb' -%}
+        <option value="ibb" selected>ImgBB</option>
+        {%- else -%}
+        <option value="ibb">ImgBB</option>
+        {%- endif -%}
+        {%- if settings.uploads_provider == 'cloudinary' -%}
+        <option value="cloudinary" selected>Cloudinary</option>
+        {%- else -%}
+        <option value="cloudinary">Cloudinary</option>
+        {%- endif -%}
+    </select>
+    <div class="cloud sm" data-cloud="default">
+        <p>The Nostr protocol itself does not allow for file uploads but media can be added to your posts by inserting a URL in to the text.
+        A couple of Nostr specific cloud options have cropped up to support the community such as:</p>
+        <ul>
+            <li><a href="https://nostr.build/" target="_blank">https://nostr.build</a></li>
+            <li><a href="https://nostrimg.com/" target="_blank">https://nostrimg.com</a></li>
+        </ul>
+        <p>You can upload via their websites and then copy the generated links to your posts. Alternatively, add an upload button to your posts by choosing a different option from the dropdown above.</p>
+    </div>
+    <div class="cloud sm" data-cloud="cloudinary">
+        <p>Add media uploads to your posts by adding a <a href="https://cloudinary.com/" target="_blank">cloudinary</a> account.</p>
+        <p>You'll need the name of your cloud and the name of an upload preset (create one in the Uploads section of your Cloudinary settings)</p>
+        <input type="text" name="cloudinary_cloud" placeholder="cloud name" value="{{settings['cloudinary_cloud'] or ''}}">
+        <input type="text" name="cloudinary_upload_preset" placeholder="upload preset" value="{{settings['cloudinary_upload_preset'] or ''}}">
+    </div>
+    <div class="cloud sm" data-cloud="ibb">
+        <p>Add image uploads to your posts by adding a <a href="https://api.imgbb.com/" target="_blank">imgbb</a> account.</p>
+        <p>Add your API key below:</p>
+        <input type="text" name="ibb_key" placeholder="API key" value="{{settings['ibb_key'] or ''}}">
+    </div>
+
     <input type="button" id="upd_cloudinary" class="right" value="Update/add">
 </form>
 </div>

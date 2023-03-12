@@ -1,3 +1,5 @@
+import time
+
 from bija.ws.filter import Filters
 
 
@@ -7,6 +9,7 @@ class Subscription:
         self.filters = filters
         self.relay = relay
         self.batch = batch
+        self.ts = int(time.time())
         self.paused = False
 
     def pause(self, b):

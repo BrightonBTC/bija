@@ -2,9 +2,11 @@ import json
 import logging
 import time
 import urllib
+import http
 from urllib import request
 from urllib.error import HTTPError, URLError
 from urllib.request import Request
+from http.client import IncompleteRead
 
 import validators
 from bs4 import BeautifulSoup
@@ -60,6 +62,8 @@ class OGTags:
                     print(error.reason)
                 except TimeoutError:
                     print("Request timed out")
+                except IncompleteRead:
+                    print('Incomplete read')
 
     def process(self):
         logger.info('process {}'.format(self.url))
