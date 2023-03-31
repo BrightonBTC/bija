@@ -4,3 +4,4 @@
 /.idea/
 /bija/flask_session/
 __pycache__
+myenv/

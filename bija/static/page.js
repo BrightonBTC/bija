@@ -861,20 +861,44 @@ class bijaMessages{
         }
     }
 
-    setSubmitMessage(){
-        document.querySelector('#new_message_submit').addEventListener("click", (event)=>{
-            event.preventDefault();
-            event.stopPropagation();
-            this.postMessage()
-            return false
-        });
-        document.querySelector('#new_message').addEventListener("keyup", (event)=>{
-            if(event.which === 13){
-                this.postMessage()
-            }
+    setSubmitMessage() {
+        const messageInput = document.querySelector('#new_message');
+        const messageSubmitButton = document.querySelector('#new_message_submit');
+        let messageText = '';
+
+        messageInput.addEventListener('input', (event) => {
+            messageText = event.target.value.trim();
         });
 
+        messageSubmitButton.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (messageText.length > 0) {
+                this.postMessage();
+            } else {
+                alert("Cannot send empty message!");
+            }
+
+            return false;
+        });
+
+        messageInput.addEventListener('keyup', (event) => {
+            if (event.ctrlKey && event.which === 13) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                if (messageText.length > 0) {
+                    this.postMessage();
+                } else {
+                    alert("Cannot send empty message!");
+                }
+
+                return false;
+            }
+        });
     }
+    
     postMessage(){
         const cb = function(response, data){
             if(response['event_id']){

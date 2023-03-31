@@ -22,7 +22,7 @@ from bija.routes import *
 
 def main():
     print("Bija is now running at http://localhost:{}".format(args.port))
-    socketio.run(app, host="0.0.0.0", port=args.port)
+    socketio.run(app, host="0.0.0.0", port=7000)
 
 
 if __name__ == '__main__':
