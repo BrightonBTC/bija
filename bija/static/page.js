@@ -877,9 +877,9 @@ class bijaMessages{
             if (messageText.length > 0) {
                 this.postMessage();
             } else {
-                alert("Cannot send empty message!");
+	    	//don't send empty message
+                return; //removed alert, Will Return nothing
             }
-
             return false;
         });
 
@@ -891,9 +891,9 @@ class bijaMessages{
                 if (messageText.length > 0) {
                     this.postMessage();
                 } else {
-                    alert("Cannot send empty message!");
+		//don't send empty message
+                return; //removed alert, Will Return nothing
                 }
-
                 return false;
             }
         });
