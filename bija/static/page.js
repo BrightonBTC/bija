@@ -465,7 +465,13 @@ class bijaNotePoster{
     setEventListeners(){
         const btn = document.querySelector('#new_post_submit');
         const form = document.querySelector('#new_post_form');
-
+	
+	const ct = document.querySelector('#new_post');
+	let messageText = '';
+        ct.addEventListener('input', (event) => {
+            messageText = event.target.value.trim();
+        });
+	
         btn.addEventListener('click', (e) => {
             e.preventDefault();
             const cb = function(response, data){
@@ -473,7 +479,12 @@ class bijaNotePoster{
                     window.location.href = '/note?id='+response['event_id']
                 }
             }
-            fetchFromForm('/submit_note', form, cb, {}, 'json');
+	    if (messageText.length > 0) {
+            	fetchFromForm('/submit_note', form, cb, {}, 'json');
+	    }
+	     else {
+                return;
+            }
         });
 
 
