@@ -64,6 +64,8 @@ class OGTags:
                     print("Request timed out")
                 except IncompleteRead:
                     print('Incomplete read')
+                except:
+                    print('Unknown error')
 
     def process(self):
         logger.info('process {}'.format(self.url))
