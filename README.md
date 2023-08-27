@@ -1,3 +1,7 @@
+# Please note that this project is no longer being maintained:
+
+I'm still working on some Nostr based projects but made the decision to end development on this. Many other Twitter style apps exist on Nostr now so please choose one of those instead. Thanks.
+
 # Bija Nostr Client
 
 Python [Nostr](https://github.com/nostr-protocol/nostr) client with backend that runs on a local flask server, and front end in your browser
