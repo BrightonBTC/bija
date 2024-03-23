@@ -10,6 +10,21 @@
     <h1>{{'messages'| svg_icon('icon-lg')|safe}} Junk <button id="empty_junk" class="right">Empty</button></h1>
 {%- endif -%}
     <hr>
+<div class="archive_fetcher">
+    <label>Fetch older messages: </label>
+    <select id="fetch_archived">
+        <option value="n">-- Select timeframe --</option>
+        <option value="w">1 week</option>
+        <option value="m">1 month</option>
+        <option value="y">1 year</option>
+        <option value="a">All time</option>
+    </select>
+    <div class="loading">
+        <div class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
+        <div>Found <span class="n_fetched" data-active="0"></span> new notes</div>
+    </div>
+</div>
+<hr>
 {%- for message in messages: -%}
 
 
@@ -37,20 +52,7 @@
 </div>
 
 {%- endfor -%}
-<div class="archive_fetcher">
-    <label>Fetch older messages: </label>
-    <select id="fetch_archived">
-        <option value="n">-- Select timeframe --</option>
-        <option value="w">1 week</option>
-        <option value="m">1 month</option>
-        <option value="y">1 year</option>
-        <option value="a">All time</option>
-    </select>
-    <div class="loading">
-        <div class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
-        <div>Found <span class="n_fetched" data-active="0"></span> new notes</div>
-    </div>
-</div>
+
 {%- endblock content -%}
 
 {%- block right_content -%}
